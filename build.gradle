@@ -1,0 +1,24 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.7.20'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.7.20'
+
+    id 'net.mamoe.mirai-console' version '2.13.0'
+}
+
+group = 'cn.chahuyun'
+version = '1.0.0'
+
+repositories {
+    maven { url 'https://maven.aliyun.com/repository/public' }
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly("cn.hutool:hutool-all:5.8.5")
+    compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.0-dev")
+}
+
+// hibernate 6 和 HikariCP 5 需要 jdk11
+mirai {
+    jvmTarget = JavaVersion.VERSION_11
+}
