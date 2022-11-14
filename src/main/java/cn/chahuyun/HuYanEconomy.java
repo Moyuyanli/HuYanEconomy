@@ -1,6 +1,7 @@
 package cn.chahuyun;
 
 import cn.chahuyun.entity.GoldEconomyCurrency;
+import cn.chahuyun.util.HibernateUtil;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.console.plugin.jvm.JavaPlugin;
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder;
@@ -10,6 +11,7 @@ import xyz.cssxsh.mirai.economy.EconomyService;
 import xyz.cssxsh.mirai.economy.service.BotEconomyContext;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 import xyz.cssxsh.mirai.economy.service.IEconomyService;
+import xyz.cssxsh.mirai.hibernate.MiraiHibernateConfiguration;
 
 public final class HuYanEconomy extends JavaPlugin {
     /**
@@ -23,18 +25,27 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String version = "1.0.0-dev";
+    public static final String version = "0.1.0";
 
     private HuYanEconomy() {
         super(new JvmPluginDescriptionBuilder("cn.chahuyun.HuYanEconomy", version)
                 .name("HuYanEconomy")
                 .info("壶言经济")
                 .author("Moyuyanli")
+                //忽略依赖版本
+                .dependsOn("xyz.cssxsh.mirai.plugin.mirai-hibernate-plugin", false)
+                .dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", false)
                 .build());
     }
 
     @Override
     public void onEnable() {
+
+        //加载前置
+        MiraiHibernateConfiguration configuration = new MiraiHibernateConfiguration(this);
+        //初始化插件数据库
+        HibernateUtil.init(configuration);
+
         Bot bot = Bot.getInstance(2061954151);
         //获取经济账户实例
         IEconomyService economyService = EconomyService.INSTANCE;

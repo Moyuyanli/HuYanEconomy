@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import xyz.cssxsh.mirai.economy.service.EconomyCurrency;
 
 /**
- * HY币
+ * 货币 [金币]
  *
  * @author Moyuyanli
  * @date 2022/11/9 14:55
@@ -20,7 +20,7 @@ public class GoldEconomyCurrency implements EconomyCurrency {
     @NotNull
     @Override
     public String getId() {
-        return "gold";
+        return "hy-gold";
     }
 
     @NotNull
