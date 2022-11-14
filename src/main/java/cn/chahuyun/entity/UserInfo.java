@@ -1,6 +1,7 @@
 package cn.chahuyun.entity;
 
 import cn.chahuyun.util.HibernateUtil;
+import cn.chahuyun.util.Log;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
@@ -10,8 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 import java.util.Date;
-
-import static cn.chahuyun.HuYanEconomy.log;
 
 /**
  * 用户信息<p>
@@ -29,6 +28,10 @@ public class UserInfo {
      * qq号
      */
     private long qq;
+    /**
+     * 群号
+     */
+    private long group;
     /**
      * 名称
      */
@@ -57,7 +60,7 @@ public class UserInfo {
     public String toString() {
         return "用户名称:" + name +
                 "\n用户qq:" + qq +
-                "\n是否签到:" + (isSign() ? "已签到" : "未签到")+"\n";
+                "\n是否签到:" + (isSign() ? "已签到" : "未签到") + "\n";
     }
 
     /**
@@ -71,7 +74,7 @@ public class UserInfo {
         String now = DateUtil.format(new Date(), "yyyy-MM-dd") + " 04:00:00";
         DateTime nowDate = DateUtil.parse(now);
         long between = DateUtil.between(nowDate, signTime, DateUnit.HOUR, false);
-        log.debug("账户:(" + this.getQq() + ")签到时差->" + between);
+        Log.debug("账户:(" + this.getQq() + ")签到时差->" + between);
 //        System.out.println("between->"+between);
         if (between <= 0) {
             sign = true;
@@ -86,8 +89,9 @@ public class UserInfo {
     public UserInfo() {
     }
 
-    public UserInfo(long qq, String name, Date registerTime) {
+    public UserInfo(long qq, long group, String name, Date registerTime) {
         this.qq = qq;
+        this.group = group;
         this.name = name;
         this.registerTime = registerTime;
         this.signTime = registerTime;
@@ -107,6 +111,14 @@ public class UserInfo {
 
     public void setQq(long qq) {
         this.qq = qq;
+    }
+
+    public long getGroup() {
+        return group;
+    }
+
+    public void setGroup(long group) {
+        this.group = group;
     }
 
     public Date getRegisterTime() {

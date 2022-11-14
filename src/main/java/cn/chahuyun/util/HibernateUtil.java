@@ -4,8 +4,6 @@ import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import xyz.cssxsh.mirai.hibernate.MiraiHibernateConfiguration;
 
-import static cn.chahuyun.HuYanEconomy.log;
-
 /**
  * 说明
  *
@@ -26,6 +24,10 @@ public class HibernateUtil {
      */
     public static SessionFactory factory = null;
 
+    private HibernateUtil() {
+
+    }
+
     /**
      * Hibernate初始化
      *
@@ -40,10 +42,10 @@ public class HibernateUtil {
         try {
             factory = configuration.buildSessionFactory();
         } catch (HibernateException e) {
-            log.error("请删除data中的HuYanEconomy.mv.db后重新启动！", e);
+            Log.error("请删除data中的HuYanEconomy.mv.db后重新启动！", e);
             return;
         }
-        log.info("H2数据库初始化成功!");
+        Log.info("H2数据库初始化成功!");
     }
 
 

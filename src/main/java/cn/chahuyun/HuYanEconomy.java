@@ -1,16 +1,16 @@
 package cn.chahuyun;
 
-import cn.chahuyun.entity.GoldEconomyCurrency;
+import cn.chahuyun.config.ConfigData;
+import cn.chahuyun.event.MessageEventListener;
+import cn.chahuyun.util.EconomyUtil;
 import cn.chahuyun.util.HibernateUtil;
+import cn.chahuyun.util.Log;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.console.plugin.jvm.JavaPlugin;
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder;
-import net.mamoe.mirai.utils.MiraiLogger;
-import xyz.cssxsh.mirai.economy.EconomyDsl;
-import xyz.cssxsh.mirai.economy.EconomyService;
-import xyz.cssxsh.mirai.economy.service.BotEconomyContext;
-import xyz.cssxsh.mirai.economy.service.EconomyAccount;
-import xyz.cssxsh.mirai.economy.service.IEconomyService;
+import net.mamoe.mirai.event.Event;
+import net.mamoe.mirai.event.EventChannel;
+import net.mamoe.mirai.event.GlobalEventChannel;
 import xyz.cssxsh.mirai.hibernate.MiraiHibernateConfiguration;
 
 public final class HuYanEconomy extends JavaPlugin {
@@ -19,9 +19,13 @@ public final class HuYanEconomy extends JavaPlugin {
      */
     public static final HuYanEconomy INSTANCE = new HuYanEconomy();
     /**
-     * 日志
+     * 配置
      */
-    public static final MiraiLogger log = INSTANCE.getLogger();
+    public static ConfigData config;
+    /**
+     * 插件所属bot
+     */
+    public static Bot bot;
     /**
      * 全局版本
      */
@@ -40,30 +44,30 @@ public final class HuYanEconomy extends JavaPlugin {
 
     @Override
     public void onEnable() {
-
         //加载前置
         MiraiHibernateConfiguration configuration = new MiraiHibernateConfiguration(this);
         //初始化插件数据库
         HibernateUtil.init(configuration);
-
-        Bot bot = Bot.getInstance(2061954151);
-        //获取经济账户实例
-        IEconomyService economyService = EconomyService.INSTANCE;
-        //一种货币  金币
-        GoldEconomyCurrency gold = new GoldEconomyCurrency();
-        //注册货币
-        economyService.register(gold,false);
-        //获取一个上下文   是不是约等于  获取一家银行  a
-        try (BotEconomyContext context = economyService.context(bot)){
-            //获取一个账户
-            EconomyAccount account = context.getService().account("t1", "test1");
-            //在 a 银行中的 t1 的 金币 余额
-            double v = context.get(account, gold);
-            //给 a 银行中的 t1 的 金币 +20
-            context.plusAssign(account,gold,20);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        //加载配置
+        reloadPluginConfig(ConfigData.INSTANCE);
+        config = ConfigData.INSTANCE;
+        long configBot = config.getBot();
+        if (configBot == 0) {
+            Log.warning("插件管理机器人还没有配置，请尽快配置!");
+        } else {
+            bot = Bot.getInstanceOrNull(configBot);
+            if (bot == null) {
+                Log.error("插件管理机器人加载错误");
+            }
         }
-        getLogger().info(String.format("HuYanEconomy已加载！当前版本 %s !",version));
+
+        EconomyUtil.init();
+
+
+        EventChannel<Event> eventEventChannel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE);
+        eventEventChannel.registerListenerHost(new MessageEventListener());
+        Log.info("消息事件已监听!");
+
+        Log.info(String.format("HuYanEconomy已加载！当前版本 %s !", version));
     }
 }
