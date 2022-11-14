@@ -44,8 +44,11 @@ public class MessageEventListener extends SimpleListenerHost {
      * @date 2022/11/14 12:34
      */
     @EventHandler()
-    public void onMessage(@NotNull MessageEvent event)  {
+    public void onMessage(@NotNull MessageEvent event) {
+        String code = event.getMessage().serializeToMiraiCode();
+        if (code.equals("签到")) {
 
+        }
     }
 
 }

@@ -6,5 +6,5 @@ package cn.chahuyun.entity;
  * @author Moyuyanli
  * @date 2022/11/14 12:35
  */
-public class PropsFish extends PropsBase{
+public class PropsFish extends PropsBase {
 }

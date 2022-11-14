@@ -9,12 +9,12 @@ import java.util.Date;
  * 道具基本<p>
  * 所有道具都应该继承这个类 并重写 toString 方法<p>
  * 基本属性:<p>
- *  [id] 道具id 例 k-01 k-> 卡 编号01e<p>
- *  [name] 道具名称 例 补签卡<p>
- *  [description] 道具描述 例 此卡可以续上你断掉的某一天签到！<p>
- *  [reuse] 是否复用 例 false 补签卡不可复用<p>
- *  [getTime] 获取日期 默认 yyyy-MM-dd HH<p>
- *  [expiredTime] 到期日期 yyyy-MM-dd HH 到期默认 HH 为 4点<p>
+ * [id] 道具种类id 例 k-01 k-> 卡 编号01<p>
+ * [name] 道具名称 例 补签卡<p>
+ * [description] 道具描述 例 此卡可以续上你断掉的某一天签到！<p>
+ * [reuse] 是否复用 例 false 补签卡不可复用<p>
+ * [getTime] 获取日期 默认 yyyy-MM-dd HH<p>
+ * [expiredTime] 到期日期 yyyy-MM-dd HH 到期默认 HH 为 4点<p>
  *
  * @author Moyuyanli
  * @date 2022/11/14 8:52
@@ -24,7 +24,7 @@ public class PropsBase {
     @Id
     private String id;
     /**
-     * 道具id
+     * 道具种类id
      */
     private String code;
     /**

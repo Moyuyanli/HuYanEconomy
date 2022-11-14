@@ -37,7 +37,7 @@ public class PropsCard extends PropsBase {
 
     @Override
     public String toString() {
-        return  "卡名称:" + this.getName() +
+        return "卡名称:" + this.getName() +
                 "\n价格:" + this.getCost() + "金币" +
                 "\n状态:" + (status ? "使用中" : "未使用") +
                 "\n描述:" + this.getDescription();

@@ -240,7 +240,7 @@ public class EconomyUtil {
      * @date 2022/11/14 16:06
      */
     public static boolean turnBankToUser(User user, double quantity, EconomyCurrency currency) {
-        try (GlobalEconomyContext global = economyService.global();BotEconomyContext context = economyService.context(bot); ) {
+        try (GlobalEconomyContext global = economyService.global(); BotEconomyContext context = economyService.context(bot);) {
             UserEconomyAccount backAccount = global.getService().account(user);
             double bankMoney = global.get(backAccount, currency);
             if (bankMoney - quantity < 0) {
