@@ -16,7 +16,7 @@ import java.util.Date;
  * @date 2022/11/14 9:27
  */
 @Entity
-public class PropCard extends PropsBase {
+public class PropsCard extends PropsBase {
 
     /**
      * 道具卡状态
@@ -43,10 +43,10 @@ public class PropCard extends PropsBase {
                 "\n描述:" + this.getDescription();
     }
 
-    public PropCard() {
+    public PropsCard() {
     }
 
-    public PropCard(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime, boolean status, boolean operation, Date enabledTime, String aging) {
+    public PropsCard(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime, boolean status, boolean operation, Date enabledTime, String aging) {
         super(code, name, cost, description, reuse, getTime, expiredTime);
         this.status = status;
         this.operation = operation;
