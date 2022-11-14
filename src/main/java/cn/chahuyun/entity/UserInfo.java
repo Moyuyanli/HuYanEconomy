@@ -4,15 +4,17 @@ import cn.chahuyun.util.HibernateUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 import java.util.Date;
 
 import static cn.chahuyun.HuYanEconomy.log;
 
 /**
- * 用户信息
- *
+ * 用户信息<p>
  *
  * @author Moyuyanli
  * @date 2022/11/14 9:45
@@ -27,7 +29,10 @@ public class UserInfo {
      * qq号
      */
     private long qq;
-
+    /**
+     * 名称
+     */
+    private String name;
     /**
      * 注册时间
      */
@@ -46,16 +51,13 @@ public class UserInfo {
     /**
      * 连续签到次数
      */
-    private int signNumber;
+    private int signNumber = 0;
 
     @Override
     public String toString() {
-        return "UserInfo{" +
-                "qq=" + qq +
-                ", registerTime=" + registerTime +
-                ", signTime=" + signTime +
-                ", signNumber=" + signNumber +
-                '}';
+        return "用户名称:" + name +
+                "\n用户qq:" + qq +
+                "\n是否签到:" + (isSign() ? "已签到" : "未签到")+"\n";
     }
 
     /**
@@ -66,10 +68,10 @@ public class UserInfo {
      * @date 2022/11/14 10:16
      */
     public boolean sign() {
-        String now = DateUtil.format(new Date(), "yyyy-MM-dd")+" 04:00:00";
+        String now = DateUtil.format(new Date(), "yyyy-MM-dd") + " 04:00:00";
         DateTime nowDate = DateUtil.parse(now);
         long between = DateUtil.between(nowDate, signTime, DateUnit.HOUR, false);
-        log.debug("账户:("+this.getQq()+")签到时差->"+between);
+        log.debug("账户:(" + this.getQq() + ")签到时差->" + between);
 //        System.out.println("between->"+between);
         if (between <= 0) {
             sign = true;
@@ -84,11 +86,11 @@ public class UserInfo {
     public UserInfo() {
     }
 
-    public UserInfo(long qq, Date registerTime) {
+    public UserInfo(long qq, String name, Date registerTime) {
         this.qq = qq;
+        this.name = name;
         this.registerTime = registerTime;
         this.signTime = registerTime;
-        this.signNumber = 0;
     }
 
     public int getId() {
@@ -127,12 +129,20 @@ public class UserInfo {
         return signNumber;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public void setSignNumber(int signNumber) {
         this.signNumber = signNumber;
     }
 
     public boolean isSign() {
-        String now = DateUtil.format(new Date(), "yyyy-MM-dd")+" 04:00:00";
+        String now = DateUtil.format(new Date(), "yyyy-MM-dd") + " 04:00:00";
         DateTime nowDate = DateUtil.parse(now);
         long between = DateUtil.between(nowDate, signTime, DateUnit.HOUR, false);
         return between > 0;
