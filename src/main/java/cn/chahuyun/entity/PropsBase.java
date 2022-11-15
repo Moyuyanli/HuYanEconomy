@@ -1,7 +1,6 @@
 package cn.chahuyun.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 import java.util.Date;
 
@@ -12,6 +11,7 @@ import java.util.Date;
  * [id] 道具种类id 例 k-01 k-> 卡 编号01<p>
  * [name] 道具名称 例 补签卡<p>
  * [description] 道具描述 例 此卡可以续上你断掉的某一天签到！<p>
+ * [cost] 道具价值 <p>
  * [reuse] 是否复用 例 false 补签卡不可复用<p>
  * [getTime] 获取日期 默认 yyyy-MM-dd HH<p>
  * [expiredTime] 到期日期 yyyy-MM-dd HH 到期默认 HH 为 4点<p>
@@ -20,9 +20,12 @@ import java.util.Date;
  * @date 2022/11/14 8:52
  */
 @Entity
+@Table(name = "PropsBase",
+        uniqueConstraints = {@UniqueConstraint(columnNames = "code")})
 public class PropsBase {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private int id;
     /**
      * 道具种类id
      */
@@ -56,7 +59,6 @@ public class PropsBase {
     }
 
     public PropsBase(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime) {
-        this.id = code;
         this.code = code;
         this.name = name;
         this.cost = cost;
@@ -66,7 +68,7 @@ public class PropsBase {
         this.expiredTime = expiredTime;
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
@@ -75,7 +77,6 @@ public class PropsBase {
     }
 
     public void setCode(String code) {
-        this.id = code;
         this.code = code;
     }
 

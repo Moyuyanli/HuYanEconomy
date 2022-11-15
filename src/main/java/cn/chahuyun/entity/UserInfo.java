@@ -5,12 +5,11 @@ import cn.chahuyun.util.Log;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 用户信息<p>
@@ -19,6 +18,7 @@ import java.util.Date;
  * @date 2022/11/14 9:45
  */
 @Entity
+@Table
 public class UserInfo {
 
     @Id
@@ -40,21 +40,21 @@ public class UserInfo {
      * 注册时间
      */
     private Date registerTime;
-
     /**
      * 签到状态
      */
     private boolean sign;
-
     /**
      * 签到时间
      */
     private Date signTime;
-
     /**
      * 连续签到次数
      */
     private int signNumber = 0;
+
+    @OneToMany(targetEntity = UserBackpack.class ,mappedBy = "userId")
+    private final List<UserBackpack> backpacks = new ArrayList<>();
 
     @Override
     public String toString() {
@@ -163,4 +163,9 @@ public class UserInfo {
     public void setSign(boolean sign) {
         this.sign = sign;
     }
+
+    public List<UserBackpack> getBackpacks() {
+        return backpacks;
+    }
+
 }
