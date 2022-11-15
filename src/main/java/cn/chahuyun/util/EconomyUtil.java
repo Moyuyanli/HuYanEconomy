@@ -32,7 +32,7 @@ public class EconomyUtil {
      * @date 2022/11/14 15:29
      */
     public static void init() {
-        init(Constant.GOLD);
+        init(Constant.CURRENCY_GOLD);
     }
 
     /**
@@ -66,7 +66,7 @@ public class EconomyUtil {
      * @date 2022/11/14 12:39
      */
     public static double getMoneyByUser(User user) {
-        return getMoneyByUser(user, Constant.GOLD);
+        return getMoneyByUser(user, Constant.CURRENCY_GOLD);
     }
 
 
@@ -102,7 +102,7 @@ public class EconomyUtil {
      * @date 2022/11/14 15:11
      */
     public static double getMoneyByBank(User user) {
-        return getMoneyByBank(user, Constant.GOLD);
+        return getMoneyByBank(user, Constant.CURRENCY_GOLD);
     }
 
     /**
@@ -136,7 +136,7 @@ public class EconomyUtil {
      * @date 2022/11/14 15:39
      */
     public static boolean turnUserToUser(User user, User toUser, double quantity) {
-        return turnUserToUser(user, toUser, quantity, Constant.GOLD);
+        return turnUserToUser(user, toUser, quantity, Constant.CURRENCY_GOLD);
     }
 
     /**
@@ -180,7 +180,7 @@ public class EconomyUtil {
      * @date 2022/11/14 15:53
      */
     public static boolean turnUserToBank(User user, double quantity) {
-        return turnUserToBank(user, quantity, Constant.GOLD);
+        return turnUserToBank(user, quantity, Constant.CURRENCY_GOLD);
     }
 
     /**
@@ -224,7 +224,7 @@ public class EconomyUtil {
      * @date 2022/11/14 16:04
      */
     public static boolean turnBankToUser(User user, double quantity) {
-        return turnBankToUser(user, quantity, Constant.GOLD);
+        return turnBankToUser(user, quantity, Constant.CURRENCY_GOLD);
     }
 
     /**

@@ -1,5 +1,6 @@
 package cn.chahuyun.entity;
 
+import cn.hutool.core.util.StrUtil;
 import jakarta.persistence.*;
 
 import java.util.Date;
@@ -13,16 +14,17 @@ import java.util.Date;
  * [description] 道具描述 例 此卡可以续上你断掉的某一天签到！<p>
  * [cost] 道具价值 <p>
  * [reuse] 是否复用 例 false 补签卡不可复用<p>
- * [getTime] 获取日期 默认 yyyy-MM-dd HH<p>
- * [expiredTime] 到期日期 yyyy-MM-dd HH 到期默认 HH 为 4点<p>
+ * [getTime] 获取日期 默认 yyyy-MM-dd <p>
+ * [expiredTime] 到期日期 yyyy-MM-dd 到期默认 <p>
  *
  * @author Moyuyanli
  * @date 2022/11/14 8:52
  */
-
+@Entity
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @Table(name = "PropsBase",
         uniqueConstraints = {@UniqueConstraint(columnNames = "code")})
-public class PropsBase {
+public abstract class PropsBase {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -57,6 +59,7 @@ public class PropsBase {
 
     public PropsBase() {
     }
+
 
     public PropsBase(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime) {
         this.code = code;

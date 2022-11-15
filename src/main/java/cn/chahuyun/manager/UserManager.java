@@ -37,32 +37,34 @@ public class UserManager {
     public static UserInfo getUserInfo(User user) {
         long userId = user.getId();
         //查询用户
-        return HibernateUtil.factory.fromTransaction(session -> {
-            HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
-            JpaCriteriaQuery<UserInfo> query = builder.createQuery(UserInfo.class);
-            JpaRoot<UserInfo> from = query.from(UserInfo.class);
-            query.select(from);
-            query.where(builder.equal(from.get("qq"), userId));
-            UserInfo singleResult;
-            try {
-                singleResult = session.createQuery(query).getSingleResult();
-            } catch (Exception e) {
-                //新建用户
-                long group = 0;
-                if (user instanceof Member) {
-                    Member member = (Member) user;
-                    group = member.getGroup().getId();
-                }
-                UserInfo info = new UserInfo(userId, group, user.getNick(), new Date());
+        try {
+            return HibernateUtil.factory.fromTransaction(session -> {
+                HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
+                JpaCriteriaQuery<UserInfo> query = builder.createQuery(UserInfo.class);
+                JpaRoot<UserInfo> from = query.from(UserInfo.class);
+                query.select(from);
+                query.where(builder.equal(from.get("qq"), userId));
+                UserInfo singleResult = null;
                 try {
-                    session.persist(info);
-                } catch (Exception ex) {
-                    Log.error("用户管理错误:注册用户失败",e);
-                }
-                return getUserInfo(user);
+                    singleResult = session.createQuery(query).getSingleResult();
+                } catch (Exception ignored) {}
+                return singleResult;
+            });
+        } catch (Exception e) {
+            //注册用户
+            long group = 0;
+            if (user instanceof Member) {
+                Member member = (Member) user;
+                group = member.getGroup().getId();
             }
-            return singleResult;
-        });
+            UserInfo info = new UserInfo(userId, group, user.getNick(), new Date());
+            try {
+                HibernateUtil.factory.fromTransaction(session -> {session.persist(info);return 0;});
+            } catch (Exception exception) {
+                Log.error("用户管理错误:注册用户失败",e);
+            }
+            return getUserInfo(user);
+        }
     }
 
 

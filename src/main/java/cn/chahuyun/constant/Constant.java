@@ -14,6 +14,6 @@ public class Constant {
     /**
      * 货币 [金币]
      */
-    public static final EconomyCurrency GOLD = new GoldEconomyCurrency();
+    public static final EconomyCurrency CURRENCY_GOLD = new GoldEconomyCurrency();
 
 }
