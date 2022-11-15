@@ -2,6 +2,7 @@ package cn.chahuyun.manager;
 
 import cn.chahuyun.entity.UserInfo;
 import cn.chahuyun.util.HibernateUtil;
+import cn.chahuyun.util.Log;
 import net.mamoe.mirai.contact.Member;
 import net.mamoe.mirai.contact.User;
 import org.hibernate.query.criteria.HibernateCriteriaBuilder;
@@ -36,29 +37,32 @@ public class UserManager {
     public static UserInfo getUserInfo(User user) {
         long userId = user.getId();
         //查询用户
-        UserInfo userInfo = HibernateUtil.factory.fromSession(session -> {
+        return HibernateUtil.factory.fromTransaction(session -> {
             HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
             JpaCriteriaQuery<UserInfo> query = builder.createQuery(UserInfo.class);
             JpaRoot<UserInfo> from = query.from(UserInfo.class);
             query.select(from);
             query.where(builder.equal(from.get("qq"), userId));
-            return session.createQuery(query).getSingleResult();
-        });
-        if (userInfo == null) {
-            //新建用户
-            long group = 0;
-            if (user instanceof Member) {
-                Member member = (Member) user;
-                group = member.getGroup().getId();
+            UserInfo singleResult;
+            try {
+                singleResult = session.createQuery(query).getSingleResult();
+            } catch (Exception e) {
+                //新建用户
+                long group = 0;
+                if (user instanceof Member) {
+                    Member member = (Member) user;
+                    group = member.getGroup().getId();
+                }
+                UserInfo info = new UserInfo(userId, group, user.getNick(), new Date());
+                try {
+                    session.persist(info);
+                } catch (Exception ex) {
+                    Log.error("用户管理错误:注册用户失败",e);
+                }
+                return getUserInfo(user);
             }
-            UserInfo info = new UserInfo(userId, group, user.getNick(), new Date());
-            HibernateUtil.factory.fromSession(session -> {
-                session.persist(info);
-                return 0;
-            });
-            return info;
-        }
-        return userInfo;
+            return singleResult;
+        });
     }
 
 

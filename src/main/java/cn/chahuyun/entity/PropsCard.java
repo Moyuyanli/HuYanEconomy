@@ -1,6 +1,7 @@
 package cn.chahuyun.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 import java.util.Date;
 
@@ -16,6 +17,7 @@ import java.util.Date;
  * @date 2022/11/14 9:27
  */
 @Entity
+@Table
 public class PropsCard extends PropsBase {
 
     /**

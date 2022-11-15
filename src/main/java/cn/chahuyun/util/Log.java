@@ -14,6 +14,8 @@ public class Log {
 
     private static final MiraiLogger log = HuYanEconomy.INSTANCE.getLogger();
 
+    private static  String name = "壶言经济--";
+    
     private Log() {
 
     }
@@ -26,7 +28,7 @@ public class Log {
      * @date 2022/11/14 13:04
      */
     public static void info(String msg) {
-        log.info("HuYanEconomy--" + msg);
+        log.info(name + msg);
     }
 
 
@@ -38,7 +40,7 @@ public class Log {
      * @date 2022/11/14 13:23
      */
     public static void warning(String msg) {
-        log.warning("HuYanEconomy-!-" + msg);
+        log.warning(name + msg);
     }
 
     /**
@@ -49,7 +51,7 @@ public class Log {
      * @date 2022/11/14 13:25
      */
     public static void error(String msg) {
-        log.error("HuYanEconomy-%-" + msg);
+        log.error(name + msg);
     }
 
     /**
@@ -61,7 +63,7 @@ public class Log {
      */
 
     public static void error(Throwable e) {
-        log.error("HuYanEconomy-%-" + e.getMessage(), e);
+        log.error(name + e.getMessage(), e);
     }
 
     /**
@@ -73,8 +75,8 @@ public class Log {
      * @date 2022/11/14 15:19
      */
     public static void error(String msg, Throwable e) {
-        log.error("HuYanEconomy-%-" + msg);
-        log.error("HuYanEconomy-%-" + e.getMessage(), e);
+        log.error(name + msg);
+        log.error(name + e.getMessage(), e);
     }
 
     /**
@@ -85,8 +87,11 @@ public class Log {
      * @date 2022/11/14 14:44
      */
     public static void debug(String msg) {
-        log.debug("HuYanEconomy-=-" + msg);
+        log.debug(name + msg);
     }
 
 
+    public static void setName(String name) {
+        Log.name = name;
+    }
 }

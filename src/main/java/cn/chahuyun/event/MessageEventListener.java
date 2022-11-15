@@ -1,5 +1,6 @@
 package cn.chahuyun.event;
 
+import cn.chahuyun.manager.SignManager;
 import cn.chahuyun.util.Log;
 import kotlin.coroutines.CoroutineContext;
 import net.mamoe.mirai.contact.BotIsBeingMutedException;
@@ -47,7 +48,7 @@ public class MessageEventListener extends SimpleListenerHost {
     public void onMessage(@NotNull MessageEvent event) {
         String code = event.getMessage().serializeToMiraiCode();
         if (code.equals("签到")) {
-
+            SignManager.sign(event);
         }
     }
 

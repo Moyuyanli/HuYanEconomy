@@ -1,6 +1,7 @@
 package cn.chahuyun;
 
 import cn.chahuyun.config.ConfigData;
+import cn.chahuyun.event.BotOnlineEventListener;
 import cn.chahuyun.event.MessageEventListener;
 import cn.chahuyun.util.EconomyUtil;
 import cn.chahuyun.util.HibernateUtil;
@@ -54,19 +55,15 @@ public final class HuYanEconomy extends JavaPlugin {
         long configBot = config.getBot();
         if (configBot == 0) {
             Log.warning("插件管理机器人还没有配置，请尽快配置!");
-        } else {
-            bot = Bot.getInstanceOrNull(configBot);
-            if (bot == null) {
-                Log.error("插件管理机器人加载错误");
-            }
         }
-
         EconomyUtil.init();
 
 
+
         EventChannel<Event> eventEventChannel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE);
+        eventEventChannel.registerListenerHost(new BotOnlineEventListener());
         eventEventChannel.registerListenerHost(new MessageEventListener());
-        Log.info("消息事件已监听!");
+        Log.info("事件已监听!");
 
         Log.info(String.format("HuYanEconomy已加载！当前版本 %s !", version));
     }

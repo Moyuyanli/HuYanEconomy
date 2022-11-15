@@ -19,13 +19,13 @@ import java.util.Date;
  * @author Moyuyanli
  * @date 2022/11/14 8:52
  */
-@Entity
+
 @Table(name = "PropsBase",
         uniqueConstraints = {@UniqueConstraint(columnNames = "code")})
 public class PropsBase {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private int id;
+    private Long id;
     /**
      * 道具种类id
      */
@@ -68,7 +68,7 @@ public class PropsBase {
         this.expiredTime = expiredTime;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 

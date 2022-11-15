@@ -22,16 +22,15 @@ import java.util.List;
 public class UserInfo {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private int id;
+    private Long id;
     /**
      * qq号
      */
     private long qq;
     /**
-     * 群号
+     * 注册群号
      */
-    private long group;
+    private long registerGroup;
     /**
      * 名称
      */
@@ -56,10 +55,10 @@ public class UserInfo {
     @OneToMany(targetEntity = UserBackpack.class ,mappedBy = "userId")
     private final List<UserBackpack> backpacks = new ArrayList<>();
 
-    @Override
-    public String toString() {
-        return "用户名称:" + name +
-                "\n用户qq:" + qq +
+
+    public String getString() {
+        return "用户名称:" + this.getName() +
+                "\n用户qq:" + this.getQq() +
                 "\n是否签到:" + (isSign() ? "已签到" : "未签到") + "\n";
     }
 
@@ -71,14 +70,20 @@ public class UserInfo {
      * @date 2022/11/14 10:16
      */
     public boolean sign() {
+        if (this.getSignTime() == null) {
+            this.setSign(true);
+            this.setSignTime( new Date());
+            HibernateUtil.factory.fromSession(session -> session.merge(this));
+            return true;
+        }
         String now = DateUtil.format(new Date(), "yyyy-MM-dd") + " 04:00:00";
         DateTime nowDate = DateUtil.parse(now);
-        long between = DateUtil.between(nowDate, signTime, DateUnit.HOUR, false);
+        long between = DateUtil.between(nowDate, this.getSignTime(), DateUnit.HOUR, false);
         Log.debug("账户:(" + this.getQq() + ")签到时差->" + between);
 //        System.out.println("between->"+between);
         if (between <= 0) {
-            sign = true;
-            signTime = new Date();
+            this.setSign(true);
+            this.setSignTime( new Date());
             HibernateUtil.factory.fromSession(session -> session.merge(this));
             return true;
         }
@@ -89,20 +94,16 @@ public class UserInfo {
     public UserInfo() {
     }
 
-    public UserInfo(long qq, long group, String name, Date registerTime) {
+    public UserInfo(long qq, long registerGroup, String name, Date registerTime) {
+        this.id = qq;
         this.qq = qq;
-        this.group = group;
+        this.registerGroup = registerGroup;
         this.name = name;
         this.registerTime = registerTime;
-        this.signTime = registerTime;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public long getQq() {
@@ -110,15 +111,16 @@ public class UserInfo {
     }
 
     public void setQq(long qq) {
+        this.id = qq;
         this.qq = qq;
     }
 
-    public long getGroup() {
-        return group;
+    public long getRegisterGroup() {
+        return registerGroup;
     }
 
-    public void setGroup(long group) {
-        this.group = group;
+    public void setRegisterGroup(long group) {
+        this.registerGroup = group;
     }
 
     public Date getRegisterTime() {

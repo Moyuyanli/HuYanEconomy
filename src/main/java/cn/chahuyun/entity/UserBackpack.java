@@ -17,7 +17,7 @@ public class UserBackpack {
     /**
      * 用户id
      */
-    private int userId;
+    private long userId;
     /**
      * 道具编码
      */
@@ -25,7 +25,7 @@ public class UserBackpack {
     /**
      * 道具id
      */
-    private int cardId;
+    private long cardId;
 
     public UserBackpack() {
     }
@@ -44,7 +44,7 @@ public class UserBackpack {
         this.id = id;
     }
 
-    public int getUserId() {
+    public Long getUserId() {
         return userId;
     }
 
@@ -60,7 +60,7 @@ public class UserBackpack {
         this.propsCode = propsCode;
     }
 
-    public int getCardId() {
+    public Long getCardId() {
         return cardId;
     }
 
