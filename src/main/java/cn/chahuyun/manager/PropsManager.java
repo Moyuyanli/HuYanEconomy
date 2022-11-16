@@ -18,7 +18,9 @@ public interface PropsManager {
      * 注册道具
      * @param propsBase
      */
-    void registerProps(PropsBase propsBase);
+    boolean registerProps(PropsBase propsBase);
+
+
 
     /**
      * 获取该用户的所有道具

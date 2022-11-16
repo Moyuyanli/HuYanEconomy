@@ -3,6 +3,7 @@ package cn.chahuyun.entity;
 import cn.hutool.core.util.StrUtil;
 import jakarta.persistence.*;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -24,7 +25,7 @@ import java.util.Date;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @Table(name = "PropsBase",
         uniqueConstraints = {@UniqueConstraint(columnNames = "code")})
-public abstract class PropsBase {
+public abstract class PropsBase implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -51,6 +52,7 @@ public abstract class PropsBase {
     /**
      * 获得时间
      */
+    @Column(columnDefinition = "date default now()")
     private Date getTime;
     /**
      * 过期时间
@@ -59,7 +61,6 @@ public abstract class PropsBase {
 
     public PropsBase() {
     }
-
 
     public PropsBase(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime) {
         this.code = code;
@@ -70,6 +71,15 @@ public abstract class PropsBase {
         this.getTime = getTime;
         this.expiredTime = expiredTime;
     }
+
+
+    /**
+     * 创建一个道具
+     * 具体实现方法请查看卡道具
+     * @return 道具的实现类
+     * @param <T> 道具类
+     */
+    public abstract <T extends PropsBase> T getProp(String code);
 
     public Long getId() {
         return id;
@@ -134,6 +144,7 @@ public abstract class PropsBase {
     public String toString() {
         return "请重写方法!";
     }
+
 }
 
 

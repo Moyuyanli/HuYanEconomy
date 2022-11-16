@@ -1,8 +1,12 @@
 package cn.chahuyun.entity;
 
+import cn.chahuyun.constant.PropsType;
+import cn.chahuyun.util.HibernateUtil;
+import cn.hutool.core.util.ObjectUtil;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -18,7 +22,7 @@ import java.util.Date;
  */
 @Entity
 @Table
-public class PropsCard extends PropsBase {
+public class PropsCard extends PropsBase implements Serializable {
 
     /**
      * 道具卡状态
@@ -46,6 +50,22 @@ public class PropsCard extends PropsBase {
     }
 
     public PropsCard() {
+    }
+
+    /**
+     * 创建一个道具
+     * 具体实现方法请查看卡道具
+     *
+     * @return 道具的实现类
+     */
+    @Override
+    public <T extends PropsBase> T getProp(String code) {
+        PropsCard propsInfo = PropsType.getPropsInfo(code);
+        PropsCard card = ObjectUtil.clone(propsInfo);
+        card.setGetTime(new Date());
+        PropsCard finalCard = card;
+        card = HibernateUtil.factory.fromTransaction(session -> session.merge(finalCard));
+        return (T) card;
     }
 
     public PropsCard(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime, boolean status, boolean operation, Date enabledTime, String aging) {

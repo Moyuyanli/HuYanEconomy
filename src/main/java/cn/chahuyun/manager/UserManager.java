@@ -59,11 +59,11 @@ public class UserManager {
             }
             UserInfo info = new UserInfo(userId, group, user.getNick(), new Date());
             try {
-                HibernateUtil.factory.fromTransaction(session -> {session.persist(info);return 0;});
+                return HibernateUtil.factory.fromTransaction(session -> session.merge(info));
             } catch (Exception exception) {
                 Log.error("用户管理错误:注册用户失败",e);
+                return null;
             }
-            return getUserInfo(user);
         }
     }
 

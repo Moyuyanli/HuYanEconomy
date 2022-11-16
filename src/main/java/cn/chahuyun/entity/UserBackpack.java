@@ -2,6 +2,8 @@ package cn.chahuyun.entity;
 
 import jakarta.persistence.*;
 
+import java.io.Serializable;
+
 /**
  * 用户背包
  *
@@ -10,7 +12,7 @@ import jakarta.persistence.*;
  */
 @Entity
 @Table
-public class UserBackpack {
+public class UserBackpack implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;

@@ -58,7 +58,7 @@ public class SignManager {
         }
 
         PropsManager propsManager = PluginManager.getPropsManager();
-        propsManager.getPropsByUserFromCode(userInfo,)
+
 
 
     }

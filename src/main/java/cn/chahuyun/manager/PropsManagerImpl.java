@@ -1,8 +1,12 @@
 package cn.chahuyun.manager;
 
+import cn.chahuyun.constant.PropsType;
 import cn.chahuyun.entity.PropsBase;
 import cn.chahuyun.entity.UserBackpack;
 import cn.chahuyun.entity.UserInfo;
+import cn.chahuyun.util.HibernateUtil;
+import cn.chahuyun.util.Log;
+import cn.hutool.core.util.StrUtil;
 
 import java.util.List;
 
@@ -16,14 +20,41 @@ public class PropsManagerImpl implements PropsManager {
 
 
     /**
-     * 注册道具
+     * 注册道具<p>
+     * 道具的<p>
+     * [code] [name] [cost] [reuse]<p>
+     * [description]<p>
+     * 不能为空<p>
      *
      * @param propsBase
      */
     @Override
-    public void registerProps(PropsBase propsBase) {
-
+    public boolean registerProps(PropsBase propsBase) {
+        String code = null;
+        try {
+            int cost = propsBase.getCost();
+            boolean reuse = propsBase.isReuse();
+            code = propsBase.getCode();
+            if (StrUtil.isBlankIfStr(code)) {
+                return false;
+            }
+            String description = propsBase.getDescription();
+            if (StrUtil.isBlankIfStr(description)) {
+                return false;
+            }
+            String name = propsBase.getName();
+            if (StrUtil.isBlankIfStr(name)) {
+                return false;
+            }
+        } catch (Exception e) {
+            Log.error("道具管理:注册道具出错!");
+            return false;
+        }
+        PropsType.add(code, propsBase);
+        return true;
     }
+
+
 
     /**
      * 获取该用户的所有道具<p>
@@ -49,8 +80,14 @@ public class PropsManagerImpl implements PropsManager {
     @Override
     public List<?> getPropsByUserFromCode(UserInfo userInfo, String code) {
         List<UserBackpack> backpacks = userInfo.getBackpacks();
-
-
+        if (backpacks.size() == 0) {
+            return null;
+        }
+        for (UserBackpack backpack : backpacks) {
+            HibernateUtil.factory.fromSession(session -> {
+                session.get(UserBackpack.class,backpack.getId())
+            })
+        }
 
         return null;
     }
