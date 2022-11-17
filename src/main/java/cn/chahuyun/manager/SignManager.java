@@ -1,5 +1,7 @@
 package cn.chahuyun.manager;
 
+import cn.chahuyun.constant.Constant;
+import cn.chahuyun.entity.PropsCard;
 import cn.chahuyun.entity.UserInfo;
 import cn.chahuyun.plugin.PluginManager;
 import cn.hutool.core.swing.RobotUtil;
@@ -9,6 +11,8 @@ import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.*;
+
+import java.util.List;
 
 /**
  * 签到管理<p>
@@ -59,7 +63,11 @@ public class SignManager {
 
         PropsManager propsManager = PluginManager.getPropsManager();
 
+        List<PropsCard> cardS = (List<PropsCard>) propsManager.getPropsByUserFromCode(userInfo, Constant.SIGN_DOUBLE_SINGLE_CARD, PropsCard.class);
 
+        for (PropsCard card : cardS) {
+
+        }
 
     }
 

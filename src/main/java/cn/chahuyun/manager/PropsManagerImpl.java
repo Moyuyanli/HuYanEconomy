@@ -64,6 +64,7 @@ public class PropsManagerImpl implements PropsManager {
      */
     @Override
     public List<?> getPropsByUser(UserInfo userInfo) {
+        //todo 获取该用户的所有道具
         return null;
     }
 
@@ -79,7 +80,7 @@ public class PropsManagerImpl implements PropsManager {
      * @date 2022/11/15 15:44
      */
     @Override
-    public List<?> getPropsByUserFromCode(UserInfo userInfo, String code, Class<? extends PropsBase> clazz) {
+    public List<? extends PropsBase> getPropsByUserFromCode(UserInfo userInfo, String code, Class<? extends PropsBase> clazz) {
         List<UserBackpack> backpacks = userInfo.getBackpacks();
         if (backpacks.size() == 0) {
             return null;
@@ -87,7 +88,7 @@ public class PropsManagerImpl implements PropsManager {
         List<PropsBase> propList = new ArrayList<>();
         for (UserBackpack backpack : backpacks) {
             if (backpack.getPropsCode().equals(code)) {
-
+                continue;
             }
             PropsBase base = HibernateUtil.factory.fromSession(session -> session.get(clazz, backpack.getPropId()));
             propList.add(base);

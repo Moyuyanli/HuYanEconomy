@@ -59,10 +59,14 @@ public class PropsCard extends PropsBase implements Serializable {
      * @return 道具的实现类
      */
     public static PropsCard getProp(String code) {
+        //从已注册的道具模板里面拿出来
         PropsCard propsInfo = PropsType.getPropsInfo(code);
+        //浅克隆
         PropsCard card = ObjectUtil.clone(propsInfo);
+        //设置属性
         card.setGetTime(new Date());
         PropsCard finalCard = card;
+        //添加道具到数据库
         card = HibernateUtil.factory.fromTransaction(session -> session.merge(finalCard));
         return card;
     }
