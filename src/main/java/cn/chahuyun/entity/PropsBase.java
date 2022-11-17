@@ -73,14 +73,6 @@ public abstract class PropsBase implements Serializable {
     }
 
 
-    /**
-     * 创建一个道具
-     * 具体实现方法请查看卡道具
-     * @return 道具的实现类
-     * @param <T> 道具类
-     */
-    public abstract <T extends PropsBase> T getProp(String code);
-
     public Long getId() {
         return id;
     }

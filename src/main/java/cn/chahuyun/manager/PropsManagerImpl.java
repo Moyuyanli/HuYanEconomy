@@ -8,6 +8,7 @@ import cn.chahuyun.util.HibernateUtil;
 import cn.chahuyun.util.Log;
 import cn.hutool.core.util.StrUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -55,7 +56,6 @@ public class PropsManagerImpl implements PropsManager {
     }
 
 
-
     /**
      * 获取该用户的所有道具<p>
      *
@@ -73,23 +73,26 @@ public class PropsManagerImpl implements PropsManager {
      *
      * @param userInfo 用户
      * @param code     道具编码
+     * @param clazz    对应道具的类
      * @return java.util.List<?> 道具集合
      * @author Moyuyanli
      * @date 2022/11/15 15:44
      */
     @Override
-    public List<?> getPropsByUserFromCode(UserInfo userInfo, String code) {
+    public List<?> getPropsByUserFromCode(UserInfo userInfo, String code, Class<? extends PropsBase> clazz) {
         List<UserBackpack> backpacks = userInfo.getBackpacks();
         if (backpacks.size() == 0) {
             return null;
         }
+        List<PropsBase> propList = new ArrayList<>();
         for (UserBackpack backpack : backpacks) {
-            HibernateUtil.factory.fromSession(session -> {
-                session.get(UserBackpack.class,backpack.getId())
-            })
-        }
+            if (backpack.getPropsCode().equals(code)) {
 
-        return null;
+            }
+            PropsBase base = HibernateUtil.factory.fromSession(session -> session.get(clazz, backpack.getPropId()));
+            propList.add(base);
+        }
+        return propList;
     }
 }
 

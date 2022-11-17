@@ -35,7 +35,7 @@ public interface PropsManager {
      * @param code 道具编码
      * @return
      */
-     List<?> getPropsByUserFromCode(UserInfo userInfo, String code);
+     List<?> getPropsByUserFromCode(UserInfo userInfo, String code,Class<? extends PropsBase> clazz);
 
 
 }

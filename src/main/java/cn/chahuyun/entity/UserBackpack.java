@@ -27,15 +27,15 @@ public class UserBackpack implements Serializable {
     /**
      * 道具id
      */
-    private long cardId;
+    private long propId;
 
     public UserBackpack() {
     }
 
-    public UserBackpack(int userId, String propsCode, int cardId) {
+    public UserBackpack(int userId, String propsCode, int propId) {
         this.userId = userId;
         this.propsCode = propsCode;
-        this.cardId = cardId;
+        this.propId = propId;
     }
 
     public Long getId() {
@@ -62,11 +62,11 @@ public class UserBackpack implements Serializable {
         this.propsCode = propsCode;
     }
 
-    public Long getCardId() {
-        return cardId;
+    public Long getPropId() {
+        return propId;
     }
 
-    public void setCardId(int cardId) {
-        this.cardId = cardId;
+    public void setPropId(int cardId) {
+        this.propId = cardId;
     }
 }

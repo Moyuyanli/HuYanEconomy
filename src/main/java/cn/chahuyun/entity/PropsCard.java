@@ -58,14 +58,13 @@ public class PropsCard extends PropsBase implements Serializable {
      *
      * @return 道具的实现类
      */
-    @Override
-    public <T extends PropsBase> T getProp(String code) {
+    public static PropsCard getProp(String code) {
         PropsCard propsInfo = PropsType.getPropsInfo(code);
         PropsCard card = ObjectUtil.clone(propsInfo);
         card.setGetTime(new Date());
         PropsCard finalCard = card;
         card = HibernateUtil.factory.fromTransaction(session -> session.merge(finalCard));
-        return (T) card;
+        return card;
     }
 
     public PropsCard(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime, boolean status, boolean operation, Date enabledTime, String aging) {
