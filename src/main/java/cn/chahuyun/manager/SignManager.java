@@ -4,13 +4,14 @@ import cn.chahuyun.constant.Constant;
 import cn.chahuyun.entity.PropsCard;
 import cn.chahuyun.entity.UserInfo;
 import cn.chahuyun.plugin.PluginManager;
-import cn.hutool.core.swing.RobotUtil;
 import cn.hutool.core.util.RandomUtil;
-import cn.hutool.poi.excel.RowUtil;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
-import net.mamoe.mirai.message.data.*;
+import net.mamoe.mirai.message.data.MessageChain;
+import net.mamoe.mirai.message.data.MessageUtils;
+import net.mamoe.mirai.message.data.PlainText;
+import net.mamoe.mirai.message.data.QuoteReply;
 
 import java.util.List;
 
@@ -58,7 +59,7 @@ public class SignManager {
                 goldNumber = RandomUtil.randomInt(100, 200);
             }
         } else {
-            goldNumber =  RandomUtil.randomInt(50, 100);
+            goldNumber = RandomUtil.randomInt(50, 100);
         }
 
         PropsManager propsManager = PluginManager.getPropsManager();
@@ -66,7 +67,9 @@ public class SignManager {
         List<PropsCard> cardS = (List<PropsCard>) propsManager.getPropsByUserFromCode(userInfo, Constant.SIGN_DOUBLE_SINGLE_CARD, PropsCard.class);
 
         for (PropsCard card : cardS) {
+            if (card.isStatus()) {
 
+            }
         }
 
     }

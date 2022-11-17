@@ -47,7 +47,8 @@ public class UserManager {
                 UserInfo singleResult = null;
                 try {
                     singleResult = session.createQuery(query).getSingleResult();
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
                 return singleResult;
             });
         } catch (Exception e) {
@@ -61,7 +62,7 @@ public class UserManager {
             try {
                 return HibernateUtil.factory.fromTransaction(session -> session.merge(info));
             } catch (Exception exception) {
-                Log.error("用户管理错误:注册用户失败",e);
+                Log.error("用户管理错误:注册用户失败", e);
                 return null;
             }
         }

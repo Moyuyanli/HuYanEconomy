@@ -1,7 +1,6 @@
 package cn.chahuyun.constant;
 
 import cn.chahuyun.entity.PropsBase;
-import cn.chahuyun.entity.PropsCard;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

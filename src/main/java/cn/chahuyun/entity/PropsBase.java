@@ -1,6 +1,5 @@
 package cn.chahuyun.entity;
 
-import cn.hutool.core.util.StrUtil;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -8,7 +7,8 @@ import java.util.Date;
 
 /**
  * 道具基本<p>
- * 所有道具都应该继承这个类 并重写 toString 方法<p>
+ * 所有道具都应该继承这个类 实现 [Serializable]<p>
+ * 并重写 toString 方法<p>
  * 基本属性:<p>
  * [id] 道具种类id 例 k-01 k-> 卡 编号01<p>
  * [name] 道具名称 例 补签卡<p>

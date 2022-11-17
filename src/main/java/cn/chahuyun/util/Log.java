@@ -14,8 +14,8 @@ public class Log {
 
     private static final MiraiLogger log = HuYanEconomy.INSTANCE.getLogger();
 
-    private static  String name = "壶言经济--";
-    
+    private static String name = "壶言经济--";
+
     private Log() {
 
     }

@@ -1,13 +1,11 @@
 package cn.chahuyun.event;
 
 import cn.chahuyun.HuYanEconomy;
-import cn.chahuyun.manager.SignManager;
 import cn.chahuyun.util.Log;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;
 import net.mamoe.mirai.event.events.BotOnlineEvent;
-import net.mamoe.mirai.event.events.MessageEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**

@@ -59,7 +59,6 @@ public final class HuYanEconomy extends JavaPlugin {
         EconomyUtil.init();
 
 
-
         EventChannel<Event> eventEventChannel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE);
         eventEventChannel.registerListenerHost(new BotOnlineEventListener());
         eventEventChannel.registerListenerHost(new MessageEventListener());
