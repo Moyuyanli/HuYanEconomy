@@ -4,6 +4,7 @@ import cn.chahuyun.constant.Constant;
 import cn.chahuyun.entity.PropsCard;
 import cn.chahuyun.entity.UserInfo;
 import cn.chahuyun.plugin.PluginManager;
+import cn.chahuyun.util.EconomyUtil;
 import cn.hutool.core.util.RandomUtil;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
@@ -66,11 +67,22 @@ public class SignManager {
 
         List<PropsCard> cardS = (List<PropsCard>) propsManager.getPropsByUserFromCode(userInfo, Constant.SIGN_DOUBLE_SINGLE_CARD, PropsCard.class);
 
+        boolean doubleStatus = false;
         for (PropsCard card : cardS) {
             if (card.isStatus()) {
-
+                doubleStatus = true;
+                if (!propsManager.deleteProp(userInfo, card, PropsCard.class)) {
+                    doubleStatus = false;
+                    subject.sendMessage("双倍签到金币卡使用失败!");
+                }
+                break;
             }
         }
+
+        if (doubleStatus) {
+            goldNumber = goldNumber * 2;
+        }
+
 
     }
 

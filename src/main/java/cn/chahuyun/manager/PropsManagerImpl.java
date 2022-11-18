@@ -7,6 +7,9 @@ import cn.chahuyun.entity.UserInfo;
 import cn.chahuyun.util.HibernateUtil;
 import cn.chahuyun.util.Log;
 import cn.hutool.core.util.StrUtil;
+import org.hibernate.query.criteria.HibernateCriteriaBuilder;
+import org.hibernate.query.criteria.JpaCriteriaQuery;
+import org.hibernate.query.criteria.JpaRoot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,6 +97,35 @@ public class PropsManagerImpl implements PropsManager {
             propList.add(base);
         }
         return propList;
+    }
+
+    /**
+     * 删除 [用户] 对应的 [道具]
+     *
+     * @param userInfo 用户
+     * @param props    用户道具
+     * @param clazz    道具类型
+     * @return true 成功删除
+     */
+    @Override
+    public boolean deleteProp(UserInfo userInfo, PropsBase props, Class<? extends PropsBase> clazz) {
+        try {
+            return HibernateUtil.factory.fromTransaction(session -> {
+                session.remove(props);
+                HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
+                JpaCriteriaQuery<UserBackpack> query = builder.createQuery(UserBackpack.class);
+                JpaRoot<UserBackpack> from = query.from(UserBackpack.class);
+                query.select(from);
+                query.where(builder.equal(from.get("propsCode"), props.getCode()));
+                query.where(builder.equal(from.get("propId"), props.getId()));
+                UserBackpack backpack = session.createQuery(query).getSingleResult();
+                session.remove(backpack);
+                return true;
+            });
+        } catch (Exception e) {
+            Log.error("道具管理:删除道具出错");
+            return false;
+        }
     }
 }
 
