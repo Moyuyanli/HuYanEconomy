@@ -86,7 +86,7 @@ public class PropsManagerImpl implements PropsManager {
     public List<? extends PropsBase> getPropsByUserFromCode(UserInfo userInfo, String code, Class<? extends PropsBase> clazz) {
         List<UserBackpack> backpacks = userInfo.getBackpacks();
         if (backpacks.size() == 0) {
-            return null;
+            return new ArrayList<>();
         }
         List<PropsBase> propList = new ArrayList<>();
         for (UserBackpack backpack : backpacks) {

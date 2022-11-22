@@ -87,7 +87,7 @@ public class EconomyUtil {
             //返回这个用户在bot上下文的某种货币的余额
             return context.get(account, currency);
         } catch (Exception e) {
-            Log.error("经济获取出错:获取用户钱包余额");
+            Log.error("经济获取出错:获取用户钱包余额", e);
         }
         return 0;
     }
@@ -119,7 +119,7 @@ public class EconomyUtil {
             UserEconomyAccount account = global.getService().account(user);
             return global.get(account, currency);
         } catch (Exception e) {
-            Log.error("经济获取出错:获取用户银行余额");
+            Log.error("经济获取出错:获取用户银行余额", e);
             return 0;
         }
     }
@@ -159,11 +159,14 @@ public class EconomyUtil {
             if (userMoney - quantity < 0) {
                 return false;
             }
-            context.minusAssign(account, currency, quantity);
-            context.plusAssign(toAccount, currency, quantity);
+            context.transaction(currency, balance -> {
+                balance.put(account, balance.get(account) - quantity);
+                balance.put(toAccount, balance.get(toAccount) + quantity);
+                return null;
+            });
             return true;
         } catch (Exception e) {
-            Log.error("经济转移出错:用户->用户");
+            Log.error("经济转移出错:用户->用户", e);
             return false;
         }
     }
@@ -198,16 +201,19 @@ public class EconomyUtil {
     public static boolean turnUserToBank(User user, double quantity, EconomyCurrency currency) {
         try (BotEconomyContext context = economyService.context(bot); GlobalEconomyContext global = economyService.global()) {
             UserEconomyAccount account = context.getService().account(user);
+            UserEconomyAccount bankAccount = global.getService().account(user);
             double money = context.get(account, currency);
             if (money - quantity < 0) {
                 return false;
             }
-            context.minusAssign(account, currency, quantity);
-            UserEconomyAccount backAccount = global.getService().account(user);
-            global.plusAssign(backAccount, currency, quantity);
+            context.transaction(currency, balance -> {
+                balance.put(account, balance.get(account) - quantity);
+                balance.put(bankAccount, balance.get(bankAccount) + quantity);
+                return null;
+            });
             return true;
         } catch (Exception e) {
-            Log.error("经济转移出错:用户->银行");
+            Log.error("经济转移出错:用户->银行", e);
             return false;
         }
     }
@@ -241,19 +247,96 @@ public class EconomyUtil {
      */
     public static boolean turnBankToUser(User user, double quantity, EconomyCurrency currency) {
         try (GlobalEconomyContext global = economyService.global(); BotEconomyContext context = economyService.context(bot);) {
-            UserEconomyAccount backAccount = global.getService().account(user);
-            double bankMoney = global.get(backAccount, currency);
+            UserEconomyAccount bankAccount = global.getService().account(user);
+            UserEconomyAccount account = context.getService().account(user);
+            double bankMoney = global.get(bankAccount, currency);
             if (bankMoney - quantity < 0) {
                 return false;
             }
-            global.minusAssign(backAccount, currency, quantity);
+            context.transaction(currency, balance -> {
+                balance.put(bankAccount, balance.get(bankAccount) - quantity);
+                balance.put(account, balance.get(account) + quantity);
+                return null;
+            });
+            return true;
+        } catch (Exception e) {
+            Log.error("经济转移出错:银行->用户", e);
+            return false;
+        }
+    }
+
+    /**
+     * 给 [用户] [钱包] 添加余额
+     * 默认货物 [金币]
+     *
+     * @param user     用户
+     * @param quantity 数量
+     * @return boolean  true 成功
+     * @author Moyuyanli
+     * @date 2022/11/22 15:17
+     */
+    public static boolean addMoneyToUser(User user, double quantity) {
+        return addMoneyToUser(user, quantity, Constant.CURRENCY_GOLD);
+    }
+
+    /**
+     * 给 [用户] [钱包] 添加余额
+     * 货币自定义
+     *
+     * @param user     用户
+     * @param quantity 数量
+     * @param currency 货币
+     * @return boolean  true 成功
+     * @author Moyuyanli
+     * @date 2022/11/22 15:19
+     */
+    public static boolean addMoneyToUser(User user, double quantity, EconomyCurrency currency) {
+        try (BotEconomyContext context = economyService.context(bot)) {
             UserEconomyAccount account = context.getService().account(user);
             context.plusAssign(account, currency, quantity);
             return true;
         } catch (Exception e) {
-            Log.error("经济转移出错:银行->用户");
+            Log.error("经济转移出错:添加用户经济", e);
             return false;
         }
     }
+
+
+    /**
+     * 给 [用户] [钱包] 减少余额
+     * 默认货物 [金币]
+     *
+     * @param user     用户
+     * @param quantity 数量
+     * @return boolean  true 成功
+     * @author Moyuyanli
+     * @date 2022/11/22 15:17
+     */
+    public static boolean lessMoneyToUser(User user, double quantity) {
+        return lessMoneyToUser(user, quantity, Constant.CURRENCY_GOLD);
+    }
+
+    /**
+     * 给 [用户] [钱包] 减少余额
+     * 货币自定义
+     *
+     * @param user     用户
+     * @param quantity 数量
+     * @param currency 货币
+     * @return boolean  true 成功
+     * @author Moyuyanli
+     * @date 2022/11/22 15:19
+     */
+    public static boolean lessMoneyToUser(User user, double quantity, EconomyCurrency currency) {
+        try (BotEconomyContext context = economyService.context(bot)) {
+            UserEconomyAccount account = context.getService().account(user);
+            context.minusAssign(account, currency, quantity);
+            return true;
+        } catch (Exception e) {
+            Log.error("经济转移出错:减少用户经济", e);
+            return false;
+        }
+    }
+
 
 }

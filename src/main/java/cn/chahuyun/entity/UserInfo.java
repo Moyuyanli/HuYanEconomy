@@ -67,7 +67,7 @@ public class UserInfo implements Serializable {
     public String getString() {
         return "用户名称:" + this.getName() +
                 "\n用户qq:" + this.getQq() +
-                "\n连续签到:" + this.getSignTime() + "天\n";
+                "\n连续签到:" + this.getSignNumber() + "天\n";
     }
 
     /**

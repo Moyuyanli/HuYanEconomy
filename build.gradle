@@ -15,7 +15,7 @@ repositories {
 
 dependencies {
     compileOnly "xyz.cssxsh.mirai:mirai-hibernate-plugin:2.5.0"
-    compileOnly "xyz.cssxsh.mirai:mirai-economy-core:1.0.0"
+    compileOnly "xyz.cssxsh.mirai:mirai-economy-core:1.0.3"
     implementation 'cn.hutool:hutool-all:5.8.9'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
 }

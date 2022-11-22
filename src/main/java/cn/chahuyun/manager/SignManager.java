@@ -10,7 +10,7 @@ import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.MessageChain;
-import net.mamoe.mirai.message.data.MessageUtils;
+import net.mamoe.mirai.message.data.MessageChainBuilder;
 import net.mamoe.mirai.message.data.PlainText;
 import net.mamoe.mirai.message.data.QuoteReply;
 
@@ -43,21 +43,31 @@ public class SignManager {
 
         UserInfo userInfo = UserManager.getUserInfo(user);
 
-        MessageChain messages = MessageUtils.newChain(new QuoteReply(message));
+        MessageChainBuilder messages = new MessageChainBuilder();
+        messages.append(new QuoteReply(message));
+        if (userInfo == null) {
+            subject.sendMessage("签到失败!");
+            return;
+        }
         if (!userInfo.sign()) {
-            messages.add(new PlainText("你今天已经签到过了哦!"));
-            subject.sendMessage(messages);
+            messages.append(new PlainText("你今天已经签到过了哦!"));
+            subject.sendMessage(messages.build());
+            return;
         }
 
         double goldNumber;
 
-        int randomNumber = RandomUtil.randomNumber();
+        PlainText plainText = null;
+
+        int randomNumber = RandomUtil.randomInt(0, 10);
         if (randomNumber > 7) {
             randomNumber = RandomUtil.randomNumber();
-            if (randomNumber > 7) {
+            if (randomNumber > 8) {
                 goldNumber = RandomUtil.randomInt(200, 500);
+                plainText = new PlainText(String.format("\n卧槽,你家祖坟裂了,冒出%s金币", goldNumber));
             } else {
                 goldNumber = RandomUtil.randomInt(100, 200);
+                plainText = new PlainText(String.format("\n哇偶,你今天运气爆棚,获得%s金币", goldNumber));
             }
         } else {
             goldNumber = RandomUtil.randomInt(50, 100);
@@ -83,7 +93,20 @@ public class SignManager {
             goldNumber = goldNumber * 2;
         }
 
+        if (EconomyUtil.addMoneyToUser(user, goldNumber)) {
+            subject.sendMessage("签到失败!");
+            return;
+        }
 
+        double moneyByUser = EconomyUtil.getMoneyByUser(user);
+
+        messages.append(new PlainText("签到成功!\n"));
+        messages.append(new PlainText(userInfo.getString()));
+        messages.append(new PlainText(String.format("金币:%s(+%s)", moneyByUser, goldNumber)));
+        if (plainText != null) {
+            messages.append(plainText);
+        }
+        subject.sendMessage(messages.build());
     }
 
 

@@ -1,7 +1,6 @@
 package cn.chahuyun.manager;
 
 import cn.chahuyun.entity.PropsBase;
-import cn.chahuyun.entity.UserBackpack;
 import cn.chahuyun.entity.UserInfo;
 
 import java.util.List;
@@ -44,8 +43,8 @@ public interface PropsManager {
      * 删除 [用户] 对应的 [道具]
      *
      * @param userInfo 用户
-     * @param props 用户的道具
-     * @param clazz 道具类型
+     * @param props    用户的道具
+     * @param clazz    道具类型
      * @return true 成功删除
      */
     boolean deleteProp(UserInfo userInfo, PropsBase props, Class<? extends PropsBase> clazz);

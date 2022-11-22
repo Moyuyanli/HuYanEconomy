@@ -44,12 +44,7 @@ public class UserManager {
                 JpaRoot<UserInfo> from = query.from(UserInfo.class);
                 query.select(from);
                 query.where(builder.equal(from.get("qq"), userId));
-                UserInfo singleResult = null;
-                try {
-                    singleResult = session.createQuery(query).getSingleResult();
-                } catch (Exception ignored) {
-                }
-                return singleResult;
+                return session.createQuery(query).getSingleResult();
             });
         } catch (Exception e) {
             //注册用户
