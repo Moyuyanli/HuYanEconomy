@@ -45,4 +45,9 @@ public class PropsType {
         props.put(code, propsBase);
     }
 
+    public static Map<String, PropsBase> getProps() {
+        return props;
+    }
+
+
 }

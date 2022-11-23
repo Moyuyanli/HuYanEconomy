@@ -1,6 +1,10 @@
 package cn.chahuyun.event;
 
+import cn.chahuyun.entity.UserInfo;
+import cn.chahuyun.manager.PropsManager;
 import cn.chahuyun.manager.SignManager;
+import cn.chahuyun.manager.UserManager;
+import cn.chahuyun.plugin.PluginManager;
 import cn.chahuyun.util.Log;
 import kotlin.coroutines.CoroutineContext;
 import net.mamoe.mirai.contact.BotIsBeingMutedException;
@@ -47,8 +51,20 @@ public class MessageEventListener extends SimpleListenerHost {
     @EventHandler()
     public void onMessage(@NotNull MessageEvent event) {
         String code = event.getMessage().serializeToMiraiCode();
+        PropsManager propsManager = PluginManager.getPropsManager();
+
+
         if (code.equals("签到")) {
             SignManager.sign(event);
+            return;
+        }
+        if (code.equals("个人信息")) {
+            UserManager.getUserInfo(event);
+            return;
+        }
+        if (code.equals("道具商店")) {
+            propsManager.propStore(event);
+            return;
         }
     }
 

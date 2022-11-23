@@ -3,6 +3,7 @@ package cn.chahuyun;
 import cn.chahuyun.config.ConfigData;
 import cn.chahuyun.event.BotOnlineEventListener;
 import cn.chahuyun.event.MessageEventListener;
+import cn.chahuyun.plugin.PluginManager;
 import cn.chahuyun.util.EconomyUtil;
 import cn.chahuyun.util.HibernateUtil;
 import cn.chahuyun.util.Log;
@@ -45,25 +46,26 @@ public final class HuYanEconomy extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        EventChannel<Event> eventEventChannel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE);
         //加载前置
         MiraiHibernateConfiguration configuration = new MiraiHibernateConfiguration(this);
         //初始化插件数据库
         HibernateUtil.init(configuration);
+        //插件功能初始化
+        PluginManager.init();
+
         //加载配置
         reloadPluginConfig(ConfigData.INSTANCE);
         config = ConfigData.INSTANCE;
         long configBot = config.getBot();
         if (configBot == 0) {
             Log.warning("插件管理机器人还没有配置，请尽快配置!");
+        } else {
+            EconomyUtil.init();
+            eventEventChannel.registerListenerHost(new BotOnlineEventListener());
+            eventEventChannel.registerListenerHost(new MessageEventListener());
+            Log.info("事件已监听!");
         }
-        EconomyUtil.init();
-
-
-        EventChannel<Event> eventEventChannel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE);
-        eventEventChannel.registerListenerHost(new BotOnlineEventListener());
-        eventEventChannel.registerListenerHost(new MessageEventListener());
-        Log.info("事件已监听!");
-
         Log.info(String.format("HuYanEconomy已加载！当前版本 %s !", version));
     }
 }

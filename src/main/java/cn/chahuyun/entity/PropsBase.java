@@ -10,7 +10,7 @@ import java.util.Date;
  * 所有道具都应该继承这个类 实现 [Serializable]<p>
  * 并重写 toString 方法<p>
  * 基本属性:<p>
- * [id] 道具种类id 例 k-01 k-> 卡 编号01<p>
+ * [code] 道具种类id 例 k-01 k-> 卡 编号01<p>
  * [name] 道具名称 例 补签卡<p>
  * [description] 道具描述 例 此卡可以续上你断掉的某一天签到！<p>
  * [cost] 道具价值 <p>

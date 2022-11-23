@@ -7,12 +7,20 @@ import cn.chahuyun.entity.UserInfo;
 import cn.chahuyun.util.HibernateUtil;
 import cn.chahuyun.util.Log;
 import cn.hutool.core.util.StrUtil;
+import net.mamoe.mirai.Bot;
+import net.mamoe.mirai.contact.Contact;
+import net.mamoe.mirai.contact.User;
+import net.mamoe.mirai.event.events.MessageEvent;
+import net.mamoe.mirai.message.data.ForwardMessageBuilder;
+import net.mamoe.mirai.message.data.MessageChain;
+import net.mamoe.mirai.message.data.PlainText;
 import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.query.criteria.JpaRoot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 道具管理<p>
@@ -126,6 +134,35 @@ public class PropsManagerImpl implements PropsManager {
             Log.error("道具管理:删除道具出错");
             return false;
         }
+    }
+
+    /**
+     * 查询道具商店
+     *
+     * @param event 消息事件
+     * @author Moyuyanli
+     * @date 2022/11/23 10:36
+     */
+    @Override
+    public void propStore(MessageEvent event) {
+        //todo 后期尝试用反射来实现通过扫描道具的继承类实现道具商店
+        Contact subject = event.getSubject();
+        MessageChain message = event.getMessage();
+        User sender = event.getSender();
+        Bot bot = event.getBot();
+
+
+        ForwardMessageBuilder iNodes = new ForwardMessageBuilder(subject);
+        ForwardMessageBuilder propCard = new ForwardMessageBuilder(subject);
+        iNodes.add(bot, new PlainText("道具商店"));
+        propCard.add(bot, new PlainText("道具卡商店"));
+        Set<String> strings = PropsType.getProps().keySet();
+        for (String string : strings) {
+            propCard.add(bot, new PlainText(PropsType.getPropsInfo(string)));
+        }
+
+        iNodes.add(bot, propCard.build());
+        subject.sendMessage(iNodes.build());
     }
 }
 

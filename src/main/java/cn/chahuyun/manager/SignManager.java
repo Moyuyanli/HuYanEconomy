@@ -30,7 +30,7 @@ public class SignManager {
 
 
     /**
-     * 签到
+     * 签到<p>
      *
      * @param event 消息事件
      * @author Moyuyanli
@@ -61,7 +61,7 @@ public class SignManager {
 
         int randomNumber = RandomUtil.randomInt(0, 10);
         if (randomNumber > 7) {
-            randomNumber = RandomUtil.randomNumber();
+            randomNumber = RandomUtil.randomInt(0, 10);
             if (randomNumber > 8) {
                 goldNumber = RandomUtil.randomInt(200, 500);
                 plainText = new PlainText(String.format("\n卧槽,你家祖坟裂了,冒出%s金币", goldNumber));
@@ -93,7 +93,7 @@ public class SignManager {
             goldNumber = goldNumber * 2;
         }
 
-        if (EconomyUtil.addMoneyToUser(user, goldNumber)) {
+        if (!EconomyUtil.addMoneyToUser(user, goldNumber)) {
             subject.sendMessage("签到失败!");
             return;
         }

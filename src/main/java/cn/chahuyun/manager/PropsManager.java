@@ -2,6 +2,7 @@ package cn.chahuyun.manager;
 
 import cn.chahuyun.entity.PropsBase;
 import cn.chahuyun.entity.UserInfo;
+import net.mamoe.mirai.event.events.MessageEvent;
 
 import java.util.List;
 
@@ -49,5 +50,14 @@ public interface PropsManager {
      */
     boolean deleteProp(UserInfo userInfo, PropsBase props, Class<? extends PropsBase> clazz);
 
+
+    /**
+     * 查询道具商店
+     *
+     * @param event 消息事件
+     * @author Moyuyanli
+     * @date 2022/11/23 10:36
+     */
+    void propStore(MessageEvent event);
 
 }
