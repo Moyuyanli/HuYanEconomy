@@ -5,6 +5,8 @@ import cn.chahuyun.util.HibernateUtil;
 import cn.hutool.core.util.ObjectUtil;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -22,7 +24,9 @@ import java.util.Date;
  */
 @Entity
 @Table
-public class PropsCard extends PropsBase implements Serializable {
+@Getter
+@Setter
+public class PropsCard extends PropsBase<PropsCard> implements Serializable {
 
     /**
      * 道具卡状态
@@ -52,15 +56,17 @@ public class PropsCard extends PropsBase implements Serializable {
     public PropsCard() {
     }
 
+
     /**
      * 创建一个道具
      * 具体实现方法请查看卡道具
      *
      * @return 道具的实现类
      */
-    public static PropsCard getProp(String code) {
+    @Override
+    public PropsCard getProp() {
         //从已注册的道具模板里面拿出来
-        PropsCard propsInfo = PropsType.getPropsInfo(code);
+        PropsCard propsInfo = PropsType.getPropsInfo(super.getCode());
         //浅克隆
         PropsCard card = ObjectUtil.clone(propsInfo);
         //设置属性
@@ -81,33 +87,5 @@ public class PropsCard extends PropsBase implements Serializable {
 
     public boolean isStatus() {
         return status;
-    }
-
-    public void setStatus(boolean status) {
-        this.status = status;
-    }
-
-    public boolean isOperation() {
-        return operation;
-    }
-
-    public void setOperation(boolean operation) {
-        this.operation = operation;
-    }
-
-    public Date getEnabledTime() {
-        return enabledTime;
-    }
-
-    public void setEnabledTime(Date enabledTime) {
-        this.enabledTime = enabledTime;
-    }
-
-    public String getAging() {
-        return aging;
-    }
-
-    public void setAging(String aging) {
-        this.aging = aging;
     }
 }

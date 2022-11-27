@@ -1,6 +1,8 @@
 package cn.chahuyun.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 
@@ -12,6 +14,8 @@ import java.io.Serializable;
  */
 @Entity
 @Table
+@Getter
+@Setter
 public class UserBackpack implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -36,37 +40,5 @@ public class UserBackpack implements Serializable {
         this.userId = userId;
         this.propsCode = propsCode;
         this.propId = propId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-
-    public String getPropsCode() {
-        return propsCode;
-    }
-
-    public void setPropsCode(String propsCode) {
-        this.propsCode = propsCode;
-    }
-
-    public Long getPropId() {
-        return propId;
-    }
-
-    public void setPropId(int cardId) {
-        this.propId = cardId;
     }
 }

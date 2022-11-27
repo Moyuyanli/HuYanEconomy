@@ -1,6 +1,8 @@
 package cn.chahuyun.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -22,10 +24,12 @@ import java.util.Date;
  * @date 2022/11/14 8:52
  */
 @Entity
+@Getter
+@Setter
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @Table(name = "PropsBase",
         uniqueConstraints = {@UniqueConstraint(columnNames = "code")})
-public abstract class PropsBase implements Serializable {
+public abstract class PropsBase<E extends PropsBase<?>> implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -72,67 +76,9 @@ public abstract class PropsBase implements Serializable {
         this.expiredTime = expiredTime;
     }
 
+    public abstract E getProp();
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getCost() {
-        return cost;
-    }
-
-    public void setCost(int cost) {
-        this.cost = cost;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public boolean isReuse() {
-        return reuse;
-    }
-
-    public void setReuse(boolean reuse) {
-        this.reuse = reuse;
-    }
-
-    public Date getGetTime() {
-        return getTime;
-    }
-
-    public void setGetTime(Date getTime) {
-        this.getTime = getTime;
-    }
-
-    public Date getExpiredTime() {
-        return expiredTime;
-    }
-
-    public void setExpiredTime(Date expiredTime) {
-        this.expiredTime = expiredTime;
-    }
-
+    @Override
     public String toString() {
         return "请重写方法!";
     }

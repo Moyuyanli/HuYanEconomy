@@ -9,6 +9,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -23,6 +25,8 @@ import java.util.List;
  */
 @Entity
 @Table
+@Getter
+@Setter
 public class UserInfo implements Serializable {
 
     @Id
@@ -118,80 +122,17 @@ public class UserInfo implements Serializable {
         this.registerTime = registerTime;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public long getQq() {
-        return qq;
-    }
-
     public void setQq(long qq) {
         this.id = qq;
         this.qq = qq;
     }
 
-    public long getRegisterGroup() {
-        return registerGroup;
-    }
-
-    public void setRegisterGroup(long group) {
-        this.registerGroup = group;
-    }
-
-    public Date getRegisterTime() {
-        return registerTime;
-    }
-
-    public void setRegisterTime(Date registerTime) {
-        this.registerTime = registerTime;
-    }
-
-    public Date getSignTime() {
-        return signTime;
-    }
-
-    public void setSignTime(Date signTime) {
-        this.signTime = signTime;
-    }
-
-    public int getSignNumber() {
-        return signNumber;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setSignNumber(int signNumber) {
-        this.signNumber = signNumber;
-    }
 
     public boolean isSign() {
         String now = DateUtil.format(new Date(), "yyyy-MM-dd") + " 04:00:00";
         DateTime nowDate = DateUtil.parse(now);
         long between = DateUtil.between(nowDate, signTime, DateUnit.HOUR, false);
         return between > 0;
-    }
-
-    public void setSign(boolean sign) {
-        this.sign = sign;
-    }
-
-    public int getOldSignNumber() {
-        return oldSignNumber;
-    }
-
-    public void setOldSignNumber(int oldSignNumber) {
-        this.oldSignNumber = oldSignNumber;
-    }
-
-    public List<UserBackpack> getBackpacks() {
-        return backpacks;
     }
 
 }
