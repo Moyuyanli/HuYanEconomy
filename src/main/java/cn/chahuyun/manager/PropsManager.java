@@ -1,7 +1,7 @@
 package cn.chahuyun.manager;
 
-import cn.chahuyun.entity.PropsBase;
 import cn.chahuyun.entity.UserInfo;
+import cn.chahuyun.entity.props.PropsBase;
 import net.mamoe.mirai.event.events.MessageEvent;
 
 import java.util.List;
@@ -27,9 +27,9 @@ public interface PropsManager {
      * 获取该用户的所有道具
      *
      * @param userInfo 用户
-     * @return List<?> 道具id集合
+     * @return List<PropsBase> 道具id集合
      */
-    List<?> getPropsByUser(UserInfo userInfo);
+    <E extends PropsBase> List<E> getPropsByUser(UserInfo userInfo);
 
     /**
      * 获取该用户的对应 [code] 的道具
@@ -38,7 +38,7 @@ public interface PropsManager {
      * @param code     道具编码
      * @return
      */
-    List<? extends PropsBase> getPropsByUserFromCode(UserInfo userInfo, String code, Class<? extends PropsBase> clazz);
+    <E extends PropsBase> List<E> getPropsByUserFromCode(UserInfo userInfo, String code, Class<E> clazz);
 
     /**
      * 删除 [用户] 对应的 [道具]
@@ -48,7 +48,7 @@ public interface PropsManager {
      * @param clazz    道具类型
      * @return true 成功删除
      */
-    boolean deleteProp(UserInfo userInfo, PropsBase props, Class<? extends PropsBase> clazz);
+    <E> boolean deleteProp(UserInfo userInfo, PropsBase props, Class<E> clazz);
 
 
     /**

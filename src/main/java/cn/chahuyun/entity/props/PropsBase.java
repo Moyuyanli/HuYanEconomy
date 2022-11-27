@@ -1,4 +1,4 @@
-package cn.chahuyun.entity;
+package cn.chahuyun.entity.props;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -29,7 +29,7 @@ import java.util.Date;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @Table(name = "PropsBase",
         uniqueConstraints = {@UniqueConstraint(columnNames = "code")})
-public abstract class PropsBase<E extends PropsBase<?>> implements Serializable {
+public abstract class PropsBase implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -76,11 +76,9 @@ public abstract class PropsBase<E extends PropsBase<?>> implements Serializable 
         this.expiredTime = expiredTime;
     }
 
-    public abstract E getProp();
-
     @Override
     public String toString() {
-        return "请重写方法!";
+        return null;
     }
 
 }

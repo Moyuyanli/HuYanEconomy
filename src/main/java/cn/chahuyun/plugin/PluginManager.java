@@ -1,7 +1,7 @@
 package cn.chahuyun.plugin;
 
 import cn.chahuyun.constant.Constant;
-import cn.chahuyun.entity.PropsCard;
+import cn.chahuyun.entity.props.PropsCard;
 import cn.chahuyun.manager.PropsManager;
 import cn.chahuyun.manager.PropsManagerImpl;
 

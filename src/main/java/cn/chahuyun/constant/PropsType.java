@@ -1,6 +1,6 @@
 package cn.chahuyun.constant;
 
-import cn.chahuyun.entity.PropsBase;
+import cn.chahuyun.entity.props.PropsBase;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -14,15 +14,15 @@ import java.util.Map;
  */
 public class PropsType {
 
-    private PropsType() {
-    }
-
     /**
      * 已注册道具信息map<p>
      * 通过 [getPropsInfo] 获取道具的信息<p>
      * 后续所有的新道具都应该以此道具模板为准生成<p>
      */
     private static final Map<String, PropsBase> props = new LinkedHashMap<>();
+
+    private PropsType() {
+    }
 
 
     //烧了我两个小时，还没烧出来
@@ -36,8 +36,8 @@ public class PropsType {
      * @author Moyuyanli
      * @date 2022/11/16 15:05
      */
-    public static <T extends PropsBase> T getPropsInfo(String propCode) {
-        return (T) props.get(propCode);
+    public static PropsBase getPropsInfo(String propCode) {
+        return props.get(propCode);
     }
 
 

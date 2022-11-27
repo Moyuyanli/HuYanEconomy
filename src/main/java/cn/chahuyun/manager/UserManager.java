@@ -94,7 +94,7 @@ public class UserManager {
             Image image = Contact.uploadImage(subject, new URL(sender.getAvatarUrl(AvatarSpec.LARGE)).openConnection().getInputStream());
             singleMessages.append(image);
         } catch (IOException e) {
-            Log.error("用户管理:查询个人信息上传图片出错!",e);
+            Log.error("用户管理:查询个人信息上传图片出错!", e);
         }
         if (userInfo == null) {
             subject.sendMessage("获取用户信息出错!");

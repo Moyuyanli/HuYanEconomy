@@ -1,8 +1,8 @@
 package cn.chahuyun.manager;
 
 import cn.chahuyun.constant.Constant;
-import cn.chahuyun.entity.PropsCard;
 import cn.chahuyun.entity.UserInfo;
+import cn.chahuyun.entity.props.PropsCard;
 import cn.chahuyun.plugin.PluginManager;
 import cn.chahuyun.util.EconomyUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -75,7 +75,7 @@ public class SignManager {
 
         PropsManager propsManager = PluginManager.getPropsManager();
 
-        List<PropsCard> cardS = (List<PropsCard>) propsManager.getPropsByUserFromCode(userInfo, Constant.SIGN_DOUBLE_SINGLE_CARD, PropsCard.class);
+        List<PropsCard> cardS = propsManager.getPropsByUserFromCode(userInfo, Constant.SIGN_DOUBLE_SINGLE_CARD, PropsCard.class);
 
         boolean doubleStatus = false;
         for (PropsCard card : cardS) {

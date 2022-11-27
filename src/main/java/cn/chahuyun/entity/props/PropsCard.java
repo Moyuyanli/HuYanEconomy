@@ -1,8 +1,5 @@
-package cn.chahuyun.entity;
+package cn.chahuyun.entity.props;
 
-import cn.chahuyun.constant.PropsType;
-import cn.chahuyun.util.HibernateUtil;
-import cn.hutool.core.util.ObjectUtil;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -26,7 +23,7 @@ import java.util.Date;
 @Table
 @Getter
 @Setter
-public class PropsCard extends PropsBase<PropsCard> implements Serializable {
+public class PropsCard extends PropsBase implements Serializable {
 
     /**
      * 道具卡状态
@@ -45,17 +42,8 @@ public class PropsCard extends PropsBase<PropsCard> implements Serializable {
      */
     private String aging;
 
-    @Override
-    public String toString() {
-        return "卡名称:" + this.getName() +
-                "\n价格:" + this.getCost() + "金币" +
-                "\n状态:" + (status ? "使用中" : "未使用") +
-                "\n描述:" + this.getDescription();
-    }
-
     public PropsCard() {
     }
-
 
     /**
      * 创建一个道具
@@ -63,19 +51,6 @@ public class PropsCard extends PropsBase<PropsCard> implements Serializable {
      *
      * @return 道具的实现类
      */
-    @Override
-    public PropsCard getProp() {
-        //从已注册的道具模板里面拿出来
-        PropsCard propsInfo = PropsType.getPropsInfo(super.getCode());
-        //浅克隆
-        PropsCard card = ObjectUtil.clone(propsInfo);
-        //设置属性
-        card.setGetTime(new Date());
-        PropsCard finalCard = card;
-        //添加道具到数据库
-        card = HibernateUtil.factory.fromTransaction(session -> session.merge(finalCard));
-        return card;
-    }
 
     public PropsCard(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime, boolean status, boolean operation, Date enabledTime, String aging) {
         super(code, name, cost, description, reuse, getTime, expiredTime);
@@ -83,6 +58,14 @@ public class PropsCard extends PropsBase<PropsCard> implements Serializable {
         this.operation = operation;
         this.enabledTime = enabledTime;
         this.aging = aging;
+    }
+
+    @Override
+    public String toString() {
+        return "卡名称:" + this.getName() +
+                "\n价格:" + this.getCost() + "金币" +
+                "\n状态:" + (status ? "使用中" : "未使用") +
+                "\n描述:" + this.getDescription();
     }
 
     public boolean isStatus() {

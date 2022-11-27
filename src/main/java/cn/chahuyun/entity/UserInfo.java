@@ -29,6 +29,8 @@ import java.util.List;
 @Setter
 public class UserInfo implements Serializable {
 
+    @OneToMany(targetEntity = UserBackpack.class, mappedBy = "userId")
+    private final List<UserBackpack> backpacks = new ArrayList<>();
     @Id
     private Long id;
     /**
@@ -64,9 +66,17 @@ public class UserInfo implements Serializable {
      */
     private int oldSignNumber;
 
-    @OneToMany(targetEntity = UserBackpack.class, mappedBy = "userId")
-    private final List<UserBackpack> backpacks = new ArrayList<>();
 
+    public UserInfo() {
+    }
+
+    public UserInfo(long qq, long registerGroup, String name, Date registerTime) {
+        this.id = qq;
+        this.qq = qq;
+        this.registerGroup = registerGroup;
+        this.name = name;
+        this.registerTime = registerTime;
+    }
 
     public String getString() {
         return "用户名称:" + this.getName() +
@@ -108,18 +118,6 @@ public class UserInfo implements Serializable {
         this.setSignTime(new Date());
         HibernateUtil.factory.fromTransaction(session -> session.merge(this));
         return true;
-    }
-
-
-    public UserInfo() {
-    }
-
-    public UserInfo(long qq, long registerGroup, String name, Date registerTime) {
-        this.id = qq;
-        this.qq = qq;
-        this.registerGroup = registerGroup;
-        this.name = name;
-        this.registerTime = registerTime;
     }
 
     public void setQq(long qq) {

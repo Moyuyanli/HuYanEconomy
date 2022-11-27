@@ -21,6 +21,10 @@ public final class HuYanEconomy extends JavaPlugin {
      */
     public static final HuYanEconomy INSTANCE = new HuYanEconomy();
     /**
+     * 全局版本
+     */
+    public static final String version = "0.1.0";
+    /**
      * 配置
      */
     public static ConfigData config;
@@ -28,10 +32,6 @@ public final class HuYanEconomy extends JavaPlugin {
      * 插件所属bot
      */
     public static Bot bot;
-    /**
-     * 全局版本
-     */
-    public static final String version = "0.1.0";
 
     private HuYanEconomy() {
         super(new JvmPluginDescriptionBuilder("cn.chahuyun.HuYanEconomy", version)

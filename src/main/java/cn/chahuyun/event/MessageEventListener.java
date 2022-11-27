@@ -1,6 +1,5 @@
 package cn.chahuyun.event;
 
-import cn.chahuyun.entity.UserInfo;
 import cn.chahuyun.manager.PropsManager;
 import cn.chahuyun.manager.SignManager;
 import cn.chahuyun.manager.UserManager;
@@ -52,8 +51,6 @@ public class MessageEventListener extends SimpleListenerHost {
     public void onMessage(@NotNull MessageEvent event) {
         String code = event.getMessage().serializeToMiraiCode();
         PropsManager propsManager = PluginManager.getPropsManager();
-
-
         if (code.equals("签到")) {
             SignManager.sign(event);
             return;
@@ -64,7 +61,6 @@ public class MessageEventListener extends SimpleListenerHost {
         }
         if (code.equals("道具商店")) {
             propsManager.propStore(event);
-            return;
         }
     }
 

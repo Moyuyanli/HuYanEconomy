@@ -1,9 +1,9 @@
 package cn.chahuyun.manager;
 
 import cn.chahuyun.constant.PropsType;
-import cn.chahuyun.entity.PropsBase;
 import cn.chahuyun.entity.UserBackpack;
 import cn.chahuyun.entity.UserInfo;
+import cn.chahuyun.entity.props.PropsBase;
 import cn.chahuyun.util.HibernateUtil;
 import cn.chahuyun.util.Log;
 import cn.hutool.core.util.StrUtil;
@@ -71,10 +71,10 @@ public class PropsManagerImpl implements PropsManager {
      * 获取该用户的所有道具<p>
      *
      * @param userInfo 用户
-     * @return List<?> 道具id集合
+     * @return List<E> 道具id集合
      */
     @Override
-    public List<?> getPropsByUser(UserInfo userInfo) {
+    public <E extends PropsBase> List<E> getPropsByUser(UserInfo userInfo) {
         //todo 获取该用户的所有道具
         return null;
     }
@@ -91,17 +91,17 @@ public class PropsManagerImpl implements PropsManager {
      * @date 2022/11/15 15:44
      */
     @Override
-    public List<? extends PropsBase> getPropsByUserFromCode(UserInfo userInfo, String code, Class<? extends PropsBase> clazz) {
+    public <E extends PropsBase> List<E> getPropsByUserFromCode(UserInfo userInfo, String code, Class<E> clazz) {
         List<UserBackpack> backpacks = userInfo.getBackpacks();
         if (backpacks.size() == 0) {
             return new ArrayList<>();
         }
-        List<PropsBase> propList = new ArrayList<>();
+        List<E> propList = new ArrayList<>();
         for (UserBackpack backpack : backpacks) {
             if (backpack.getPropsCode().equals(code)) {
                 continue;
             }
-            PropsBase base = HibernateUtil.factory.fromSession(session -> session.get(clazz, backpack.getPropId()));
+            E base = HibernateUtil.factory.fromSession(session -> session.get(clazz, backpack.getPropId()));
             propList.add(base);
         }
         return propList;
@@ -116,7 +116,7 @@ public class PropsManagerImpl implements PropsManager {
      * @return true 成功删除
      */
     @Override
-    public boolean deleteProp(UserInfo userInfo, PropsBase props, Class<? extends PropsBase> clazz) {
+    public <E> boolean deleteProp(UserInfo userInfo, PropsBase props, Class<E> clazz) {
         try {
             return HibernateUtil.factory.fromTransaction(session -> {
                 session.remove(props);
@@ -158,7 +158,7 @@ public class PropsManagerImpl implements PropsManager {
         propCard.add(bot, new PlainText("道具卡商店"));
         Set<String> strings = PropsType.getProps().keySet();
         for (String string : strings) {
-            propCard.add(bot, new PlainText(PropsType.getPropsInfo(string)));
+            propCard.add(bot, new PlainText(PropsType.getPropsInfo(string).toString()));
         }
 
         iNodes.add(bot, propCard.build());

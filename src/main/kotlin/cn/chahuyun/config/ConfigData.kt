@@ -13,6 +13,6 @@ import net.mamoe.mirai.console.data.value
 object ConfigData : AutoSavePluginConfig("config") {
 
     @ValueDescription("插件单一管理botQQ")
-    val bot : Long by value()
+    val bot: Long by value()
 
 }
