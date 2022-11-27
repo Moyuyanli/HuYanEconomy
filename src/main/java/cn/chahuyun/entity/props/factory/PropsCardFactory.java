@@ -1,5 +1,6 @@
 package cn.chahuyun.entity.props.factory;
 
+import cn.chahuyun.constant.PropsType;
 import cn.chahuyun.entity.props.PropsCard;
 import cn.chahuyun.util.HibernateUtil;
 
@@ -17,8 +18,8 @@ public class PropsCardFactory implements PropsFactory {
     }
 
     @Override
-    public PropsCard create(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime, boolean status, boolean operation, Date enabledTime, String aging) {
-        PropsCard card = new PropsCard(code, name, cost, description, reuse, getTime, expiredTime, status, operation, enabledTime, aging);
+    public PropsCard create(String code) {
+        PropsCard card = (PropsCard) PropsType.getPropsInfo(code);
         card.setGetTime(new Date());
         PropsCard finalCard = card;
         //添加道具到数据库

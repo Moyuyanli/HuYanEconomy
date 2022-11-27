@@ -1,5 +1,6 @@
 package cn.chahuyun.entity.props;
 
+import cn.chahuyun.constant.PropsType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;

@@ -1,5 +1,7 @@
 package cn.chahuyun.entity.props.factory;
 
+import cn.chahuyun.constant.PropsType;
+import cn.chahuyun.entity.props.PropsBase;
 import cn.chahuyun.entity.props.PropsFish;
 
 import java.util.Date;
@@ -16,8 +18,9 @@ public class PropsFishFactory implements PropsFactory {
     }
 
     @Override
-    public PropsFish create(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime, boolean status, boolean operation, Date enabledTime, String aging) {
-        return new PropsFish(code, name, cost, description, reuse, getTime, expiredTime, status, operation, enabledTime, aging);
+    public PropsFish create(String code) {
+        PropsFish fish = (PropsFish) PropsType.getPropsInfo(code);
+        return fish;
     }
 
     @Override
