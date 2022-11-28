@@ -51,17 +51,25 @@ public class MessageEventListener extends SimpleListenerHost {
     public void onMessage(@NotNull MessageEvent event) {
         String code = event.getMessage().serializeToMiraiCode();
         PropsManager propsManager = PluginManager.getPropsManager();
-        if (code.equals("签到")) {
-            SignManager.sign(event);
-            return;
+
+        switch (code) {
+            case "签到":
+            case "sign":
+                SignManager.sign(event);
+                return;
+            case "个人信息":
+            case "info":
+                UserManager.getUserInfo(event);
+                return;
+            case "道具商店":
+            case "shops":
+                propsManager.propStore(event);
+                return;
         }
-        if (code.equals("个人信息")) {
-            UserManager.getUserInfo(event);
-            return;
-        }
-        if (code.equals("道具商店")) {
-            propsManager.propStore(event);
-        }
+
+        String buyPropPattern = "购买 (\\d+)( \\d+)?|buy (\\d+)( \\d+)?";
+
+
     }
 
 }

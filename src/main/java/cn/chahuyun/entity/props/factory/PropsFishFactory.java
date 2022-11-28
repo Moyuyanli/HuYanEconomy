@@ -1,7 +1,7 @@
 package cn.chahuyun.entity.props.factory;
 
-import cn.chahuyun.constant.PropsType;
 import cn.chahuyun.entity.props.PropsFish;
+import cn.chahuyun.plugin.PropsType;
 
 /**
  * @author Erzbir

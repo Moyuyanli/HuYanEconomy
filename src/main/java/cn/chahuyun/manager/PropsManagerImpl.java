@@ -1,9 +1,9 @@
 package cn.chahuyun.manager;
 
-import cn.chahuyun.constant.PropsType;
 import cn.chahuyun.entity.UserBackpack;
 import cn.chahuyun.entity.UserInfo;
 import cn.chahuyun.entity.props.PropsBase;
+import cn.chahuyun.plugin.PropsType;
 import cn.chahuyun.util.HibernateUtil;
 import cn.chahuyun.util.Log;
 import cn.hutool.core.util.StrUtil;
@@ -92,7 +92,7 @@ public class PropsManagerImpl implements PropsManager {
      */
     @Override
     public <E extends PropsBase> List<E> getPropsByUserFromCode(UserInfo userInfo, String code, Class<E> clazz) {
-        List<UserBackpack> backpacks =  userInfo.getBackpacks();
+        List<UserBackpack> backpacks = userInfo.getBackpacks();
         if (backpacks == null || backpacks.size() == 0) {
             return new ArrayList<>();
         }
@@ -158,7 +158,11 @@ public class PropsManagerImpl implements PropsManager {
         propCard.add(bot, new PlainText("道具卡商店"));
         Set<String> strings = PropsType.getProps().keySet();
         for (String string : strings) {
-            propCard.add(bot, new PlainText(PropsType.getPropsInfo(string).toString()));
+            if (string.startsWith("K-")) {
+                String propInfo = String.format("道具编号:%s\n", PropsType.getNo(string));
+                propInfo += PropsType.getPropsInfo(string).toString();
+                propCard.add(bot, new PlainText(propInfo));
+            }
         }
 
         iNodes.add(bot, propCard.build());

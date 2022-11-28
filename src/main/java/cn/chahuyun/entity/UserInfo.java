@@ -10,7 +10,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -65,7 +64,7 @@ public class UserInfo implements Serializable {
     /**
      * 道具背包
      */
-    @OneToMany(targetEntity = UserBackpack.class, mappedBy = "userId",fetch = FetchType.EAGER)
+    @OneToMany(targetEntity = UserBackpack.class, mappedBy = "userId", fetch = FetchType.EAGER)
     private List<UserBackpack> backpacks;
 
     public UserInfo() {

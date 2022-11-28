@@ -1,7 +1,8 @@
-package cn.chahuyun.constant;
+package cn.chahuyun.plugin;
 
 import cn.chahuyun.entity.props.PropsBase;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -20,6 +21,10 @@ public class PropsType {
      * 后续所有的新道具都应该以此道具模板为准生成<p>
      */
     private static final Map<String, PropsBase> props = new LinkedHashMap<>();
+    /**
+     * 道具商店的 [code] 映射<p>
+     */
+    private static final Map<String, String> map = new HashMap<>();
 
     private PropsType() {
     }
@@ -29,7 +34,7 @@ public class PropsType {
     //2022年11月16日09:34:45 目前的最优解
 
     /**
-     * 获取一个注册的道具类
+     * 获取一个注册的道具类<p>
      *
      * @param propCode 道具code
      * @return T 道具子类接收
@@ -40,14 +45,40 @@ public class PropsType {
         return props.get(propCode);
     }
 
-
+    /**
+     * 注册道具模板<p>
+     * 同时添加道具编号映射<p>
+     *
+     * @param code      道具code
+     * @param propsBase 道具模板
+     * @author Moyuyanli
+     * @date 2022/11/28 10:39
+     */
     public static void add(String code, PropsBase propsBase) {
         props.put(code, propsBase);
+        map.put(String.valueOf(getProps().size()), code);
     }
 
     public static Map<String, PropsBase> getProps() {
         return props;
     }
 
+    /**
+     * 通过道具 [code] 获取道具注册编号<p>
+     * 便于商店的购买<p>
+     *
+     * @param code 道具code
+     * @return 对应的道具编号
+     * @author Moyuyanli
+     * @date 2022/11/28 10:37
+     */
+    public static String getNo(String code) {
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            if (entry.getValue().equals(code)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
 
 }
