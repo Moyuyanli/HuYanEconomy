@@ -5,10 +5,7 @@ import cn.chahuyun.util.Log;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,8 +26,7 @@ import java.util.List;
 @Setter
 public class UserInfo implements Serializable {
 
-    @OneToMany(targetEntity = UserBackpack.class, mappedBy = "userId")
-    private final List<UserBackpack> backpacks = new ArrayList<>();
+
     @Id
     private Long id;
     /**
@@ -66,6 +62,11 @@ public class UserInfo implements Serializable {
      */
     private int oldSignNumber;
 
+    /**
+     * 道具背包
+     */
+    @OneToMany(targetEntity = UserBackpack.class, mappedBy = "userId",fetch = FetchType.EAGER)
+    private List<UserBackpack> backpacks;
 
     public UserInfo() {
     }
@@ -107,9 +108,9 @@ public class UserInfo implements Serializable {
         //获取天数差
         long between = DateUtil.between(new Date(), this.getSignTime(), DateUnit.DAY, false);
         Log.debug("账户:(" + this.getQq() + ")签到天差->" + between);
-        if (0 <= between && between <= 1) {
+        if (between == -1) {
             this.setSignNumber(this.getSignNumber() + 1);
-            this.setOldSignNumber(0);
+            this.setOldSignNumber(this.getSignNumber());
         } else {
             this.setOldSignNumber(this.getSignNumber());
             this.setSignNumber(1);

@@ -14,10 +14,15 @@ repositories {
 }
 
 dependencies {
+    //依赖
     compileOnly "xyz.cssxsh.mirai:mirai-hibernate-plugin:2.5.0"
     compileOnly "xyz.cssxsh.mirai:mirai-economy-core:1.0.4"
-    compileOnly "org.projectlombok:lombok:1.18.24"
-    implementation 'cn.hutool:hutool-all:5.8.9'
+    //使用库
+    implementation "org.projectlombok:lombok:1.18.24"
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
+
+    implementation 'cn.hutool:hutool-all:5.8.10'
+    //测试库
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
 }
 

@@ -1,6 +1,5 @@
 package cn.chahuyun.entity.props;
 
-import cn.chahuyun.constant.PropsType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -47,17 +46,24 @@ public class PropsCard extends PropsBase implements Serializable {
     }
 
     /**
-     * 创建一个道具
+     * 创建一个道具模板
      * 具体实现方法请查看卡道具
      *
-     * @return 道具的实现类
+     * @param code        道具code
+     * @param name        道具名称
+     * @param cost        道具价值
+     * @param description 道具描述
+     * @param reuse       是否复用
+     * @param getTime     获取时间
+     * @param expiredTime 过期时间
+     * @param operation   可操作
+     * @param aging       时效
      */
-
-    public PropsCard(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime, boolean status, boolean operation, Date enabledTime, String aging) {
+    public PropsCard(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime, boolean operation, String aging) {
         super(code, name, cost, description, reuse, getTime, expiredTime);
-        this.status = status;
+        this.status = false;
         this.operation = operation;
-        this.enabledTime = enabledTime;
+        this.enabledTime = null;
         this.aging = aging;
     }
 

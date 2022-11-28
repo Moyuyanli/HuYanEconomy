@@ -92,8 +92,8 @@ public class PropsManagerImpl implements PropsManager {
      */
     @Override
     public <E extends PropsBase> List<E> getPropsByUserFromCode(UserInfo userInfo, String code, Class<E> clazz) {
-        List<UserBackpack> backpacks = userInfo.getBackpacks();
-        if (backpacks.size() == 0) {
+        List<UserBackpack> backpacks =  userInfo.getBackpacks();
+        if (backpacks == null || backpacks.size() == 0) {
             return new ArrayList<>();
         }
         List<E> propList = new ArrayList<>();

@@ -17,9 +17,21 @@ public class PropsCardFactory implements PropsFactory {
 
     }
 
+    /**
+     * 通过 [code] 取出对应的道具<p>
+     * 如果对应类型不对则返回 [null]<p>
+     *
+     * @param code 道具code
+     * @return
+     */
     @Override
     public PropsCard create(String code) {
-        PropsCard card = (PropsCard) PropsType.getPropsInfo(code);
+        PropsCard card = null;
+        try {
+            card = (PropsCard) PropsType.getPropsInfo(code);
+        } catch (Exception e) {
+            return null;
+        }
         card.setGetTime(new Date());
         PropsCard finalCard = card;
         //添加道具到数据库

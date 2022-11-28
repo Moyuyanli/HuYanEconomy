@@ -24,13 +24,11 @@ public class PluginManager {
     /**
      * 初始化插件道具系统
      *
-     * @param
-     * @return void
      * @author Moyuyanli
      * @date 2022/11/23 10:50
      */
     public static void init() {
-        PropsCard propsCard = new PropsCard(Constant.SIGN_DOUBLE_SINGLE_CARD, "签到双倍金币卡", 300, "让你的下一次签到活动的金币翻倍!", false, null, null, false, false, null, null);
+        PropsCard propsCard = new PropsCard(Constant.SIGN_DOUBLE_SINGLE_CARD, "签到双倍金币卡", 300, "让你的下一次签到活动的金币翻倍!", false, null, null, false,  null);
         propsManager.registerProps(propsCard);
     }
 
