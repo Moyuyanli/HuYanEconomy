@@ -81,4 +81,16 @@ public class PropsType {
         return null;
     }
 
+    /**
+     * 根据商店编号获取道具 [code]
+     *
+     * @param no 商店编号
+     * @return 道具code
+     * @author Moyuyanli
+     * @date 2022/11/28 15:22
+     */
+    public static String getCode(String no) {
+        return map.get(no);
+    }
+
 }

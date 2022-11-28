@@ -120,6 +120,26 @@ public class UserInfo implements Serializable {
         return true;
     }
 
+    /**
+     * 将这个道具添加到用户背包<p>
+     *
+     * @param userBackpack 背包格信息
+     * @return boolean  true 成功
+     * @author Moyuyanli
+     * @date 2022/11/28 15:55
+     */
+    public boolean addPropToBackpack(UserBackpack userBackpack) {
+        this.getBackpacks().add(userBackpack);
+        try {
+            HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+        } catch (Exception e) {
+            Log.error("用户信息:添加道具到背包出错", e);
+            return false;
+        }
+        return true;
+    }
+
+
     public void setQq(long qq) {
         this.id = qq;
         this.qq = qq;

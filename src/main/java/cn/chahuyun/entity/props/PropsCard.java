@@ -52,6 +52,7 @@ public class PropsCard extends PropsBase implements Serializable {
      * @param code        道具code
      * @param name        道具名称
      * @param cost        道具价值
+     * @param unit        道具数量单位
      * @param description 道具描述
      * @param reuse       是否复用
      * @param getTime     获取时间
@@ -59,8 +60,8 @@ public class PropsCard extends PropsBase implements Serializable {
      * @param operation   可操作
      * @param aging       时效
      */
-    public PropsCard(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime, boolean operation, String aging) {
-        super(code, name, cost, description, reuse, getTime, expiredTime);
+    public PropsCard(String code, String name, int cost, String unit, String description, boolean reuse, Date getTime, Date expiredTime, boolean operation, String aging) {
+        super(code, name, cost, unit, description, reuse, getTime, expiredTime);
         this.status = false;
         this.operation = operation;
         this.enabledTime = null;

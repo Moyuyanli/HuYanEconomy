@@ -12,7 +12,11 @@ import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;
 import net.mamoe.mirai.event.events.EventCancelledException;
 import net.mamoe.mirai.event.events.MessageEvent;
+import net.mamoe.mirai.message.code.MiraiCode;
+import net.mamoe.mirai.message.data.MessageChain;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.regex.Pattern;
 
 /**
  * 说明
@@ -61,6 +65,9 @@ public class MessageEventListener extends SimpleListenerHost {
             case "info":
                 UserManager.getUserInfo(event);
                 return;
+            case "背包":
+            case "backpack":
+
             case "道具商店":
             case "shops":
                 propsManager.propStore(event);
@@ -68,6 +75,10 @@ public class MessageEventListener extends SimpleListenerHost {
         }
 
         String buyPropPattern = "购买 (\\d+)( \\d+)?|buy (\\d+)( \\d+)?";
+        if (Pattern.matches(buyPropPattern, code)) {
+            propsManager.buyPropFromStore(event);
+            return;
+        }
 
 
     }

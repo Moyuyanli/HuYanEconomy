@@ -1,5 +1,6 @@
 package cn.chahuyun.entity;
 
+import cn.chahuyun.entity.props.PropsBase;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,4 +42,11 @@ public class UserBackpack implements Serializable {
         this.propsCode = propsCode;
         this.propId = propId;
     }
+
+    public UserBackpack(UserInfo userInfo, PropsBase propsBase) {
+        this.userId = userInfo.getId();
+        this.propsCode = propsBase.getCode();
+        this.propId = propsBase.getId();
+    }
+
 }

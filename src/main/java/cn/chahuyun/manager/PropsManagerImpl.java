@@ -3,7 +3,10 @@ package cn.chahuyun.manager;
 import cn.chahuyun.entity.UserBackpack;
 import cn.chahuyun.entity.UserInfo;
 import cn.chahuyun.entity.props.PropsBase;
+import cn.chahuyun.entity.props.PropsCard;
+import cn.chahuyun.entity.props.factory.PropsCardFactory;
 import cn.chahuyun.plugin.PropsType;
+import cn.chahuyun.util.EconomyUtil;
 import cn.chahuyun.util.HibernateUtil;
 import cn.chahuyun.util.Log;
 import cn.hutool.core.util.StrUtil;
@@ -11,9 +14,7 @@ import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
-import net.mamoe.mirai.message.data.ForwardMessageBuilder;
-import net.mamoe.mirai.message.data.MessageChain;
-import net.mamoe.mirai.message.data.PlainText;
+import net.mamoe.mirai.message.data.*;
 import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.query.criteria.JpaRoot;
@@ -42,10 +43,8 @@ public class PropsManagerImpl implements PropsManager {
      */
     @Override
     public boolean registerProps(PropsBase propsBase) {
-        String code = null;
+        String code;
         try {
-            int cost = propsBase.getCost();
-            boolean reuse = propsBase.isReuse();
             code = propsBase.getCode();
             if (StrUtil.isBlankIfStr(code)) {
                 return false;
@@ -76,6 +75,8 @@ public class PropsManagerImpl implements PropsManager {
     @Override
     public <E extends PropsBase> List<E> getPropsByUser(UserInfo userInfo) {
         //todo 获取该用户的所有道具
+        List<UserBackpack> backpacks = userInfo.getBackpacks();
+
         return null;
     }
 
@@ -147,8 +148,6 @@ public class PropsManagerImpl implements PropsManager {
     public void propStore(MessageEvent event) {
         //todo 后期尝试用反射来实现通过扫描道具的继承类实现道具商店
         Contact subject = event.getSubject();
-        MessageChain message = event.getMessage();
-        User sender = event.getSender();
         Bot bot = event.getBot();
 
 
@@ -168,6 +167,110 @@ public class PropsManagerImpl implements PropsManager {
         iNodes.add(bot, propCard.build());
         subject.sendMessage(iNodes.build());
     }
+
+    /**
+     * 购买一个道具，加入到用户背包
+     *
+     * @param event 消息事件
+     * @author Moyuyanli
+     * @date 2022/11/28 15:05
+     */
+    @Override
+    public void buyPropFromStore(MessageEvent event) {
+        Contact subject = event.getSubject();
+        User sender = event.getSender();
+        MessageChain message = event.getMessage();
+
+        MessageChainBuilder messages = new MessageChainBuilder();
+        messages.append(new QuoteReply(message));
+
+        String code = message.serializeToMiraiCode();
+
+        String[] s = code.split(" ");
+        String no = s[1];
+        int num = 1;
+        if (s.length == 3) {
+            num = Integer.parseInt(s[2]);
+        }
+
+        String propCode = PropsType.getCode(no);
+        Log.info("道具商店:购买道具-Code " + propCode);
+
+
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+        if (userInfo == null) {
+            Log.warning("道具商店:获取用户为空！");
+            subject.sendMessage("系统出错，请联系主人!");
+            return;
+        }
+
+        PropsBase propsInfo = PropsType.getPropsInfo(propCode);
+        //用户钱包现有余额
+        double money = EconomyUtil.getMoneyByUser(sender);
+        //购买道具合计金额
+        int total = propsInfo.getCost() * num;
+
+        if (money - total < -1000) {
+            messages.append(new PlainText("做梦去吧你，" + propsInfo.getName() + " 也是你能想要的东西?"));
+            subject.sendMessage(messages.build());
+            return;
+        } else if (money - total < 0) {
+            messages.append(new PlainText("这么点钱就想买 " + propsInfo.getName() + " ?"));
+            subject.sendMessage(messages.build());
+            return;
+        }
+
+        if (!EconomyUtil.lessMoneyToUser(sender, total)) {
+            Log.warning("道具商店:减少余额失败!");
+            subject.sendMessage("系统出错，请联系主人!");
+            return;
+        }
+
+        PropsCard propsCard = PropsCardFactory.INSTANCE.create(propCode);
+
+        UserBackpack userBackpack = new UserBackpack(userInfo, propsCard);
+
+        if (!userInfo.addPropToBackpack(userBackpack)) {
+            Log.warning("道具商店:添加道具到用户背包失败!");
+            subject.sendMessage("系统出错，请联系主人!");
+            return;
+        }
+
+        money = EconomyUtil.getMoneyByUser(sender);
+
+
+        messages.append(String.format("成功购买 %s %d%s,你还有 %s 枚金币", propsInfo.getName(), num, propsInfo.getUnit(), money));
+
+        Log.info("道具商店:道具购买成功");
+
+        subject.sendMessage(messages.build());
+
+    }
+
+    /**
+     * 查询用户背包
+     *
+     * @param event 消息事件
+     */
+    @Override
+    public void viewUserBackpack(MessageEvent event) {
+        Contact subject = event.getSubject();
+        User sender = event.getSender();
+
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+
+        assert userInfo != null;
+        List<PropsBase> propsByUser = getPropsByUser(userInfo);
+
+        for (PropsBase propsBase : propsByUser) {
+
+        }
+
+
+    }
+
+
+
 }
 
 

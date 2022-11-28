@@ -46,6 +46,10 @@ public abstract class PropsBase implements Serializable {
      */
     private int cost;
     /**
+     * 道具数量单位
+     */
+    private String unit;
+    /**
      * 道具描述
      */
     private String description;
@@ -70,15 +74,17 @@ public abstract class PropsBase implements Serializable {
      * @param code        道具code
      * @param name        道具名称
      * @param cost        道具价值
+     * @param unit        道具数量单位
      * @param description 道具描述
      * @param reuse       是否复用
      * @param getTime     获取时间
      * @param expiredTime 过期时间
      */
-    public PropsBase(String code, String name, int cost, String description, boolean reuse, Date getTime, Date expiredTime) {
+    public PropsBase(String code, String name, int cost,String unit, String description, boolean reuse, Date getTime, Date expiredTime) {
         this.code = code;
         this.name = name;
         this.cost = cost;
+        this.unit = unit;
         this.description = description;
         this.reuse = reuse;
         this.getTime = getTime;

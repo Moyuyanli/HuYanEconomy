@@ -60,4 +60,18 @@ public interface PropsManager {
      */
     void propStore(MessageEvent event);
 
+    /**
+     * 购买一个道具，加入到用户背包
+     *
+     * @param event 消息事件
+     */
+    void buyPropFromStore(MessageEvent event);
+
+    /**
+     * 查询用户背包
+     *
+     * @param event 消息事件
+     */
+    void viewUserBackpack(MessageEvent event);
+
 }
