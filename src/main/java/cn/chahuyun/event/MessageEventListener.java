@@ -67,19 +67,27 @@ public class MessageEventListener extends SimpleListenerHost {
                 return;
             case "背包":
             case "backpack":
-
+                propsManager.viewUserBackpack(event);
+                return;
             case "道具商店":
             case "shops":
                 propsManager.propStore(event);
                 return;
         }
 
-        String buyPropPattern = "购买 (\\d+)( \\d+)?|buy (\\d+)( \\d+)?";
-        if (Pattern.matches(buyPropPattern, code)) {
+        String buyPropRegex = "购买 (\\d+)( \\d+)?|buy (\\d+)( \\d+)?";
+        if (Pattern.matches(buyPropRegex, code)) {
+            Log.info("购买指令");
             propsManager.buyPropFromStore(event);
             return;
         }
 
+        String userPropRegex = "使用 (\\d+)( \\d+)?|use (\\d+)( \\d+)?";
+        if (Pattern.matches(userPropRegex, code)) {
+            Log.info("使用指令");
+            propsManager.userProp(event);
+            return;
+        }
 
     }
 

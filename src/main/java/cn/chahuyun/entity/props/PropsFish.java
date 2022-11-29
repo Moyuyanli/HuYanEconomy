@@ -23,8 +23,8 @@ public class PropsFish extends PropsBase implements Serializable {
     public PropsFish() {
     }
 
-    public PropsFish(String code, String name, int cost, String unit, String description, boolean reuse, Date getTime, Date expiredTime, boolean status, boolean operation, Date enabledTime, String aging) {
-        super(code, name, cost, unit, description, reuse, getTime, expiredTime);
+    public PropsFish(String code, String name, int cost, boolean stack, String unit, String description, boolean reuse, Date getTime, Date expiredTime, boolean status, boolean operation, Date enabledTime, String aging) {
+        super(code, name, cost, stack, unit, description, reuse, getTime, expiredTime);
         this.status = status;
         this.operation = operation;
         this.enabledTime = enabledTime;

@@ -132,6 +132,7 @@ public class UserInfo implements Serializable {
         this.getBackpacks().add(userBackpack);
         try {
             HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+            HibernateUtil.factory.fromTransaction(session -> session.merge(userBackpack));
         } catch (Exception e) {
             Log.error("用户信息:添加道具到背包出错", e);
             return false;

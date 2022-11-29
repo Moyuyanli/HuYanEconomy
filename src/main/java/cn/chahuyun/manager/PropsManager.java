@@ -29,7 +29,7 @@ public interface PropsManager {
      * @param userInfo 用户
      * @return List<PropsBase> 道具id集合
      */
-    <E extends PropsBase> List<E> getPropsByUser(UserInfo userInfo);
+    List<PropsBase> getPropsByUser(UserInfo userInfo);
 
     /**
      * 获取该用户的对应 [code] 的道具
@@ -68,10 +68,18 @@ public interface PropsManager {
     void buyPropFromStore(MessageEvent event);
 
     /**
+     * 使用一个道具
+     *
+     * @param event 消息事件
+     */
+    void userProp(MessageEvent event);
+
+    /**
      * 查询用户背包
      *
      * @param event 消息事件
      */
     void viewUserBackpack(MessageEvent event);
+
 
 }

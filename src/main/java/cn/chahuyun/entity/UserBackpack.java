@@ -33,20 +33,26 @@ public class UserBackpack implements Serializable {
      * 道具id
      */
     private long propId;
+    /**
+     * 道具子类映射
+     */
+    private String className;
 
     public UserBackpack() {
     }
 
-    public UserBackpack(Long userId, String propsCode, int propId) {
+    public UserBackpack(Long userId, String propsCode, int propId, Class<? extends PropsBase> className) {
         this.userId = userId;
         this.propsCode = propsCode;
         this.propId = propId;
+        this.className = className.getName();
     }
 
     public UserBackpack(UserInfo userInfo, PropsBase propsBase) {
         this.userId = userInfo.getId();
         this.propsCode = propsBase.getCode();
         this.propId = propsBase.getId();
+        this.className = propsBase.getClass().getName();
     }
 
 }
