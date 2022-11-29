@@ -23,7 +23,7 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String version = "0.1.0";
+    public static final String version = "0.1.2";
     /**
      * 配置
      */
