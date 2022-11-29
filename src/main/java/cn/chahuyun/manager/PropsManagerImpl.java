@@ -220,7 +220,7 @@ public class PropsManagerImpl implements PropsManager {
         //购买道具合计金额
         int total = propsInfo.getCost() * num;
 
-        if (money - total < -propsInfo.getCost()*5) {
+        if (money - total < -propsInfo.getCost() * 5) {
             messages.append(new PlainText("做梦去吧你，" + propsInfo.getName() + " 也是你能想要的东西?"));
             subject.sendMessage(messages.build());
             return;
@@ -235,8 +235,10 @@ public class PropsManagerImpl implements PropsManager {
             subject.sendMessage("系统出错，请联系主人!");
             return;
         }
-
-        PropsCard propsCard = PropsCardFactory.INSTANCE.create(propCode);
+        PropsCard propsCard = null;
+        if (propCode.startsWith("K-")) {
+            propsCard = PropsCardFactory.INSTANCE.create(propCode);
+        }
 
         UserBackpack userBackpack = new UserBackpack(userInfo, propsCard);
 

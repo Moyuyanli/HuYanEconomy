@@ -58,6 +58,7 @@ public class MessageEventListener extends SimpleListenerHost {
 
         switch (code) {
             case "签到":
+            case "打卡":
             case "sign":
                 SignManager.sign(event);
                 return;

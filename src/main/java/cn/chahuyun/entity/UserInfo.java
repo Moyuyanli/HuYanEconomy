@@ -109,7 +109,7 @@ public class UserInfo implements Serializable {
         Log.debug("账户:(" + this.getQq() + ")签到天差->" + between);
         if (between == -1) {
             this.setSignNumber(this.getSignNumber() + 1);
-            this.setOldSignNumber(this.getSignNumber());
+            this.setOldSignNumber(0);
         } else {
             this.setOldSignNumber(this.getSignNumber());
             this.setSignNumber(1);

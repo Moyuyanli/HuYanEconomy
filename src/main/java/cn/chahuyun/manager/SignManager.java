@@ -104,6 +104,9 @@ public class SignManager {
         messages.append(new PlainText("签到成功!\n"));
         messages.append(new PlainText(userInfo.getString()));
         messages.append(new PlainText(String.format("金币:%s(+%s)", moneyByUser, goldNumber)));
+        if (userInfo.getOldSignNumber() != 0) {
+            messages.append(String.format("你的连签线断在了%d天,可惜~", userInfo.getOldSignNumber()));
+        }
         if (plainText != null) {
             messages.append(plainText);
         }
