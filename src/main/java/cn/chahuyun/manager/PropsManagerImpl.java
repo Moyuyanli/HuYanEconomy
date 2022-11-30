@@ -299,18 +299,25 @@ public class PropsManagerImpl implements PropsManager {
             }
 
             for (PropsCard propsCard : propsByUserFromCode) {
+                if (!propsCard.isStatus()) {
+                    continue;
+                }
                 if (num == 0) {
                     break;
                 }
                 propsCard.setStatus(true);
+                propsCard.setEnabledTime(new Date());
                 HibernateUtil.factory.fromTransaction(session -> session.merge(propsCard));
                 num--;
                 success++;
                 prop = propsCard;
             }
         }
-
         assert prop != null;
+        if (success == 0) {
+            subject.sendMessage(messages.append(String.format("你没有未使用的%s", prop.getName())).build());
+            return;
+        }
         subject.sendMessage(messages.append(String.format("成功使用%d%s%s",success,prop.getUnit(),prop.getName())).build());
     }
 

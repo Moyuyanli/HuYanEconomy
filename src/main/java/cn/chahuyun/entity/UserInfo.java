@@ -33,13 +33,13 @@ public class UserInfo implements Serializable {
      */
     private long qq;
     /**
-     * 注册群号
-     */
-    private long registerGroup;
-    /**
      * 名称
      */
     private String name;
+    /**
+     * 注册群号
+     */
+    private long registerGroup;
     /**
      * 注册时间
      */
@@ -60,6 +60,10 @@ public class UserInfo implements Serializable {
      * 断掉的连续签到次数
      */
     private int oldSignNumber;
+    /**
+     * 银行收益
+     */
+    private double bankEarnings;
 
     /**
      * 道具背包
