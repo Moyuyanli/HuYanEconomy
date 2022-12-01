@@ -9,8 +9,10 @@ group = 'cn.chahuyun'
 version = '0.1.2'
 
 repositories {
-
     mavenCentral()
+//    maven { url 'https://maven.aliyun.com/repository/public' }
+//    maven { url "https://www.sonatype.org/nexus/" }
+//    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
 }
 
 dependencies {
@@ -21,9 +23,10 @@ dependencies {
     implementation "org.projectlombok:lombok:1.18.24"
     annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
 
+
     implementation 'cn.hutool:hutool-all:5.8.10'
     //测试库
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
 }
 
 // hibernate 6 和 HikariCP 5 需要 jdk11

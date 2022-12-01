@@ -55,6 +55,9 @@ public class MessageEventListener extends SimpleListenerHost {
         PropsManager propsManager = PluginManager.getPropsManager();
 
         switch (code) {
+            case "测试":
+                SignManager.getSignImage(event.getSubject());
+                return;
             case "签到":
             case "打卡":
             case "sign":
