@@ -7,6 +7,7 @@ import cn.chahuyun.entity.props.PropsCard;
 import cn.chahuyun.plugin.PluginManager;
 import cn.chahuyun.util.EconomyUtil;
 import cn.chahuyun.util.Log;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import net.mamoe.mirai.contact.AvatarSpec;
 import net.mamoe.mirai.contact.Contact;
@@ -19,11 +20,11 @@ import net.mamoe.mirai.message.data.QuoteReply;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -37,6 +38,8 @@ public class SignManager {
     private SignManager() {
 
     }
+
+    private static int index = 0;
 
 
     /**
@@ -115,32 +118,56 @@ public class SignManager {
         messages.append(new PlainText(userInfo.getString()));
         messages.append(new PlainText(String.format("金币:%s(+%s)", moneyByUser, goldNumber)));
         if (userInfo.getOldSignNumber() != 0) {
-            messages.append(String.format("你的连签线断在了%d天,可惜~", userInfo.getOldSignNumber()));
+            messages.append(String.format("\n你的连签线断在了%d天,可惜~", userInfo.getOldSignNumber()));
         }
         if (plainText != null) {
             messages.append(plainText);
         }
-        subject.sendMessage(messages.build());
+
+        sendSignImage(userInfo,user,subject,moneyByUser,goldNumber,messages.build());
+
+//        subject.sendMessage(messages.build());
     }
 
-    public static void getSignImage(MessageEvent event) {
+    /**
+     *
+     *
+     * @param userInfo
+     * @param user
+     * @param subject
+     * @return void
+     * @author Moyuyanli
+     * @date 2022/12/2 12:25
+     */
+    public static void sendSignImage(UserInfo userInfo, User user, Contact subject, double money, double obtain,MessageChain messages) {
         HuYanEconomy instance = HuYanEconomy.INSTANCE;
         try {
             refreshSignImage();
             File file = instance.resolveDataFile("sign.png");
-
-            System.out.println("图片名称：" + file.getName());
-            System.out.println("图片大小：" + file.length() / 1024 + " kb");
+//            System.out.println("图片名称：" + file.getName());
+//            System.out.println("图片大小：" + file.length() / 1024 + " kb");
             // 将文件对象转化为图片对象
             BufferedImage image = ImageIO.read(file);
-            System.out.println("图片宽度：" + image.getWidth() + " px");
-            System.out.println("图片高度：" + image.getHeight() + " px");
+//            System.out.println("图片宽度：" + image.getWidth() + " px");
+//            System.out.println("图片高度：" + image.getHeight() + " px");
 
             // 创建画笔(image为上一步的图片对象)
             Graphics2D pen = image.createGraphics();
             //图片与文字的抗锯齿
             pen.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             pen.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            String avatarUrl = user.getAvatarUrl(AvatarSpec.LARGE);
+            BufferedImage avatar = ImageIO.read(new URL(avatarUrl));
+            //圆角处理
+            BufferedImage avatarRounder = makeRoundedCorner(avatar, 50);
+            //写入头像
+            pen.drawImage(avatarRounder, 24, 25, null);
+//            ByteArrayOutputStream avatarImage = new ByteArrayOutputStream();
+//            ImageIO.write(avatarRounder, "png", avatarImage);
+            //发送处理后的头像
+//            Contact.sendImage(subject, new ByteArrayInputStream(avatarImage.toByteArray()));
+
             /*
             相关说明：
             （1） pen.setColor(Color.WHITE);
@@ -157,22 +184,28 @@ public class SignManager {
             // 设置画笔颜色为白色
             pen.setColor(Color.WHITE);
             // 设置画笔字体样式为微软雅黑，斜体，文字大小为20px
-            pen.setFont(new Font("微软雅黑", Font.ITALIC, 20));
-            pen.drawString("我是图片水印", 30, 30);
+            pen.setFont(new Font("黑体", Font.BOLD, 60));
+            pen.drawString(userInfo.getName(), 200, 155);
+            //写入金币
+            pen.setColor(Color.black);
+            pen.setFont(new Font("黑体", Font.PLAIN, 28));
+            pen.drawString(String.valueOf(userInfo.getQq()),172,230);
+            pen.drawString(String.valueOf(money),600,410);
+            pen.drawString(String.valueOf(obtain),810,410);
+            pen.drawString(DateUtil.format(userInfo.getSignTime(),"yyyy-MM-dd HH:mm:ss"),172,320);
+            pen.drawString(String.valueOf(userInfo.getSignNumber()),172,360);
+            pen.drawString(DateUtil.format(DateUtil.offsetDay(userInfo.getSignTime(),1),"yyyy-MM-dd HH:mm:ss"),221,402);
+            pen.drawString("暂无",172,440);
+
+            pen.setFont(new Font("黑体", Font.PLAIN, 20));
+            pen.drawString(messages.serializeToMiraiCode(),500,216);
+
+
+
 
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
-//            FileOutputStream fos = new FileOutputStream(file);
             ImageIO.write(image, "png", stream);
-
-            User sender = event.getSender();
-            String avatarUrl = sender.getAvatarUrl(AvatarSpec.LARGE);
-            BufferedImage avatar = ImageIO.read(new URL(avatarUrl));
-            //写入头像
-            pen.drawImage(avatar, );
-
-
-            Contact.sendImage(event.getSubject(), new ByteArrayInputStream(stream.toByteArray()));
+            Contact.sendImage(subject, new ByteArrayInputStream(stream.toByteArray()));
         } catch (IOException e) {
             Log.error(e);
         }
@@ -188,7 +221,8 @@ public class SignManager {
      */
     private static void refreshSignImage() {
         HuYanEconomy instance = HuYanEconomy.INSTANCE;
-        InputStream asStream = instance.getResourceAsStream("sign.png");
+        InputStream asStream = instance.getResourceAsStream("sign" + (index % 4 == 0 ? 4 : index % 4) + ".png");
+        index++;
         File file = instance.resolveDataFile("sign.png");
         if (file.exists()) {
             if (file.delete()) {
@@ -206,37 +240,42 @@ public class SignManager {
     /**
      * 圆角处理
      *
-     * @param BufferedImage
-     * @param cornerRadius
+     * @param image        BufferedImage 需要处理的图片
+     * @param cornerRadius 圆角度
+     * @return 处理后的图片
      */
-    public static String makeRoundedCorner(String srcImageFile, String result, String type, int cornerRadius) {
-        try {
-            BufferedImage image = ImageIO.read(new File(srcImageFile));
-            int w = image.getWidth();
-            int h = image.getHeight();
-            BufferedImage output = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = output.createGraphics();
+    public static BufferedImage makeRoundedCorner(BufferedImage image, int cornerRadius) {
+        int w = image.getWidth();
+        int h = image.getHeight();
+        BufferedImage output = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = output.createGraphics();
 
-            output = g2.getDeviceConfiguration().createCompatibleImage(w, h, Transparency.TRANSLUCENT);
-            g2.dispose();
-            g2 = output.createGraphics();
-            //这里绘画圆角矩形
-//        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-//        g2.fillRoundRect(0, 0,w, h, cornerRadius, cornerRadius);
-//        g2.setComposite(AlphaComposite.SrcIn);
+        output = g2.getDeviceConfiguration().createCompatibleImage(w, h, Transparency.TRANSLUCENT);
+        g2.dispose();
+        g2 = output.createGraphics();
+        /*
+        这里绘画圆角矩形
+        原图切圆边角
+         */
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.fillRoundRect(0, 0, w, h, cornerRadius, cornerRadius);
+        g2.setComposite(AlphaComposite.SrcIn);
+        /*结束*/
 
-            //这里绘画原型图
-            Ellipse2D.Double shape = new Ellipse2D.Double(0, 0, w, h);
-            g2.setClip(shape);
 
-            g2.drawImage(image, 0, 0, w, h, null);
-            g2.dispose();
-            ImageIO.write(output, type, new File(result));
-            return result;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+        /*这里绘画原型图
+        原图切成圆形
+         */
+//        Ellipse2D.Double shape = new Ellipse2D.Double(0, 0, w, h);
+//        g2.setClip(shape);
+        /*结束*/
+
+        g2.drawImage(image, 0, 0, w, h, null);
+        g2.dispose();
+
+        return output;
+//            ImageIO.write(output, "png", new File(result));
+//            return result;
     }
 
 

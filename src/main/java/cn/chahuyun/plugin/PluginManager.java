@@ -28,7 +28,7 @@ public class PluginManager {
      * @date 2022/11/23 10:50
      */
     public static void init() {
-        PropsCard propsCard = new PropsCard(Constant.SIGN_DOUBLE_SINGLE_CARD, "签到双倍金币卡", 129, true, "张", "只要129，你的下一次签到金币翻倍!", false, null, null, false, null);
+        PropsCard propsCard = new PropsCard(Constant.SIGN_DOUBLE_SINGLE_CARD, "签到双倍金币卡", 99, true, "张", "不要999，不要599，只要99金币，你的下一次签到将翻倍！", false, null, null, false, null);
         propsManager.registerProps(propsCard);
     }
 
