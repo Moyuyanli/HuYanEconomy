@@ -24,8 +24,8 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 签到管理<p>
@@ -35,12 +35,11 @@ import java.util.List;
  */
 public class SignManager {
 
+    private static int index = 0;
+
     private SignManager() {
 
     }
-
-    private static int index = 0;
-
 
     /**
      * 签到<p>
@@ -77,10 +76,10 @@ public class SignManager {
             randomNumber = RandomUtil.randomInt(0, 10);
             if (randomNumber > 8) {
                 goldNumber = RandomUtil.randomInt(200, 500);
-                plainText = new PlainText(String.format("\n卧槽,你家祖坟裂了,冒出%s金币", goldNumber));
+                plainText = new PlainText(String.format("卧槽,你家祖坟裂了,冒出%s金币", goldNumber));
             } else {
                 goldNumber = RandomUtil.randomInt(100, 200);
-                plainText = new PlainText(String.format("\n哇偶,你今天运气爆棚,获得%s金币", goldNumber));
+                plainText = new PlainText(String.format("哇偶,你今天运气爆棚,获得%s金币", goldNumber));
             }
         } else {
             goldNumber = RandomUtil.randomInt(50, 100);
@@ -111,27 +110,22 @@ public class SignManager {
             //todo 签到失败回滚
             return;
         }
-
-        double moneyByUser = EconomyUtil.getMoneyByUser(user);
-
-        messages.append(new PlainText("签到成功!\n"));
-        messages.append(new PlainText(userInfo.getString()));
-        messages.append(new PlainText(String.format("金币:%s(+%s)", moneyByUser, goldNumber)));
+        double moneyBytUser = EconomyUtil.getMoneyByUser(user);
+        messages.append(new PlainText("签到成功!"));
+        messages.append(new PlainText(String.format("金币:%s(+%s)", moneyBytUser, goldNumber)));
         if (userInfo.getOldSignNumber() != 0) {
-            messages.append(String.format("\n你的连签线断在了%d天,可惜~", userInfo.getOldSignNumber()));
+            messages.append(String.format("你的连签线断在了%d天,可惜~", userInfo.getOldSignNumber()));
         }
         if (plainText != null) {
             messages.append(plainText);
         }
 
-        sendSignImage(userInfo,user,subject,moneyByUser,goldNumber,messages.build());
+        sendSignImage(userInfo, user, subject, moneyBytUser, goldNumber, messages.build());
 
 //        subject.sendMessage(messages.build());
     }
 
     /**
-     *
-     *
      * @param userInfo
      * @param user
      * @param subject
@@ -139,7 +133,7 @@ public class SignManager {
      * @author Moyuyanli
      * @date 2022/12/2 12:25
      */
-    public static void sendSignImage(UserInfo userInfo, User user, Contact subject, double money, double obtain,MessageChain messages) {
+    public static void sendSignImage(UserInfo userInfo, User user, Contact subject, double money, double obtain, MessageChain messages) {
         HuYanEconomy instance = HuYanEconomy.INSTANCE;
         try {
             refreshSignImage();
@@ -189,19 +183,19 @@ public class SignManager {
             //写入金币
             pen.setColor(Color.black);
             pen.setFont(new Font("黑体", Font.PLAIN, 28));
-            pen.drawString(String.valueOf(userInfo.getQq()),172,230);
-            pen.drawString(String.valueOf(money),600,410);
-            pen.drawString(String.valueOf(obtain),810,410);
-            pen.drawString(DateUtil.format(userInfo.getSignTime(),"yyyy-MM-dd HH:mm:ss"),172,320);
-            pen.drawString(String.valueOf(userInfo.getSignNumber()),172,360);
-            pen.drawString(DateUtil.format(DateUtil.offsetDay(userInfo.getSignTime(),1),"yyyy-MM-dd HH:mm:ss"),221,402);
-            pen.drawString("暂无",172,440);
-
-            pen.setFont(new Font("黑体", Font.PLAIN, 20));
-            pen.drawString(messages.serializeToMiraiCode(),500,216);
-
-
-
+            pen.drawString(String.valueOf(userInfo.getQq()), 172, 240);
+            pen.drawString(String.valueOf(money), 600, 410);
+            pen.drawString(String.valueOf(obtain), 810, 410);
+            pen.setFont(new Font("黑体", Font.PLAIN, 23));
+            pen.drawString(DateUtil.format(userInfo.getSignTime(), "yyyy-MM-dd HH:mm:ss"), 172, 320);
+            pen.drawString(String.valueOf(userInfo.getSignNumber()), 172, 360);
+            pen.drawString(DateUtil.format(DateUtil.offsetDay(userInfo.getSignTime(), 1), "yyyy-MM-dd HH:mm:ss"), 221, 402);
+            pen.drawString("暂无", 172, 440);
+            AtomicInteger x = new AtomicInteger(210);
+            messages.forEach(v -> {
+                pen.drawString(v.contentToString(), 525, x.get());
+                x.addAndGet(28);
+            });
 
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             ImageIO.write(image, "png", stream);
