@@ -243,14 +243,15 @@ public class PropsManagerImpl implements PropsManager {
             Log.error("道具系统:道具创建为空");
             return;
         }
-        while (num != 0) {
+        int number = num;
+        while (number != 0) {
             UserBackpack userBackpack = new UserBackpack(userInfo, propsCard);
             if (!userInfo.addPropToBackpack(userBackpack)) {
                 Log.warning("道具系统:添加道具到用户背包失败!");
                 subject.sendMessage("系统出错，请联系主人!");
                 return;
             }
-            num--;
+            number--;
         }
 
 

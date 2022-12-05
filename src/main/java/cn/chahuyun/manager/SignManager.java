@@ -181,10 +181,17 @@ public class SignManager {
             pen.setFont(new Font("黑体", Font.BOLD, 60));
             pen.drawString(userInfo.getName(), 200, 155);
             //写入金币
-            pen.setColor(Color.black);
-            pen.setFont(new Font("黑体", Font.PLAIN, 28));
+            if (String.valueOf(money).length() > 5) {
+                pen.setFont(new Font("黑体", Font.PLAIN, 24));
+                pen.setColor(Color.black);
+                pen.drawString(String.valueOf(money), 600, 410);
+                pen.setFont(new Font("黑体", Font.PLAIN, 28));
+            } else {
+                pen.setFont(new Font("黑体", Font.PLAIN, 28));
+                pen.setColor(Color.black);
+                pen.drawString(String.valueOf(money), 600, 410);
+            }
             pen.drawString(String.valueOf(userInfo.getQq()), 172, 240);
-            pen.drawString(String.valueOf(money), 600, 410);
             pen.drawString(String.valueOf(obtain), 810, 410);
             pen.setFont(new Font("黑体", Font.PLAIN, 23));
             pen.drawString(DateUtil.format(userInfo.getSignTime(), "yyyy-MM-dd HH:mm:ss"), 172, 320);
