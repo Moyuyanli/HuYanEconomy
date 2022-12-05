@@ -239,14 +239,20 @@ public class PropsManagerImpl implements PropsManager {
         if (propCode.startsWith("K-")) {
             propsCard = PropsCardFactory.INSTANCE.create(propCode);
         }
-
-        UserBackpack userBackpack = new UserBackpack(userInfo, propsCard);
-
-        if (!userInfo.addPropToBackpack(userBackpack)) {
-            Log.warning("道具系统:添加道具到用户背包失败!");
-            subject.sendMessage("系统出错，请联系主人!");
+        if (propsCard == null) {
+            Log.error("道具系统:道具创建为空");
             return;
         }
+        while (num != 0) {
+            UserBackpack userBackpack = new UserBackpack(userInfo, propsCard);
+            if (!userInfo.addPropToBackpack(userBackpack)) {
+                Log.warning("道具系统:添加道具到用户背包失败!");
+                subject.sendMessage("系统出错，请联系主人!");
+                return;
+            }
+            num--;
+        }
+
 
         money = EconomyUtil.getMoneyByUser(sender);
 
@@ -299,7 +305,8 @@ public class PropsManagerImpl implements PropsManager {
             }
 
             for (PropsCard propsCard : propsByUserFromCode) {
-                if (!propsCard.isStatus()) {
+                prop = propsCard;
+                if (propsCard.isStatus()) {
                     continue;
                 }
                 if (num == 0) {
@@ -310,7 +317,6 @@ public class PropsManagerImpl implements PropsManager {
                 HibernateUtil.factory.fromTransaction(session -> session.merge(propsCard));
                 num--;
                 success++;
-                prop = propsCard;
             }
         }
         assert prop != null;
