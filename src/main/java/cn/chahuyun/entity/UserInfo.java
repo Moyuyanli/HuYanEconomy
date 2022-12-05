@@ -116,7 +116,7 @@ public class UserInfo implements Serializable {
         long between = DateUtil.between(new Date(), this.getSignTime(), DateUnit.HOUR, true);
         Log.debug("账户:(" + this.getQq() + ")签到天差->" + between);
         //时间还在24小时之内
-        if (0 < between && between <= 24) {
+        if (0 <= between && between <= 24) {
             return false;
         } else if (24 < between && between <= 48) {
             this.setSignNumber(this.getSignNumber() + 1);
