@@ -119,7 +119,6 @@ public class SignManager {
         if (plainText != null) {
             messages.append(plainText);
         }
-
         sendSignImage(userInfo, user, subject, messages.build());
 //        sendSignImage(userInfo, user, subject, moneyBytUser, goldNumber, messages.build());
 

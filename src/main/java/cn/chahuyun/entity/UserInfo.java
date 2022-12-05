@@ -100,7 +100,7 @@ public class UserInfo implements Serializable {
      * @date 2022/11/14 10:16
      */
     public boolean sign() {
-        if (true) return true;
+//        if (true) return true;
         //如果签到时间为空->新用户第一次签到
         if (this.getSignTime() == null) {
             this.setSign(true);
