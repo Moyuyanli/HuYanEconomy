@@ -77,14 +77,14 @@ public class MessageEventListener extends SimpleListenerHost {
                 return;
         }
 
-        String buyPropRegex = "购买 (\\d+)( \\d+)?|buy (\\d+)( \\d+)?";
+        String buyPropRegex = "购买 (\\S+)( \\S+)?|buy (\\S+)( \\S+)?";
         if (Pattern.matches(buyPropRegex, code)) {
             Log.info("购买指令");
             propsManager.buyPropFromStore(event);
             return;
         }
 
-        String userPropRegex = "使用 (\\d+)( \\d+)?|use (\\d+)( \\d+)?";
+        String userPropRegex = "使用 (\\S+)( \\S+)?|use (\\S+)( \\S+)?";
         if (Pattern.matches(userPropRegex, code)) {
             Log.info("使用指令");
             propsManager.userProp(event);

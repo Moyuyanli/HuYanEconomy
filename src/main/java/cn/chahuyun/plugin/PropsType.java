@@ -90,7 +90,17 @@ public class PropsType {
      * @date 2022/11/28 15:22
      */
     public static String getCode(String no) {
-        return map.get(no);
+        if (map.containsKey(no)) {
+            return map.get(no);
+        }
+        for (PropsBase value : props.values()) {
+            if (value.getName().equals(no)) {
+                return value.getCode();
+            }
+        }
+        return null;
     }
+
+
 
 }

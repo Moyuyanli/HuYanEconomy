@@ -204,6 +204,11 @@ public class PropsManagerImpl implements PropsManager {
         }
 
         String propCode = PropsType.getCode(no);
+        if (propCode == null) {
+            Log.warning("道具系统:购买道具为空");
+            subject.sendMessage("我这里不卖这个...");
+            return;
+        }
         Log.info("道具系统:购买道具-Code " + propCode);
 
 
@@ -221,11 +226,11 @@ public class PropsManagerImpl implements PropsManager {
         int total = propsInfo.getCost() * num;
 
         if (money - total < -propsInfo.getCost() * 5) {
-            messages.append(new PlainText("做梦去吧你，" + propsInfo.getName() + " 也是你能想要的东西?"));
+            messages.append(new PlainText("做梦去吧你，" + propsInfo.getName() + "也是你能想要的东西?"));
             subject.sendMessage(messages.build());
             return;
         } else if (money - total < 0) {
-            messages.append(new PlainText("这么点钱就想买 " + propsInfo.getName() + " ?"));
+            messages.append(new PlainText("这么点钱就想买" + propsInfo.getName() + "?"));
             subject.sendMessage(messages.build());
             return;
         }
@@ -254,9 +259,7 @@ public class PropsManagerImpl implements PropsManager {
             number--;
         }
 
-
         money = EconomyUtil.getMoneyByUser(sender);
-
 
         messages.append(String.format("成功购买 %s %d%s,你还有 %s 枚金币", propsInfo.getName(), num, propsInfo.getUnit(), money));
 
@@ -325,7 +328,7 @@ public class PropsManagerImpl implements PropsManager {
             subject.sendMessage(messages.append(String.format("你没有未使用的%s", prop.getName())).build());
             return;
         }
-        subject.sendMessage(messages.append(String.format("成功使用%d%s%s",success,prop.getUnit(),prop.getName())).build());
+        subject.sendMessage(messages.append(String.format("成功使用%d%s%s", success, prop.getUnit(), prop.getName())).build());
     }
 
     /**

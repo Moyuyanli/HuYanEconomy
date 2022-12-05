@@ -120,28 +120,79 @@ public class SignManager {
             messages.append(plainText);
         }
 
-        sendSignImage(userInfo, user, subject, moneyBytUser, goldNumber, messages.build());
+        sendSignImage(userInfo, user, subject, messages.build());
+//        sendSignImage(userInfo, user, subject, moneyBytUser, goldNumber, messages.build());
 
 //        subject.sendMessage(messages.build());
     }
 
     /**
-     * @param userInfo
-     * @param user
-     * @param subject
-     * @return void
+     * 发送签到图片信息<p>
+     * 在基础信息上添加签到信息<p>
+     *
+     * @param userInfo 用户信息
+     * @param user     用户
+     * @param subject  发送者
+     * @param messages 消息
+     * @author Moyuyanli
+     * @date 2022/12/5 16:22
+     */
+    public static void sendSignImage(UserInfo userInfo, User user, Contact subject, MessageChain messages) {
+        BufferedImage userInfoImageBase = UserManager.getUserInfoImageBase(userInfo, user);
+        if (userInfoImageBase == null) {
+            return;
+        }
+        Graphics2D graphics = userInfoImageBase.createGraphics();
+        graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        int fontSize = 20;
+        graphics.setColor(Color.black);
+        AtomicInteger x = new AtomicInteger(210);
+        graphics.setFont(new Font("黑体", Font.PLAIN, fontSize));
+        messages.forEach(v -> {
+            //写入签到信息
+            graphics.drawString(v.contentToString(), 520, x.get());
+            x.addAndGet(28);
+        });
+        //释放资源
+        graphics.dispose();
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(userInfoImageBase, "png", stream);
+        } catch (IOException e) {
+            Log.error("签到管理:签到图片发送错误!", e);
+            subject.sendMessage(messages);
+            return;
+        }
+        Contact.sendImage(subject, new ByteArrayInputStream(stream.toByteArray()));
+    }
+
+    /**
+     * 发送签到图片
+     *
+     * @param userInfo 用户信息
+     * @param user     发送者
+     * @param subject  发送位置
      * @author Moyuyanli
      * @date 2022/12/2 12:25
      */
+    @Deprecated(since = "已废弃")
     public static void sendSignImage(UserInfo userInfo, User user, Contact subject, double money, double obtain, MessageChain messages) {
         HuYanEconomy instance = HuYanEconomy.INSTANCE;
         try {
-            refreshSignImage();
-            File file = instance.resolveDataFile("sign.png");
+            InputStream asStream = instance.getResourceAsStream("sign" + (index % 4 == 0 ? 4 : index % 4) + ".png");
+            index++;
+            if (asStream == null) {
+                Log.error("签到图片获取错误!");
+                return;
+            }
 //            System.out.println("图片名称：" + file.getName());
 //            System.out.println("图片大小：" + file.length() / 1024 + " kb");
             // 将文件对象转化为图片对象
-            BufferedImage image = ImageIO.read(file);
+            BufferedImage image = ImageIO.read(asStream);
+
 //            System.out.println("图片宽度：" + image.getWidth() + " px");
 //            System.out.println("图片高度：" + image.getHeight() + " px");
 
@@ -154,9 +205,9 @@ public class SignManager {
             String avatarUrl = user.getAvatarUrl(AvatarSpec.LARGE);
             BufferedImage avatar = ImageIO.read(new URL(avatarUrl));
             //圆角处理
-            BufferedImage avatarRounder = makeRoundedCorner(avatar, 50);
+//            BufferedImage avatarRounder = makeRoundedCorner(avatar, 50);
             //写入头像
-            pen.drawImage(avatarRounder, 24, 25, null);
+//            pen.drawImage(avatarRounder, 24, 25, null);
 //            ByteArrayOutputStream avatarImage = new ByteArrayOutputStream();
 //            ImageIO.write(avatarRounder, "png", avatarImage);
             //发送处理后的头像
@@ -199,8 +250,9 @@ public class SignManager {
             pen.drawString(DateUtil.format(DateUtil.offsetDay(userInfo.getSignTime(), 1), "yyyy-MM-dd HH:mm:ss"), 221, 402);
             pen.drawString("暂无", 172, 440);
             AtomicInteger x = new AtomicInteger(210);
+            pen.setFont(new Font("黑体", Font.PLAIN, 22));
             messages.forEach(v -> {
-                pen.drawString(v.contentToString(), 525, x.get());
+                pen.drawString(v.contentToString(), 520, x.get());
                 x.addAndGet(28);
             });
 
@@ -236,47 +288,6 @@ public class SignManager {
         } catch (IOException e) {
             Log.error("签到管理:签到图片刷新失败", e);
         }
-    }
-
-    /**
-     * 圆角处理
-     *
-     * @param image        BufferedImage 需要处理的图片
-     * @param cornerRadius 圆角度
-     * @return 处理后的图片
-     */
-    public static BufferedImage makeRoundedCorner(BufferedImage image, int cornerRadius) {
-        int w = image.getWidth();
-        int h = image.getHeight();
-        BufferedImage output = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = output.createGraphics();
-
-        output = g2.getDeviceConfiguration().createCompatibleImage(w, h, Transparency.TRANSLUCENT);
-        g2.dispose();
-        g2 = output.createGraphics();
-        /*
-        这里绘画圆角矩形
-        原图切圆边角
-         */
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.fillRoundRect(0, 0, w, h, cornerRadius, cornerRadius);
-        g2.setComposite(AlphaComposite.SrcIn);
-        /*结束*/
-
-
-        /*这里绘画原型图
-        原图切成圆形
-         */
-//        Ellipse2D.Double shape = new Ellipse2D.Double(0, 0, w, h);
-//        g2.setClip(shape);
-        /*结束*/
-
-        g2.drawImage(image, 0, 0, w, h, null);
-        g2.dispose();
-
-        return output;
-//            ImageIO.write(output, "png", new File(result));
-//            return result;
     }
 
 

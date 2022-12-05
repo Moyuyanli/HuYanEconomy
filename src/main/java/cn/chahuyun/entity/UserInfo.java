@@ -61,6 +61,10 @@ public class UserInfo implements Serializable {
      */
     private int oldSignNumber;
     /**
+     * 签到收益
+     */
+    private double signEarnings;
+    /**
      * 银行收益
      */
     private double bankEarnings;
@@ -96,6 +100,7 @@ public class UserInfo implements Serializable {
      * @date 2022/11/14 10:16
      */
     public boolean sign() {
+        if (true) return true;
         //如果签到时间为空->新用户第一次签到
         if (this.getSignTime() == null) {
             this.setSign(true);
@@ -104,14 +109,16 @@ public class UserInfo implements Serializable {
             HibernateUtil.factory.fromTransaction(session -> session.merge(this));
             return true;
         }
-        //判断是否为同一天
-        if (DateUtil.isSameDay(new Date(), this.getSignTime())) {
-            return false;
-        }
-        //获取天数差
-        long between = DateUtil.between(new Date(), this.getSignTime(), DateUnit.DAY, false);
+//        if (DateUtil.isSameDay(new Date(), this.getSignTime())) {
+//            return false;
+//        }
+        //获取小时数差
+        long between = DateUtil.between(new Date(), this.getSignTime(), DateUnit.HOUR, true);
         Log.debug("账户:(" + this.getQq() + ")签到天差->" + between);
-        if (between == -1) {
+        //时间还在24小时之内
+        if (0 < between && between <= 24) {
+            return false;
+        } else if (24 < between && between <= 48) {
             this.setSignNumber(this.getSignNumber() + 1);
             this.setOldSignNumber(0);
         } else {
