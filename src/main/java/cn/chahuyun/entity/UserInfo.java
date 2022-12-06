@@ -151,6 +151,16 @@ public class UserInfo implements Serializable {
         return true;
     }
 
+    /**
+     * 保存
+     *
+     * @return 本身
+     * @author Moyuyanli
+     * @date 2022/12/6 8:49
+     */
+    public UserInfo save() {
+        return HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+    }
 
     public void setQq(long qq) {
         this.id = qq;

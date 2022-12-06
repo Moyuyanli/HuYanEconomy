@@ -3,6 +3,7 @@ package cn.chahuyun;
 import cn.chahuyun.config.ConfigData;
 import cn.chahuyun.event.BotOnlineEventListener;
 import cn.chahuyun.event.MessageEventListener;
+import cn.chahuyun.manager.LotteryManager;
 import cn.chahuyun.plugin.PluginManager;
 import cn.chahuyun.util.EconomyUtil;
 import cn.chahuyun.util.HibernateUtil;
@@ -23,7 +24,7 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String version = "0.1.5";
+    public static final String version = "0.1.6";
     /**
      * 配置
      */
@@ -62,6 +63,7 @@ public final class HuYanEconomy extends JavaPlugin {
             Log.warning("插件管理机器人还没有配置，请尽快配置!");
         } else {
             EconomyUtil.init();
+            LotteryManager.init(true);
             eventEventChannel.registerListenerHost(new BotOnlineEventListener());
             eventEventChannel.registerListenerHost(new MessageEventListener());
             Log.info("事件已监听!");

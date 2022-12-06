@@ -15,4 +15,8 @@ object ConfigData : AutoSavePluginConfig("config") {
     @ValueDescription("插件单一管理botQQ")
     val bot: Long by value()
 
+    @ValueDescription("启用的彩票群列表")
+    var group: List<Long> by value()
+
+
 }

@@ -110,6 +110,8 @@ public class SignManager {
             //todo 签到失败回滚
             return;
         }
+        userInfo.setSignEarnings(goldNumber);
+        userInfo.save();
         double moneyBytUser = EconomyUtil.getMoneyByUser(user);
         messages.append(new PlainText("签到成功!"));
         messages.append(new PlainText(String.format("金币:%s(+%s)", moneyBytUser, goldNumber)));

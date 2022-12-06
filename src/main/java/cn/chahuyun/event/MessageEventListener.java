@@ -1,5 +1,7 @@
 package cn.chahuyun.event;
 
+import cn.chahuyun.entity.LotteryInfo;
+import cn.chahuyun.manager.LotteryManager;
 import cn.chahuyun.manager.PropsManager;
 import cn.chahuyun.manager.SignManager;
 import cn.chahuyun.manager.UserManager;
@@ -88,6 +90,13 @@ public class MessageEventListener extends SimpleListenerHost {
         if (Pattern.matches(userPropRegex, code)) {
             Log.info("使用指令");
             propsManager.userProp(event);
+            return;
+        }
+
+        String buyLotteryRegex = "猜签 (\\d+)( \\d+)|guess (\\d+)( \\d+)";
+        if (Pattern.matches(buyLotteryRegex, code)) {
+            Log.info("彩票指令");
+            LotteryManager.addLottery(event);
             return;
         }
 
