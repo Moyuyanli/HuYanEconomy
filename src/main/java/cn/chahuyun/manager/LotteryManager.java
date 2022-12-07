@@ -195,13 +195,12 @@ public class LotteryManager {
      * 发送彩票结果信息
      * <p>
      *
-     * @param type        彩票类型
      * @param location    猜中数量
      * @param lotteryInfo 彩票信息
      * @author Moyuyanli
      * @date 2022/12/6 16:52
      */
-    public static void result(int type, int location, LotteryInfo lotteryInfo) {
+    public static void result(int location, LotteryInfo lotteryInfo) {
         Bot bot = HuYanEconomy.bot;
         Group group = bot.getGroup(lotteryInfo.getGroup());
         assert group != null;
@@ -289,7 +288,7 @@ class LotteryMinutesTask implements Task {
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
             lotteryInfo.save();
-            LotteryManager.result(1, location, lotteryInfo);
+            LotteryManager.result(location, lotteryInfo);
         }
         for (Long group : groups) {
             String format = String.format("本期小签开签啦！\n开签号码%s", currentString);
@@ -370,7 +369,7 @@ class LotteryHoursTask implements Task {
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
             lotteryInfo.save();
-            LotteryManager.result(1, location, lotteryInfo);
+            LotteryManager.result(location, lotteryInfo);
         }
         for (Long group : groups) {
             String format = String.format("本期中签开签啦！\n开签号码%s", currentString);
@@ -456,7 +455,7 @@ class LotteryDayTask implements Task {
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
             lotteryInfo.save();
-            LotteryManager.result(1, location, lotteryInfo);
+            LotteryManager.result(location, lotteryInfo);
             if (location == 5) {
                 list.add(lotteryInfo);
             }
