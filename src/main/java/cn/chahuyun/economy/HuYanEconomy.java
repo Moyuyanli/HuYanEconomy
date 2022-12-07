@@ -35,7 +35,7 @@ public final class HuYanEconomy extends JavaPlugin {
     public static Bot bot;
 
     private HuYanEconomy() {
-        super(new JvmPluginDescriptionBuilder("cn.chahuyun.economy.HuYanEconomy", version)
+        super(new JvmPluginDescriptionBuilder("cn.chahuyun.HuYanEconomy", version)
                 .name("HuYanEconomy")
                 .info("壶言经济")
                 .author("Moyuyanli")
