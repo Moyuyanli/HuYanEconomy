@@ -203,20 +203,18 @@ public class LotteryManager {
      */
     public static void result(int type, int location, LotteryInfo lotteryInfo) {
         Bot bot = HuYanEconomy.bot;
-        if (type == 1) {
-            Group group = bot.getGroup(lotteryInfo.getGroup());
-            assert group != null;
-            NormalMember member = group.get(lotteryInfo.getQq());
-            assert member != null;
-            member.sendMessage(lotteryInfo.toMessage());
-            if (location == 3) {
-                group.sendMessage(String.format("得签着:%s(%s),奖励%s金币", member.getNick(), member.getId(), lotteryInfo.getBonus()));
-            }
-            lotteryInfo.remove();
-            minutesLottery.remove(lotteryInfo);
-            if (!EconomyUtil.addMoneyToUser(member, lotteryInfo.getBonus())) {
-                member.sendMessage("奖金添加失败，请联系管理员!");
-            }
+        Group group = bot.getGroup(lotteryInfo.getGroup());
+        assert group != null;
+        NormalMember member = group.get(lotteryInfo.getQq());
+        assert member != null;
+        member.sendMessage(lotteryInfo.toMessage());
+        if (location == 3) {
+            group.sendMessage(String.format("得签着:%s(%s),奖励%s金币", member.getNick(), member.getId(), lotteryInfo.getBonus()));
+        }
+        lotteryInfo.remove();
+        minutesLottery.remove(lotteryInfo);
+        if (!EconomyUtil.addMoneyToUser(member, lotteryInfo.getBonus())) {
+            member.sendMessage("奖金添加失败，请联系管理员!");
         }
     }
 
