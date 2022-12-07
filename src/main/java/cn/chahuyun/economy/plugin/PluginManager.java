@@ -40,7 +40,7 @@ public class PluginManager {
             //壶言会话
             HuYanSession instance = HuYanSession.INSTANCE;
             HuYanEconomy.config.setOwner(ConfigData.INSTANCE.getOwner());
-            Log.info("检测到壶言经济,已同步主人");
+            Log.info("检测到壶言会话,已同步主人");
             isHuYanSessionPlugin = true;
         } catch (NoClassDefFoundError e) {
             isHuYanSessionPlugin = false;
