@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.economy.HuYanEconomy;
-import cn.chahuyun.economy.constant.entity.UserInfo;
+import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.util.EconomyUtil;
 import cn.chahuyun.economy.util.HibernateUtil;
 import cn.chahuyun.economy.util.Log;

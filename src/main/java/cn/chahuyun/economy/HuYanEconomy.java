@@ -42,7 +42,7 @@ public final class HuYanEconomy extends JavaPlugin {
                 //忽略依赖版本
                 .dependsOn("xyz.cssxsh.mirai.plugin.mirai-hibernate-plugin", false)
                 .dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", false)
-                .dependsOn("cn.chahuyun.HuYanSession",true)
+                .dependsOn("cn.chahuyun.HuYanSession", true)
                 .build());
     }
 

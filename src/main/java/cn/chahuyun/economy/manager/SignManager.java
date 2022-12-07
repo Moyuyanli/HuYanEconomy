@@ -2,11 +2,11 @@ package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.Constant;
-import cn.chahuyun.economy.constant.entity.UserInfo;
+import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.props.PropsCard;
+import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.util.EconomyUtil;
 import cn.chahuyun.economy.util.Log;
-import cn.chahuyun.economy.plugin.PluginManager;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
@@ -71,7 +71,7 @@ public class SignManager {
             long house = between / 60;
             between = between % 60;
             messages.append(new PlainText("你今天已经签到过了哦!"));
-            messages.append(new PlainText(String.format("\n距离下次签到还有%s小时%s分钟",house,between)));
+            messages.append(new PlainText(String.format("\n距离下次签到还有%s小时%s分钟", house, between)));
             subject.sendMessage(messages.build());
             return;
         }

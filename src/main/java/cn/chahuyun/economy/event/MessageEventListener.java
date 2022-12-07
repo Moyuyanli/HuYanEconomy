@@ -1,9 +1,9 @@
 package cn.chahuyun.economy.event;
 
-import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.config.EconomyConfig;
-import cn.chahuyun.economy.manager.PropsManager;
+import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.manager.LotteryManager;
+import cn.chahuyun.economy.manager.PropsManager;
 import cn.chahuyun.economy.manager.SignManager;
 import cn.chahuyun.economy.manager.UserManager;
 import cn.chahuyun.economy.plugin.PluginManager;

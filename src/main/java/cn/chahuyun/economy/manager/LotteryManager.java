@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.manager;
 
-import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.config.EconomyConfig;
+import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.LotteryInfo;
 import cn.chahuyun.economy.util.EconomyUtil;
 import cn.chahuyun.economy.util.HibernateUtil;
@@ -36,13 +36,12 @@ import java.util.*;
 public class LotteryManager {
 
 
-    private LotteryManager() {
-    }
-
     private static final Map<String, LotteryInfo> minutesLottery = new HashMap<>();
     private static final Map<String, LotteryInfo> hoursLottery = new HashMap<>();
     private static final Map<String, LotteryInfo> dayLottery = new HashMap<>();
 
+    private LotteryManager() {
+    }
 
     /**
      * 初始化彩票<p>
@@ -200,7 +199,7 @@ public class LotteryManager {
      * @author Moyuyanli
      * @date 2022/12/6 16:52
      */
-    public static void result(int type,int location, LotteryInfo lotteryInfo) {
+    public static void result(int type, int location, LotteryInfo lotteryInfo) {
         if (location == 0) {
             return;
         }
@@ -300,7 +299,7 @@ class LotteryMinutesTask implements Task {
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
             lotteryInfo.save();
-            LotteryManager.result(1,location, lotteryInfo);
+            LotteryManager.result(1, location, lotteryInfo);
         }
         for (Long group : groups) {
             String format = String.format("本期小签开签啦！\n开签号码%s", currentString);
@@ -381,7 +380,7 @@ class LotteryHoursTask implements Task {
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
             lotteryInfo.save();
-            LotteryManager.result(2,location, lotteryInfo);
+            LotteryManager.result(2, location, lotteryInfo);
         }
         for (Long group : groups) {
             String format = String.format("本期中签开签啦！\n开签号码%s", currentString);
@@ -467,7 +466,7 @@ class LotteryDayTask implements Task {
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
             lotteryInfo.save();
-            LotteryManager.result(3,location, lotteryInfo);
+            LotteryManager.result(3, location, lotteryInfo);
             if (location == 5) {
                 list.add(lotteryInfo);
             }

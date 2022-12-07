@@ -6,12 +6,12 @@ package cn.chahuyun.economy.entity.bank;
  * 转帐功能
  */
 public class Transfer extends BankAction {
+    public Transfer(Long id) {
+        this.id = id;
+    }
+
     @Override
     public Boolean execute() {
         return null;
-    }
-
-    public Transfer(Long id) {
-        this.id = id;
     }
 }

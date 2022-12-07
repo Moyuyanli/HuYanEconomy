@@ -9,5 +9,4 @@ package cn.chahuyun.economy.entity;
 public class TitleInfo {
 
 
-
 }

@@ -84,7 +84,10 @@ public class LotteryInfo {
      * 删除
      */
     public void remove() {
-        HibernateUtil.factory.fromTransaction(session -> {session.remove(this);return null;});
+        HibernateUtil.factory.fromTransaction(session -> {
+            session.remove(this);
+            return null;
+        });
     }
 
     /**

@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.manager;
 
-import cn.chahuyun.economy.constant.entity.UserInfo;
+import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.props.PropsBase;
 import net.mamoe.mirai.event.events.MessageEvent;
 
