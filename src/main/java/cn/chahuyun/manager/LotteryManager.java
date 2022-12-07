@@ -181,13 +181,13 @@ public class LotteryManager {
             String aByte = String.valueOf(chars[i]);
             number.append(",").append(aByte);
         }
-        LotteryInfo lotteryInfo = new LotteryInfo(user.getId(), subject.getId(), money, type, string);
+        LotteryInfo lotteryInfo = new LotteryInfo(user.getId(), subject.getId(), money, type, number.toString());
         if (!EconomyUtil.lessMoneyToUser(user, money)) {
             subject.sendMessage("猜签失败！");
             return;
         }
         lotteryInfo.save();
-        subject.sendMessage(String.format("猜签成功:\n猜签类型:%s\n猜签号码:%s\n猜签金额:%s", typeString, number, money));
+        subject.sendMessage(String.format("猜签成功:\n猜签类型:%s\n猜签号码:%s\n猜签金币:%s", typeString, number, money));
         init(false);
     }
 
@@ -200,7 +200,7 @@ public class LotteryManager {
      * @author Moyuyanli
      * @date 2022/12/6 16:52
      */
-    public static void result(int location, LotteryInfo lotteryInfo) {
+    public static void result(int type,int location, LotteryInfo lotteryInfo) {
         Bot bot = HuYanEconomy.bot;
         Group group = bot.getGroup(lotteryInfo.getGroup());
         assert group != null;
@@ -211,7 +211,16 @@ public class LotteryManager {
             group.sendMessage(String.format("得签着:%s(%s),奖励%s金币", member.getNick(), member.getId(), lotteryInfo.getBonus()));
         }
         lotteryInfo.remove();
-        minutesLottery.remove(lotteryInfo);
+        switch (type) {
+            case 1:
+                minutesLottery.remove(lotteryInfo.getNumber());
+                break;
+            case 2:
+                hoursLottery.remove(lotteryInfo.getNumber());
+                break;
+            case 3:
+                dayLottery.remove(lotteryInfo.getNumber());
+        }
         if (!EconomyUtil.addMoneyToUser(member, lotteryInfo.getBonus())) {
             member.sendMessage("奖金添加失败，请联系管理员!");
         }
@@ -288,7 +297,7 @@ class LotteryMinutesTask implements Task {
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
             lotteryInfo.save();
-            LotteryManager.result(location, lotteryInfo);
+            LotteryManager.result(1,location, lotteryInfo);
         }
         for (Long group : groups) {
             String format = String.format("本期小签开签啦！\n开签号码%s", currentString);
@@ -369,7 +378,7 @@ class LotteryHoursTask implements Task {
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
             lotteryInfo.save();
-            LotteryManager.result(location, lotteryInfo);
+            LotteryManager.result(2,location, lotteryInfo);
         }
         for (Long group : groups) {
             String format = String.format("本期中签开签啦！\n开签号码%s", currentString);
@@ -455,7 +464,7 @@ class LotteryDayTask implements Task {
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
             lotteryInfo.save();
-            LotteryManager.result(location, lotteryInfo);
+            LotteryManager.result(3,location, lotteryInfo);
             if (location == 5) {
                 list.add(lotteryInfo);
             }
