@@ -305,6 +305,7 @@ class LotteryMinutesTask implements Task {
             String format = String.format("本期小签开签啦！\n开签号码%s", currentString);
             Objects.requireNonNull(bot.getGroup(group)).sendMessage(format);
         }
+        lotteryInfos = new ArrayList<>();
         CronUtil.remove(id);
     }
 }
