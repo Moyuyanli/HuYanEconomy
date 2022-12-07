@@ -1,7 +1,7 @@
 package cn.chahuyun.manager;
 
 import cn.chahuyun.HuYanEconomy;
-import cn.chahuyun.config.ConfigData;
+import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.entity.LotteryInfo;
 import cn.chahuyun.util.EconomyUtil;
 import cn.chahuyun.util.HibernateUtil;
@@ -116,7 +116,7 @@ public class LotteryManager {
 
         if (subject instanceof Group) {
             Group group = (Group) subject;
-            List<Long> longs = ConfigData.INSTANCE.getGroup();
+            List<Long> longs = EconomyConfig.INSTANCE.getGroup();
             if (!longs.contains(group.getId())) {
                 return;
             }
@@ -201,6 +201,9 @@ public class LotteryManager {
      * @date 2022/12/6 16:52
      */
     public static void result(int type,int location, LotteryInfo lotteryInfo) {
+        if (location == 0) {
+            return;
+        }
         Bot bot = HuYanEconomy.bot;
         Group group = bot.getGroup(lotteryInfo.getGroup());
         assert group != null;

@@ -10,12 +10,15 @@ import net.mamoe.mirai.console.data.value
  * @author Moyuyanli
  * @date 2022/11/14 12:49
  */
-object ConfigData : AutoSavePluginConfig("config") {
+object EconomyConfig : AutoSavePluginConfig("config") {
 
-    @ValueDescription("插件单一管理botQQ")
+    @ValueDescription("主人\n")
+    var owner: Long by value()
+
+    @ValueDescription("插件单一管理botQQ\n")
     val bot: Long by value()
 
-    @ValueDescription("启用的彩票群列表")
+    @ValueDescription("启用的彩票群列表\n")
     var group: List<Long> by value()
 
 

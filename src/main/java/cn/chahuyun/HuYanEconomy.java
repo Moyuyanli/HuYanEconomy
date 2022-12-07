@@ -1,6 +1,6 @@
 package cn.chahuyun;
 
-import cn.chahuyun.config.ConfigData;
+import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.event.BotOnlineEventListener;
 import cn.chahuyun.event.MessageEventListener;
 import cn.chahuyun.manager.LotteryManager;
@@ -24,11 +24,11 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String version = "0.1.6";
+    public static final String version = "0.1.7";
     /**
      * 配置
      */
-    public static ConfigData config;
+    public static final EconomyConfig config = EconomyConfig.INSTANCE;
     /**
      * 插件所属bot
      */
@@ -42,6 +42,7 @@ public final class HuYanEconomy extends JavaPlugin {
                 //忽略依赖版本
                 .dependsOn("xyz.cssxsh.mirai.plugin.mirai-hibernate-plugin", false)
                 .dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", false)
+                .dependsOn("cn.chahuyun.HuYanSession",true)
                 .build());
     }
 
@@ -56,8 +57,7 @@ public final class HuYanEconomy extends JavaPlugin {
         PluginManager.init();
 
         //加载配置
-        reloadPluginConfig(ConfigData.INSTANCE);
-        config = ConfigData.INSTANCE;
+        reloadPluginConfig(config);
         long configBot = config.getBot();
         if (configBot == 0) {
             Log.warning("插件管理机器人还没有配置，请尽快配置!");

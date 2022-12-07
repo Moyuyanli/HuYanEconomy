@@ -181,6 +181,7 @@ public class UserManager {
                     pen.setColor(Color.WHITE);
                 }
             }
+            //根据名字长度改变大小
             if (userInfoName.length() > 6) {
                 fontSize = 40;
             } else {
@@ -226,7 +227,7 @@ public class UserManager {
             double money = EconomyUtil.getMoneyByUser(user);
             //写入金币
             if (String.valueOf(money).length() > 5) {
-                fontSize = 22;
+                fontSize = 20;
             }
             pen.setFont(new Font("黑体", Font.PLAIN, fontSize));
             //写入总金币

@@ -1,6 +1,7 @@
 package cn.chahuyun.event;
 
-import cn.chahuyun.entity.LotteryInfo;
+import cn.chahuyun.HuYanEconomy;
+import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.manager.LotteryManager;
 import cn.chahuyun.manager.PropsManager;
 import cn.chahuyun.manager.SignManager;
@@ -8,8 +9,7 @@ import cn.chahuyun.manager.UserManager;
 import cn.chahuyun.plugin.PluginManager;
 import cn.chahuyun.util.Log;
 import kotlin.coroutines.CoroutineContext;
-import net.mamoe.mirai.contact.BotIsBeingMutedException;
-import net.mamoe.mirai.contact.MessageTooLargeException;
+import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;
 import net.mamoe.mirai.event.events.EventCancelledException;
@@ -53,6 +53,17 @@ public class MessageEventListener extends SimpleListenerHost {
      */
     @EventHandler()
     public void onMessage(@NotNull MessageEvent event) {
+        EconomyConfig config = HuYanEconomy.config;
+
+        User sender = event.getSender();
+        //主人
+        boolean owner = config.getOwner() == sender.getId();
+        Contact subject = event.getSubject();
+        Group group = null;
+        if (subject instanceof Group) {
+            group = (Group) subject;
+        }
+
         String code = event.getMessage().serializeToMiraiCode();
         PropsManager propsManager = PluginManager.getPropsManager();
 
@@ -77,6 +88,22 @@ public class MessageEventListener extends SimpleListenerHost {
             case "shops":
                 propsManager.propStore(event);
                 return;
+            case "开启 猜签":
+                if (owner) {
+                    if (group != null && !config.getGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getGroup().add(group.getId());
+                    }
+                    subject.sendMessage("本群的猜签功能已开启!");
+                    break;
+                }
+            case "关闭 猜签":
+                if (owner) {
+                    if (group != null && config.getGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getGroup().remove(group.getId());
+                    }
+                    subject.sendMessage("本群的猜签功能已关闭!");
+                    break;
+                }
         }
 
         String buyPropRegex = "购买 (\\S+)( \\S+)?|buy (\\S+)( \\S+)?";
@@ -96,7 +123,9 @@ public class MessageEventListener extends SimpleListenerHost {
         String buyLotteryRegex = "猜签 (\\d+)( \\d+)|lottery (\\d+)( \\d+)";
         if (Pattern.matches(buyLotteryRegex, code)) {
             Log.info("彩票指令");
-            LotteryManager.addLottery(event);
+            if (group != null && config.getGroup().contains(group.getId())) {
+                LotteryManager.addLottery(event);
+            }
             return;
         }
 

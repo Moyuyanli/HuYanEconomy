@@ -5,6 +5,8 @@ import net.mamoe.mirai.contact.User;
 import xyz.cssxsh.mirai.economy.EconomyService;
 import xyz.cssxsh.mirai.economy.service.*;
 
+import java.text.DecimalFormat;
+
 import static cn.chahuyun.HuYanEconomy.bot;
 
 /**
@@ -84,8 +86,10 @@ public class EconomyUtil {
         try (BotEconomyContext context = economyService.context(bot)) {
             //在bot上下文里面找到这个用户
             UserEconomyAccount account = context.getService().account(user);
-            //返回这个用户在bot上下文的某种货币的余额
-            return context.get(account, currency);
+            DecimalFormat format = new DecimalFormat("#.0");
+            //返回这个用户在bot上下文的某种货币的余额，并格式化
+            String str = format.format(context.get(account, currency));
+            return Double.parseDouble(str);
         } catch (Exception e) {
             Log.error("经济获取出错:获取用户钱包余额", e);
         }
@@ -117,7 +121,9 @@ public class EconomyUtil {
     public static double getMoneyByBank(User user, EconomyCurrency currency) {
         try (GlobalEconomyContext global = economyService.global()) {
             UserEconomyAccount account = global.getService().account(user);
-            return global.get(account, currency);
+            DecimalFormat format = new DecimalFormat("#.0");
+            String str = format.format(global.get(account, currency));
+            return Double.parseDouble(str);
         } catch (Exception e) {
             Log.error("经济获取出错:获取用户银行余额", e);
             return 0;
