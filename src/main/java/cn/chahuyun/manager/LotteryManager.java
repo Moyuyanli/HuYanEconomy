@@ -81,16 +81,22 @@ public class LotteryManager {
         }
 
         if (minutesLottery.size() > 0) {
-            LotteryMinutesTask minutesTask = new LotteryMinutesTask("minutesTask", minutesLottery.values());
-            CronUtil.schedule("minutesTask", "0 * * * * ?", minutesTask);
+            String minutesTaskId = "minutesTask";
+            CronUtil.remove(minutesTaskId);
+            LotteryMinutesTask minutesTask = new LotteryMinutesTask(minutesTaskId, minutesLottery.values());
+            CronUtil.schedule(minutesTaskId, "0 * * * * ?", minutesTask);
         }
         if (hoursLottery.size() > 0) {
-            LotteryHoursTask hoursTask = new LotteryHoursTask("hoursTask", hoursLottery.values());
-            CronUtil.schedule("hoursTask", "0 0 * * * ?", hoursTask);
+            String hoursTaskId = "hoursTask";
+            CronUtil.remove(hoursTaskId);
+            LotteryHoursTask hoursTask = new LotteryHoursTask(hoursTaskId, hoursLottery.values());
+            CronUtil.schedule(hoursTaskId, "0 0 * * * ?", hoursTask);
         }
         if (dayLottery.size() > 0) {
-            var dayTask = new LotteryDayTask("dayTask", dayLottery.values());
-            CronUtil.schedule("dayTask", "0 0 0 * * ?", dayTask);
+            String dayTaskId = "dayTask";
+            CronUtil.remove(dayTaskId);
+            var dayTask = new LotteryDayTask(dayTaskId, dayLottery.values());
+            CronUtil.schedule(dayTaskId, "0 0 0 * * ?", dayTask);
         }
         if (type) {
             CronUtil.start();
