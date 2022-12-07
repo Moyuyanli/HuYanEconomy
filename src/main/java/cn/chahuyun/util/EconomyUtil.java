@@ -266,8 +266,8 @@ public class EconomyUtil {
     }
 
     /**
-     * 给 [用户] [钱包] 添加余额
-     * 默认货物 [金币]
+     * 给 [用户] [钱包] 添加余额<p>
+     * 默认货物 [金币]<p>
      *
      * @param user     用户
      * @param quantity 数量
@@ -280,8 +280,8 @@ public class EconomyUtil {
     }
 
     /**
-     * 给 [用户] [钱包] 添加余额
-     * 货币自定义
+     * 给 [用户] [钱包] 添加余额<p>
+     * 货币自定义<p>
      *
      * @param user     用户
      * @param quantity 数量
@@ -303,8 +303,8 @@ public class EconomyUtil {
 
 
     /**
-     * 给 [用户] [钱包] 减少余额
-     * 默认货物 [金币]
+     * 给 [用户] [钱包] 减少余额<p>
+     * 默认货物 [金币]<p>
      *
      * @param user     用户
      * @param quantity 数量
@@ -317,8 +317,8 @@ public class EconomyUtil {
     }
 
     /**
-     * 给 [用户] [钱包] 减少余额
-     * 货币自定义
+     * 给 [用户] [钱包] 减少余额<p>
+     * 货币自定义<p>
      *
      * @param user     用户
      * @param quantity 数量
