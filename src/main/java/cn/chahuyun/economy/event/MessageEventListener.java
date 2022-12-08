@@ -2,10 +2,7 @@ package cn.chahuyun.economy.event;
 
 import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.economy.HuYanEconomy;
-import cn.chahuyun.economy.manager.LotteryManager;
-import cn.chahuyun.economy.manager.PropsManager;
-import cn.chahuyun.economy.manager.SignManager;
-import cn.chahuyun.economy.manager.UserManager;
+import cn.chahuyun.economy.manager.*;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.util.Log;
 import kotlin.coroutines.CoroutineContext;
@@ -14,8 +11,10 @@ import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;
 import net.mamoe.mirai.event.events.EventCancelledException;
 import net.mamoe.mirai.event.events.MessageEvent;
+import net.mamoe.mirai.message.data.MessageChainBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -124,6 +123,24 @@ public class MessageEventListener extends SimpleListenerHost {
             Log.info("彩票指令");
             if (group != null && config.getGroup().contains(group.getId())) {
                 LotteryManager.addLottery(event);
+            }
+            return;
+        }
+
+        {
+            if (group == null) {
+                return;
+            }
+            String regex = "转账\\s+(@?\\d+)\\s+(\\d+)";
+            //  String s = "转账    2482065472    12";
+            Matcher matcher = Pattern.compile(regex).matcher(event.getMessage().contentToString());
+            System.out.println(event.getMessage().contentToString());
+            MessageChainBuilder messages = new MessageChainBuilder();
+            if (matcher.matches()) {
+                int money = Integer.parseInt(matcher.group(2));
+                long toId = Long.parseLong(matcher.group(1).replaceAll("@", ""));
+                messages.append(TransferManager.transfer(event.getSender(), group.get(toId), money));
+                event.getSubject().sendMessage(messages.build());
             }
             return;
         }
