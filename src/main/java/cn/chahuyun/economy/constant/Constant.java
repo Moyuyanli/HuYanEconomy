@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.constant;
 
-import cn.chahuyun.economy.entity.GoldEconomyCurrency;
+import cn.chahuyun.economy.entity.currency.GoldEconomyCurrency;
 import xyz.cssxsh.mirai.economy.service.EconomyCurrency;
 
 /**

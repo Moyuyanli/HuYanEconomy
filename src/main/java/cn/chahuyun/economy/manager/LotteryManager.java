@@ -75,7 +75,6 @@ public class LotteryManager {
                     continue;
                 case 3:
                     dayLottery.put(lotteryInfo.getNumber(), lotteryInfo);
-                    continue;
             }
         }
 
@@ -240,7 +239,7 @@ public class LotteryManager {
  */
 class LotteryMinutesTask implements Task {
 
-    private String id;
+    private final String id;
     private List<LotteryInfo> lotteryInfos;
 
     LotteryMinutesTask(String id, Collection<LotteryInfo> lotteryInfos) {
@@ -257,11 +256,11 @@ class LotteryMinutesTask implements Task {
     @Override
     public void execute() {
         Bot bot = HuYanEconomy.bot;
-
-        int random1 = RandomUtil.randomInt(0, 9);
-        int random2 = RandomUtil.randomInt(0, 9);
-        int random3 = RandomUtil.randomInt(0, 9);
-        String[] current = {String.valueOf(random1), String.valueOf(random2), String.valueOf(random3)};
+        String[] current = {
+                String.valueOf(RandomUtil.randomInt(0, 9)),
+                String.valueOf(RandomUtil.randomInt(0, 9)),
+                String.valueOf(RandomUtil.randomInt(0, 9))
+        };
         StringBuilder currentString = new StringBuilder(current[0]);
         for (int i = 1; i < current.length; i++) {
             String s = current[i];
@@ -318,8 +317,8 @@ class LotteryMinutesTask implements Task {
  * @date 2022/12/6 14:43
  */
 class LotteryHoursTask implements Task {
-    private String id;
-    private List<LotteryInfo> lotteryInfos;
+    private final String id;
+    private final List<LotteryInfo> lotteryInfos;
 
 
     LotteryHoursTask(String id, Collection<LotteryInfo> lotteryInfos) {
@@ -336,12 +335,12 @@ class LotteryHoursTask implements Task {
     @Override
     public void execute() {
         Bot bot = HuYanEconomy.bot;
-
-        int random1 = RandomUtil.randomInt(0, 9);
-        int random2 = RandomUtil.randomInt(0, 9);
-        int random3 = RandomUtil.randomInt(0, 9);
-        int random4 = RandomUtil.randomInt(0, 9);
-        String[] current = {String.valueOf(random1), String.valueOf(random2), String.valueOf(random3), String.valueOf(random4)};
+        String[] current = {
+                String.valueOf(RandomUtil.randomInt(0, 9)),
+                String.valueOf(RandomUtil.randomInt(0, 9)),
+                String.valueOf(RandomUtil.randomInt(0, 9)),
+                String.valueOf(RandomUtil.randomInt(0, 9))
+        };
         StringBuilder currentString = new StringBuilder(current[0]);
         for (int i = 1; i < current.length; i++) {
             String s = current[i];
@@ -400,8 +399,8 @@ class LotteryHoursTask implements Task {
  */
 class LotteryDayTask implements Task {
 
-    private String id;
-    private List<LotteryInfo> lotteryInfos;
+    private final String id;
+    private final List<LotteryInfo> lotteryInfos;
 
     LotteryDayTask(String id, Collection<LotteryInfo> lotteryInfos) {
         this.id = id;
@@ -417,13 +416,13 @@ class LotteryDayTask implements Task {
     @Override
     public void execute() {
         Bot bot = HuYanEconomy.bot;
-
-        int random1 = RandomUtil.randomInt(0, 9);
-        int random2 = RandomUtil.randomInt(0, 9);
-        int random3 = RandomUtil.randomInt(0, 9);
-        int random4 = RandomUtil.randomInt(0, 9);
-        int random5 = RandomUtil.randomInt(0, 9);
-        String[] current = {String.valueOf(random1), String.valueOf(random2), String.valueOf(random3), String.valueOf(random4), String.valueOf(random5)};
+        String[] current = {
+                String.valueOf(RandomUtil.randomInt(0, 9)),
+                String.valueOf(RandomUtil.randomInt(0, 9)),
+                String.valueOf(RandomUtil.randomInt(0, 9)),
+                String.valueOf(RandomUtil.randomInt(0, 9)),
+                String.valueOf(RandomUtil.randomInt(0, 9))
+        };
         StringBuilder currentString = new StringBuilder(current[0]);
         for (int i = 1; i < current.length; i++) {
             String s = current[i];
@@ -476,8 +475,7 @@ class LotteryDayTask implements Task {
             Group botGroup = bot.getGroup(group);
             MessageChainBuilder singleMessages = new MessageChainBuilder();
             String format = String.format("本期大签开签啦！\n开签号码%s", currentString);
-            singleMessages.append(format)
-                    .append("\n以下是本期大签开签着:↓");
+            singleMessages.append(format).append("\n以下是本期大签开签着:↓");
             if (list.size() == 0) {
                 singleMessages.append("无!");
             } else {

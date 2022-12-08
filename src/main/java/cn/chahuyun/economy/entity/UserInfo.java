@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.entity;
 
+import cn.chahuyun.economy.entity.fish.FishInfo;
 import cn.chahuyun.economy.util.HibernateUtil;
 import cn.chahuyun.economy.util.Log;
 import cn.hutool.core.date.DateTime;
@@ -8,6 +9,7 @@ import cn.hutool.core.date.DateUtil;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import net.mamoe.mirai.contact.User;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -74,6 +76,9 @@ public class UserInfo implements Serializable {
      */
     @OneToMany(targetEntity = UserBackpack.class, mappedBy = "userId", fetch = FetchType.EAGER)
     private List<UserBackpack> backpacks;
+
+    @Transient
+    private User user;
 
     public UserInfo() {
     }
@@ -174,5 +179,26 @@ public class UserInfo implements Serializable {
         long between = DateUtil.between(nowDate, signTime, DateUnit.HOUR, false);
         return between > 0;
     }
+
+    /**
+     * 获取钓鱼信息<p>
+     * 不存在则注册一个<p>
+     *
+     * @return FishInfo 钓鱼信息
+     */
+    public FishInfo getFishInfo() {
+        try {
+            return HibernateUtil.factory.fromSession(session -> session.get(FishInfo.class, this.getQq()));
+        } catch (Exception e) {
+            FishInfo fishInfo = new FishInfo(this.getQq(), this.getRegisterGroup());
+            return HibernateUtil.factory.fromTransaction(session -> session.merge(fishInfo));
+        }
+    }
+
+    public UserInfo setUser(User user) {
+        this.user = user;
+        return this;
+    }
+
 
 }

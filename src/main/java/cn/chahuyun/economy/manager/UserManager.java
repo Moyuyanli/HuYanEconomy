@@ -9,7 +9,6 @@ import cn.hutool.core.date.DateUtil;
 import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.Image;
-import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
 import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
@@ -60,7 +59,7 @@ public class UserManager {
                 JpaRoot<UserInfo> from = query.from(UserInfo.class);
                 query.select(from);
                 query.where(builder.equal(from.get("qq"), userId));
-                return session.createQuery(query).getSingleResult();
+                return session.createQuery(query).getSingleResult().setUser(user);
             });
         } catch (Exception e) {
             //注册用户
@@ -71,10 +70,10 @@ public class UserManager {
             }
             UserInfo info = new UserInfo(userId, group, user.getNick(), new Date());
             try {
-                return HibernateUtil.factory.fromTransaction(session -> session.merge(info));
+                return HibernateUtil.factory.fromTransaction(session -> session.merge(info)).setUser(user);
             } catch (Exception exception) {
                 Log.error("用户管理错误:注册用户失败", e);
-                return null;
+                return getUserInfo(user);
             }
         }
     }
@@ -90,7 +89,6 @@ public class UserManager {
     public static void getUserInfo(MessageEvent event) {
         Contact subject = event.getSubject();
         User sender = event.getSender();
-        MessageChain message = event.getMessage();
 
         UserInfo userInfo = getUserInfo(sender);
         double moneyByUser = EconomyUtil.getMoneyByUser(sender);
@@ -110,7 +108,7 @@ public class UserManager {
 
         singleMessages.append(userInfo.getString()).append(String.format("金币:%s", moneyByUser));
 
-        BufferedImage userInfoImageBase = getUserInfoImageBase(userInfo, sender);
+        BufferedImage userInfoImageBase = getUserInfoImageBase(userInfo);
         if (userInfoImageBase == null) {
             subject.sendMessage(singleMessages.build());
             return;
@@ -136,14 +134,14 @@ public class UserManager {
      * 总金币、今日签到获得<p>
      *
      * @param userInfo 用户信息
-     * @param user     用户
      * @return java.awt.image.BufferedImage
      * @author Moyuyanli
      * @date 2022/12/5 16:11
      */
-    public static BufferedImage getUserInfoImageBase(UserInfo userInfo, User user) {
+    public static BufferedImage getUserInfoImageBase(UserInfo userInfo) {
         //插件的唯一实例
         HuYanEconomy instance = HuYanEconomy.INSTANCE;
+        User user = userInfo.getUser();
         try {
             //轮询获取底图
             InputStream asStream = instance.getResourceAsStream("sign" + (index % 4 == 0 ? 4 : index % 4) + ".png");

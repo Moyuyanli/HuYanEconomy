@@ -114,14 +114,14 @@ public class SignManager {
             goldNumber = goldNumber * 2;
         }
 
-        if (!EconomyUtil.addMoneyToUser(user, goldNumber)) {
+        if (!EconomyUtil.addMoneyToUser(userInfo.getUser(), goldNumber)) {
             subject.sendMessage("签到失败!");
             //todo 签到失败回滚
             return;
         }
         userInfo.setSignEarnings(goldNumber);
         userInfo.save();
-        double moneyBytUser = EconomyUtil.getMoneyByUser(user);
+        double moneyBytUser = EconomyUtil.getMoneyByUser(userInfo.getUser());
         messages.append(new PlainText("签到成功!"));
         messages.append(new PlainText(String.format("金币:%s(+%s)", moneyBytUser, goldNumber)));
         if (userInfo.getOldSignNumber() != 0) {
@@ -130,7 +130,7 @@ public class SignManager {
         if (plainText != null) {
             messages.append(plainText);
         }
-        sendSignImage(userInfo, user, subject, messages.build());
+        sendSignImage(userInfo, subject, messages.build());
 //        sendSignImage(userInfo, user, subject, moneyBytUser, goldNumber, messages.build());
 
 //        subject.sendMessage(messages.build());
@@ -141,14 +141,13 @@ public class SignManager {
      * 在基础信息上添加签到信息<p>
      *
      * @param userInfo 用户信息
-     * @param user     用户
      * @param subject  发送者
      * @param messages 消息
      * @author Moyuyanli
      * @date 2022/12/5 16:22
      */
-    public static void sendSignImage(UserInfo userInfo, User user, Contact subject, MessageChain messages) {
-        BufferedImage userInfoImageBase = UserManager.getUserInfoImageBase(userInfo, user);
+    public static void sendSignImage(UserInfo userInfo, Contact subject, MessageChain messages) {
+        BufferedImage userInfoImageBase = UserManager.getUserInfoImageBase(userInfo);
         if (userInfoImageBase == null) {
             return;
         }
@@ -277,8 +276,6 @@ public class SignManager {
     /**
      * 将签到图片删除并重新复制
      *
-     * @param
-     * @return void
      * @author Moyuyanli
      * @date 2022/12/1 16:11
      */

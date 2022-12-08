@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.entity;
+package cn.chahuyun.economy.entity.currency;
 
 import cn.hutool.core.util.NumberUtil;
 import org.jetbrains.annotations.NotNull;
