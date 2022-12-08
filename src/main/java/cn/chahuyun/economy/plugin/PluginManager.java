@@ -16,6 +16,9 @@ import cn.chahuyun.economy.util.Log;
  */
 public class PluginManager {
 
+    /**
+     * 是否加载壶言会话插件
+     */
     public static boolean isHuYanSessionPlugin;
 
     /**
