@@ -105,7 +105,7 @@ public class UserInfo implements Serializable {
      * @date 2022/11/14 10:16
      */
     public boolean sign() {
-//        if (true) return true;
+        if (true) return true;
         //如果签到时间为空->新用户第一次签到
         if (this.getSignTime() == null) {
             this.setSign(true);
@@ -187,14 +187,20 @@ public class UserInfo implements Serializable {
      * @return FishInfo 钓鱼信息
      */
     public FishInfo getFishInfo() {
+        FishInfo fishInfo;
         try {
-            return HibernateUtil.factory.fromSession(session -> session.get(FishInfo.class, this.getQq()));
-        } catch (Exception e) {
-            FishInfo fishInfo = new FishInfo(this.getQq(), this.getRegisterGroup());
-            return HibernateUtil.factory.fromTransaction(session -> session.merge(fishInfo));
+            fishInfo = HibernateUtil.factory.fromSession(session -> session.get(FishInfo.class, this.getQq()));
+            if (fishInfo != null) return fishInfo;
+        } catch (Exception ignored) {
         }
+        FishInfo newFishInfo = new FishInfo(this.getQq(), this.getRegisterGroup());
+        return HibernateUtil.factory.fromTransaction(session -> session.merge(newFishInfo));
     }
 
+    /**
+     * 设置user
+     * @param user 用户
+     */
     public UserInfo setUser(User user) {
         this.user = user;
         return this;

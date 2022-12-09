@@ -57,7 +57,7 @@ public class Fish {
      * @return 鱼的尺寸
      */
     public int getDimensions(boolean winning) {
-        int randomInt = RandomUtil.randomInt(getDimensionsMin(), getDimensionsMin());
+        int randomInt = RandomUtil.randomInt(dimensionsMin, dimensionsMax == dimensionsMin ? dimensionsMax + 1 : dimensionsMax);
         if (winning) {
             return (int) (randomInt + (randomInt * 0.2));
         } else {

@@ -160,23 +160,23 @@ public class MessageEventListener extends SimpleListenerHost {
             return;
         }
 
-        {
-            if (group == null) {
-                return;
-            }
-            String regex = "转账\\s+(@?\\d+)\\s+(\\d+)";
-            //  String s = "转账    2482065472    12";
-            Matcher matcher = Pattern.compile(regex).matcher(event.getMessage().contentToString());
-            System.out.println(event.getMessage().contentToString());
-            MessageChainBuilder messages = new MessageChainBuilder();
-            if (matcher.matches()) {
-                int money = Integer.parseInt(matcher.group(2));
-                long toId = Long.parseLong(matcher.group(1).replaceAll("@", ""));
-                messages.append(TransferManager.transfer(event.getSender(), group.get(toId), money));
-                event.getSubject().sendMessage(messages.build());
-            }
-            return;
-        }
+//        {
+//            if (group == null) {
+//                return;
+//            }
+//            String regex = "转账\\s+(@?\\d+)\\s+(\\d+)";
+//            //  String s = "转账    2482065472    12";
+//            Matcher matcher = Pattern.compile(regex).matcher(event.getMessage().contentToString());
+//            System.out.println(event.getMessage().contentToString());
+//            MessageChainBuilder messages = new MessageChainBuilder();
+//            if (matcher.matches()) {
+//                int money = Integer.parseInt(matcher.group(2));
+//                long toId = Long.parseLong(matcher.group(1).replaceAll("@", ""));
+//                messages.append(TransferManager.transfer(event.getSender(), group.get(toId), money));
+//                event.getSubject().sendMessage(messages.build());
+//            }
+//            return;
+//        }
 
     }
 

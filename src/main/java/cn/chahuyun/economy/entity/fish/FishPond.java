@@ -1,6 +1,7 @@
 package cn.chahuyun.economy.entity.fish;
 
 import cn.chahuyun.economy.entity.UserBackpack;
+import cn.chahuyun.economy.plugin.FishManager;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,14 +21,16 @@ import java.util.List;
 @Setter
 public class FishPond {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private int id;
     /**
-     * 鱼塘id<p>
-     * 群鱼塘 g.[群号]<p>
-     * 私人鱼塘 g.[群号].[玩家qq]<p>
+     * 鱼塘code<p>
+     * 群鱼塘 g[群号]<p>
+     * 私人鱼塘 [群号]-[玩家qq]<p>
      * 私人全局鱼塘 [玩家qq]<p>
      */
-    @Id
-    private String id;
+    private String code;
     /**
      * 鱼塘管理者
      */
@@ -69,11 +72,11 @@ public class FishPond {
 
     public FishPond(int pondType, long group, long admin, String name, String description) {
         if (pondType == 1) {
-            this.id = "g." + group;
+            this.code = "g-" + group;
         } else if (pondType == 2) {
-            this.id = "g." + group + "." + admin;
+            this.code = "g-" +group + "-" + admin;
         } else {
-            this.id = admin + ".";
+            this.code = String.valueOf(admin);
         }
         this.admin = admin;
         this.name = name;
@@ -83,12 +86,34 @@ public class FishPond {
         } else {
             this.pondLevel = 1;
         }
+        this.pondType = pondType;
         this.minLevel = 0;
         this.rebate = 0.05;
     }
 
+    /**
+     * 获取池塘的鱼
+     *
+     * @return 池塘的鱼
+     */
     public List<Fish> getFishList() {
-        if (this.fishList==null) {
+        if (this.fishList == null) {
+            return new ArrayList<>();
+        }
+        return fishList;
+    }
+
+    /**
+     * 获取池塘的鱼
+     *
+     * @param level 鱼的等级
+     * @return 池塘的鱼
+     */
+    public List<Fish> getFishList(int level) {
+        if (pondType == 1) {
+            return FishManager.getLevelFishList(level);
+        }
+        if (this.fishList == null) {
             return new ArrayList<>();
         }
         return fishList;

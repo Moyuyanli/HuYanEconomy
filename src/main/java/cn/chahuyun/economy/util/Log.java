@@ -90,6 +90,17 @@ public class Log {
         log.debug(name + msg);
     }
 
+    /**
+     * 调试级信息
+     *
+     * @param exception 异常
+     * @author Moyuyanli
+     * @date 2022/12/10 0:55
+     */
+    public static void debug(Exception exception) {
+        log.debug(name + exception);
+    }
+
 
     public static void setName(String name) {
         Log.name = name;

@@ -4,15 +4,18 @@ import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.util.EconomyUtil;
 import cn.chahuyun.economy.util.HibernateUtil;
+import cn.chahuyun.economy.util.Log;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import net.mamoe.mirai.contact.Group;
-import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.PlainText;
 import net.mamoe.mirai.message.data.SingleMessage;
+import org.hibernate.query.criteria.HibernateCriteriaBuilder;
+import org.hibernate.query.criteria.JpaCriteriaQuery;
+import org.hibernate.query.criteria.JpaRoot;
 
 import java.io.Serializable;
 
@@ -61,7 +64,7 @@ public class FishInfo implements Serializable {
         this.qq = qq;
         this.fishRod = false;
         this.rodLevel = 0;
-        this.defaultFishPond = "g." + group;
+        this.defaultFishPond = "g-" + group;
     }
 
     /**
@@ -96,19 +99,35 @@ public class FishInfo implements Serializable {
      * @date 2022/12/8 15:11
      */
     public FishPond getFishPond() {
+        FishPond fishPond;
         try {
-            return HibernateUtil.factory.fromSession(session -> session.get(FishPond.class, this.getDefaultFishPond()));
+            //从数据库中查询该鱼塘
+            fishPond = HibernateUtil.factory.fromSession(session -> {
+                HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
+                JpaCriteriaQuery<FishPond> query = builder.createQuery(FishPond.class);
+                JpaRoot<FishPond> from = query.from(FishPond.class);
+                query.select(from);
+                query.where(builder.equal(from.get("code"), this.getDefaultFishPond()));
+                return session.createQuery(query).getSingleResult();
+            });
+            //如果不存在 或者报错，则进行新建改鱼塘
+            if (fishPond != null) return fishPond;
         } catch (Exception e) {
-            String[] split = this.getDefaultFishPond().split("\\.");
-            if (split.length == 2) {
-                long group = Long.parseLong(split[1]);
-                Group botGroup = HuYanEconomy.bot.getGroup(group);
-                assert botGroup != null;
-                FishPond fishPond = new FishPond(1, group, HuYanEconomy.config.getOwner(), botGroup.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
-                return HibernateUtil.factory.fromTransaction(session -> session.merge(fishPond));
-            } else {
-                return null;
-            }
+            Log.debug(e);
+        }
+        //分割鱼塘id信息
+        String[] split = this.getDefaultFishPond().split("-");
+        //如果为2 -> 群默认鱼塘格式  g-(群号)
+        if (split.length == 2) {
+            long group = Long.parseLong(split[1]);
+            Group botGroup = HuYanEconomy.bot.getGroup(group);
+            assert botGroup != null;
+            //注册新鱼塘
+            FishPond finalFishPond = new FishPond(1, group, HuYanEconomy.config.getOwner(), botGroup.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
+            return HibernateUtil.factory.fromTransaction(session -> session.merge(finalFishPond));
+        } else {
+            //todo 私人鱼塘
+            return null;
         }
     }
 

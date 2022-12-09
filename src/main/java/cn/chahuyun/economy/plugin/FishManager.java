@@ -73,16 +73,16 @@ public class FishManager {
      */
     private static void reloadFish() {
         HuYanEconomy instance = HuYanEconomy.INSTANCE;
-        ExcelReader reader = ExcelUtil.getReader(instance.getResourceAsStream("fish.excel"));
+        ExcelReader reader = ExcelUtil.getReader(instance.getResourceAsStream("fish.xlsx"));
         Map<String, String> map = new HashMap<>();
-        map.put("level", "等级");
-        map.put("name", "名称");
-        map.put("description", "描述");
-        map.put("price", "单价");
-        map.put("dimensionsMin", "最小尺寸");
-        map.put("dimensionsMax", "最大尺寸");
-        map.put("difficulty", "难度");
-        map.put("special", "特殊标记");
+        map.put("等级", "level");
+        map.put("名称", "name");
+        map.put("描述", "description");
+        map.put("单价", "price");
+        map.put("最小尺寸", "dimensionsMin");
+        map.put("最大尺寸", "dimensionsMax");
+        map.put("难度", "difficulty");
+        map.put("特殊标记", "special");
         List<Fish> fishList = reader.setHeaderAlias(map).readAll(Fish.class);
         for (Fish fish : fishList) {
             HibernateUtil.factory.fromTransaction(session -> session.merge(fish));
