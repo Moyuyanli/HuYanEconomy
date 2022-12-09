@@ -29,7 +29,7 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 配置
      */
-    public static final EconomyConfig config = EconomyConfig.INSTANCE;
+    public static  EconomyConfig config;
     /**
      * 插件所属bot
      */
@@ -58,7 +58,8 @@ public final class HuYanEconomy extends JavaPlugin {
         PluginManager.init();
 
         //加载配置
-        reloadPluginConfig(config);
+        reloadPluginConfig(EconomyConfig.INSTANCE);
+        config = EconomyConfig.INSTANCE;
         long configBot = config.getBot();
         if (configBot == 0) {
             Log.warning("插件管理机器人还没有配置，请尽快配置!");
