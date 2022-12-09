@@ -29,11 +29,11 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 配置
      */
-    public static  EconomyConfig config;
+    public EconomyConfig config;
     /**
      * 插件所属bot
      */
-    public static Bot bot;
+    public Bot bot;
 
     private HuYanEconomy() {
         super(new JvmPluginDescriptionBuilder("cn.chahuyun.HuYanEconomy", version)

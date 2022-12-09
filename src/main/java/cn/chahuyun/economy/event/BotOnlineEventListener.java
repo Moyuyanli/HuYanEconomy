@@ -19,8 +19,8 @@ public class BotOnlineEventListener extends SimpleListenerHost {
     @EventHandler()
     public void onMessage(@NotNull BotOnlineEvent event) {
         Bot bot = event.getBot();
-        if (bot.getId() == HuYanEconomy.config.getBot()) {
-            HuYanEconomy.bot = bot;
+        if (bot.getId() == HuYanEconomy.INSTANCE.config.getBot()) {
+            HuYanEconomy.INSTANCE.bot = bot;
             Log.info("插件管理机器人已上线");
         }
     }

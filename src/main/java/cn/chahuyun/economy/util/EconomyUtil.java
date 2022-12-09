@@ -1,13 +1,13 @@
 package cn.chahuyun.economy.util;
 
+import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.Constant;
+import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.User;
 import xyz.cssxsh.mirai.economy.EconomyService;
 import xyz.cssxsh.mirai.economy.service.*;
 
 import java.text.DecimalFormat;
-
-import static cn.chahuyun.economy.HuYanEconomy.bot;
 
 /**
  * 经济工具<p>
@@ -18,6 +18,7 @@ import static cn.chahuyun.economy.HuYanEconomy.bot;
  */
 public class EconomyUtil {
 
+    private static final Bot bot = HuYanEconomy.INSTANCE.bot;
     //获取经济账户实例
     public static final IEconomyService economyService = EconomyService.INSTANCE;
 

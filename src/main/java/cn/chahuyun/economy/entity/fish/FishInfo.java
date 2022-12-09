@@ -120,10 +120,10 @@ public class FishInfo implements Serializable {
         //如果为2 -> 群默认鱼塘格式  g-(群号)
         if (split.length == 2) {
             long group = Long.parseLong(split[1]);
-            Group botGroup = HuYanEconomy.bot.getGroup(group);
+            Group botGroup = HuYanEconomy.INSTANCE.bot.getGroup(group);
             assert botGroup != null;
             //注册新鱼塘
-            FishPond finalFishPond = new FishPond(1, group, HuYanEconomy.config.getOwner(), botGroup.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
+            FishPond finalFishPond = new FishPond(1, group, HuYanEconomy.INSTANCE.config.getOwner(), botGroup.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
             return HibernateUtil.factory.fromTransaction(session -> session.merge(finalFishPond));
         } else {
             //todo 私人鱼塘

@@ -11,10 +11,8 @@ import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;
 import net.mamoe.mirai.event.events.EventCancelledException;
 import net.mamoe.mirai.event.events.MessageEvent;
-import net.mamoe.mirai.message.data.MessageChainBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -52,7 +50,7 @@ public class MessageEventListener extends SimpleListenerHost {
      */
     @EventHandler()
     public void onMessage(@NotNull MessageEvent event) {
-        EconomyConfig config = HuYanEconomy.config;
+        EconomyConfig config = HuYanEconomy.INSTANCE.config;
         User sender = event.getSender();
         //主人
         boolean owner = config.getOwner() == sender.getId();

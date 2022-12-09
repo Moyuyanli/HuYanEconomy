@@ -199,6 +199,7 @@ public class UserInfo implements Serializable {
 
     /**
      * 设置user
+     *
      * @param user 用户
      */
     public UserInfo setUser(User user) {

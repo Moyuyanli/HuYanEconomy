@@ -1,6 +1,5 @@
 package cn.chahuyun.economy.entity.fish;
 
-import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.plugin.FishManager;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -74,7 +73,7 @@ public class FishPond {
         if (pondType == 1) {
             this.code = "g-" + group;
         } else if (pondType == 2) {
-            this.code = "g-" +group + "-" + admin;
+            this.code = "g-" + group + "-" + admin;
         } else {
             this.code = String.valueOf(admin);
         }

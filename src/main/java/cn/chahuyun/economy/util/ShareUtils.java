@@ -2,7 +2,6 @@ package cn.chahuyun.economy.util;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import kotlin.coroutines.EmptyCoroutineContext;
-import net.mamoe.mirai.contact.Member;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.ConcurrencyKind;
 import net.mamoe.mirai.event.EventChannel;
@@ -22,7 +21,8 @@ import java.util.concurrent.ExecutionException;
  */
 public class ShareUtils {
 
-    private ShareUtils(){}
+    private ShareUtils() {
+    }
 
     /**
      * 获取用户的下一次消息事件
@@ -34,7 +34,7 @@ public class ShareUtils {
      * @date 2022/8/20 12:37
      */
     @NotNull
-    public static MessageEvent getNextMessageEventFromUser(User user,boolean type) {
+    public static MessageEvent getNextMessageEventFromUser(User user, boolean type) {
         EventChannel<MessageEvent> channel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE)
                 .filterIsInstance(MessageEvent.class)
                 .filter(event -> event.getSender().getId() == user.getId());

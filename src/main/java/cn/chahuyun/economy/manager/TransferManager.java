@@ -56,7 +56,7 @@ public class TransferManager {
                 }
             }
             money = Double.parseDouble(s[s.length - 1]);
-        }else {
+        } else {
             qq = Long.parseLong(s[1]);
             money = Long.parseLong(s[2]);
         }

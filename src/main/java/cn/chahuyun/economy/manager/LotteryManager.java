@@ -207,7 +207,7 @@ public class LotteryManager {
         if (location == 0) {
             return;
         }
-        Bot bot = HuYanEconomy.bot;
+        Bot bot = HuYanEconomy.INSTANCE.bot;
         Group group = bot.getGroup(lotteryInfo.getGroup());
         assert group != null;
         NormalMember member = group.get(lotteryInfo.getQq());
@@ -260,7 +260,7 @@ class LotteryMinutesTask implements Task {
      */
     @Override
     public void execute() {
-        Bot bot = HuYanEconomy.bot;
+        Bot bot = HuYanEconomy.INSTANCE.bot;
         String[] current = {
                 String.valueOf(RandomUtil.randomInt(0, 9)),
                 String.valueOf(RandomUtil.randomInt(0, 9)),
@@ -340,7 +340,7 @@ class LotteryHoursTask implements Task {
      */
     @Override
     public void execute() {
-        Bot bot = HuYanEconomy.bot;
+        Bot bot = HuYanEconomy.INSTANCE.bot;
         String[] current = {
                 String.valueOf(RandomUtil.randomInt(0, 9)),
                 String.valueOf(RandomUtil.randomInt(0, 9)),
@@ -421,7 +421,7 @@ class LotteryDayTask implements Task {
      */
     @Override
     public void execute() {
-        Bot bot = HuYanEconomy.bot;
+        Bot bot = HuYanEconomy.INSTANCE.bot;
         String[] current = {
                 String.valueOf(RandomUtil.randomInt(0, 9)),
                 String.valueOf(RandomUtil.randomInt(0, 9)),

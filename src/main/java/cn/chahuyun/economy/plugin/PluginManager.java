@@ -40,7 +40,7 @@ public class PluginManager {
         propsManager.registerProps(propsCard);
         try {
             //壶言会话
-            HuYanEconomy.config.setOwner(HuYanSession.config.getOwner());
+            HuYanEconomy.INSTANCE.config.setOwner(HuYanSession.config.getOwner());
             Log.info("检测到壶言会话,已同步主人!");
             isHuYanSessionPlugin = true;
         } catch (NoClassDefFoundError e) {

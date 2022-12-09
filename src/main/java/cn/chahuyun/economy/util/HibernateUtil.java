@@ -3,7 +3,6 @@ package cn.chahuyun.economy.util;
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import xyz.cssxsh.mirai.hibernate.MiraiHibernateConfiguration;
-import xyz.cssxsh.mirai.hibernate.MiraiHibernateRecorder;
 
 /**
  * 说明
