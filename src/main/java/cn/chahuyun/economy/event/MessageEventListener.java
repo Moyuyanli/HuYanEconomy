@@ -153,6 +153,13 @@ public class MessageEventListener extends SimpleListenerHost {
             return;
         }
 
+        String userToUserTransferRegex = "转账(\\[mirai:at:\\d+])? \\d+( \\d+)?";
+        if (Pattern.matches(userToUserTransferRegex, code)) {
+            Log.info("转账指令");
+            TransferManager.userToUser(event);
+            return;
+        }
+
         {
             if (group == null) {
                 return;
