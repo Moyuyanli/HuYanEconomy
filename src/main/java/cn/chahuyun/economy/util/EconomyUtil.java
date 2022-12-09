@@ -2,7 +2,6 @@ package cn.chahuyun.economy.util;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.Constant;
-import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.User;
 import xyz.cssxsh.mirai.economy.EconomyService;
 import xyz.cssxsh.mirai.economy.service.*;
@@ -18,7 +17,6 @@ import java.text.DecimalFormat;
  */
 public class EconomyUtil {
 
-    private static final Bot bot = HuYanEconomy.INSTANCE.bot;
     //获取经济账户实例
     public static final IEconomyService economyService = EconomyService.INSTANCE;
 
@@ -84,7 +82,7 @@ public class EconomyUtil {
      */
     public static double getMoneyByUser(User user, EconomyCurrency currency) {
         //获取一个bot上下文
-        try (BotEconomyContext context = economyService.context(bot)) {
+        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot)) {
             //在bot上下文里面找到这个用户
             UserEconomyAccount account = context.getService().account(user);
             DecimalFormat format = new DecimalFormat("#.0");
@@ -159,7 +157,7 @@ public class EconomyUtil {
      * @date 2022/11/14 15:39
      */
     public static boolean turnUserToUser(User user, User toUser, double quantity, EconomyCurrency currency) {
-        try (BotEconomyContext context = economyService.context(bot)) {
+        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot)) {
             UserEconomyAccount account = context.getService().account(user);
             UserEconomyAccount toAccount = context.getService().account(toUser);
             double userMoney = context.get(account, currency);
@@ -206,7 +204,7 @@ public class EconomyUtil {
      * @date 2022/11/14 15:53
      */
     public static boolean turnUserToBank(User user, double quantity, EconomyCurrency currency) {
-        try (BotEconomyContext context = economyService.context(bot); GlobalEconomyContext global = economyService.global()) {
+        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot); GlobalEconomyContext global = economyService.global()) {
             UserEconomyAccount account = context.getService().account(user);
             UserEconomyAccount bankAccount = global.getService().account(user);
             double money = context.get(account, currency);
@@ -253,7 +251,7 @@ public class EconomyUtil {
      * @date 2022/11/14 16:06
      */
     public static boolean turnBankToUser(User user, double quantity, EconomyCurrency currency) {
-        try (GlobalEconomyContext global = economyService.global(); BotEconomyContext context = economyService.context(bot);) {
+        try (GlobalEconomyContext global = economyService.global(); BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot);) {
             UserEconomyAccount bankAccount = global.getService().account(user);
             UserEconomyAccount account = context.getService().account(user);
             double bankMoney = global.get(bankAccount, currency);
@@ -298,7 +296,7 @@ public class EconomyUtil {
      * @date 2022/11/22 15:19
      */
     public static boolean addMoneyToUser(User user, double quantity, EconomyCurrency currency) {
-        try (BotEconomyContext context = economyService.context(bot)) {
+        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot)) {
             UserEconomyAccount account = context.getService().account(user);
             context.plusAssign(account, currency, quantity);
             return true;
@@ -335,7 +333,7 @@ public class EconomyUtil {
      * @date 2022/11/22 15:19
      */
     public static boolean lessMoneyToUser(User user, double quantity, EconomyCurrency currency) {
-        try (BotEconomyContext context = economyService.context(bot)) {
+        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot)) {
             UserEconomyAccount account = context.getService().account(user);
             context.minusAssign(account, currency, quantity);
             return true;
