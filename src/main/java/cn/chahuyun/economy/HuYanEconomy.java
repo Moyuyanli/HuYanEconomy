@@ -54,9 +54,6 @@ public final class HuYanEconomy extends JavaPlugin {
         MiraiHibernateConfiguration configuration = new MiraiHibernateConfiguration(this);
         //初始化插件数据库
         HibernateUtil.init(configuration);
-        //插件功能初始化
-        PluginManager.init();
-
         //加载配置
         reloadPluginConfig(EconomyConfig.INSTANCE);
         config = EconomyConfig.INSTANCE;
@@ -64,6 +61,8 @@ public final class HuYanEconomy extends JavaPlugin {
         if (configBot == 0) {
             Log.warning("插件管理机器人还没有配置，请尽快配置!");
         } else {
+            //插件功能初始化
+            PluginManager.init();
             EconomyUtil.init();
             LotteryManager.init(true);
             FishManager.init();
