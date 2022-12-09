@@ -4,7 +4,6 @@ import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.Fish;
 import cn.chahuyun.economy.entity.fish.FishInfo;
 import cn.chahuyun.economy.entity.fish.FishPond;
-import cn.chahuyun.economy.plugin.FishManager;
 import cn.chahuyun.economy.util.EconomyUtil;
 import cn.chahuyun.economy.util.Log;
 import cn.chahuyun.economy.util.ShareUtils;
@@ -15,7 +14,6 @@ import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.At;
-import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageUtils;
 import net.mamoe.mirai.message.data.PlainText;
 
@@ -89,6 +87,7 @@ public class GamesManager {
 
         //初始钓鱼信息
         boolean quit = true;
+        boolean theRod = false;
         int difficultyMin = 0;
         int difficultyMax = 101;
         int rankMin = 1;
@@ -97,6 +96,7 @@ public class GamesManager {
         String[] successMessages = {"这不轻轻松松嘛~", "这鱼还没发力！", "慢慢的、慢慢的..."};
         String[] failureMessages = {"挂底了吗？", "怎么这么有劲？难道是大鱼？", "卧槽！卧槽！卧槽！"};
         String[] otherMessages = {"钓鱼就是这么简单", "一条小鱼也敢班门弄斧！", "收！收！收！~~"};
+        String[] errorMessages = {"风吹的...", "眼花了...", "走神了..."};
 
         while (quit) {
             //随机睡眠
@@ -108,11 +108,12 @@ public class GamesManager {
             subject.sendMessage(MessageUtils.newChain(new At(user.getId()), new PlainText("有动静了，快来！")));
             //开始拉扯
             boolean rank = true;
+            int pull = 0;
             while (rank) {
                 //获取下一条消息
                 MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, false);
                 String nextMessageCode = newMessage.getMessage().serializeToMiraiCode();
-                int randomInt = RandomUtil.randomInt(0, 2);
+                int randomInt = RandomUtil.randomInt(0, 3);
                 switch (nextMessageCode) {
                     case "向左拉":
                     case "左":
@@ -152,18 +153,26 @@ public class GamesManager {
                     case "放线":
                     case "放":
                     case "~":
-                        difficultyMin = 0;
-                        rankMax = 0;
+                        difficultyMin += 20;
+                        rankMax = 1;
                         subject.sendMessage("你把你收回来的线，又放了出去!");
                         break;
                     default:
                         if (Pattern.matches("[!！收起提竿杆]{1,2}", nextMessageCode)) {
+                            if (pull == 0) {
+                                theRod = true;
+                            }
                             rank = false;
                             quit = false;
                         }
                         break;
                 }
+                pull++;
             }
+        }
+        //空军
+        if (theRod) {
+            subject.sendMessage(errorMessages[RandomUtil.randomInt(0, 3)]);
         }
 
         /*
