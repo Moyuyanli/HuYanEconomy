@@ -19,7 +19,10 @@ object EconomyConfig : AutoSavePluginConfig("config") {
     val bot: Long by value()
 
     @ValueDescription("启用的彩票群列表\n")
-    var group: List<Long> by value()
+    var lotteryGroup: List<Long> by value()
+
+    @ValueDescription("启用的钓鱼群列表\n")
+    var fishGroup: List<Long> by value()
 
 
 }

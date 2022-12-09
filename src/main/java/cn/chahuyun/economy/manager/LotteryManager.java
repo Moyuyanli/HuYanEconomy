@@ -114,7 +114,7 @@ public class LotteryManager {
 
         if (subject instanceof Group) {
             Group group = (Group) subject;
-            List<Long> longs = EconomyConfig.INSTANCE.getGroup();
+            List<Long> longs = EconomyConfig.INSTANCE.getLotteryGroup();
             if (!longs.contains(group.getId())) {
                 return;
             }

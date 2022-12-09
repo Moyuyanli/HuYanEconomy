@@ -2,6 +2,7 @@ package cn.chahuyun.economy.entity.fish;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.util.EconomyUtil;
 import cn.chahuyun.economy.util.HibernateUtil;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -10,6 +11,8 @@ import lombok.Getter;
 import lombok.Setter;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.message.data.MessageChain;
+import net.mamoe.mirai.message.data.PlainText;
+import net.mamoe.mirai.message.data.SingleMessage;
 
 import java.io.Serializable;
 
@@ -76,7 +79,13 @@ public class FishInfo implements Serializable {
      * @author Moyuyanli
      * @date 2022/12/8 10:59
      */
-    public MessageChain updateRod(UserInfo userInfo) {
+    public SingleMessage updateRod(UserInfo userInfo) {
+        if (getRodLevel() == 0) {
+            double moneyByUser = EconomyUtil.getMoneyByUser(userInfo.getUser());
+            if (moneyByUser - 1 < 0) {
+                return new PlainText("你的金币不够拉！");
+            }
+        }
         return null;
     }
 
@@ -101,6 +110,15 @@ public class FishInfo implements Serializable {
                 return null;
             }
         }
+    }
+
+    /**
+     * 获取钓鱼的鱼竿支持最大等级
+     *
+     * @return 鱼竿支持最大等级
+     */
+    public int getLevel() {
+        return (int) (Math.ceil(getRodLevel() / 10.0));
     }
 
 

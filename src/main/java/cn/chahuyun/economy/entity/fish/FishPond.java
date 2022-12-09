@@ -1,10 +1,12 @@
 package cn.chahuyun.economy.entity.fish;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import cn.chahuyun.economy.entity.UserBackpack;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 鱼塘
@@ -59,6 +61,9 @@ public class FishPond {
      */
     private double rebate;
 
+    @OneToMany(targetEntity = Fish.class, mappedBy = "id", fetch = FetchType.EAGER)
+    private List<Fish> fishList;
+
     public FishPond() {
     }
 
@@ -80,5 +85,12 @@ public class FishPond {
         }
         this.minLevel = 0;
         this.rebate = 0.05;
+    }
+
+    public List<Fish> getFishList() {
+        if (this.fishList==null) {
+            return new ArrayList<>();
+        }
+        return fishList;
     }
 }

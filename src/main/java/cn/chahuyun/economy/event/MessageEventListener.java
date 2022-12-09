@@ -2,10 +2,7 @@ package cn.chahuyun.economy.event;
 
 import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.economy.HuYanEconomy;
-import cn.chahuyun.economy.manager.LotteryManager;
-import cn.chahuyun.economy.manager.PropsManager;
-import cn.chahuyun.economy.manager.SignManager;
-import cn.chahuyun.economy.manager.UserManager;
+import cn.chahuyun.economy.manager.*;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.util.Log;
 import kotlin.coroutines.CoroutineContext;
@@ -89,20 +86,46 @@ public class MessageEventListener extends SimpleListenerHost {
                 return;
             case "开启 猜签":
                 if (owner) {
-                    if (group != null && !config.getGroup().contains(group.getId())) {
-                        EconomyConfig.INSTANCE.getGroup().add(group.getId());
+                    if (group != null && !config.getLotteryGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getLotteryGroup().add(group.getId());
                     }
                     subject.sendMessage("本群的猜签功能已开启!");
-                    break;
                 }
+                break;
             case "关闭 猜签":
                 if (owner) {
-                    if (group != null && config.getGroup().contains(group.getId())) {
-                        EconomyConfig.INSTANCE.getGroup().remove(group.getId());
+                    if (group != null && config.getLotteryGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getLotteryGroup().remove(group.getId());
                     }
                     subject.sendMessage("本群的猜签功能已关闭!");
-                    break;
                 }
+                break;
+            case "开启 钓鱼":
+                if (owner) {
+                    if (group != null && !config.getFishGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getFishGroup().add(group.getId());
+                    }
+                    subject.sendMessage("本群的猜钓鱼能已开启!");
+                }
+                break;
+            case "关闭 钓鱼":
+                if (owner) {
+                    if (group != null && config.getFishGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getFishGroup().remove(group.getId());
+                    }
+                    subject.sendMessage("本群的猜钓鱼能已关闭!");
+                }
+                break;
+            case "购买鱼竿":
+                GamesManager.buyFishRod(event);
+                break;
+            case "钓鱼":
+            case "抛竿":
+                if (group != null && config.getFishGroup().contains(group.getId())) {
+                    GamesManager.fishing(event);
+                }
+                break;
+
         }
 
         String buyPropRegex = "购买 (\\S+)( \\S+)?|buy (\\S+)( \\S+)?";
@@ -122,7 +145,7 @@ public class MessageEventListener extends SimpleListenerHost {
         String buyLotteryRegex = "猜签 (\\d+)( \\d+)|lottery (\\d+)( \\d+)";
         if (Pattern.matches(buyLotteryRegex, code)) {
             Log.info("彩票指令");
-            if (group != null && config.getGroup().contains(group.getId())) {
+            if (group != null && config.getLotteryGroup().contains(group.getId())) {
                 LotteryManager.addLottery(event);
             }
             return;
