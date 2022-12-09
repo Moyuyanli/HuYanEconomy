@@ -81,9 +81,9 @@ public class GamesManager {
             return;
         }
         //开始钓鱼
-        String start = String.format("%s开始钓鱼", userInfo.getName());
+        String start = String.format("%s开始钓鱼\n鱼塘:%s\n%s", userInfo.getName(), fishPond.getName(), fishPond.getDescription());
         subject.sendMessage(start);
-        Log.info(start);
+        Log.info(String.format("%s开始钓鱼", userInfo.getName()));
 
         //初始钓鱼信息
         boolean quit = true;
@@ -172,7 +172,10 @@ public class GamesManager {
         }
         //空军
         if (theRod) {
-            subject.sendMessage(errorMessages[RandomUtil.randomInt(0, 3)]);
+            if (RandomUtil.randomInt(0, 101) >= 50) {
+                subject.sendMessage(errorMessages[RandomUtil.randomInt(0, 3)]);
+                return;
+            }
         }
 
         /*

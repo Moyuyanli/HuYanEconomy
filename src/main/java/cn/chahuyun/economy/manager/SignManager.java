@@ -84,7 +84,7 @@ public class SignManager {
         if (randomNumber > 7) {
             randomNumber = RandomUtil.randomInt(0, 10);
             if (randomNumber > 8) {
-                goldNumber = RandomUtil.randomInt(200, 500);
+                goldNumber = RandomUtil.randomInt(200, 501);
                 plainText = new PlainText(String.format("卧槽,你家祖坟裂了,冒出%s金币", goldNumber));
             } else {
                 goldNumber = RandomUtil.randomInt(100, 200);
