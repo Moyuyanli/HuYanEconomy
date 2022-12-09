@@ -79,9 +79,13 @@ public class LotteryManager {
         }
 
         if (minutesLottery.size() > 0) {
+            //唯一id
             String minutesTaskId = "minutesTask";
+            //始终删除一次  用于防止刷新的时候 添加定时任务报错
             CronUtil.remove(minutesTaskId);
+            //建立任务类
             LotteryMinutesTask minutesTask = new LotteryMinutesTask(minutesTaskId, minutesLottery.values());
+            //添加定时任务到调度器
             CronUtil.schedule(minutesTaskId, "0 * * * * ?", minutesTask);
         }
         if (hoursLottery.size() > 0) {
@@ -97,6 +101,7 @@ public class LotteryManager {
             CronUtil.schedule(dayTaskId, "0 0 0 * * ?", dayTask);
         }
         if (type) {
+            //插件加载的时候启动调度器
             CronUtil.start();
         }
     }
@@ -305,6 +310,7 @@ class LotteryMinutesTask implements Task {
             Objects.requireNonNull(bot.getGroup(group)).sendMessage(format);
         }
         lotteryInfos = new ArrayList<>();
+        //定时任务执行完成，清除自身  我这里需要 其实可以不用
         CronUtil.remove(id);
     }
 }

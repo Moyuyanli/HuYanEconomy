@@ -1,7 +1,9 @@
 package cn.chahuyun.economy.entity.bank;
 
+import cn.chahuyun.economy.entity.bank.action.BankAction;
 import lombok.Getter;
 import lombok.Setter;
+import net.mamoe.mirai.contact.User;
 
 /**
  * @author Erzbir
@@ -10,7 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AbstractBank {
-    private String name; // 预留, 如果有需要多个银行, 就一个银行绑定唯一标识
+    private User user;
 
     private BankAction bankAction;
 

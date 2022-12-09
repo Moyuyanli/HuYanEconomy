@@ -1,5 +1,7 @@
 package cn.chahuyun.economy.entity.bank;
 
+import cn.chahuyun.economy.entity.bank.action.BankAction;
+
 /**
  * @author Erzbir
  * @Date: 2022/11/29 21:55
@@ -11,11 +13,8 @@ public class Bank extends AbstractBank {
         super();
     }
 
-    public static void main(String[] args) {
-        // 取款示例
-        Bank bank = Bank.INSTANCE;
-        bank.setBankAction(new TopUp(191231232L));
-        bank.getBankAction().execute();
+    public void execute(BankAction action) throws Exception {
+        action.execute();
     }
 
 }
