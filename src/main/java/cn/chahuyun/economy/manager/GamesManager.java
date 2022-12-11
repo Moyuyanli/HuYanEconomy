@@ -16,6 +16,7 @@ import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.At;
 import net.mamoe.mirai.message.data.MessageUtils;
 import net.mamoe.mirai.message.data.PlainText;
+import net.mamoe.mirai.message.data.SingleMessage;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -60,13 +61,15 @@ public class GamesManager {
             return;
         }
         //钓鱼冷却
-        if (playerCooling.containsKey(userInfo.getId())) {
-            Date date = playerCooling.get(userInfo.getId());
+        if (playerCooling.containsKey(userInfo.getQq())) {
+            Date date = playerCooling.get(userInfo.getQq());
             long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
-            if (between <= 10) {
+            if (between <= 3) {
                 subject.sendMessage(String.format("你还差%s分钟来准备好钓鱼!", 10 - between));
                 return;
             }
+        } else {
+            playerCooling.put(userInfo.getQq(), new Date());
         }
         //获取鱼塘
         FishPond fishPond = fishInfo.getFishPond();
@@ -81,7 +84,7 @@ public class GamesManager {
             return;
         }
         //开始钓鱼
-        String start = String.format("%s开始钓鱼\n鱼塘:%s\n%s", userInfo.getName(), fishPond.getName(), fishPond.getDescription());
+        String start = String.format("%s开始钓鱼\n鱼塘:%s   等级:%s\n%s\n最低鱼竿等级:%s", userInfo.getName(), fishPond.getName(), fishPond.getPondLevel(), fishPond.getDescription(), fishPond.getMinLevel());
         subject.sendMessage(start);
         Log.info(String.format("%s开始钓鱼", userInfo.getName()));
 
@@ -189,7 +192,7 @@ public class GamesManager {
          */
         difficultyMax = Math.max(difficultyMin + 1, difficultyMax + fishInfo.getRodLevel());
         //roll等级
-        int rank = RandomUtil.randomInt(rankMin, rankMax);
+        int rank = RandomUtil.randomInt(rankMin, rankMax + 1);
 
         Fish fish;
         //彩蛋
@@ -218,8 +221,13 @@ public class GamesManager {
         //roll尺寸
         int dimensions = fish.getDimensions(winning);
         int money = fish.getPrice() * dimensions;
-        String format = String.format("起竿咯！\n%s\n%s\n尺寸:%d\n总金额:%d", fish.getName(), fish.getDescription(), dimensions, money);
-        subject.sendMessage(format);
+        if (EconomyUtil.addMoneyToUser(user, money)) {
+            String format = String.format("起竿咯！\n%s   等级:%s\n%s\n尺寸:%d\n总金额:%d", fish.getName(), fish.getLevel(), fish.getDescription(), dimensions, money);
+            subject.sendMessage(format);
+        } else {
+            subject.sendMessage("钓鱼失败!");
+            playerCooling.remove(userInfo.getQq());
+        }
     }
 
     /**
@@ -254,6 +262,28 @@ public class GamesManager {
         } else {
             Log.error("游戏管理:购买鱼竿失败!");
         }
+    }
+
+    /**
+     * 升级鱼竿
+     *
+     * @param event 消息事件
+     * @author Moyuyanli
+     * @date 2022/12/11 22:27
+     */
+    public static void upFishRod(MessageEvent event) {
+        UserInfo userInfo = UserManager.getUserInfo(event.getSender());
+
+        Contact subject = event.getSubject();
+
+        FishInfo fishInfo = userInfo.getFishInfo();
+        if (!fishInfo.isFishRod()) {
+            subject.sendMessage("鱼竿都没得，你升级个锤子!");
+            return;
+        }
+
+        SingleMessage singleMessage = fishInfo.updateRod(userInfo);
+        subject.sendMessage(singleMessage);
     }
 
 }

@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import net.mamoe.mirai.contact.Group;
+import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.message.data.PlainText;
 import net.mamoe.mirai.message.data.SingleMessage;
 import org.hibernate.query.criteria.HibernateCriteriaBuilder;
@@ -83,13 +84,31 @@ public class FishInfo implements Serializable {
      * @date 2022/12/8 10:59
      */
     public SingleMessage updateRod(UserInfo userInfo) {
+        User user = userInfo.getUser();
+        double moneyByUser = EconomyUtil.getMoneyByUser(user);
+        int upMoney = 1;
         if (getRodLevel() == 0) {
-            double moneyByUser = EconomyUtil.getMoneyByUser(userInfo.getUser());
-            if (moneyByUser - 1 < 0) {
-                return new PlainText("你的金币不够拉！");
-            }
+            return isMoney(user, moneyByUser, upMoney);
+        } else if (1 <= getRodLevel() && getRodLevel() < 6) {
+            upMoney = 100;
+            return isMoney(user, moneyByUser, upMoney);
+        } else if (6 <= getRodLevel() && getRodLevel() < 11) {
+            upMoney = 120;
+            return isMoney(user, moneyByUser, upMoney);
+        } else if (11 <= getRodLevel() && getRodLevel() < 16) {
+            upMoney = 200;
+            return isMoney(user, moneyByUser, upMoney);
+        } else if (16 <= getRodLevel() && getRodLevel() < 21) {
+            upMoney = 250;
+            return isMoney(user, moneyByUser, upMoney);
+        } else if (21 <= getRodLevel() && getRodLevel() < 26) {
+            upMoney = 300;
+            return isMoney(user, moneyByUser, upMoney);
+        } else if (26 <= getRodLevel() && getRodLevel() < 31) {
+            upMoney = 350;
+            return isMoney(user, moneyByUser, upMoney);
         }
-        return null;
+        return new PlainText("升级失败!");
     }
 
     /**
@@ -140,5 +159,31 @@ public class FishInfo implements Serializable {
         return (int) (Math.ceil(getRodLevel() / 10.0));
     }
 
+    /**
+     * 鱼竿等级+1
+     */
+    private void upFishRod() {
+        this.setRodLevel(getRodLevel() + 1);
+        save();
+    }
+
+    /**
+     * 相同的升级
+     *
+     * @param user      用户
+     * @param userMoney 用户拥有的金币
+     * @param upMoney   升级鱼竿的金币
+     * @return 成功消息
+     */
+    private SingleMessage isMoney(User user, double userMoney, int upMoney) {
+        if (userMoney - upMoney < 0) {
+            return new PlainText(String.format("你的金币不够%s拉！", upMoney));
+        }
+        if (EconomyUtil.lessMoneyToUser(user, upMoney)) {
+            upFishRod();
+            return new PlainText(String.format("升级成功,花费%s金币!你的鱼竿更强了!\n%s->%s", upMoney, this.getRodLevel() - 1, getRodLevel()));
+        }
+        return new PlainText("升级失败!");
+    }
 
 }

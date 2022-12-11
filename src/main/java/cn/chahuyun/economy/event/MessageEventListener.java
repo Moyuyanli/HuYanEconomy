@@ -105,7 +105,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     if (group != null && !config.getFishGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getFishGroup().add(group.getId());
                     }
-                    subject.sendMessage("本群的猜钓鱼能已开启!");
+                    subject.sendMessage("本群的钓鱼能已开启!");
                 }
                 break;
             case "关闭 钓鱼":
@@ -113,7 +113,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     if (group != null && config.getFishGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getFishGroup().remove(group.getId());
                     }
-                    subject.sendMessage("本群的猜钓鱼能已关闭!");
+                    subject.sendMessage("本群的钓鱼能已关闭!");
                 }
                 break;
             case "购买鱼竿":
@@ -125,7 +125,9 @@ public class MessageEventListener extends SimpleListenerHost {
                     GamesManager.fishing(event);
                 }
                 break;
-
+            case "升级鱼竿":
+                GamesManager.upFishRod(event);
+                break;
         }
 
         String buyPropRegex = "购买 (\\S+)( \\S+)?|buy (\\S+)( \\S+)?";
