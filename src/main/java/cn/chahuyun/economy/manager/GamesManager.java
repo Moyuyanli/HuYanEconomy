@@ -222,7 +222,7 @@ public class GamesManager {
         int dimensions = fish.getDimensions(winning);
         int money = fish.getPrice() * dimensions;
         if (EconomyUtil.addMoneyToUser(user, money)) {
-            String format = String.format("起竿咯！\n%s   等级:%s\n%s\n尺寸:%d\n总金额:%d", fish.getName(), fish.getLevel(), fish.getDescription(), dimensions, money);
+            String format = String.format("起竿咯！\n%s\n等级:%s\n%s\n单价:%s   尺寸:%d\n总金额:%d", fish.getName(), fish.getLevel(), fish.getDescription(), fish.getPrice(), dimensions, money);
             subject.sendMessage(format);
         } else {
             subject.sendMessage("钓鱼失败!");
