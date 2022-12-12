@@ -27,7 +27,7 @@ import java.io.Serializable;
  * @date 2022/12/8 10:48
  */
 @Table
-@Entity
+@Entity(name = "FishInfo")
 @Getter
 @Setter
 public class FishInfo implements Serializable {
@@ -78,7 +78,7 @@ public class FishInfo implements Serializable {
     /**
      * 升级鱼竿<p>
      *
-     * @param
+     * @param userInfo 用户信息
      * @return net.mamoe.mirai.message.data.MessageChain
      * @author Moyuyanli
      * @date 2022/12/8 10:59
@@ -89,26 +89,24 @@ public class FishInfo implements Serializable {
         int upMoney = 1;
         if (getRodLevel() == 0) {
             return isMoney(user, moneyByUser, upMoney);
-        } else if (1 <= getRodLevel() && getRodLevel() < 6) {
-            upMoney = 100;
+        } else if (1 <= getRodLevel() && getRodLevel() < 70) {
+            upMoney = 40*getRodLevel()*getLevel();
             return isMoney(user, moneyByUser, upMoney);
-        } else if (6 <= getRodLevel() && getRodLevel() < 11) {
-            upMoney = 120;
+        } else if (70 <= getRodLevel() && getRodLevel() < 80) {
+            upMoney = 80*getRodLevel()*getLevel();
             return isMoney(user, moneyByUser, upMoney);
-        } else if (11 <= getRodLevel() && getRodLevel() < 16) {
-            upMoney = 200;
+        } else if (80 <= getRodLevel() && getRodLevel() < 90) {
+            upMoney = 100*getRodLevel()*getLevel();
             return isMoney(user, moneyByUser, upMoney);
-        } else if (16 <= getRodLevel() && getRodLevel() < 21) {
-            upMoney = 250;
+        } else if (90 <= getRodLevel() && getRodLevel() < 100) {
+            upMoney = 150 * getRodLevel() * getLevel();
             return isMoney(user, moneyByUser, upMoney);
-        } else if (21 <= getRodLevel() && getRodLevel() < 26) {
-            upMoney = 300;
+        } else if (getRodLevel() == 99) {
+            upMoney = 150000;
             return isMoney(user, moneyByUser, upMoney);
-        } else if (26 <= getRodLevel() && getRodLevel() < 31) {
-            upMoney = 350;
-            return isMoney(user, moneyByUser, upMoney);
+        } else {
+            return new PlainText("你的鱼竿已经满级拉！");
         }
-        return new PlainText("升级失败!");
     }
 
     /**
@@ -156,7 +154,7 @@ public class FishInfo implements Serializable {
      * @return 鱼竿支持最大等级
      */
     public int getLevel() {
-        return (int) (Math.ceil(getRodLevel() / 10.0));
+        return getRodLevel()/10+1;
     }
 
     /**

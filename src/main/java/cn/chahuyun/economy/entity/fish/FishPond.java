@@ -1,6 +1,8 @@
 package cn.chahuyun.economy.entity.fish;
 
 import cn.chahuyun.economy.plugin.FishManager;
+import cn.chahuyun.economy.util.EconomyUtil;
+import cn.chahuyun.economy.util.HibernateUtil;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -62,6 +64,10 @@ public class FishPond {
      * 0.00-0.10
      */
     private double rebate;
+    /**
+     * 总钓鱼次数
+     */
+    private int number;
 
     @OneToMany(targetEntity = Fish.class, mappedBy = "id", fetch = FetchType.EAGER)
     private List<Fish> fishList;
@@ -88,6 +94,18 @@ public class FishPond {
         this.pondType = pondType;
         this.minLevel = 0;
         this.rebate = 0.05;
+        this.number = 0;
+    }
+
+    /**
+     * 获取鱼塘的经济
+     *
+     * @return double
+     * @author Moyuyanli
+     * @date 2022/12/12 9:56
+     */
+    public double getFishPondMoney() {
+        return EconomyUtil.getMoneyByBankFromId(getCode(), getDescription());
     }
 
     /**
@@ -117,4 +135,20 @@ public class FishPond {
         }
         return fishList;
     }
+
+    /**
+     * 添加一次钓鱼次数
+     */
+    public void addNumber() {
+        this.number++;
+        save();
+    }
+
+    /**
+     * 保存
+     */
+    public FishPond save() {
+        return HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+    }
+
 }

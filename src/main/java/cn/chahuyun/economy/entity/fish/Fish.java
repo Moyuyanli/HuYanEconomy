@@ -41,6 +41,10 @@ public class Fish {
      * 最大尺寸
      */
     private int dimensionsMax;
+    private int dimensions1;
+    private int dimensions2;
+    private int dimensions3;
+    private int dimensions4;
     /**
      * 难度
      */
@@ -57,7 +61,15 @@ public class Fish {
      * @return 鱼的尺寸
      */
     public int getDimensions(boolean winning) {
-        int randomInt = RandomUtil.randomInt(dimensionsMin, dimensionsMax == dimensionsMin ? dimensionsMax + 1 : dimensionsMax);
+        int i = RandomUtil.randomInt(0, 101);
+        int randomInt;
+        if (i >= 90) {
+            randomInt = RandomUtil.randomInt(dimensions3, dimensions4 == dimensions3 ? dimensions4 + 1 : dimensions4);
+        } else if (i >= 60) {
+            randomInt = RandomUtil.randomInt(dimensions2, dimensions3 == dimensions2 ? dimensions3 + 1 : dimensions3);
+        } else {
+            randomInt = RandomUtil.randomInt(dimensions1, dimensions2 == dimensions1 ? dimensions2 + 1 : dimensions2);
+        }
         if (winning) {
             return (int) (randomInt + (randomInt * 0.2));
         } else {

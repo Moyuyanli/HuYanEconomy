@@ -65,7 +65,7 @@ public class GamesManager {
             Date date = playerCooling.get(userInfo.getQq());
             long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
             if (between <= 3) {
-                subject.sendMessage(String.format("你还差%s分钟来准备好钓鱼!", 10 - between));
+                subject.sendMessage(String.format("你还差%s分钟来准备好钓鱼!", 3 - between));
                 return;
             }
         } else {
@@ -84,7 +84,7 @@ public class GamesManager {
             return;
         }
         //开始钓鱼
-        String start = String.format("%s开始钓鱼\n鱼塘:%s   等级:%s\n%s\n最低鱼竿等级:%s", userInfo.getName(), fishPond.getName(), fishPond.getPondLevel(), fishPond.getDescription(), fishPond.getMinLevel());
+        String start = String.format("%s开始钓鱼\n鱼塘:%s\n等级:%s\n最低鱼竿等级:%s\n%s", userInfo.getName(), fishPond.getName(), fishPond.getPondLevel(), fishPond.getMinLevel(), fishPond.getDescription());
         subject.sendMessage(start);
         Log.info(String.format("%s开始钓鱼", userInfo.getName()));
 
@@ -99,7 +99,7 @@ public class GamesManager {
         String[] successMessages = {"这不轻轻松松嘛~", "这鱼还没发力！", "慢慢的、慢慢的..."};
         String[] failureMessages = {"挂底了吗？", "怎么这么有劲？难道是大鱼？", "卧槽！卧槽！卧槽！"};
         String[] otherMessages = {"钓鱼就是这么简单", "一条小鱼也敢班门弄斧！", "收！收！收！~~"};
-        String[] errorMessages = {"风吹的...", "眼花了...", "走神了..."};
+        String[] errorMessages = {"风吹的...", "眼花了...", "走神了...", "呀！切线了...", "钓鱼佬绝不空间！"};
 
         while (quit) {
             //随机睡眠
@@ -176,7 +176,7 @@ public class GamesManager {
         //空军
         if (theRod) {
             if (RandomUtil.randomInt(0, 101) >= 50) {
-                subject.sendMessage(errorMessages[RandomUtil.randomInt(0, 3)]);
+                subject.sendMessage(errorMessages[RandomUtil.randomInt(0, 5)]);
                 return;
             }
         }
@@ -221,8 +221,10 @@ public class GamesManager {
         //roll尺寸
         int dimensions = fish.getDimensions(winning);
         int money = fish.getPrice() * dimensions;
-        if (EconomyUtil.addMoneyToUser(user, money)) {
-            String format = String.format("起竿咯！\n%s\n等级:%s\n%s\n单价:%s   尺寸:%d\n总金额:%d", fish.getName(), fish.getLevel(), fish.getDescription(), fish.getPrice(), dimensions, money);
+        double v = money * (1 - fishPond.getRebate());
+        if (EconomyUtil.addMoneyToUser(user, v) && EconomyUtil.addMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), money * fishPond.getRebate())) {
+            fishPond.addNumber();
+            String format = String.format("起竿咯！\n%s\n等级:%s\n单价:%s\n尺寸:%d\n总金额:%d\n%s", fish.getName(), fish.getLevel(), fish.getPrice(), dimensions, money, fish.getDescription());
             subject.sendMessage(format);
         } else {
             subject.sendMessage("钓鱼失败!");
