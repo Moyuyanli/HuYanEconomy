@@ -43,6 +43,10 @@ public class FishInfo implements Serializable {
      */
     private boolean fishRod;
     /**
+     * 是否在钓鱼
+     */
+    private boolean status;
+    /**
      * 鱼竿等级
      */
     private int rodLevel;
@@ -184,4 +188,21 @@ public class FishInfo implements Serializable {
         return new PlainText("升级失败!");
     }
 
+    /**
+     * 获取钓鱼状态
+     * @return true 在钓鱼
+     */
+    public synchronized boolean isStatus() {
+        if (status) {
+            return true;
+        } else {
+            status = true;
+            return false;
+        }
+    }
+
+    public FishInfo setStatus(boolean status) {
+        this.status = status;
+        return this;
+    }
 }

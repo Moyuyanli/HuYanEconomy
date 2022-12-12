@@ -60,12 +60,17 @@ public class GamesManager {
             subject.sendMessage("你连鱼竿都没得，拿**钓？");
             return;
         }
+        //是否已经在钓鱼
+        if (fishInfo.isStatus()) {
+            subject.sendMessage("你已经在钓鱼了！");
+            return;
+        }
         //钓鱼冷却
         if (playerCooling.containsKey(userInfo.getQq())) {
             Date date = playerCooling.get(userInfo.getQq());
             long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
-            if (between <= 3) {
-                subject.sendMessage(String.format("你还差%s分钟来准备好钓鱼!", 3 - between));
+            if (between <= 10) {
+                subject.sendMessage(String.format("你还差%s分钟来准备好钓鱼!", 11 - between));
                 return;
             }
         } else {
@@ -203,7 +208,14 @@ public class GamesManager {
             //在所有鱼中拿到对应的鱼等级
             List<Fish> levelFishList = fishPond.getFishList(rank);
             //过滤掉难度不够的鱼
-            List<Fish> collect = levelFishList.stream().filter(it -> it.getDifficulty() <= difficulty).collect(Collectors.toList());
+            List<Fish> collect;
+            try {
+                collect = levelFishList.stream().filter(it -> it.getDifficulty() <= difficulty).collect(Collectors.toList());
+            } catch (Exception e) {
+                //降级重新roll难度处理
+                rank--;
+                continue;
+            }
             //如果没有了
             if (collect.size() == 0) {
                 //降级重新roll难度处理
@@ -230,6 +242,7 @@ public class GamesManager {
             subject.sendMessage("钓鱼失败!");
             playerCooling.remove(userInfo.getQq());
         }
+        fishInfo.setStatus(false).save();
     }
 
     /**
