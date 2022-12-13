@@ -60,11 +60,6 @@ public class GamesManager {
             subject.sendMessage("你连鱼竿都没得，拿**钓？");
             return;
         }
-        //是否已经在钓鱼
-        if (fishInfo.isStatus()) {
-            subject.sendMessage("你已经在钓鱼了！");
-            return;
-        }
         //钓鱼冷却
         if (playerCooling.containsKey(userInfo.getQq())) {
             Date date = playerCooling.get(userInfo.getQq());
@@ -77,6 +72,11 @@ public class GamesManager {
             }
         } else {
             playerCooling.put(userInfo.getQq(), new Date());
+        }
+        //是否已经在钓鱼
+        if (fishInfo.isStatus()) {
+            subject.sendMessage("你已经在钓鱼了！");
+            return;
         }
         //获取鱼塘
         FishPond fishPond = fishInfo.getFishPond();

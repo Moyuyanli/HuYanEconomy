@@ -61,6 +61,11 @@ public class TransferManager {
             money = Long.parseLong(s[2]);
         }
 
+        if (0 > money) {
+            subject.sendMessage("耍我了？小子？");
+            return;
+        }
+
         if (subject instanceof Group) {
             group = (Group) subject;
         }
