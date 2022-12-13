@@ -2,6 +2,7 @@ package cn.chahuyun.economy.util;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import kotlin.coroutines.EmptyCoroutineContext;
+import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.ConcurrencyKind;
 import net.mamoe.mirai.event.EventChannel;
@@ -34,10 +35,11 @@ public class ShareUtils {
      * @date 2022/8/20 12:37
      */
     @NotNull
-    public static MessageEvent getNextMessageEventFromUser(User user, boolean type) {
+    public static MessageEvent getNextMessageEventFromUser(User user, Contact subject, boolean type) {
         EventChannel<MessageEvent> channel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE)
                 .filterIsInstance(MessageEvent.class)
-                .filter(event -> event.getSender().getId() == user.getId());
+                .filter(event -> event.getSender() == user)
+                .filter(event -> event.getSubject() == subject);
 
         CompletableFuture<MessageEvent> future = new CompletableFuture<>();
 

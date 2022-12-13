@@ -61,7 +61,7 @@ public class TransferManager {
             money = Long.parseLong(s[2]);
         }
 
-        if (0 > money) {
+        if (0 > money || user.getId() == qq) {
             subject.sendMessage("耍我了？小子？");
             return;
         }

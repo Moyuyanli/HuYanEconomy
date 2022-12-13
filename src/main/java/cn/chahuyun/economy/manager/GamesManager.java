@@ -65,7 +65,7 @@ public class GamesManager {
             Date date = playerCooling.get(userInfo.getQq());
             long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
             if (between < 10) {
-                subject.sendMessage(String.format("你还差%s分钟来准备好钓鱼!", 10 - between));
+                subject.sendMessage(String.format("你还差%s分钟来抛第二杆!", 10 - between));
                 return;
             } else {
                 playerCooling.remove(userInfo.getQq());
@@ -119,7 +119,7 @@ public class GamesManager {
         int pull = 0;
         while (rankStatus) {
             //获取下一条消息
-            MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, false);
+            MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject, false);
             String nextMessageCode = newMessage.getMessage().serializeToMiraiCode();
             int randomInt = RandomUtil.randomInt(0, 3);
             switch (nextMessageCode) {
