@@ -94,13 +94,13 @@ public class FishInfo implements Serializable {
         if (getRodLevel() == 0) {
             return isMoney(user, moneyByUser, upMoney);
         } else if (1 <= getRodLevel() && getRodLevel() < 70) {
-            upMoney = 40*getRodLevel()*getLevel();
+            upMoney = 40 * getRodLevel() * getLevel();
             return isMoney(user, moneyByUser, upMoney);
         } else if (70 <= getRodLevel() && getRodLevel() < 80) {
-            upMoney = 80*getRodLevel()*getLevel();
+            upMoney = 80 * getRodLevel() * getLevel();
             return isMoney(user, moneyByUser, upMoney);
         } else if (80 <= getRodLevel() && getRodLevel() < 90) {
-            upMoney = 100*getRodLevel()*getLevel();
+            upMoney = 100 * getRodLevel() * getLevel();
             return isMoney(user, moneyByUser, upMoney);
         } else if (90 <= getRodLevel() && getRodLevel() < 100) {
             upMoney = 150 * getRodLevel() * getLevel();
@@ -158,7 +158,7 @@ public class FishInfo implements Serializable {
      * @return 鱼竿支持最大等级
      */
     public int getLevel() {
-        return getRodLevel()/10+1;
+        return getRodLevel() / 10 + 1;
     }
 
     /**
@@ -190,6 +190,7 @@ public class FishInfo implements Serializable {
 
     /**
      * 获取钓鱼状态
+     *
      * @return true 在钓鱼
      */
     public synchronized boolean isStatus() {
@@ -202,8 +203,12 @@ public class FishInfo implements Serializable {
         }
     }
 
-    public FishInfo setStatus(boolean status) {
-        this.status = status;
-        return this;
+    /**
+     * 关闭钓鱼状态
+     */
+    public void switchStatus() {
+        this.status = false;
+        save();
     }
+
 }
