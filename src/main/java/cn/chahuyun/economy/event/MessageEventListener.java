@@ -112,7 +112,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     if (group != null && config.getFishGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getFishGroup().remove(group.getId());
                     }
-                    subject.sendMessage("本群的钓功鱼能已关闭!");
+                    subject.sendMessage("本群的钓鱼功能已关闭!");
                 }
                 return;
             case "购买鱼竿":
