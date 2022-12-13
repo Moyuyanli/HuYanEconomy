@@ -75,7 +75,7 @@ public class TransferManager {
         MessageChainBuilder chainBuilder = new MessageChainBuilder();
         if (EconomyUtil.turnUserToUser(user, member, money)) {
             assert member != null;
-            chainBuilder.append(String.format("成功向%s转账%s金币", member.getNick(), member));
+            chainBuilder.append(String.format("成功向%s转账%s金币", member.getNick(), money));
             subject.sendMessage(chainBuilder.build());
         } else {
             subject.sendMessage("转账失败！请联系管理员!");
