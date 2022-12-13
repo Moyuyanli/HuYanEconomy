@@ -119,7 +119,7 @@ public class UserInfo implements Serializable {
 //        }
         //获取小时数差
         long between = DateUtil.between(new Date(), this.getSignTime(), DateUnit.HOUR, true);
-        Log.debug("账户:(" + this.getQq() + ")签到天差->" + between);
+        Log.debug("账户:(" + this.getQq() + ")签到时差->" + between);
         //时间还在24小时之内
         if (0 <= between && between < 24) {
             return false;

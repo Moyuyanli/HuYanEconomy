@@ -197,6 +197,7 @@ public class FishInfo implements Serializable {
             return true;
         } else {
             status = true;
+            save();
             return false;
         }
     }

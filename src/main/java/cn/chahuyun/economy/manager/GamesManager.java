@@ -69,9 +69,11 @@ public class GamesManager {
         if (playerCooling.containsKey(userInfo.getQq())) {
             Date date = playerCooling.get(userInfo.getQq());
             long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
-            if (between <= 10) {
-                subject.sendMessage(String.format("你还差%s分钟来准备好钓鱼!", 11 - between));
+            if (between < 10) {
+                subject.sendMessage(String.format("你还差%s分钟来准备好钓鱼!", 10 - between));
                 return;
+            } else {
+                playerCooling.remove(userInfo.getQq());
             }
         } else {
             playerCooling.put(userInfo.getQq(), new Date());
@@ -104,7 +106,7 @@ public class GamesManager {
         String[] successMessages = {"这不轻轻松松嘛~", "这鱼还没发力！", "慢慢的、慢慢的..."};
         String[] failureMessages = {"挂底了吗？", "怎么这么有劲？难道是大鱼？", "卧槽！卧槽！卧槽！"};
         String[] otherMessages = {"钓鱼就是这么简单", "一条小鱼也敢班门弄斧！", "收！收！收！~~"};
-        String[] errorMessages = {"风吹的...", "眼花了...", "走神了...", "呀！切线了...", "钓鱼佬绝不空间！"};
+        String[] errorMessages = {"风吹的...", "眼花了...", "走神了...", "呀！切线了...", "钓鱼佬绝不空军！"};
 
         while (quit) {
             //随机睡眠
@@ -203,19 +205,18 @@ public class GamesManager {
         //彩蛋
         boolean winning = false;
         while (true) {
+            if (rank == 0) {
+                subject.sendMessage("切线了我去！");
+                fishInfo.setStatus(false).save();
+                return;
+            }
             //roll难度
             int difficulty = RandomUtil.randomInt(difficultyMin, difficultyMax);
             //在所有鱼中拿到对应的鱼等级
             List<Fish> levelFishList = fishPond.getFishList(rank);
             //过滤掉难度不够的鱼
             List<Fish> collect;
-            try {
-                collect = levelFishList.stream().filter(it -> it.getDifficulty() <= difficulty).collect(Collectors.toList());
-            } catch (Exception e) {
-                //降级重新roll难度处理
-                rank--;
-                continue;
-            }
+            collect = levelFishList.stream().filter(it -> it.getDifficulty() <= difficulty).collect(Collectors.toList());
             //如果没有了
             if (collect.size() == 0) {
                 //降级重新roll难度处理

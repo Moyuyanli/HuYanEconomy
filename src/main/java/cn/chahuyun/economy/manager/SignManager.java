@@ -70,7 +70,7 @@ public class SignManager {
             long between = DateUtil.between(dateTime, new Date(), DateUnit.MINUTE, true);
             long house = between / 60;
             between = between % 60;
-            messages.append(new PlainText("你今天已经签到过了哦!"));
+            messages.append(new PlainText("你已经签到过了哦!"));
             messages.append(new PlainText(String.format("\n距离下次签到还有%s小时%s分钟", house, between)));
             subject.sendMessage(messages.build());
             return;

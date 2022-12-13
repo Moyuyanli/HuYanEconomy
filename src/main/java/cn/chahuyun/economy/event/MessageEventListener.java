@@ -65,7 +65,6 @@ public class MessageEventListener extends SimpleListenerHost {
 
         switch (code) {
             case "测试":
-
                 return;
             case "签到":
             case "打卡":
@@ -91,7 +90,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     }
                     subject.sendMessage("本群的猜签功能已开启!");
                 }
-                break;
+                return;
             case "关闭 猜签":
                 if (owner) {
                     if (group != null && config.getLotteryGroup().contains(group.getId())) {
@@ -99,7 +98,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     }
                     subject.sendMessage("本群的猜签功能已关闭!");
                 }
-                break;
+                return;
             case "开启 钓鱼":
                 if (owner) {
                     if (group != null && !config.getFishGroup().contains(group.getId())) {
@@ -107,7 +106,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     }
                     subject.sendMessage("本群的钓鱼能已开启!");
                 }
-                break;
+                return;
             case "关闭 钓鱼":
                 if (owner) {
                     if (group != null && config.getFishGroup().contains(group.getId())) {
@@ -115,19 +114,19 @@ public class MessageEventListener extends SimpleListenerHost {
                     }
                     subject.sendMessage("本群的钓鱼能已关闭!");
                 }
-                break;
+                return;
             case "购买鱼竿":
                 GamesManager.buyFishRod(event);
-                break;
+                return;
             case "钓鱼":
             case "抛竿":
                 if (group != null && config.getFishGroup().contains(group.getId())) {
                     GamesManager.fishing(event);
                 }
-                break;
+                return;
             case "升级鱼竿":
                 GamesManager.upFishRod(event);
-                break;
+                return;
         }
 
         String buyPropRegex = "购买 (\\S+)( \\S+)?|buy (\\S+)( \\S+)?";
