@@ -237,10 +237,10 @@ public class UserManager {
             pen.drawString(String.valueOf(userInfo.getSignEarnings()), 810, 410);
 
             fontSize = 15;
-            pen.setColor(new Color(255, 255, 255,80));
+            pen.setColor(new Color(255, 255, 255, 30));
             pen.setFont(new Font("黑体", Font.ITALIC, fontSize));
 
-            pen.drawString("by HuYanEconomy & 壶言经济 "+HuYanEconomy.version,580,525);
+            pen.drawString("by HuYanEconomy & 壶言经济 " + HuYanEconomy.version, 580, 525);
 
             //关闭窗体，释放部分资源
             pen.dispose();
