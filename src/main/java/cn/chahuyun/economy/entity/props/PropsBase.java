@@ -23,7 +23,7 @@ import java.util.Date;
  * @author Moyuyanli
  * @date 2022/11/14 8:52
  */
-@Entity
+@Entity(name = "PropsBase")
 @Getter
 @Setter
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)

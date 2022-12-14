@@ -4,16 +4,18 @@ import cn.hutool.core.util.RandomUtil;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * 鱼
  *
  * @author Moyuyanli
  * @date 2022/12/9 9:50
  */
-@Entity
+@Entity(name = "Fish")
 @Table
 @Data
-public class Fish {
+public class Fish implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;

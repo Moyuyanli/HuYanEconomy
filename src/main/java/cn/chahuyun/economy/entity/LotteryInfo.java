@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @author Moyuyanli
  * @date 2022/12/6 8:55
  */
-@Entity
+@Entity(name = "LotteryInfo")
 @Table
 @Getter
 @Setter

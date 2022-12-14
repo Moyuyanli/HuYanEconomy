@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,11 +17,11 @@ import java.util.List;
  * @author Moyuyanli
  * @date 2022/12/8 14:37
  */
-@Entity
+@Entity(name = "FishPond")
 @Table
 @Getter
 @Setter
-public class FishPond {
+public class FishPond implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

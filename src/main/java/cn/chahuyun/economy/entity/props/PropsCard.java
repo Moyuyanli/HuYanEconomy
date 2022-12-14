@@ -19,7 +19,7 @@ import java.util.Date;
  * @author Moyuyanli
  * @date 2022/11/14 9:27
  */
-@Entity
+@Entity(name = "PropsCard")
 @Table
 @Getter
 @Setter

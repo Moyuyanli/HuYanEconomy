@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @author Moyuyanli
  * @date 2022/11/15 9:02
  */
-@Entity
+@Entity(name = "UserBackpack")
 @Table
 @Getter
 @Setter

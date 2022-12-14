@@ -21,7 +21,7 @@ import java.util.List;
  * @author Moyuyanli
  * @date 2022/11/14 9:45
  */
-@Entity
+@Entity(name = "UserInfo")
 @Table
 @Getter
 @Setter
@@ -76,6 +76,11 @@ public class UserInfo implements Serializable {
      */
     @OneToMany(targetEntity = UserBackpack.class, mappedBy = "userId", fetch = FetchType.EAGER)
     private List<UserBackpack> backpacks;
+    /**
+     * 称号信息
+     */
+    @OneToMany(targetEntity = TitleInfo.class, mappedBy = "userId", fetch = FetchType.EAGER)
+    private List<TitleInfo> titleInfos;
 
     @Transient
     private User user;

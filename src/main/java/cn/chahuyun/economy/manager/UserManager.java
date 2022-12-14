@@ -6,6 +6,9 @@ import cn.chahuyun.economy.util.EconomyUtil;
 import cn.chahuyun.economy.util.HibernateUtil;
 import cn.chahuyun.economy.util.Log;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.Image;
@@ -23,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 用户管理<p>
@@ -113,6 +117,39 @@ public class UserManager {
             subject.sendMessage(singleMessages.build());
             return;
         }
+        Graphics2D graphics = userInfoImageBase.createGraphics();
+        //图片与文字的抗锯齿
+        graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics.setColor(Color.black);
+        graphics.setFont(new Font("黑体", Font.PLAIN, 20));
+
+
+        JSONObject entries = JSONUtil.parseObj(HttpUtil.get("https://v1.hitokoto.cn"));
+        String hitokoto = entries.getStr("hitokoto");
+        String author = entries.getStr("from_who");
+        String from = entries.getStr("from");
+
+        String[] yiyan;
+        if (hitokoto.length() > 18) {
+            yiyan = new String[3];
+            yiyan[0] = hitokoto.substring(0, 18);
+            yiyan[1] = hitokoto.substring(18);
+            yiyan[2] = "--" + (author == null ? "无铭" : author) + ":" + from;
+        } else {
+            yiyan = new String[2];
+            yiyan[0] = hitokoto;
+            yiyan[1] = "--" + (author == null ? "无铭" : author) + ":" + from;
+        }
+
+        AtomicInteger x = new AtomicInteger(230);
+
+        for (String s : yiyan) {
+            //写入签到信息
+            graphics.drawString(s, 520, x.get());
+            x.addAndGet(28);
+        }
+        graphics.dispose();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         try {
             ImageIO.write(userInfoImageBase, "png", stream);
@@ -223,6 +260,7 @@ public class UserManager {
             pen.drawString("暂无", 172, 440);
 
             double money = EconomyUtil.getMoneyByUser(user);
+            double bank = EconomyUtil.getMoneyByBank(user);
             //写入金币
             if (String.valueOf(money).length() > 5) {
                 fontSize = 20;
@@ -235,6 +273,24 @@ public class UserManager {
             pen.setFont(new Font("黑体", Font.PLAIN, fontSize));
             //写入今日获得
             pen.drawString(String.valueOf(userInfo.getSignEarnings()), 810, 410);
+
+            //写入银行
+            if (String.valueOf(bank).length() > 5) {
+                fontSize = 20;
+            }
+            pen.setFont(new Font("黑体", Font.PLAIN, fontSize));
+            //写入银行金币
+            pen.drawString(String.valueOf(bank), 600, 460);
+
+            fontSize = 24;
+            double bankEarnings = userInfo.getBankEarnings();
+            //写入银行收益
+            if (String.valueOf(bankEarnings).length() > 5) {
+                fontSize = 20;
+            }
+            pen.setFont(new Font("黑体", Font.PLAIN, fontSize));
+            //写入银行收益金币
+            pen.drawString(String.valueOf(bankEarnings), 810, 460);
 
             fontSize = 15;
             pen.setColor(new Color(255, 255, 255, 153));
