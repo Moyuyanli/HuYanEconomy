@@ -85,7 +85,7 @@ public class FishRanking implements Serializable {
      */
     public SingleMessage getInfo(int top) {
         String message =
-                "top:" + top+1 + "\n" +
+                "top:" + (top+1) + "\n" +
                         "用户:" + getName() + "(鱼竿等级:" + getFishRodLevel() + ")\n" +
                         "尺寸:" + getDimensions() + "\n" +
                         "金额:" + getMoney() + "\n" +
