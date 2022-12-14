@@ -16,9 +16,6 @@ import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.*;
-import org.hibernate.query.criteria.HibernateCriteriaBuilder;
-import org.hibernate.query.criteria.JpaCriteriaQuery;
-import org.hibernate.query.criteria.JpaRoot;
 
 import java.util.*;
 
@@ -123,28 +120,44 @@ public class PropsManagerImpl implements PropsManager {
      * 删除 [用户] 对应的 [道具]
      *
      * @param userInfo 用户
-     * @param props    用户道具
+     * @param props    用户的道具
      * @param clazz    道具类型
      * @return true 成功删除
      */
     @Override
     public <E> boolean deleteProp(UserInfo userInfo, PropsBase props, Class<E> clazz) {
+        return false;
+    }
+
+    /**
+     * 删除 [用户] 对应的 [道具]
+     *
+     * @param userInfo 用户
+     * @param props    用户道具
+     * @return true 成功删除
+     */
+    @Override
+    public UserInfo deleteProp(UserInfo userInfo, PropsBase props) {
         try {
             return HibernateUtil.factory.fromTransaction(session -> {
                 session.remove(props);
-                HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
-                JpaCriteriaQuery<UserBackpack> query = builder.createQuery(UserBackpack.class);
-                JpaRoot<UserBackpack> from = query.from(UserBackpack.class);
-                query.select(from);
-                query.where(builder.equal(from.get("propsCode"), props.getCode()));
-                query.where(builder.equal(from.get("propId"), props.getId()));
-                UserBackpack backpack = session.createQuery(query).getSingleResult();
-                session.remove(backpack);
-                return true;
+                List<UserBackpack> backpacks = userInfo.getBackpacks();
+                backpacks.removeIf(filter -> filter.getPropId() == props.getId());
+                userInfo.setBackpacks(backpacks);
+//                HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
+//                JpaCriteriaQuery<UserBackpack> query = builder.createQuery(UserBackpack.class);
+//                JpaRoot<UserBackpack> from = query.from(UserBackpack.class);
+//                query.select(from);
+//                query.where(builder.equal(from.get("propsCode"), props.getCode()));
+//                query.where(builder.equal(from.get("propId"), props.getId()));
+//                UserBackpack backpack = session.createQuery(query).getSingleResult();
+//                session.remove(backpack);
+//                backpacks.remove(backpack);
+                return userInfo;
             });
         } catch (Exception e) {
             Log.error("道具管理:删除道具出错");
-            return false;
+            return null;
         }
     }
 

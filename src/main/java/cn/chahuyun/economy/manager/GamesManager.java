@@ -4,19 +4,22 @@ import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.Fish;
 import cn.chahuyun.economy.entity.fish.FishInfo;
 import cn.chahuyun.economy.entity.fish.FishPond;
+import cn.chahuyun.economy.entity.fish.FishRanking;
 import cn.chahuyun.economy.util.EconomyUtil;
+import cn.chahuyun.economy.util.HibernateUtil;
 import cn.chahuyun.economy.util.Log;
 import cn.chahuyun.economy.util.ShareUtils;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
+import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
-import net.mamoe.mirai.message.data.At;
-import net.mamoe.mirai.message.data.MessageUtils;
-import net.mamoe.mirai.message.data.PlainText;
-import net.mamoe.mirai.message.data.SingleMessage;
+import net.mamoe.mirai.message.data.*;
+import org.hibernate.query.criteria.HibernateCriteriaBuilder;
+import org.hibernate.query.criteria.JpaCriteriaQuery;
+import org.hibernate.query.criteria.JpaRoot;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -241,6 +244,7 @@ public class GamesManager {
             playerCooling.remove(userInfo.getQq());
         }
         fishInfo.switchStatus();
+        new FishRanking(userInfo.getQq(), userInfo.getName(), dimensions, money, fishInfo.getRodLevel(), fish, fishPond).save();
     }
 
     /**
@@ -298,5 +302,53 @@ public class GamesManager {
         SingleMessage singleMessage = fishInfo.updateRod(userInfo);
         subject.sendMessage(singleMessage);
     }
+
+
+    /**
+     * 钓鱼排行榜
+     *
+     * @param event 消息事件
+     * @author Moyuyanli
+     * @date 2022/12/14 15:27
+     */
+    public static void fishTop(MessageEvent event) {
+        Bot bot = event.getBot();
+        Contact subject = event.getSubject();
+        UserInfo userInfo = UserManager.getUserInfo(event.getSender());
+        User user = userInfo.getUser();
+
+        List<FishRanking> rankingList = HibernateUtil.factory.fromSession(session -> {
+            HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
+            JpaCriteriaQuery<FishRanking> query = builder.createQuery(FishRanking.class);
+            JpaRoot<FishRanking> from = query.from(FishRanking.class);
+            query.select(from);
+            query.orderBy(builder.desc(from.get("money")));
+            List<FishRanking> list = session.createQuery(query).list();
+            if (list.size() == 0) {
+                return null;
+            }
+            return list.subList(0, Math.min(list.size(), 30));
+        });
+        if (rankingList == null || rankingList.size() == 0) {
+            subject.sendMessage("暂时没人钓鱼!");
+            return;
+        }
+        ForwardMessageBuilder iNodes = new ForwardMessageBuilder(subject);
+        iNodes.add(bot, new PlainText("钓鱼排行榜:"));
+
+        int start = 0;
+        int end = 10;
+
+        for (int i = start; i < end && i < rankingList.size(); i++) {
+            FishRanking ranking = rankingList.get(i);
+            iNodes.add(bot, ranking.getInfo(i));
+        }
+//        while (true) {
+//
+//        }
+
+        subject.sendMessage(iNodes.build());
+    }
+
 
 }

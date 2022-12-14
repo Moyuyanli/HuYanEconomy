@@ -50,6 +50,14 @@ public interface PropsManager {
      */
     <E> boolean deleteProp(UserInfo userInfo, PropsBase props, Class<E> clazz);
 
+    /**
+     * 删除 [用户] 对应的 [道具]
+     *
+     * @param userInfo 用户
+     * @param props    用户的道具
+     * @return 新用户信息
+     */
+    UserInfo deleteProp(UserInfo userInfo, PropsBase props);
 
     /**
      * 查询道具商店

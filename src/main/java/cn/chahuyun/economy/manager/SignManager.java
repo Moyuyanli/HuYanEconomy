@@ -102,9 +102,10 @@ public class SignManager {
         for (PropsCard card : cardS) {
             if (card.isStatus()) {
                 doubleStatus = true;
-                if (!propsManager.deleteProp(userInfo, card, PropsCard.class)) {
-                    doubleStatus = false;
-                    subject.sendMessage("双倍签到金币卡使用失败!");
+                userInfo = propsManager.deleteProp(userInfo, card);
+                if (userInfo == null) {
+                    subject.sendMessage("双倍签到金币卡使用失败!签到失败!");
+                    return;
                 }
                 break;
             }

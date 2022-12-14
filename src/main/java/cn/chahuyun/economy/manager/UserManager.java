@@ -293,7 +293,7 @@ public class UserManager {
             pen.drawString(String.valueOf(bankEarnings), 810, 460);
 
             fontSize = 15;
-            pen.setColor(new Color(255, 255, 255, 153));
+            pen.setColor(new Color(255, 255, 255, 230));
             pen.setFont(new Font("黑体", Font.ITALIC, fontSize));
 
             pen.drawString("by HuYanEconomy & 壶言经济 " + HuYanEconomy.version, 580, 525);

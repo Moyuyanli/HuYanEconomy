@@ -69,22 +69,27 @@ public class MessageEventListener extends SimpleListenerHost {
             case "签到":
             case "打卡":
             case "sign":
+                Log.info("签到指令");
                 SignManager.sign(event);
                 return;
             case "个人信息":
             case "info":
+                Log.info("个人信息指令");
                 UserManager.getUserInfo(event);
                 return;
             case "背包":
             case "backpack":
+                Log.info("背包指令");
                 propsManager.viewUserBackpack(event);
                 return;
             case "道具商店":
             case "shops":
+                Log.info("道具商店指令");
                 propsManager.propStore(event);
                 return;
             case "开启 猜签":
                 if (owner) {
+                    Log.info("管理指令");
                     if (group != null && !config.getLotteryGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getLotteryGroup().add(group.getId());
                     }
@@ -93,6 +98,7 @@ public class MessageEventListener extends SimpleListenerHost {
                 return;
             case "关闭 猜签":
                 if (owner) {
+                    Log.info("管理指令");
                     if (group != null && config.getLotteryGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getLotteryGroup().remove(group.getId());
                     }
@@ -101,6 +107,7 @@ public class MessageEventListener extends SimpleListenerHost {
                 return;
             case "开启 钓鱼":
                 if (owner) {
+                    Log.info("管理指令");
                     if (group != null && !config.getFishGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getFishGroup().add(group.getId());
                     }
@@ -109,6 +116,7 @@ public class MessageEventListener extends SimpleListenerHost {
                 return;
             case "关闭 钓鱼":
                 if (owner) {
+                    Log.info("管理指令");
                     if (group != null && config.getFishGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getFishGroup().remove(group.getId());
                     }
@@ -116,16 +124,23 @@ public class MessageEventListener extends SimpleListenerHost {
                 }
                 return;
             case "购买鱼竿":
+                Log.info("游戏指令");
                 GamesManager.buyFishRod(event);
                 return;
             case "钓鱼":
             case "抛竿":
+                Log.info("游戏指令");
                 if (group != null && config.getFishGroup().contains(group.getId())) {
                     GamesManager.fishing(event);
                 }
                 return;
             case "升级鱼竿":
+                Log.info("游戏指令");
                 GamesManager.upFishRod(event);
+                return;
+            case "钓鱼排行":
+                Log.info("游戏指令");
+                GamesManager.fishTop(event);
                 return;
         }
 
