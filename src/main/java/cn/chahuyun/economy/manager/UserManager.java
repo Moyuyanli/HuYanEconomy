@@ -296,7 +296,7 @@ public class UserManager {
             pen.setColor(new Color(255, 255, 255, 230));
             pen.setFont(new Font("黑体", Font.ITALIC, fontSize));
 
-            pen.drawString("by HuYanEconomy & 壶言经济 " + HuYanEconomy.version, 580, 525);
+            pen.drawString("by Mirai & HuYanEconomy(壶言经济) " + HuYanEconomy.version, 540, 525);
 
             //关闭窗体，释放部分资源
             pen.dispose();

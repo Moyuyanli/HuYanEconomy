@@ -139,6 +139,7 @@ public class MessageEventListener extends SimpleListenerHost {
                 GamesManager.upFishRod(event);
                 return;
             case "钓鱼排行":
+            case "钓鱼榜":
                 Log.info("游戏指令");
                 GamesManager.fishTop(event);
                 return;

@@ -189,9 +189,10 @@ public class GamesManager {
         }
 
         /*
-        最小钓鱼等级 = 1
+        最小钓鱼等级 = max(钓鱼竿支持最大等级/3,基础最小等级）
         最大钓鱼等级 = max(最小钓鱼等级,min(钓鱼竿支持最大等级,鱼塘支持最大等级,拉扯的等级))
          */
+        rankMin = Math.max(fishInfo.getLevel(), rankMin);
         rankMax = Math.max(rankMin + 1, Math.min(fishInfo.getLevel(), Math.min(fishPond.getPondLevel(), rankMax)));
         /*
         最小难度 = 拉扯最小难度
@@ -199,7 +200,7 @@ public class GamesManager {
          */
         difficultyMax = Math.max(difficultyMin + 1, difficultyMax + fishInfo.getRodLevel());
         //roll等级
-        int rank = RandomUtil.randomInt(rankMin, rankMax + 1);
+        int rank = RandomUtil.randomInt(rankMin, rankMax);
 
         Fish fish;
         //彩蛋
@@ -238,7 +239,9 @@ public class GamesManager {
         if (EconomyUtil.addMoneyToUser(user, v) && EconomyUtil.addMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), money * fishPond.getRebate())) {
             fishPond.addNumber();
             String format = String.format("起竿咯！\n%s\n等级:%s\n单价:%s\n尺寸:%d\n总金额:%d\n%s", fish.getName(), fish.getLevel(), fish.getPrice(), dimensions, money, fish.getDescription());
-            subject.sendMessage(format);
+            MessageChainBuilder messages = new MessageChainBuilder();
+            messages.append(new PlainText(format)).append(new At(userInfo.getQq()));
+            subject.sendMessage(messages.build());
         } else {
             subject.sendMessage("钓鱼失败!");
             playerCooling.remove(userInfo.getQq());
