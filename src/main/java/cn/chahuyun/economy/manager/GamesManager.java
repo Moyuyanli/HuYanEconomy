@@ -240,7 +240,7 @@ public class GamesManager {
             fishPond.addNumber();
             String format = String.format("起竿咯！\n%s\n等级:%s\n单价:%s\n尺寸:%d\n总金额:%d\n%s", fish.getName(), fish.getLevel(), fish.getPrice(), dimensions, money, fish.getDescription());
             MessageChainBuilder messages = new MessageChainBuilder();
-            messages.append(new PlainText(format)).append(new At(userInfo.getQq()));
+            messages.append(new At(userInfo.getQq())).append(new PlainText(format));
             subject.sendMessage(messages.build());
         } else {
             subject.sendMessage("钓鱼失败!");
