@@ -1,12 +1,14 @@
 package cn.chahuyun.economy.entity.fish;
 
 import cn.chahuyun.economy.util.HibernateUtil;
+import cn.hutool.core.date.DateUtil;
 import jakarta.persistence.*;
 import lombok.Data;
 import net.mamoe.mirai.message.data.PlainText;
 import net.mamoe.mirai.message.data.SingleMessage;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * 钓鱼排行
@@ -43,6 +45,10 @@ public class FishRanking implements Serializable {
      */
     private int fishRodLevel;
     /**
+     * 钓起来的时间
+     */
+    private Date date;
+    /**
      * 钓起来的鱼
      */
     @ManyToOne(targetEntity = Fish.class, fetch = FetchType.EAGER)
@@ -66,6 +72,7 @@ public class FishRanking implements Serializable {
         this.fishRodLevel = fishRodLevel;
         this.fish = fish;
         this.fishPond = fishPond;
+        this.date = new Date();
     }
 
     /**
@@ -85,8 +92,13 @@ public class FishRanking implements Serializable {
      */
     public SingleMessage getInfo(int top) {
         String message =
-                "top:" + (top+1) + "\n" +
-                        "用户:" + getName() + "(鱼竿等级:" + getFishRodLevel() + ")\n" +
+                "top:" + (top + 1) + "\n";
+        if (top == 1) {
+            String s = DateUtil.formatBetween(new Date(), getDate());
+            message += "霸榜时间:" + s + "\n";
+        }
+        message +=
+                "用户:" + getName() + "(鱼竿等级:" + getFishRodLevel() + ")\n" +
                         "尺寸:" + getDimensions() + "\n" +
                         "金额:" + getMoney() + "\n" +
                         "鱼:" + getFish().getName() + "(等级:" + getFish().getLevel() + ")\n" +

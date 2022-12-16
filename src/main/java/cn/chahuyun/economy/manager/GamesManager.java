@@ -21,10 +21,7 @@ import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.query.criteria.JpaRoot;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -133,7 +130,7 @@ public class GamesManager {
                         difficultyMin += 5;
                         subject.sendMessage(successMessages[randomInt]);
                     } else {
-                        difficultyMin -= 10;
+                        difficultyMin -= 8;
                         subject.sendMessage(failureMessages[randomInt]);
                     }
                     break;
@@ -144,7 +141,7 @@ public class GamesManager {
                         difficultyMin += 5;
                         subject.sendMessage(successMessages[randomInt]);
                     } else {
-                        difficultyMin -= 10;
+                        difficultyMin -= 8;
                         subject.sendMessage(failureMessages[randomInt]);
                     }
                     break;
@@ -156,7 +153,7 @@ public class GamesManager {
                         difficultyMin += 5;
                         subject.sendMessage(otherMessages[randomInt]);
                     } else {
-                        difficultyMin -= 10;
+                        difficultyMin -= 12;
                         subject.sendMessage(failureMessages[randomInt]);
                     }
                     rankMax++;
@@ -200,7 +197,7 @@ public class GamesManager {
          */
         difficultyMax = Math.max(difficultyMin + 1, difficultyMax + fishInfo.getRodLevel());
         //roll等级
-        int rank = RandomUtil.randomInt(rankMin, rankMax);
+        int rank = RandomUtil.randomInt(rankMin, rankMax + 1);
 
         Fish fish;
         //彩蛋
@@ -347,10 +344,43 @@ public class GamesManager {
             iNodes.add(bot, ranking.getInfo(i));
         }
 //        while (true) {
-//
+//          todo 钓鱼榜分页
 //        }
 
         subject.sendMessage(iNodes.build());
+    }
+
+    /**
+     * 刷新钓鱼状态
+     *
+     * @param event 消息事件
+     * @author Moyuyanli
+     * @date 2022/12/16 11:04
+     */
+    public static void refresh(MessageEvent event) {
+        Boolean status = HibernateUtil.factory.fromTransaction(session -> {
+            HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
+            JpaCriteriaQuery<FishInfo> query = builder.createQuery(FishInfo.class);
+            JpaRoot<FishInfo> from = query.from(FishInfo.class);
+            query.select(from);
+            query.where(builder.equal(from.get("status"), true));
+            List<FishInfo> list;
+            try {
+                list = session.createQuery(query).list();
+            } catch (Exception e) {
+                return false;
+            }
+            for (FishInfo fishInfo : list) {
+                fishInfo.setStatus(false);
+                session.merge(fishInfo);
+            }
+            return true;
+        });
+        if (status) {
+            event.getSubject().sendMessage("钓鱼状态刷新成功!");
+        } else {
+            event.getSubject().sendMessage("钓鱼状态刷新成功!");
+        }
     }
 
 
