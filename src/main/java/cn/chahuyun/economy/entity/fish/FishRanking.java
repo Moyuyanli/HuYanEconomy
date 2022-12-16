@@ -1,6 +1,8 @@
 package cn.chahuyun.economy.entity.fish;
 
 import cn.chahuyun.economy.util.HibernateUtil;
+import cn.hutool.core.date.BetweenFormatter;
+import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -93,8 +95,8 @@ public class FishRanking implements Serializable {
     public SingleMessage getInfo(int top) {
         String message =
                 "top:" + (top + 1) + "\n";
-        if (top == 1) {
-            String s = DateUtil.formatBetween(new Date(), getDate());
+        if (top == 0 || top == 1 || top == 2) {
+            String s = DateUtil.formatBetween(DateUtil.between(new Date(), getDate(), DateUnit.MS), BetweenFormatter.Level.MINUTE);
             message += "霸榜时间:" + s + "\n";
         }
         message +=
