@@ -2,9 +2,9 @@ package cn.chahuyun.economy.entity.fish;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.UserInfo;
-import cn.chahuyun.economy.util.EconomyUtil;
-import cn.chahuyun.economy.util.HibernateUtil;
-import cn.chahuyun.economy.util.Log;
+import cn.chahuyun.economy.utils.EconomyUtil;
+import cn.chahuyun.economy.utils.HibernateUtil;
+import cn.chahuyun.economy.utils.Log;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -118,6 +118,7 @@ public class FishInfo implements Serializable {
      *
      * @author Moyuyanli
      * @date 2022/12/8 15:11
+     * @see FishPond
      */
     public FishPond getFishPond() {
         FishPond fishPond;

@@ -1,8 +1,8 @@
 package cn.chahuyun.economy.entity;
 
 import cn.chahuyun.economy.entity.fish.FishInfo;
-import cn.chahuyun.economy.util.HibernateUtil;
-import cn.chahuyun.economy.util.Log;
+import cn.chahuyun.economy.utils.HibernateUtil;
+import cn.chahuyun.economy.utils.Log;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
@@ -190,6 +190,7 @@ public class UserInfo implements Serializable {
      * 不存在则注册一个<p>
      *
      * @return FishInfo 钓鱼信息
+     * @see FishInfo
      */
     public FishInfo getFishInfo() {
         FishInfo fishInfo;

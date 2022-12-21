@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.util;
+package cn.chahuyun.economy.utils;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import net.mamoe.mirai.utils.MiraiLogger;

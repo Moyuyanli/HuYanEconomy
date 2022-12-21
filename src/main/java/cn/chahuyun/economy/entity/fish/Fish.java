@@ -3,6 +3,8 @@ package cn.chahuyun.economy.entity.fish;
 import cn.hutool.core.util.RandomUtil;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 
@@ -14,7 +16,8 @@ import java.io.Serializable;
  */
 @Entity(name = "Fish")
 @Table
-@Data
+@Getter
+@Setter
 public class Fish implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

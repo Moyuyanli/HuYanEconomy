@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.entity.bank.action;
 
-import cn.chahuyun.economy.util.EconomyUtil;
+import cn.chahuyun.economy.utils.EconomyUtil;
 import net.mamoe.mirai.contact.User;
 
 /**

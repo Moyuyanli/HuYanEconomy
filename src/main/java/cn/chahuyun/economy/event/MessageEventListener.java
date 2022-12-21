@@ -4,7 +4,7 @@ import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.manager.*;
 import cn.chahuyun.economy.plugin.PluginManager;
-import cn.chahuyun.economy.util.Log;
+import cn.chahuyun.economy.utils.Log;
 import kotlin.coroutines.CoroutineContext;
 import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.EventHandler;
@@ -181,6 +181,19 @@ public class MessageEventListener extends SimpleListenerHost {
             TransferManager.userToUser(event);
             return;
         }
+
+        String walletToBankRegex = "存款 \\d+|deposit \\d+";
+        String bankToWalletRegex = "取款 \\d+|withdraw \\d+";
+        if (Pattern.matches(walletToBankRegex, code)) {
+            Log.info("银行指令");
+            BankManager.deposit(event);
+            return;
+        } else if (Pattern.matches(bankToWalletRegex, code)) {
+            Log.info("银行指令");
+            BankManager.withdrawal(event);
+            return;
+        }
+
 
 //        {
 //            if (group == null) {

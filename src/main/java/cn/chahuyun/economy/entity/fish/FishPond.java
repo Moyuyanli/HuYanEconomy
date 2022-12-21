@@ -1,8 +1,8 @@
 package cn.chahuyun.economy.entity.fish;
 
 import cn.chahuyun.economy.plugin.FishManager;
-import cn.chahuyun.economy.util.EconomyUtil;
-import cn.chahuyun.economy.util.HibernateUtil;
+import cn.chahuyun.economy.utils.EconomyUtil;
+import cn.chahuyun.economy.utils.HibernateUtil;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

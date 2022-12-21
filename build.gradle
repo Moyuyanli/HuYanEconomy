@@ -18,7 +18,7 @@ repositories {
 dependencies {
     //依赖
     compileOnly "xyz.cssxsh.mirai:mirai-hibernate-plugin:2.5.1"
-    compileOnly "xyz.cssxsh.mirai:mirai-economy-core:1.0.5"
+    compileOnly "xyz.cssxsh.mirai:mirai-economy-core:1.0.6"
     compileOnly "cn.chahuyun:HuYanSession:2.3.1"
     //使用库
     implementation "org.projectlombok:lombok:1.18.24"

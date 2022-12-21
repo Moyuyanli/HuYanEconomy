@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.entity;
 
-import cn.chahuyun.economy.util.HibernateUtil;
+import cn.chahuyun.economy.utils.HibernateUtil;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

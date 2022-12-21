@@ -2,7 +2,7 @@ package cn.chahuyun.economy.plugin;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.fish.Fish;
-import cn.chahuyun.economy.util.HibernateUtil;
+import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.ExcelUtil;
 import org.hibernate.query.criteria.HibernateCriteriaBuilder;

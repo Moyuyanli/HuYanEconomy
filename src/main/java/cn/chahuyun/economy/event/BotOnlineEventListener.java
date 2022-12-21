@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.event;
 
 import cn.chahuyun.economy.HuYanEconomy;
-import cn.chahuyun.economy.util.Log;
+import cn.chahuyun.economy.utils.Log;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;

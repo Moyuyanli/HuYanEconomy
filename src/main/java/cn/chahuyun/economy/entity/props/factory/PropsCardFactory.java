@@ -2,7 +2,7 @@ package cn.chahuyun.economy.entity.props.factory;
 
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.plugin.PropsType;
-import cn.chahuyun.economy.util.HibernateUtil;
+import cn.chahuyun.economy.utils.HibernateUtil;
 
 import java.util.Date;
 

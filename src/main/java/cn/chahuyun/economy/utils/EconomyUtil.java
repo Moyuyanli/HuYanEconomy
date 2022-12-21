@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.util;
+package cn.chahuyun.economy.utils;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.Constant;
@@ -238,15 +238,23 @@ public class EconomyUtil {
      * @date 2022/11/14 15:53
      */
     public static boolean turnUserToBank(User user, double quantity, EconomyCurrency currency) {
-        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot); GlobalEconomyContext global = economyService.global()) {
+        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot);
+             GlobalEconomyContext global = economyService.global()) {
+
             UserEconomyAccount account = context.getService().account(user);
+
             UserEconomyAccount bankAccount = global.getService().account(user);
+
             double money = context.get(account, currency);
             if (money - quantity < 0) {
                 return false;
             }
+            context.minusAssign(account,currency,quantity);
+
+
             context.transaction(currency, balance -> {
                 balance.put(account, balance.get(account) - quantity);
+
                 balance.put(bankAccount, balance.get(bankAccount) + quantity);
                 return null;
             });

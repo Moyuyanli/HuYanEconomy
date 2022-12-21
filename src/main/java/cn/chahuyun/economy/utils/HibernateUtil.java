@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.util;
+package cn.chahuyun.economy.utils;
 
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;

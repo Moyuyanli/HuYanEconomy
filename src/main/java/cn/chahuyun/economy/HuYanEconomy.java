@@ -6,9 +6,9 @@ import cn.chahuyun.economy.event.MessageEventListener;
 import cn.chahuyun.economy.manager.LotteryManager;
 import cn.chahuyun.economy.plugin.FishManager;
 import cn.chahuyun.economy.plugin.PluginManager;
-import cn.chahuyun.economy.util.EconomyUtil;
-import cn.chahuyun.economy.util.HibernateUtil;
-import cn.chahuyun.economy.util.Log;
+import cn.chahuyun.economy.utils.EconomyUtil;
+import cn.chahuyun.economy.utils.HibernateUtil;
+import cn.chahuyun.economy.utils.Log;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.console.plugin.jvm.JavaPlugin;
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder;
@@ -71,5 +71,13 @@ public final class HuYanEconomy extends JavaPlugin {
             Log.info("事件已监听!");
         }
         Log.info(String.format("HuYanEconomy已加载！当前版本 %s !", version));
+    }
+
+    /**
+     * 插件关闭
+     */
+    @Override
+    public void onDisable() {
+        Log.info("插件已卸载!");
     }
 }

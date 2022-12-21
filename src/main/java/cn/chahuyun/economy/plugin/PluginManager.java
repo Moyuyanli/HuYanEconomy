@@ -6,7 +6,7 @@ import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.manager.PropsManager;
 import cn.chahuyun.economy.manager.PropsManagerImpl;
-import cn.chahuyun.economy.util.Log;
+import cn.chahuyun.economy.utils.Log;
 
 /**
  * 插件管理<p>

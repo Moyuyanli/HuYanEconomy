@@ -1,11 +1,12 @@
 package cn.chahuyun.economy.entity.fish;
 
-import cn.chahuyun.economy.util.HibernateUtil;
+import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.hutool.core.date.BetweenFormatter;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import net.mamoe.mirai.message.data.PlainText;
 import net.mamoe.mirai.message.data.SingleMessage;
 
@@ -18,9 +19,10 @@ import java.util.Date;
  * @author Moyuyanli
  * @date 2022/12/14 15:08
  */
-@Data
 @Entity(name = "FishRanking")
 @Table
+@Getter
+@Setter
 public class FishRanking implements Serializable {
 
     @Id

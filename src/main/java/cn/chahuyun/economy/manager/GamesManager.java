@@ -5,10 +5,10 @@ import cn.chahuyun.economy.entity.fish.Fish;
 import cn.chahuyun.economy.entity.fish.FishInfo;
 import cn.chahuyun.economy.entity.fish.FishPond;
 import cn.chahuyun.economy.entity.fish.FishRanking;
-import cn.chahuyun.economy.util.EconomyUtil;
-import cn.chahuyun.economy.util.HibernateUtil;
-import cn.chahuyun.economy.util.Log;
-import cn.chahuyun.economy.util.ShareUtils;
+import cn.chahuyun.economy.utils.EconomyUtil;
+import cn.chahuyun.economy.utils.HibernateUtil;
+import cn.chahuyun.economy.utils.Log;
+import cn.chahuyun.economy.utils.ShareUtils;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -21,7 +21,10 @@ import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.query.criteria.JpaRoot;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -186,10 +189,10 @@ public class GamesManager {
         }
 
         /*
-        最小钓鱼等级 = max(钓鱼竿支持最大等级/3,基础最小等级）
-        最大钓鱼等级 = max(最小钓鱼等级,min(钓鱼竿支持最大等级,鱼塘支持最大等级,拉扯的等级))
+        最小钓鱼等级 = max((钓鱼竿支持最大等级/4)+1,基础最小等级）
+        最大钓鱼等级 = max(最小钓鱼等级+1,min(钓鱼竿支持最大等级,鱼塘支持最大等级,拉扯的等级))
          */
-        rankMin = Math.max(fishInfo.getLevel(), rankMin);
+        rankMin = Math.max((fishInfo.getLevel() / 4) + 1, rankMin);
         rankMax = Math.max(rankMin + 1, Math.min(fishInfo.getLevel(), Math.min(fishPond.getPondLevel(), rankMax)));
         /*
         最小难度 = 拉扯最小难度
@@ -197,7 +200,7 @@ public class GamesManager {
          */
         difficultyMax = Math.max(difficultyMin + 1, difficultyMax + fishInfo.getRodLevel());
         //roll等级
-        int rank = RandomUtil.randomInt(rankMin, rankMax + 1);
+        int rank = RandomUtil.randomInt(rankMin, rankMax);
 
         Fish fish;
         //彩蛋
@@ -296,6 +299,10 @@ public class GamesManager {
         FishInfo fishInfo = userInfo.getFishInfo();
         if (!fishInfo.isFishRod()) {
             subject.sendMessage("鱼竿都没得，你升级个锤子!");
+            return;
+        }
+        if (fishInfo.isStatus()) {
+            subject.sendMessage("钓鱼期间不可升级鱼竿!");
             return;
         }
 
