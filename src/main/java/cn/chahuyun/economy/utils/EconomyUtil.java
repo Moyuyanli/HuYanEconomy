@@ -240,24 +240,14 @@ public class EconomyUtil {
     public static boolean turnUserToBank(User user, double quantity, EconomyCurrency currency) {
         try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot);
              GlobalEconomyContext global = economyService.global()) {
-
             UserEconomyAccount account = context.getService().account(user);
-
             UserEconomyAccount bankAccount = global.getService().account(user);
-
             double money = context.get(account, currency);
             if (money - quantity < 0) {
                 return false;
             }
-            context.minusAssign(account,currency,quantity);
-
-
-            context.transaction(currency, balance -> {
-                balance.put(account, balance.get(account) - quantity);
-
-                balance.put(bankAccount, balance.get(bankAccount) + quantity);
-                return null;
-            });
+            context.minusAssign(account, currency, quantity);
+            global.plusAssign(bankAccount, currency, quantity);
             return true;
         } catch (Exception e) {
             Log.error("经济转移出错:用户->银行", e);
@@ -300,11 +290,8 @@ public class EconomyUtil {
             if (bankMoney - quantity < 0) {
                 return false;
             }
-            context.transaction(currency, balance -> {
-                balance.put(bankAccount, balance.get(bankAccount) - quantity);
-                balance.put(account, balance.get(account) + quantity);
-                return null;
-            });
+            global.minusAssign(bankAccount, currency, quantity);
+            context.plusAssign(account, currency, quantity);
             return true;
         } catch (Exception e) {
             Log.error("经济转移出错:银行->用户", e);

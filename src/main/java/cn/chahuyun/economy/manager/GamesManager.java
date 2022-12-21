@@ -224,7 +224,7 @@ public class GamesManager {
                 rank--;
                 continue;
             }
-            //难度>=200 触发彩蛋
+            //难度>=200 触发彩蛋 
             if (difficulty >= 200) {
                 winning = true;
             }
