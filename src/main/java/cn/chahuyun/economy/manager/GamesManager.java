@@ -200,7 +200,7 @@ public class GamesManager {
          */
         difficultyMax = Math.max(difficultyMin + 1, difficultyMax + fishInfo.getRodLevel());
         //roll等级
-        int rank = RandomUtil.randomInt(rankMin, rankMax);
+        int rank = RandomUtil.randomInt(rankMin, rankMax + 1);
 
         Fish fish;
         //彩蛋
