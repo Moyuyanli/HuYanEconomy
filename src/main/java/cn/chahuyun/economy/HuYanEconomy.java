@@ -9,6 +9,7 @@ import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
+import cn.hutool.cron.CronUtil;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.console.plugin.jvm.JavaPlugin;
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder;
@@ -78,6 +79,7 @@ public final class HuYanEconomy extends JavaPlugin {
      */
     @Override
     public void onDisable() {
+        CronUtil.stop();
         Log.info("插件已卸载!");
     }
 }

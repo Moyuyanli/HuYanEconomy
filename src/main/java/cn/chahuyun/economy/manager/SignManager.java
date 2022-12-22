@@ -7,8 +7,6 @@ import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
-import cn.hutool.core.date.DateTime;
-import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import net.mamoe.mirai.contact.AvatarSpec;
@@ -26,7 +24,6 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -65,13 +62,7 @@ public class SignManager {
             return;
         }
         if (!userInfo.sign()) {
-            Date signTime = userInfo.getSignTime();
-            DateTime dateTime = DateUtil.offsetHour(signTime, 24);
-            long between = DateUtil.between(dateTime, new Date(), DateUnit.MINUTE, true);
-            long house = between / 60;
-            between = between % 60;
             messages.append(new PlainText("你已经签到过了哦!"));
-            messages.append(new PlainText(String.format("\n距离下次签到还有%s小时%s分钟", house, between)));
             subject.sendMessage(messages.build());
             return;
         }

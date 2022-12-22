@@ -159,7 +159,7 @@ public class FishInfo implements Serializable {
      * @return 鱼竿支持最大等级
      */
     public int getLevel() {
-        return getRodLevel() / 10 + 1;
+        return getRodLevel() == 0 ? 1 : getRodLevel() / 10 + 2;
     }
 
     /**
@@ -190,7 +190,7 @@ public class FishInfo implements Serializable {
     }
 
     /**
-     * 获取钓鱼状态
+     * 线程安全获取钓鱼状态
      *
      * @return true 在钓鱼
      */
@@ -202,6 +202,15 @@ public class FishInfo implements Serializable {
             save();
             return false;
         }
+    }
+
+    /**
+     * 获取钓鱼状态
+     *
+     * @return true 在钓鱼
+     */
+    public boolean getStatus() {
+        return status;
     }
 
     /**

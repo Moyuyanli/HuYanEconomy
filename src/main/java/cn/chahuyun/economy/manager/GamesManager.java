@@ -189,10 +189,10 @@ public class GamesManager {
         }
 
         /*
-        最小钓鱼等级 = max((钓鱼竿支持最大等级/4)+1,基础最小等级）
+        最小钓鱼等级 = max((钓鱼竿支持最大等级/5)+1,基础最小等级）
         最大钓鱼等级 = max(最小钓鱼等级+1,min(钓鱼竿支持最大等级,鱼塘支持最大等级,拉扯的等级))
          */
-        rankMin = Math.max((fishInfo.getLevel() / 4) + 1, rankMin);
+        rankMin = Math.max((fishInfo.getLevel() / 5) + 1, rankMin);
         rankMax = Math.max(rankMin + 1, Math.min(fishInfo.getLevel(), Math.min(fishPond.getPondLevel(), rankMax)));
         /*
         最小难度 = 拉扯最小难度
@@ -201,7 +201,9 @@ public class GamesManager {
         difficultyMax = Math.max(difficultyMin + 1, difficultyMax + fishInfo.getRodLevel());
         //roll等级
         int rank = RandomUtil.randomInt(rankMin, rankMax + 1);
-
+        Log.debug("钓鱼管理:roll等级min" + rankMin);
+        Log.debug("钓鱼管理:roll等级max" + rankMax);
+        Log.debug("钓鱼管理:roll等级" + rank);
         Fish fish;
         //彩蛋
         boolean winning = false;
@@ -213,23 +215,27 @@ public class GamesManager {
             }
             //roll难度
             int difficulty = RandomUtil.randomInt(difficultyMin, difficultyMax);
+            Log.debug("钓鱼管理:等级:" + rank + "-roll难度min" + difficultyMin);
+            Log.debug("钓鱼管理:等级:" + rank + "-roll难度max" + difficultyMax);
+            Log.debug("钓鱼管理:等级:" + rank + "-roll难度" + difficulty);
             //在所有鱼中拿到对应的鱼等级
             List<Fish> levelFishList = fishPond.getFishList(rank);
             //过滤掉难度不够的鱼
             List<Fish> collect;
             collect = levelFishList.stream().filter(it -> it.getDifficulty() <= difficulty).collect(Collectors.toList());
             //如果没有了
-            if (collect.size() == 0) {
+            int size = collect.size();
+            if (size == 0) {
                 //降级重新roll难度处理
                 rank--;
                 continue;
             }
-            //难度>=200 触发彩蛋 
+            //难度>=200 触发彩蛋
             if (difficulty >= 200) {
                 winning = true;
             }
             //roll鱼
-            fish = collect.get(RandomUtil.randomInt(0, collect.size()));
+            fish = collect.get(RandomUtil.randomInt(size > 6 ? size - 6 : 0, size));
             break;
         }
         //roll尺寸
@@ -301,11 +307,10 @@ public class GamesManager {
             subject.sendMessage("鱼竿都没得，你升级个锤子!");
             return;
         }
-        if (fishInfo.isStatus()) {
+        if (fishInfo.getStatus()) {
             subject.sendMessage("钓鱼期间不可升级鱼竿!");
             return;
         }
-
         SingleMessage singleMessage = fishInfo.updateRod(userInfo);
         subject.sendMessage(singleMessage);
     }
@@ -383,6 +388,7 @@ public class GamesManager {
             }
             return true;
         });
+        playerCooling.clear();
         if (status) {
             event.getSubject().sendMessage("钓鱼状态刷新成功!");
         } else {

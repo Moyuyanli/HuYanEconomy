@@ -76,8 +76,8 @@ public class UserManager {
             try {
                 return HibernateUtil.factory.fromTransaction(session -> session.merge(info)).setUser(user);
             } catch (Exception exception) {
-                Log.error("用户管理错误:注册用户失败", e);
-                return getUserInfo(user);
+                Log.error("用户管理错误:注册用户失败", exception);
+                return null;
             }
         }
     }
@@ -90,7 +90,7 @@ public class UserManager {
      * @author Moyuyanli
      * @date 2022/11/23 9:37
      */
-    public static void getUserInfo(MessageEvent event) {
+    public static void getUserInfoImage(MessageEvent event) {
         Contact subject = event.getSubject();
         User sender = event.getSender();
 
@@ -176,20 +176,21 @@ public class UserManager {
      * @date 2022/12/5 16:11
      */
     public static BufferedImage getUserInfoImageBase(UserInfo userInfo) {
-        //插件的唯一实例
-        HuYanEconomy instance = HuYanEconomy.INSTANCE;
         User user = userInfo.getUser();
         try {
-            //轮询获取底图
-            InputStream asStream = instance.getResourceAsStream("sign" + (index % 4 == 0 ? 4 : index % 4) + ".png");
-            index++;
-            //验证
-            if (asStream == null) {
-                Log.error("用户管理:个人信息图片底图获取错误!");
-                return null;
-            }
-            //转图片处理
-            BufferedImage image = ImageIO.read(asStream);
+//            InputStream asStream = instance.getResourceAsStream("sign" + (index % 4 == 0 ? 4 : index % 4) + ".png");
+
+
+//            index++;
+//            //验证
+//            if (asStream == null) {
+//                Log.error("用户管理:个人信息图片底图获取错误!");
+//                return null;
+//            }
+//            //转图片处理
+//            BufferedImage image = ImageIO.read(asStream);
+
+            BufferedImage image = bottomImageBuild();
             //创建画笔
             Graphics2D pen = image.createGraphics();
             //图片与文字的抗锯齿
@@ -242,22 +243,18 @@ public class UserManager {
             //id
             pen.drawString(String.valueOf(userInfo.getQq()), 172, 240);
             String format;
-            String toSing;
             if (userInfo.getSignTime() == null) {
                 format = "暂未签到";
-                toSing = "暂未签到";
+
             } else {
                 format = DateUtil.format(userInfo.getSignTime(), "yyyy-MM-dd HH:mm:ss");
-                toSing = DateUtil.format(DateUtil.offsetDay(userInfo.getSignTime(), 1), "yyyy-MM-dd HH:mm:ss");
             }
             //签到时间
             pen.drawString(format, 172, 320);
             //连签次数
             pen.drawString(String.valueOf(userInfo.getSignNumber()), 172, 360);
-            //下次签到时间
-            pen.drawString(toSing, 221, 402);
             //其他称号
-            pen.drawString("暂无", 172, 440);
+            pen.drawString("暂无", 172, 400);
 
             double money = EconomyUtil.getMoneyByUser(user);
             double bank = EconomyUtil.getMoneyByBank(user);
@@ -308,6 +305,46 @@ public class UserManager {
     }
 
 
+    private static BufferedImage bottomImageBuild() {
+        //插件的唯一实例
+        HuYanEconomy instance = HuYanEconomy.INSTANCE;
+        try {
+            //轮询获取底图
+            InputStream asStream = instance.getResourceAsStream("bottom" + (index % 8 == 0 ? 8 : index % 8) + ".png");
+            index++;
+            //验证
+            if (asStream == null) {
+                Log.error("用户管理:个人信息图片底图获取错误!");
+                return null;
+            }
+            //转图片处理
+            BufferedImage image = ImageIO.read(asStream);
+            //切小圆边角
+            BufferedImage bottom = makeRoundedCorner(image, 5);
+            //创建画笔
+            Graphics2D pen = bottom.createGraphics();
+
+            //图片与文字的抗锯齿
+            pen.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            pen.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            InputStream bottomStream = instance.getResourceAsStream("bottom.png");
+            if (bottomStream == null) {
+                Log.error("用户管理:个人信息图片底图获取错误!");
+                return null;
+            }
+            BufferedImage bottomImage = ImageIO.read(bottomStream);
+            pen.drawImage(bottomImage, null, 0, 0);
+
+            pen.dispose();
+
+            return bottom;
+        } catch (IOException e) {
+            Log.error("用户管理:个人信息基础信息绘图错误!", e);
+            return null;
+        }
+    }
+
     /**
      * 圆角处理
      *
@@ -315,7 +352,7 @@ public class UserManager {
      * @param cornerRadius 圆角度
      * @return 处理后的图片
      */
-    public static BufferedImage makeRoundedCorner(BufferedImage image, int cornerRadius) {
+    private static BufferedImage makeRoundedCorner(BufferedImage image, int cornerRadius) {
         int w = image.getWidth();
         int h = image.getHeight();
         BufferedImage output = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);

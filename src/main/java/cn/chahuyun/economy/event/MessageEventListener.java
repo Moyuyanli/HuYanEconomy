@@ -75,7 +75,7 @@ public class MessageEventListener extends SimpleListenerHost {
             case "个人信息":
             case "info":
                 Log.info("个人信息指令");
-                UserManager.getUserInfo(event);
+                UserManager.getUserInfoImage(event);
                 return;
             case "背包":
             case "backpack":

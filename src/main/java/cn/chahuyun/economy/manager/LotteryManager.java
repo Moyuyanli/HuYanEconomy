@@ -100,10 +100,6 @@ public class LotteryManager {
             var dayTask = new LotteryDayTask(dayTaskId, dayLottery.values());
             CronUtil.schedule(dayTaskId, "0 0 0 * * ?", dayTask);
         }
-        if (type) {
-            //插件加载的时候启动调度器
-            CronUtil.start();
-        }
     }
 
     /**
@@ -212,10 +208,6 @@ public class LotteryManager {
         assert group != null;
         NormalMember member = group.get(lotteryInfo.getQq());
         assert member != null;
-        member.sendMessage(lotteryInfo.toMessage());
-        if (location == 3) {
-            group.sendMessage(String.format("得签着:%s(%s),奖励%s金币", member.getNick(), member.getId(), lotteryInfo.getBonus()));
-        }
         lotteryInfo.remove();
         switch (type) {
             case 1:
@@ -229,7 +221,19 @@ public class LotteryManager {
         }
         if (!EconomyUtil.addMoneyToUser(member, lotteryInfo.getBonus())) {
             member.sendMessage("奖金添加失败，请联系管理员!");
+            return;
         }
+        member.sendMessage(lotteryInfo.toMessage());
+        if (location == 3) {
+            group.sendMessage(String.format("得签着:%s(%s),奖励%s金币", member.getNick(), member.getId(), lotteryInfo.getBonus()));
+        }
+    }
+
+    /**
+     * 关闭定时器
+     */
+    public static void close() {
+        CronUtil.stop();
     }
 
 }
@@ -342,10 +346,10 @@ class LotteryHoursTask implements Task {
     public void execute() {
         Bot bot = HuYanEconomy.INSTANCE.bot;
         String[] current = {
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9))
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10))
         };
         StringBuilder currentString = new StringBuilder(current[0]);
         for (int i = 1; i < current.length; i++) {
@@ -423,11 +427,11 @@ class LotteryDayTask implements Task {
     public void execute() {
         Bot bot = HuYanEconomy.INSTANCE.bot;
         String[] current = {
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9))
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10))
         };
         StringBuilder currentString = new StringBuilder(current[0]);
         for (int i = 1; i < current.length; i++) {

@@ -2,7 +2,6 @@ package cn.chahuyun.economy.entity.fish;
 
 import cn.hutool.core.util.RandomUtil;
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -70,7 +69,7 @@ public class Fish implements Serializable {
         int randomInt;
         if (i >= 90) {
             randomInt = RandomUtil.randomInt(dimensions3, dimensions4 == dimensions3 ? dimensions4 + 1 : dimensions4);
-        } else if (i >= 60) {
+        } else if (i >= 70) {
             randomInt = RandomUtil.randomInt(dimensions2, dimensions3 == dimensions2 ? dimensions3 + 1 : dimensions3);
         } else {
             randomInt = RandomUtil.randomInt(dimensions1, dimensions2 == dimensions1 ? dimensions2 + 1 : dimensions2);

@@ -3,15 +3,18 @@ package cn.chahuyun.economy.entity;
 import cn.chahuyun.economy.entity.fish.FishInfo;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
+import cn.hutool.core.date.CalendarUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import net.mamoe.mirai.console.permission.AbstractPermitteeId;
 import net.mamoe.mirai.contact.User;
 
 import java.io.Serializable;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -29,7 +32,7 @@ public class UserInfo implements Serializable {
 
 
     @Id
-    private Long id;
+    private String id;
     /**
      * qq号
      */
@@ -89,7 +92,7 @@ public class UserInfo implements Serializable {
     }
 
     public UserInfo(long qq, long registerGroup, String name, Date registerTime) {
-        this.id = qq;
+        this.id = new AbstractPermitteeId.ExactUser(qq).asString();
         this.qq = qq;
         this.registerGroup = registerGroup;
         this.name = name;
@@ -119,16 +122,20 @@ public class UserInfo implements Serializable {
             HibernateUtil.factory.fromTransaction(session -> session.merge(this));
             return true;
         }
-//        if (DateUtil.isSameDay(new Date(), this.getSignTime())) {
-//            return false;
-//        }
+        //获取签到时间，向后偏移一天
+        Calendar calendar = CalendarUtil.calendar(DateUtil.offsetDay(getSignTime(), 1));
+        //设置时间为 04:00:00
+        calendar.set(Calendar.HOUR_OF_DAY, 4);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        Date time = calendar.getTime();
         //获取小时数差
-        long between = DateUtil.between(new Date(), this.getSignTime(), DateUnit.HOUR, true);
+        long between = DateUtil.between(time, new Date(), DateUnit.MINUTE, false);
         Log.debug("账户:(" + this.getQq() + ")签到时差->" + between);
-        //时间还在24小时之内
-        if (0 <= between && between < 24) {
+        //时间还在24小时之内  则为负数
+        if (between < 0) {
             return false;
-        } else if (24 <= between && between < 48) {
+        } else if (between <= 1440) {
             this.setSignNumber(this.getSignNumber() + 1);
             this.setOldSignNumber(0);
         } else {
@@ -173,7 +180,6 @@ public class UserInfo implements Serializable {
     }
 
     public void setQq(long qq) {
-        this.id = qq;
         this.qq = qq;
     }
 

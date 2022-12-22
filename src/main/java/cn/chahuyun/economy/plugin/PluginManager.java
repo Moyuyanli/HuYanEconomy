@@ -7,6 +7,7 @@ import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.manager.PropsManager;
 import cn.chahuyun.economy.manager.PropsManagerImpl;
 import cn.chahuyun.economy.utils.Log;
+import cn.hutool.cron.CronUtil;
 
 /**
  * 插件管理<p>
@@ -36,7 +37,11 @@ public class PluginManager {
      * @date 2022/11/23 10:50
      */
     public static void init() {
+        //插件加载的时候启动调度器
+        CronUtil.start();
+        //加载道具
         PropsCard propsCard = new PropsCard(Constant.SIGN_DOUBLE_SINGLE_CARD, "签到双倍金币卡", 99, true, "张", "不要999，不要599，只要99金币，你的下一次签到将翻倍！", false, null, null, false, null);
+
         propsManager.registerProps(propsCard);
         try {
             //壶言会话
