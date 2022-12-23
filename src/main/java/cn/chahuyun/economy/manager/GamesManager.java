@@ -398,5 +398,16 @@ public class GamesManager {
         }
     }
 
+/**
+ * 查看鱼竿等级
+ *
+ * @param event 消息事件
+ * @author Moyuyanli
+ * @date 2022/12/23 16:12
+ */
+    public static void viewFishLevel(MessageEvent event) {
+        int rodLevel = UserManager.getUserInfo(event.getSender()).getFishInfo().getRodLevel();
+        event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的鱼竿等级为%s级", rodLevel));
+    }
 
 }

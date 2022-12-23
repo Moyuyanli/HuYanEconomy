@@ -145,12 +145,21 @@ public class MessageEventListener extends SimpleListenerHost {
                 Log.info("游戏指令");
                 GamesManager.fishTop(event);
                 return;
+            case "鱼竿等级":
+                Log.info("游戏指令");
+                GamesManager.viewFishLevel(event);
+                return;
             case "刷新钓鱼":
                 if (owner) {
                     Log.info("游戏指令");
                     GamesManager.refresh(event);
                 }
                 return;
+            case "银行利率":
+                Log.info("银行指令");
+                BankManager.viewBankInterest(event);
+                return;
+
         }
 
         String buyPropRegex = "购买 (\\S+)( \\S+)?|buy (\\S+)( \\S+)?";

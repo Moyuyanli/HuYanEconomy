@@ -2,7 +2,6 @@ package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.config.EconomyPluginConfig;
 import cn.chahuyun.economy.HuYanEconomy;
-import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.bank.BankInfo;
 import cn.chahuyun.economy.utils.EconomyUtil;
@@ -135,6 +134,18 @@ public class BankManager {
             subject.sendMessage(singleMessages.build());
             Log.error("银行管理:取款失败!");
         }
+    }
+
+    /**
+     * 查看利率
+     *
+     * @param event 消息事件
+     * @author Moyuyanli
+     * @date 2022/12/23 16:08
+     */
+    public static void viewBankInterest(MessageEvent event) {
+        BankInfo bankInfo = HibernateUtil.factory.fromSession(session -> session.get(BankInfo.class, 1));
+        event.getSender().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "今日银行利率是%s%%", bankInfo.getInterest()));
     }
 
 }
