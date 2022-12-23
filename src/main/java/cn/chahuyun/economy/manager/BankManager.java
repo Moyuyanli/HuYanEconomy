@@ -121,7 +121,7 @@ public class BankManager {
 
         int money = Integer.parseInt(code.split(" ")[1]);
         double moneyByBank = EconomyUtil.getMoneyByBank(user);
-        if (moneyByBank - money <= 0) {
+        if (moneyByBank - money < 0) {
             singleMessages.append(String.format("你的银行余额不够%s枚金币了", money));
             subject.sendMessage(singleMessages.build());
             return;

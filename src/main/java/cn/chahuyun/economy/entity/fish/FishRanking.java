@@ -56,13 +56,13 @@ public class FishRanking implements Serializable {
      * 钓起来的鱼
      */
     @ManyToOne(targetEntity = Fish.class, fetch = FetchType.EAGER)
-    @JoinColumn(name = "fish_id")
+    @JoinColumn(name = "FishId")
     private Fish fish;
     /**
      * 钓起来的鱼塘
      */
     @ManyToOne(targetEntity = FishPond.class, fetch = FetchType.EAGER)
-    @JoinColumn(name = "fish_pond_id")
+    @JoinColumn(name = "FishPondId")
     private FishPond fishPond;
 
     public FishRanking() {
