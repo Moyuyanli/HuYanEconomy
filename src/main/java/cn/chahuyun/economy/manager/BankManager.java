@@ -153,7 +153,7 @@ public class BankManager {
             query.where(builder.equal(from.get("id"), 1));
             return session.createQuery(query).getSingleResult();
         });
-        event.getSender().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "今日银行利率是%s%%", bankInfo.getInterest()));
+        event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "今日银行利率是%s%%", bankInfo.getInterest()));
     }
 
 }
