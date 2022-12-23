@@ -19,6 +19,7 @@ import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
 import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
+import org.hibernate.query.criteria.JpaRoot;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 
 import java.util.List;
@@ -144,7 +145,14 @@ public class BankManager {
      * @date 2022/12/23 16:08
      */
     public static void viewBankInterest(MessageEvent event) {
-        BankInfo bankInfo = HibernateUtil.factory.fromSession(session -> session.get(BankInfo.class, 1));
+        BankInfo bankInfo = HibernateUtil.factory.fromSession(session -> {
+            HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
+            JpaCriteriaQuery<BankInfo> query = builder.createQuery(BankInfo.class);
+            JpaRoot<BankInfo> from = query.from(BankInfo.class);
+            query.select(from);
+            query.where(builder.equal(from.get("id"), 1));
+            return session.createQuery(query).getSingleResult();
+        });
         event.getSender().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "今日银行利率是%s%%", bankInfo.getInterest()));
     }
 
