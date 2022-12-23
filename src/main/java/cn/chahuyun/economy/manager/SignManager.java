@@ -7,6 +7,7 @@ import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
+import cn.chahuyun.economy.utils.MessageUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import net.mamoe.mirai.contact.AvatarSpec;
@@ -55,8 +56,8 @@ public class SignManager {
 
         UserInfo userInfo = UserManager.getUserInfo(user);
 
-        MessageChainBuilder messages = new MessageChainBuilder();
-        messages.append(new QuoteReply(message));
+        MessageChainBuilder messages = MessageUtil.quoteReply(message);
+
         if (userInfo == null) {
             subject.sendMessage("签到失败!");
             return;

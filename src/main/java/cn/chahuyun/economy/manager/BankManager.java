@@ -85,7 +85,7 @@ public class BankManager {
 
         int money = Integer.parseInt(code.split(" ")[1]);
         double moneyByUser = EconomyUtil.getMoneyByUser(user);
-        if (moneyByUser - money <= 0) {
+        if (moneyByUser - money < 0) {
             singleMessages.append(String.format("你的金币不够%s了", money));
             subject.sendMessage(singleMessages.build());
             return;

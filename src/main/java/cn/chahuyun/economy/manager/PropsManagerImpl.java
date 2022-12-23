@@ -10,6 +10,7 @@ import cn.chahuyun.economy.plugin.PropsType;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
+import cn.chahuyun.economy.utils.MessageUtil;
 import cn.hutool.core.util.StrUtil;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
@@ -205,8 +206,7 @@ public class PropsManagerImpl implements PropsManager {
         User sender = event.getSender();
         MessageChain message = event.getMessage();
 
-        MessageChainBuilder messages = new MessageChainBuilder();
-        messages.append(new QuoteReply(message));
+        MessageChainBuilder messages = MessageUtil.quoteReply(message);
 
         String code = message.serializeToMiraiCode();
 
@@ -220,7 +220,7 @@ public class PropsManagerImpl implements PropsManager {
         String propCode = PropsType.getCode(no);
         if (propCode == null) {
             Log.warning("道具系统:购买道具为空");
-            subject.sendMessage("我这里不卖这个...");
+            subject.sendMessage(MessageUtil.formatMessageChain(message,"我这里不卖这个..."));
             return;
         }
         Log.info("道具系统:购买道具-Code " + propCode);
@@ -294,8 +294,7 @@ public class PropsManagerImpl implements PropsManager {
         User sender = event.getSender();
         MessageChain message = event.getMessage();
 
-        MessageChainBuilder messages = new MessageChainBuilder();
-        messages.append(new QuoteReply(message));
+        MessageChainBuilder messages = MessageUtil.quoteReply(message);
 
         String code = message.serializeToMiraiCode();
 
@@ -361,7 +360,7 @@ public class PropsManagerImpl implements PropsManager {
         assert userInfo != null;
         List<PropsBase> propsByUser = getPropsByUser(userInfo);
         if (propsByUser.size() == 0) {
-            subject.sendMessage("你的背包空荡荡的...");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的背包空荡荡的..."));
             return;
         }
 

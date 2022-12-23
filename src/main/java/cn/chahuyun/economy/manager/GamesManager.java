@@ -5,10 +5,7 @@ import cn.chahuyun.economy.entity.fish.Fish;
 import cn.chahuyun.economy.entity.fish.FishInfo;
 import cn.chahuyun.economy.entity.fish.FishPond;
 import cn.chahuyun.economy.entity.fish.FishRanking;
-import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.HibernateUtil;
-import cn.chahuyun.economy.utils.Log;
-import cn.chahuyun.economy.utils.ShareUtils;
+import cn.chahuyun.economy.utils.*;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -60,7 +57,12 @@ public class GamesManager {
         FishInfo fishInfo = userInfo.getFishInfo();
         //能否钓鱼
         if (!fishInfo.isFishRod()) {
-            subject.sendMessage("你连鱼竿都没得，拿**钓？");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你连鱼竿都没得，拿**钓？"));
+            return;
+        }
+        //是否已经在钓鱼
+        if (fishInfo.getStatus()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你已经在钓鱼了！"));
             return;
         }
         //钓鱼冷却
@@ -68,7 +70,7 @@ public class GamesManager {
             Date date = playerCooling.get(userInfo.getQq());
             long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
             if (between < 10) {
-                subject.sendMessage(String.format("你还差%s分钟来抛第二杆!", 10 - between));
+                subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你还差%s分钟来抛第二杆!", 10 - between));
                 return;
             } else {
                 playerCooling.remove(userInfo.getQq());
@@ -78,19 +80,19 @@ public class GamesManager {
         }
         //是否已经在钓鱼
         if (fishInfo.isStatus()) {
-            subject.sendMessage("你已经在钓鱼了！");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你已经在钓鱼了！"));
             return;
         }
         //获取鱼塘
         FishPond fishPond = fishInfo.getFishPond();
         if (fishPond == null) {
-            subject.sendMessage("默认鱼塘不存在!");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"默认鱼塘不存在!"));
             return;
         }
         //获取鱼塘限制鱼竿最低等级
         int minLevel = fishPond.getMinLevel();
         if (fishInfo.getRodLevel() < minLevel) {
-            subject.sendMessage("你的鱼竿太拉了，这里不让你来，升升级吧...");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你的鱼竿太拉了，这里不让你来，升升级吧..."));
             return;
         }
         //开始钓鱼
@@ -271,20 +273,20 @@ public class GamesManager {
         Contact subject = event.getSubject();
 
         if (fishInfo.isFishRod()) {
-            subject.sendMessage("你已经有一把钓鱼竿了，不用再买了！");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你已经有一把钓鱼竿了，不用再买了！"));
             return;
         }
 
         double moneyByUser = EconomyUtil.getMoneyByUser(user);
         if (moneyByUser - 500 < 0) {
-            subject.sendMessage("我这把钓鱼竿可是神器！他能吸收你的金币来进化，卖你500还嫌贵？");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"我这把钓鱼竿可是神器！他能吸收你的金币来进化，卖你500还嫌贵？"));
             return;
         }
 
         if (EconomyUtil.minusMoneyToUser(user, 500)) {
             fishInfo.setFishRod(true);
             fishInfo.save();
-            subject.sendMessage("拿好了，这鱼竿到手即不负责，永不提供售后！");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"拿好了，这鱼竿到手即不负责，永不提供售后！"));
         } else {
             Log.error("游戏管理:购买鱼竿失败!");
         }
@@ -304,11 +306,11 @@ public class GamesManager {
 
         FishInfo fishInfo = userInfo.getFishInfo();
         if (!fishInfo.isFishRod()) {
-            subject.sendMessage("鱼竿都没得，你升级个锤子!");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"鱼竿都没得，你升级个锤子!"));
             return;
         }
         if (fishInfo.getStatus()) {
-            subject.sendMessage("钓鱼期间不可升级鱼竿!");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"钓鱼期间不可升级鱼竿!"));
             return;
         }
         SingleMessage singleMessage = fishInfo.updateRod(userInfo);
@@ -342,7 +344,7 @@ public class GamesManager {
             return list.subList(0, Math.min(list.size(), 30));
         });
         if (rankingList == null || rankingList.size() == 0) {
-            subject.sendMessage("暂时没人钓鱼!");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"暂时没人钓鱼!"));
             return;
         }
         ForwardMessageBuilder iNodes = new ForwardMessageBuilder(subject);
@@ -390,9 +392,9 @@ public class GamesManager {
         });
         playerCooling.clear();
         if (status) {
-            event.getSubject().sendMessage("钓鱼状态刷新成功!");
+            event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"钓鱼状态刷新成功!"));
         } else {
-            event.getSubject().sendMessage("钓鱼状态刷新成功!");
+            event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"钓鱼状态刷新成功!"));
         }
     }
 
