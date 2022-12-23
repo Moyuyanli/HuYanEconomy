@@ -249,7 +249,7 @@ public class PropsManagerImpl implements PropsManager {
             return;
         }
 
-        if (!EconomyUtil.lessMoneyToUser(sender, total)) {
+        if (!EconomyUtil.minusMoneyToUser(sender, total)) {
             Log.warning("道具系统:减少余额失败!");
             subject.sendMessage("系统出错，请联系主人!");
             return;

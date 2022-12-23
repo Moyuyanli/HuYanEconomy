@@ -1,8 +1,10 @@
 package cn.chahuyun.economy;
 
 import cn.chahuyun.config.EconomyConfig;
+import cn.chahuyun.config.EconomyPluginConfig;
 import cn.chahuyun.economy.event.BotOnlineEventListener;
 import cn.chahuyun.economy.event.MessageEventListener;
+import cn.chahuyun.economy.manager.BankManager;
 import cn.chahuyun.economy.manager.LotteryManager;
 import cn.chahuyun.economy.plugin.FishManager;
 import cn.chahuyun.economy.plugin.PluginManager;
@@ -26,11 +28,11 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String version = "0.1.14";
+    public static final String version = "0.1.15";
     /**
      * 配置
      */
-    public EconomyConfig config;
+    public static EconomyConfig config;
     /**
      * 插件所属bot
      */
@@ -57,6 +59,7 @@ public final class HuYanEconomy extends JavaPlugin {
         HibernateUtil.init(configuration);
         //加载配置
         reloadPluginConfig(EconomyConfig.INSTANCE);
+        reloadPluginConfig(EconomyPluginConfig.INSTANCE);
         config = EconomyConfig.INSTANCE;
         //插件功能初始化
         PluginManager.init();
@@ -67,10 +70,12 @@ public final class HuYanEconomy extends JavaPlugin {
             EconomyUtil.init();
             LotteryManager.init(true);
             FishManager.init();
+            BankManager.init();
             eventEventChannel.registerListenerHost(new BotOnlineEventListener());
             eventEventChannel.registerListenerHost(new MessageEventListener());
             Log.info("事件已监听!");
         }
+        EconomyPluginConfig.INSTANCE.setFirstStart(false);
         Log.info(String.format("HuYanEconomy已加载！当前版本 %s !", version));
     }
 

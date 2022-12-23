@@ -242,7 +242,7 @@ public class GamesManager {
         int dimensions = fish.getDimensions(winning);
         int money = fish.getPrice() * dimensions;
         double v = money * (1 - fishPond.getRebate());
-        if (EconomyUtil.addMoneyToUser(user, v) && EconomyUtil.addMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), money * fishPond.getRebate())) {
+        if (EconomyUtil.plusMoneyToUser(user, v) && EconomyUtil.plusMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), money * fishPond.getRebate())) {
             fishPond.addNumber();
             String format = String.format("\n起竿咯！\n%s\n等级:%s\n单价:%s\n尺寸:%d\n总金额:%d\n%s", fish.getName(), fish.getLevel(), fish.getPrice(), dimensions, money, fish.getDescription());
             MessageChainBuilder messages = new MessageChainBuilder();
@@ -281,7 +281,7 @@ public class GamesManager {
             return;
         }
 
-        if (EconomyUtil.lessMoneyToUser(user, 500)) {
+        if (EconomyUtil.minusMoneyToUser(user, 500)) {
             fishInfo.setFishRod(true);
             fishInfo.save();
             subject.sendMessage("拿好了，这鱼竿到手即不负责，永不提供售后！");

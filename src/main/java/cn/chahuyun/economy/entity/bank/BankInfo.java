@@ -1,13 +1,27 @@
 package cn.chahuyun.economy.entity.bank;
 
+import cn.chahuyun.economy.utils.HibernateUtil;
+import cn.hutool.core.util.RandomUtil;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.Date;
+
 /**
  * 银行信息
  *
  * @author Moyuyanli
  * @date 2022/12/22 12:38
  */
+@Entity(name = "BankInfo")
+@Table(name = "BankInfo")
+@Getter
+@Setter
 public class BankInfo {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
     /**
      * 银行唯一id
@@ -26,11 +40,54 @@ public class BankInfo {
      */
     private long qq;
     /**
-     * 银行
+     * 是否每周随机银行利率
+     */
+    private boolean interestSwitch;
+    /**
+     * 注册时间
+     */
+    private Date regTime;
+    /**
+     * 银行注册金额
+     */
+    private double regTotal;
+    /**
+     * 银行总金额
      */
     private double total;
-
+    /**
+     * 银行利率 i%
+     */
     private int interest;
 
+    public BankInfo() {
+    }
+
+    /**
+     * 构造一个银行信息
+     * @param code 银行编码
+     * @param name 银行名称
+     * @param description 银行描述
+     * @param qq 银行管理者
+     * @param regTotal 注册金额
+     */
+    public BankInfo(String code, String name, String description, long qq, double regTotal) {
+        this.code = code;
+        this.name = name;
+        this.description = description;
+        this.qq = qq;
+        this.regTime = new Date();
+        this.regTotal = regTotal;
+        this.interestSwitch = true;
+        this.interest = RandomUtil.randomInt(2, 9);
+    }
+
+    /**
+     * 保存
+     * @return this
+     */
+    public BankInfo save() {
+        return HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+    }
 
 }

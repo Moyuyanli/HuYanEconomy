@@ -99,11 +99,6 @@ public class UserInfo implements Serializable {
         this.registerTime = registerTime;
     }
 
-    public String getString() {
-        return "用户名称:" + this.getName() +
-                "\n用户qq:" + this.getQq() +
-                "\n连续签到:" + this.getSignNumber() + "天\n";
-    }
 
     /**
      * 签到
@@ -168,21 +163,6 @@ public class UserInfo implements Serializable {
         return true;
     }
 
-    /**
-     * 保存
-     *
-     * @return 本身
-     * @author Moyuyanli
-     * @date 2022/12/6 8:49
-     */
-    public UserInfo save() {
-        return HibernateUtil.factory.fromTransaction(session -> session.merge(this));
-    }
-
-    public void setQq(long qq) {
-        this.qq = qq;
-    }
-
 
     public boolean isSign() {
         String now = DateUtil.format(new Date(), "yyyy-MM-dd") + " 04:00:00";
@@ -209,6 +189,23 @@ public class UserInfo implements Serializable {
         return HibernateUtil.factory.fromTransaction(session -> session.merge(newFishInfo));
     }
 
+    public String getString() {
+        return "用户名称:" + this.getName() +
+                "\n用户qq:" + this.getQq() +
+                "\n连续签到:" + this.getSignNumber() + "天\n";
+    }
+
+    /**
+     * 保存
+     *
+     * @return 本身
+     * @author Moyuyanli
+     * @date 2022/12/6 8:49
+     */
+    public UserInfo save() {
+        return HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+    }
+
     /**
      * 设置user
      *
@@ -217,6 +214,10 @@ public class UserInfo implements Serializable {
     public UserInfo setUser(User user) {
         this.user = user;
         return this;
+    }
+
+    public void setQq(long qq) {
+        this.qq = qq;
     }
 
 

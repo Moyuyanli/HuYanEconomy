@@ -106,7 +106,7 @@ public class SignManager {
             goldNumber = goldNumber * 2;
         }
 
-        if (!EconomyUtil.addMoneyToUser(userInfo.getUser(), goldNumber)) {
+        if (!EconomyUtil.plusMoneyToUser(userInfo.getUser(), goldNumber)) {
             subject.sendMessage("签到失败!");
             //todo 签到失败回滚
             return;

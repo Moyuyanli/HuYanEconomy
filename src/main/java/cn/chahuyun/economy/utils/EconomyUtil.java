@@ -7,6 +7,8 @@ import xyz.cssxsh.mirai.economy.EconomyService;
 import xyz.cssxsh.mirai.economy.service.*;
 
 import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 经济工具<p>
@@ -80,9 +82,9 @@ public class EconomyUtil {
      */
     public static double getMoneyByUser(User user, EconomyCurrency currency) {
         //获取一个bot上下文
-        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot)) {
+        try (EconomyContext context = economyService.custom(HuYanEconomy.INSTANCE)) {
             //在bot上下文里面找到这个用户
-            UserEconomyAccount account = context.getService().account(user);
+            UserEconomyAccount account = economyService.account(user);
             DecimalFormat format = new DecimalFormat("#.0");
             //返回这个用户在bot上下文的某种货币的余额，并格式化
             String str = format.format(context.get(account, currency));
@@ -117,7 +119,7 @@ public class EconomyUtil {
      */
     public static double getMoneyByBank(User user, EconomyCurrency currency) {
         try (GlobalEconomyContext global = economyService.global()) {
-            UserEconomyAccount account = global.getService().account(user);
+            UserEconomyAccount account = economyService.account(user);
             DecimalFormat format = new DecimalFormat("#.0");
             String str = format.format(global.get(account, currency));
             return Double.parseDouble(str);
@@ -152,7 +154,7 @@ public class EconomyUtil {
      */
     public static double getMoneyByBankFromId(String userId, String description, EconomyCurrency currency) {
         try (GlobalEconomyContext global = economyService.global()) {
-            EconomyAccount account = global.getService().account(userId, description);
+            EconomyAccount account = economyService.account(userId, description);
             DecimalFormat format = new DecimalFormat("#.0");
             String str = format.format(global.get(account, currency));
             return Double.parseDouble(str);
@@ -191,9 +193,9 @@ public class EconomyUtil {
      * @date 2022/11/14 15:39
      */
     public static boolean turnUserToUser(User user, User toUser, double quantity, EconomyCurrency currency) {
-        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot)) {
-            UserEconomyAccount account = context.getService().account(user);
-            UserEconomyAccount toAccount = context.getService().account(toUser);
+        try (EconomyContext context = economyService.custom(HuYanEconomy.INSTANCE)) {
+            UserEconomyAccount account = economyService.account(user);
+            UserEconomyAccount toAccount = economyService.account(toUser);
             double userMoney = context.get(account, currency);
             if (userMoney - quantity < 0) {
                 return false;
@@ -238,10 +240,10 @@ public class EconomyUtil {
      * @date 2022/11/14 15:53
      */
     public static boolean turnUserToBank(User user, double quantity, EconomyCurrency currency) {
-        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot);
+        try (EconomyContext context = economyService.custom(HuYanEconomy.INSTANCE);
              GlobalEconomyContext global = economyService.global()) {
-            UserEconomyAccount account = context.getService().account(user);
-            UserEconomyAccount bankAccount = global.getService().account(user);
+            UserEconomyAccount account = economyService.account(user);
+            UserEconomyAccount bankAccount = economyService.account(user);
             double money = context.get(account, currency);
             if (money - quantity < 0) {
                 return false;
@@ -283,9 +285,10 @@ public class EconomyUtil {
      * @date 2022/11/14 16:06
      */
     public static boolean turnBankToUser(User user, double quantity, EconomyCurrency currency) {
-        try (GlobalEconomyContext global = economyService.global(); BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot)) {
-            UserEconomyAccount bankAccount = global.getService().account(user);
-            UserEconomyAccount account = context.getService().account(user);
+        try (GlobalEconomyContext global = economyService.global();
+             EconomyContext context = economyService.custom(HuYanEconomy.INSTANCE)) {
+            UserEconomyAccount bankAccount = economyService.account(user);
+            UserEconomyAccount account = economyService.account(user);
             double bankMoney = global.get(bankAccount, currency);
             if (bankMoney - quantity < 0) {
                 return false;
@@ -309,8 +312,8 @@ public class EconomyUtil {
      * @author Moyuyanli
      * @date 2022/11/22 15:17
      */
-    public static boolean addMoneyToUser(User user, double quantity) {
-        return addMoneyToUser(user, quantity, Constant.CURRENCY_GOLD);
+    public static boolean plusMoneyToUser(User user, double quantity) {
+        return plusMoneyToUser(user, quantity, Constant.CURRENCY_GOLD);
     }
 
     /**
@@ -324,9 +327,9 @@ public class EconomyUtil {
      * @author Moyuyanli
      * @date 2022/11/22 15:19
      */
-    public static boolean addMoneyToUser(User user, double quantity, EconomyCurrency currency) {
-        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot)) {
-            UserEconomyAccount account = context.getService().account(user);
+    public static boolean plusMoneyToUser(User user, double quantity, EconomyCurrency currency) {
+        try (EconomyContext context = economyService.custom(HuYanEconomy.INSTANCE)) {
+            UserEconomyAccount account = economyService.account(user);
             context.plusAssign(account, currency, quantity);
             return true;
         } catch (Exception e) {
@@ -346,8 +349,8 @@ public class EconomyUtil {
      * @author Moyuyanli
      * @date 2022年12月12日09:14:24
      */
-    public static boolean addMoneyToBank(User user, double quantity) {
-        return addMoneyToBank(user, quantity, Constant.CURRENCY_GOLD);
+    public static boolean plusMoneyToBank(User user, double quantity) {
+        return plusMoneyToBank(user, quantity, Constant.CURRENCY_GOLD);
     }
 
     /**
@@ -361,9 +364,9 @@ public class EconomyUtil {
      * @author Moyuyanli
      * @date 2022年12月12日09:14:32
      */
-    public static boolean addMoneyToBank(User user, double quantity, EconomyCurrency currency) {
+    public static boolean plusMoneyToBank(User user, double quantity, EconomyCurrency currency) {
         try (GlobalEconomyContext context = economyService.global()) {
-            UserEconomyAccount account = context.getService().account(user);
+            UserEconomyAccount account = economyService.account(user);
             context.plusAssign(account, currency, quantity);
             return true;
         } catch (Exception e) {
@@ -383,8 +386,8 @@ public class EconomyUtil {
      * @author Moyuyanli
      * @date 2022/11/22 15:17
      */
-    public static boolean lessMoneyToUser(User user, double quantity) {
-        return lessMoneyToUser(user, quantity, Constant.CURRENCY_GOLD);
+    public static boolean minusMoneyToUser(User user, double quantity) {
+        return minusMoneyToUser(user, quantity, Constant.CURRENCY_GOLD);
     }
 
     /**
@@ -398,9 +401,9 @@ public class EconomyUtil {
      * @author Moyuyanli
      * @date 2022/11/22 15:19
      */
-    public static boolean lessMoneyToUser(User user, double quantity, EconomyCurrency currency) {
-        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot)) {
-            UserEconomyAccount account = context.getService().account(user);
+    public static boolean minusMoneyToUser(User user, double quantity, EconomyCurrency currency) {
+        try (EconomyContext context = economyService.custom(HuYanEconomy.INSTANCE)) {
+            UserEconomyAccount account = economyService.account(user);
             context.minusAssign(account, currency, quantity);
             return true;
         } catch (Exception e) {
@@ -411,46 +414,7 @@ public class EconomyUtil {
 
 
     /**
-     * 给 [用户] [钱包] 添加余额<p>
-     * 默认货物 [金币]<p>
-     *
-     * @param userId      用户id
-     * @param description 用户描述
-     * @param quantity    数量
-     * @return boolean  true 成功
-     * @author Moyuyanli
-     * @date 2022年12月12日09:14:38
-     */
-    public static boolean addMoneyToBankForId(String userId, String description, double quantity) {
-        return addMoneyToBankForId(userId, description, quantity, Constant.CURRENCY_GOLD);
-    }
-
-    /**
-     * 给 [用户] [钱包] 添加余额<p>
-     * 货币自定义<p>
-     *
-     * @param userId      用户id
-     * @param description 用户描述
-     * @param quantity    数量
-     * @param currency    货币
-     * @return boolean  true 成功
-     * @author Moyuyanli
-     * @date 2022年12月12日09:14:41
-     */
-    public static boolean addMoneyToBankForId(String userId, String description, double quantity, EconomyCurrency currency) {
-        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot)) {
-            EconomyAccount account = context.getService().account(userId, description);
-            context.plusAssign(account, currency, quantity);
-            return true;
-        } catch (Exception e) {
-            Log.error("经济转移出错:添加用户经济", e);
-            return false;
-        }
-    }
-
-
-    /**
-     * 给 [用户] [银行] 添加余额<p>
+     * 给 [用户] [自定义银行] 添加余额<p>
      * 默认货物 [金币]<p>
      *
      * @param userId      用户id
@@ -460,12 +424,12 @@ public class EconomyUtil {
      * @author Moyuyanli
      * @date 2022年12月12日09:14:45
      */
-    public static boolean lassMoneyToBankForId(String userId, String description, double quantity) {
-        return lassMoneyToBankForId(userId, description, quantity, Constant.CURRENCY_GOLD);
+    public static boolean plusMoneyToBankForId(String userId, String description, double quantity) {
+        return plusMoneyToBankForId(userId, description, quantity, Constant.CURRENCY_GOLD);
     }
 
     /**
-     * 给 [用户] [银行] 添加余额<p>
+     * 给 [用户] [自定义银行] 添加余额<p>
      * 货币自定义<p>
      *
      * @param userId      用户id
@@ -476,10 +440,10 @@ public class EconomyUtil {
      * @author Moyuyanli
      * @date 2022年12月12日09:14:48
      */
-    public static boolean lassMoneyToBankForId(String userId, String description, double quantity, EconomyCurrency currency) {
-        try (BotEconomyContext context = economyService.context(HuYanEconomy.INSTANCE.bot)) {
-            EconomyAccount account = context.getService().account(userId, description);
-            context.minusAssign(account, currency, quantity);
+    public static boolean plusMoneyToBankForId(String userId, String description, double quantity, EconomyCurrency currency) {
+        try (EconomyContext context = economyService.custom(HuYanEconomy.INSTANCE)) {
+            EconomyAccount account = economyService.account(userId, description);
+            context.plusAssign(account, currency, quantity);
             return true;
         } catch (Exception e) {
             Log.error("经济转移出错:减少用户经济", e);
@@ -487,5 +451,105 @@ public class EconomyUtil {
         }
     }
 
+    /**
+     * 给 [经济账户] [钱包] 添加余额<p>
+     * 默认货物 [金币]<p>
+     *
+     * @param account  经济账户
+     * @param quantity 数量
+     * @return boolean  true 成功
+     * @author Moyuyanli
+     * @date 2022/12/23 10:47
+     */
+    public static boolean plusMoneyToWalletForAccount(EconomyAccount account, double quantity) {
+        return plusMoneyToWalletForAccount(account, quantity, Constant.CURRENCY_GOLD);
+    }
+
+    /**
+     * 给 [经济账户] [钱包] 添加余额<p>
+     * 货币自定义<p>
+     *
+     * @param account  经济账户
+     * @param quantity 数量
+     * @param currency 货币
+     * @return boolean  true 成功
+     * @author Moyuyanli
+     * @date 2022年12月12日09:14:48
+     */
+    public static boolean plusMoneyToWalletForAccount(EconomyAccount account, double quantity, EconomyCurrency currency) {
+        try (EconomyContext context = economyService.custom(HuYanEconomy.INSTANCE)) {
+            context.plusAssign(account, currency, quantity);
+            return true;
+        } catch (Exception e) {
+            Log.error("经济转移出错:减少用户经济", e);
+            return false;
+        }
+    }
+
+
+    /**
+     * 给 [经济账户] [银行] 添加余额<p>
+     * 默认货物 [金币]<p>
+     *
+     * @param account  经济账户
+     * @param quantity 数量
+     * @return boolean  true 成功
+     * @author Moyuyanli
+     * @date 2022/12/23 10:47
+     */
+    public static boolean plusMoneyToBankForAccount(EconomyAccount account, double quantity) {
+        return plusMoneyToBankForAccount(account, quantity, Constant.CURRENCY_GOLD);
+    }
+
+    /**
+     * 给 [经济账户] [银行] 添加余额<p>
+     * 货币自定义<p>
+     *
+     * @param account  经济账户
+     * @param quantity 数量
+     * @param currency 货币
+     * @return boolean  true 成功
+     * @author Moyuyanli
+     * @date 2022年12月12日09:14:48
+     */
+    public static boolean plusMoneyToBankForAccount(EconomyAccount account, double quantity, EconomyCurrency currency) {
+        try (EconomyContext context = economyService.global()) {
+            context.plusAssign(account, currency, quantity);
+            return true;
+        } catch (Exception e) {
+            Log.error("经济转移出错:减少用户经济", e);
+            return false;
+        }
+    }
+
+
+    /**
+     * 获取银行的所有经济信息<p>
+     * 默认货币<p>
+     *
+     * @return map<经济用户, 金额>
+     * @author Moyuyanli
+     * @date 2022/12/23 10:37
+     */
+    public static Map<EconomyAccount, Double> getAccountByBank() {
+        return getAccountByBank(Constant.CURRENCY_GOLD);
+    }
+
+    /**
+     * 获取银行的所有经济信息<p>
+     * 自定义货币<p>
+     *
+     * @return map<经济用户, 金额>
+     * @author Moyuyanli
+     * @date 2022/12/23 10:37
+     */
+    public static Map<EconomyAccount, Double> getAccountByBank(EconomyCurrency economyCurrency) {
+        try (GlobalEconomyContext global = economyService.global()) {
+            return global.balance(economyCurrency);
+        } catch (Exception e) {
+            Log.error("经济获取出错:获取银行对应货币的所有经济信息", e);
+            return new HashMap<>();
+        }
+    }
 
 }

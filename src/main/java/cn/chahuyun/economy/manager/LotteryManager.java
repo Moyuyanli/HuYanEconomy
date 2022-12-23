@@ -181,7 +181,7 @@ public class LotteryManager {
             number.append(",").append(aByte);
         }
         LotteryInfo lotteryInfo = new LotteryInfo(user.getId(), subject.getId(), money, type, number.toString());
-        if (!EconomyUtil.lessMoneyToUser(user, money)) {
+        if (!EconomyUtil.minusMoneyToUser(user, money)) {
             subject.sendMessage("猜签失败！");
             return;
         }
@@ -219,7 +219,7 @@ public class LotteryManager {
             case 3:
                 dayLottery.remove(lotteryInfo.getNumber());
         }
-        if (!EconomyUtil.addMoneyToUser(member, lotteryInfo.getBonus())) {
+        if (!EconomyUtil.plusMoneyToUser(member, lotteryInfo.getBonus())) {
             member.sendMessage("奖金添加失败，请联系管理员!");
             return;
         }

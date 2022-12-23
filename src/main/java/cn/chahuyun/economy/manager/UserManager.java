@@ -16,6 +16,7 @@ import net.mamoe.mirai.message.data.MessageChainBuilder;
 import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.query.criteria.JpaRoot;
+import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -79,6 +80,32 @@ public class UserManager {
                 Log.error("用户管理错误:注册用户失败", exception);
                 return null;
             }
+        }
+    }
+
+    /**
+     * 获取用户信息(不含user)<p>
+     * 没有的时候返回null<p>
+     *
+     * @param account 经济账户
+     * @return cn.chahuyun.entity.UserInfo
+     * @author Moyuyanli
+     * @date 2022/11/14 17:08
+     */
+    public static UserInfo getUserInfo(EconomyAccount account) {
+        String userId = account.getUuid();
+        //查询用户
+        try {
+            return HibernateUtil.factory.fromTransaction(session -> {
+                HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
+                JpaCriteriaQuery<UserInfo> query = builder.createQuery(UserInfo.class);
+                JpaRoot<UserInfo> from = query.from(UserInfo.class);
+                query.select(from);
+                query.where(builder.equal(from.get("id"), userId));
+                return session.createQuery(query).getSingleResult();
+            });
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -176,21 +203,22 @@ public class UserManager {
      * @date 2022/12/5 16:11
      */
     public static BufferedImage getUserInfoImageBase(UserInfo userInfo) {
+        HuYanEconomy instance = HuYanEconomy.INSTANCE;
         User user = userInfo.getUser();
         try {
-//            InputStream asStream = instance.getResourceAsStream("sign" + (index % 4 == 0 ? 4 : index % 4) + ".png");
+            InputStream asStream = instance.getResourceAsStream("sign" + (index % 4 == 0 ? 4 : index % 4) + ".png");
+            index++;
+            //验证
+            if (asStream == null) {
+                Log.error("用户管理:个人信息图片底图获取错误!");
+                return null;
+            }
+            //转图片处理
+            BufferedImage image = ImageIO.read(asStream);
+
+//            BufferedImage image = bottomImageBuild();
 
 
-//            index++;
-//            //验证
-//            if (asStream == null) {
-//                Log.error("用户管理:个人信息图片底图获取错误!");
-//                return null;
-//            }
-//            //转图片处理
-//            BufferedImage image = ImageIO.read(asStream);
-
-            BufferedImage image = bottomImageBuild();
             //创建画笔
             Graphics2D pen = image.createGraphics();
             //图片与文字的抗锯齿
@@ -254,7 +282,7 @@ public class UserManager {
             //连签次数
             pen.drawString(String.valueOf(userInfo.getSignNumber()), 172, 360);
             //其他称号
-            pen.drawString("暂无", 172, 400);
+//            pen.drawString("暂无", 172, 400);
 
             double money = EconomyUtil.getMoneyByUser(user);
             double bank = EconomyUtil.getMoneyByBank(user);
