@@ -2,6 +2,8 @@ package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.power.Power;
+import cn.chahuyun.economy.power.PowerManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
@@ -90,7 +92,10 @@ public class UserManager {
      * @author Moyuyanli
      * @date 2022/11/23 9:37
      */
+    @Power(text = {"info","个人信息"})
     public static void getUserInfo(MessageEvent event) {
+
+
         Contact subject = event.getSubject();
         User sender = event.getSender();
 
