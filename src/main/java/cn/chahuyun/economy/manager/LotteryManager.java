@@ -6,6 +6,7 @@ import cn.chahuyun.economy.entity.LotteryInfo;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
+import cn.chahuyun.economy.utils.MessageUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.cron.CronUtil;
 import cn.hutool.cron.task.Task;
@@ -100,10 +101,6 @@ public class LotteryManager {
             var dayTask = new LotteryDayTask(dayTaskId, dayLottery.values());
             CronUtil.schedule(dayTaskId, "0 0 0 * * ?", dayTask);
         }
-        if (type) {
-            //插件加载的时候启动调度器
-            CronUtil.start();
-        }
     }
 
     /**
@@ -136,7 +133,7 @@ public class LotteryManager {
 
         double moneyByUser = EconomyUtil.getMoneyByUser(user);
         if (moneyByUser - money <= 0) {
-            subject.sendMessage("你都穷的叮当响了，还来猜签？");
+            subject.sendMessage(MessageUtil.formatMessageChain(message, "你都穷的叮当响了，还来猜签？"));
             return;
         }
 
@@ -156,23 +153,23 @@ public class LotteryManager {
                 typeString = "大签";
                 break;
             default:
-                subject.sendMessage("猜签类型错误!");
+                subject.sendMessage(MessageUtil.formatMessageChain(message,"猜签类型错误!"));
                 return;
         }
 
         if (type == 1) {
             if (!(0 < money && money <= 1000)) {
-                subject.sendMessage("你投注的金额不属于这个签!");
+                subject.sendMessage(MessageUtil.formatMessageChain(message,"你投注的金额不属于这个签!"));
                 return;
             }
         } else if (type == 2) {
             if (!(0 < money && money <= 10000)) {
-                subject.sendMessage("你投注的金额不属于这个签!");
+                subject.sendMessage(MessageUtil.formatMessageChain(message,"你投注的金额不属于这个签!"));
                 return;
             }
         } else {
             if (!(0 < money && money <= 1000000)) {
-                subject.sendMessage("你投注的金额不属于这个签!");
+                subject.sendMessage(MessageUtil.formatMessageChain(message,"你投注的金额不属于这个签!"));
                 return;
             }
         }
@@ -185,12 +182,12 @@ public class LotteryManager {
             number.append(",").append(aByte);
         }
         LotteryInfo lotteryInfo = new LotteryInfo(user.getId(), subject.getId(), money, type, number.toString());
-        if (!EconomyUtil.lessMoneyToUser(user, money)) {
-            subject.sendMessage("猜签失败！");
+        if (!EconomyUtil.minusMoneyToUser(user, money)) {
+            subject.sendMessage(MessageUtil.formatMessageChain(message,"猜签失败！"));
             return;
         }
         lotteryInfo.save();
-        subject.sendMessage(String.format("猜签成功:\n猜签类型:%s\n猜签号码:%s\n猜签金币:%s", typeString, number, money));
+        subject.sendMessage(MessageUtil.formatMessageChain(message,"猜签成功:\n猜签类型:%s\n猜签号码:%s\n猜签金币:%s", typeString, number, money));
         init(false);
     }
 
@@ -212,10 +209,6 @@ public class LotteryManager {
         assert group != null;
         NormalMember member = group.get(lotteryInfo.getQq());
         assert member != null;
-        member.sendMessage(lotteryInfo.toMessage());
-        if (location == 3) {
-            group.sendMessage(String.format("得签着:%s(%s),奖励%s金币", member.getNick(), member.getId(), lotteryInfo.getBonus()));
-        }
         lotteryInfo.remove();
         switch (type) {
             case 1:
@@ -227,9 +220,21 @@ public class LotteryManager {
             case 3:
                 dayLottery.remove(lotteryInfo.getNumber());
         }
-        if (!EconomyUtil.addMoneyToUser(member, lotteryInfo.getBonus())) {
+        if (!EconomyUtil.plusMoneyToUser(member, lotteryInfo.getBonus())) {
             member.sendMessage("奖金添加失败，请联系管理员!");
+            return;
         }
+        member.sendMessage(lotteryInfo.toMessage());
+        if (location == 3) {
+            group.sendMessage(String.format("得签着:%s(%s),奖励%s金币", member.getNick(), member.getId(), lotteryInfo.getBonus()));
+        }
+    }
+
+    /**
+     * 关闭定时器
+     */
+    public static void close() {
+        CronUtil.stop();
     }
 
 }
@@ -342,10 +347,10 @@ class LotteryHoursTask implements Task {
     public void execute() {
         Bot bot = HuYanEconomy.INSTANCE.bot;
         String[] current = {
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9))
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10))
         };
         StringBuilder currentString = new StringBuilder(current[0]);
         for (int i = 1; i < current.length; i++) {
@@ -423,11 +428,11 @@ class LotteryDayTask implements Task {
     public void execute() {
         Bot bot = HuYanEconomy.INSTANCE.bot;
         String[] current = {
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9))
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10)),
+                String.valueOf(RandomUtil.randomInt(0, 10))
         };
         StringBuilder currentString = new StringBuilder(current[0]);
         for (int i = 1; i < current.length; i++) {

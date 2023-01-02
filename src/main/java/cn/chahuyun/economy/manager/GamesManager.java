@@ -5,10 +5,7 @@ import cn.chahuyun.economy.entity.fish.Fish;
 import cn.chahuyun.economy.entity.fish.FishInfo;
 import cn.chahuyun.economy.entity.fish.FishPond;
 import cn.chahuyun.economy.entity.fish.FishRanking;
-import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.HibernateUtil;
-import cn.chahuyun.economy.utils.Log;
-import cn.chahuyun.economy.utils.ShareUtils;
+import cn.chahuyun.economy.utils.*;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -60,7 +57,12 @@ public class GamesManager {
         FishInfo fishInfo = userInfo.getFishInfo();
         //能否钓鱼
         if (!fishInfo.isFishRod()) {
-            subject.sendMessage("你连鱼竿都没得，拿**钓？");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你连鱼竿都没得，拿**钓？"));
+            return;
+        }
+        //是否已经在钓鱼
+        if (fishInfo.getStatus()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你已经在钓鱼了！"));
             return;
         }
         //钓鱼冷却
@@ -68,7 +70,7 @@ public class GamesManager {
             Date date = playerCooling.get(userInfo.getQq());
             long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
             if (between < 10) {
-                subject.sendMessage(String.format("你还差%s分钟来抛第二杆!", 10 - between));
+                subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你还差%s分钟来抛第二杆!", 10 - between));
                 return;
             } else {
                 playerCooling.remove(userInfo.getQq());
@@ -78,19 +80,19 @@ public class GamesManager {
         }
         //是否已经在钓鱼
         if (fishInfo.isStatus()) {
-            subject.sendMessage("你已经在钓鱼了！");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你已经在钓鱼了！"));
             return;
         }
         //获取鱼塘
         FishPond fishPond = fishInfo.getFishPond();
         if (fishPond == null) {
-            subject.sendMessage("默认鱼塘不存在!");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"默认鱼塘不存在!"));
             return;
         }
         //获取鱼塘限制鱼竿最低等级
         int minLevel = fishPond.getMinLevel();
         if (fishInfo.getRodLevel() < minLevel) {
-            subject.sendMessage("你的鱼竿太拉了，这里不让你来，升升级吧...");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你的鱼竿太拉了，这里不让你来，升升级吧..."));
             return;
         }
         //开始钓鱼
@@ -189,10 +191,10 @@ public class GamesManager {
         }
 
         /*
-        最小钓鱼等级 = max((钓鱼竿支持最大等级/4)+1,基础最小等级）
+        最小钓鱼等级 = max((钓鱼竿支持最大等级/5)+1,基础最小等级）
         最大钓鱼等级 = max(最小钓鱼等级+1,min(钓鱼竿支持最大等级,鱼塘支持最大等级,拉扯的等级))
          */
-        rankMin = Math.max((fishInfo.getLevel() / 4) + 1, rankMin);
+        rankMin = Math.max((fishInfo.getLevel() / 5) + 1, rankMin);
         rankMax = Math.max(rankMin + 1, Math.min(fishInfo.getLevel(), Math.min(fishPond.getPondLevel(), rankMax)));
         /*
         最小难度 = 拉扯最小难度
@@ -201,7 +203,9 @@ public class GamesManager {
         difficultyMax = Math.max(difficultyMin + 1, difficultyMax + fishInfo.getRodLevel());
         //roll等级
         int rank = RandomUtil.randomInt(rankMin, rankMax + 1);
-
+        Log.debug("钓鱼管理:roll等级min" + rankMin);
+        Log.debug("钓鱼管理:roll等级max" + rankMax);
+        Log.debug("钓鱼管理:roll等级" + rank);
         Fish fish;
         //彩蛋
         boolean winning = false;
@@ -213,30 +217,34 @@ public class GamesManager {
             }
             //roll难度
             int difficulty = RandomUtil.randomInt(difficultyMin, difficultyMax);
+            Log.debug("钓鱼管理:等级:" + rank + "-roll难度min" + difficultyMin);
+            Log.debug("钓鱼管理:等级:" + rank + "-roll难度max" + difficultyMax);
+            Log.debug("钓鱼管理:等级:" + rank + "-roll难度" + difficulty);
             //在所有鱼中拿到对应的鱼等级
             List<Fish> levelFishList = fishPond.getFishList(rank);
             //过滤掉难度不够的鱼
             List<Fish> collect;
             collect = levelFishList.stream().filter(it -> it.getDifficulty() <= difficulty).collect(Collectors.toList());
             //如果没有了
-            if (collect.size() == 0) {
+            int size = collect.size();
+            if (size == 0) {
                 //降级重新roll难度处理
                 rank--;
                 continue;
             }
-            //难度>=200 触发彩蛋 
+            //难度>=200 触发彩蛋
             if (difficulty >= 200) {
                 winning = true;
             }
             //roll鱼
-            fish = collect.get(RandomUtil.randomInt(0, collect.size()));
+            fish = collect.get(RandomUtil.randomInt(size > 6 ? size - 6 : 0, size));
             break;
         }
         //roll尺寸
         int dimensions = fish.getDimensions(winning);
         int money = fish.getPrice() * dimensions;
         double v = money * (1 - fishPond.getRebate());
-        if (EconomyUtil.addMoneyToUser(user, v) && EconomyUtil.addMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), money * fishPond.getRebate())) {
+        if (EconomyUtil.plusMoneyToUser(user, v) && EconomyUtil.plusMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), money * fishPond.getRebate())) {
             fishPond.addNumber();
             String format = String.format("\n起竿咯！\n%s\n等级:%s\n单价:%s\n尺寸:%d\n总金额:%d\n%s", fish.getName(), fish.getLevel(), fish.getPrice(), dimensions, money, fish.getDescription());
             MessageChainBuilder messages = new MessageChainBuilder();
@@ -265,20 +273,20 @@ public class GamesManager {
         Contact subject = event.getSubject();
 
         if (fishInfo.isFishRod()) {
-            subject.sendMessage("你已经有一把钓鱼竿了，不用再买了！");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你已经有一把钓鱼竿了，不用再买了！"));
             return;
         }
 
         double moneyByUser = EconomyUtil.getMoneyByUser(user);
         if (moneyByUser - 500 < 0) {
-            subject.sendMessage("我这把钓鱼竿可是神器！他能吸收你的金币来进化，卖你500还嫌贵？");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"我这把钓鱼竿可是神器！他能吸收你的金币来进化，卖你500还嫌贵？"));
             return;
         }
 
-        if (EconomyUtil.lessMoneyToUser(user, 500)) {
+        if (EconomyUtil.minusMoneyToUser(user, 500)) {
             fishInfo.setFishRod(true);
             fishInfo.save();
-            subject.sendMessage("拿好了，这鱼竿到手即不负责，永不提供售后！");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"拿好了，这鱼竿到手即不负责，永不提供售后！"));
         } else {
             Log.error("游戏管理:购买鱼竿失败!");
         }
@@ -298,14 +306,13 @@ public class GamesManager {
 
         FishInfo fishInfo = userInfo.getFishInfo();
         if (!fishInfo.isFishRod()) {
-            subject.sendMessage("鱼竿都没得，你升级个锤子!");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"鱼竿都没得，你升级个锤子!"));
             return;
         }
-        if (fishInfo.isStatus()) {
-            subject.sendMessage("钓鱼期间不可升级鱼竿!");
+        if (fishInfo.getStatus()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"钓鱼期间不可升级鱼竿!"));
             return;
         }
-
         SingleMessage singleMessage = fishInfo.updateRod(userInfo);
         subject.sendMessage(singleMessage);
     }
@@ -337,7 +344,7 @@ public class GamesManager {
             return list.subList(0, Math.min(list.size(), 30));
         });
         if (rankingList == null || rankingList.size() == 0) {
-            subject.sendMessage("暂时没人钓鱼!");
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"暂时没人钓鱼!"));
             return;
         }
         ForwardMessageBuilder iNodes = new ForwardMessageBuilder(subject);
@@ -383,12 +390,24 @@ public class GamesManager {
             }
             return true;
         });
+        playerCooling.clear();
         if (status) {
-            event.getSubject().sendMessage("钓鱼状态刷新成功!");
+            event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"钓鱼状态刷新成功!"));
         } else {
-            event.getSubject().sendMessage("钓鱼状态刷新成功!");
+            event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"钓鱼状态刷新成功!"));
         }
     }
 
+/**
+ * 查看鱼竿等级
+ *
+ * @param event 消息事件
+ * @author Moyuyanli
+ * @date 2022/12/23 16:12
+ */
+    public static void viewFishLevel(MessageEvent event) {
+        int rodLevel = UserManager.getUserInfo(event.getSender()).getFishInfo().getRodLevel();
+        event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的鱼竿等级为%s级", rodLevel));
+    }
 
 }

@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.plugin;
 
+import cn.chahuyun.config.EconomyPluginConfig;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.fish.Fish;
 import cn.chahuyun.economy.utils.HibernateUtil;
@@ -39,7 +40,6 @@ public class FishManager {
             query.select(query.from(Fish.class));
             return session.createQuery(query).list();
         });
-
         if (fishList == null || fishList.size() == 0) {
             reloadFish();
             return;

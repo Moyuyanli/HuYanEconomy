@@ -24,7 +24,7 @@ public class UserBackpack implements Serializable {
     /**
      * 用户id
      */
-    private Long userId;
+    private String userId;
     /**
      * 道具编码
      */
@@ -41,7 +41,7 @@ public class UserBackpack implements Serializable {
     public UserBackpack() {
     }
 
-    public UserBackpack(Long userId, String propsCode, int propId, Class<? extends PropsBase> className) {
+    public UserBackpack(String userId, String propsCode, int propId, Class<? extends PropsBase> className) {
         this.userId = userId;
         this.propsCode = propsCode;
         this.propId = propId;

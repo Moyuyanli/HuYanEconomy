@@ -5,6 +5,7 @@ import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.manager.*;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.utils.Log;
+import cn.chahuyun.economy.utils.MessageUtil;
 import kotlin.coroutines.CoroutineContext;
 import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.EventHandler;
@@ -75,7 +76,7 @@ public class MessageEventListener extends SimpleListenerHost {
             case "个人信息":
             case "info":
                 Log.info("个人信息指令");
-                UserManager.getUserInfo(event);
+                UserManager.getUserInfoImage(event);
                 return;
             case "背包":
             case "backpack":
@@ -93,7 +94,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     if (group != null && !config.getLotteryGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getLotteryGroup().add(group.getId());
                     }
-                    subject.sendMessage("本群的猜签功能已开启!");
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"本群的猜签功能已开启!"));
                 }
                 return;
             case "关闭 猜签":
@@ -102,7 +103,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     if (group != null && config.getLotteryGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getLotteryGroup().remove(group.getId());
                     }
-                    subject.sendMessage("本群的猜签功能已关闭!");
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"本群的猜签功能已关闭!"));
                 }
                 return;
             case "开启 钓鱼":
@@ -111,7 +112,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     if (group != null && !config.getFishGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getFishGroup().add(group.getId());
                     }
-                    subject.sendMessage("本群的钓鱼功能已开启!");
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"本群的钓鱼功能已开启!"));
                 }
                 return;
             case "关闭 钓鱼":
@@ -120,7 +121,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     if (group != null && config.getFishGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getFishGroup().remove(group.getId());
                     }
-                    subject.sendMessage("本群的钓鱼功能已关闭!");
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"本群的钓鱼功能已关闭!"));
                 }
                 return;
             case "购买鱼竿":
@@ -144,12 +145,21 @@ public class MessageEventListener extends SimpleListenerHost {
                 Log.info("游戏指令");
                 GamesManager.fishTop(event);
                 return;
+            case "鱼竿等级":
+                Log.info("游戏指令");
+                GamesManager.viewFishLevel(event);
+                return;
             case "刷新钓鱼":
                 if (owner) {
                     Log.info("游戏指令");
                     GamesManager.refresh(event);
                 }
                 return;
+            case "银行利率":
+                Log.info("银行指令");
+                BankManager.viewBankInterest(event);
+                return;
+
         }
 
         String buyPropRegex = "购买 (\\S+)( \\S+)?|buy (\\S+)( \\S+)?";

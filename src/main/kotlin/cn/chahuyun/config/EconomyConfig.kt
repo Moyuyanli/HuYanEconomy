@@ -10,7 +10,7 @@ import net.mamoe.mirai.console.data.value
  * @author Moyuyanli
  * @date 2022/11/14 12:49
  */
-object EconomyConfig : AutoSavePluginConfig("config") {
+object EconomyConfig : AutoSavePluginConfig("Config") {
 
     @ValueDescription("主人\n")
     var owner: Long by value()

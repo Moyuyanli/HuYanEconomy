@@ -145,7 +145,7 @@ public class FishInfo implements Serializable {
             Group botGroup = HuYanEconomy.INSTANCE.bot.getGroup(group);
             assert botGroup != null;
             //注册新鱼塘
-            FishPond finalFishPond = new FishPond(1, group, HuYanEconomy.INSTANCE.config.getOwner(), botGroup.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
+            FishPond finalFishPond = new FishPond(1, group, HuYanEconomy.config.getOwner(), botGroup.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
             return HibernateUtil.factory.fromTransaction(session -> session.merge(finalFishPond));
         } else {
             //todo 私人鱼塘
@@ -159,7 +159,7 @@ public class FishInfo implements Serializable {
      * @return 鱼竿支持最大等级
      */
     public int getLevel() {
-        return getRodLevel() / 10 + 1;
+        return getRodLevel() == 0 ? 1 : getRodLevel() / 10 + 2;
     }
 
     /**
@@ -182,7 +182,7 @@ public class FishInfo implements Serializable {
         if (userMoney - upMoney < 0) {
             return new PlainText(String.format("你的金币不够%s拉！", upMoney));
         }
-        if (EconomyUtil.lessMoneyToUser(user, upMoney)) {
+        if (EconomyUtil.minusMoneyToUser(user, upMoney)) {
             upFishRod();
             return new PlainText(String.format("升级成功,花费%s金币!你的鱼竿更强了!\n%s->%s", upMoney, this.getRodLevel() - 1, getRodLevel()));
         }
@@ -190,7 +190,7 @@ public class FishInfo implements Serializable {
     }
 
     /**
-     * 获取钓鱼状态
+     * 线程安全获取钓鱼状态
      *
      * @return true 在钓鱼
      */
@@ -202,6 +202,15 @@ public class FishInfo implements Serializable {
             save();
             return false;
         }
+    }
+
+    /**
+     * 获取钓鱼状态
+     *
+     * @return true 在钓鱼
+     */
+    public boolean getStatus() {
+        return status;
     }
 
     /**
