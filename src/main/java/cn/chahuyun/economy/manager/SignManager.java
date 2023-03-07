@@ -17,7 +17,6 @@ import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
 import net.mamoe.mirai.message.data.PlainText;
-import net.mamoe.mirai.message.data.QuoteReply;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -85,28 +84,31 @@ public class SignManager {
         } else {
             goldNumber = RandomUtil.randomInt(50, 100);
         }
+        /*
+        双倍金币卡道具
+         */
+        if (false) {
+            PropsManager propsManager = PluginManager.getPropsManager();
 
-        PropsManager propsManager = PluginManager.getPropsManager();
+            List<PropsCard> cardS = propsManager.getPropsByUserFromCode(userInfo, Constant.SIGN_DOUBLE_SINGLE_CARD, PropsCard.class);
 
-        List<PropsCard> cardS = propsManager.getPropsByUserFromCode(userInfo, Constant.SIGN_DOUBLE_SINGLE_CARD, PropsCard.class);
-
-        boolean doubleStatus = false;
-        for (PropsCard card : cardS) {
-            if (card.isStatus()) {
-                doubleStatus = true;
-                userInfo = propsManager.deleteProp(userInfo, card);
-                if (userInfo == null) {
-                    subject.sendMessage("双倍签到金币卡使用失败!签到失败!");
-                    return;
+            boolean doubleStatus = false;
+            for (PropsCard card : cardS) {
+                if (card.isStatus()) {
+                    doubleStatus = true;
+                    userInfo = propsManager.deleteProp(userInfo, card);
+                    if (userInfo == null) {
+                        subject.sendMessage("双倍签到金币卡使用失败!签到失败!");
+                        return;
+                    }
+                    break;
                 }
-                break;
+            }
+
+            if (doubleStatus) {
+                goldNumber = goldNumber * 2;
             }
         }
-
-        if (doubleStatus) {
-            goldNumber = goldNumber * 2;
-        }
-
         if (!EconomyUtil.plusMoneyToUser(userInfo.getUser(), goldNumber)) {
             subject.sendMessage("签到失败!");
             //todo 签到失败回滚
