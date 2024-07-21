@@ -1,8 +1,8 @@
 package cn.chahuyun.economy.entity;
 
 import cn.chahuyun.economy.entity.fish.FishInfo;
-import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.CalendarUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
@@ -36,6 +36,7 @@ public class UserInfo implements Serializable {
     /**
      * qq号
      */
+    @Setter
     private long qq;
     /**
      * 名称
@@ -114,7 +115,7 @@ public class UserInfo implements Serializable {
             this.setSign(true);
             this.setSignTime(new Date());
             this.setSignNumber(1);
-            HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+            HibernateFactory.merge(this);
             return true;
         }
         //获取签到时间，向后偏移一天
@@ -139,7 +140,7 @@ public class UserInfo implements Serializable {
         }
         this.setSign(true);
         this.setSignTime(new Date());
-        HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+        HibernateFactory.merge(this);
         return true;
     }
 
@@ -154,8 +155,8 @@ public class UserInfo implements Serializable {
     public boolean addPropToBackpack(UserBackpack userBackpack) {
         this.getBackpacks().add(userBackpack);
         try {
-            HibernateUtil.factory.fromTransaction(session -> session.merge(this));
-            HibernateUtil.factory.fromTransaction(session -> session.merge(userBackpack));
+            HibernateFactory.merge(this);
+            HibernateFactory.merge(userBackpack);
         } catch (Exception e) {
             Log.error("用户信息:添加道具到背包出错", e);
             return false;
@@ -181,12 +182,12 @@ public class UserInfo implements Serializable {
     public FishInfo getFishInfo() {
         FishInfo fishInfo;
         try {
-            fishInfo = HibernateUtil.factory.fromSession(session -> session.get(FishInfo.class, this.getQq()));
+            fishInfo = HibernateFactory.selectOne(FishInfo.class, this.getQq());
             if (fishInfo != null) return fishInfo;
         } catch (Exception ignored) {
         }
         FishInfo newFishInfo = new FishInfo(this.getQq(), this.getRegisterGroup());
-        return HibernateUtil.factory.fromTransaction(session -> session.merge(newFishInfo));
+        return HibernateFactory.merge(newFishInfo);
     }
 
     public String getString() {
@@ -203,7 +204,7 @@ public class UserInfo implements Serializable {
      * @date 2022/12/6 8:49
      */
     public UserInfo save() {
-        return HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+        return HibernateFactory.merge(this);
     }
 
     /**
@@ -214,10 +215,6 @@ public class UserInfo implements Serializable {
     public UserInfo setUser(User user) {
         this.user = user;
         return this;
-    }
-
-    public void setQq(long qq) {
-        this.qq = qq;
     }
 
 

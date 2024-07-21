@@ -6,6 +6,7 @@ import cn.chahuyun.economy.entity.fish.FishInfo;
 import cn.chahuyun.economy.entity.fish.FishPond;
 import cn.chahuyun.economy.entity.fish.FishRanking;
 import cn.chahuyun.economy.utils.*;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -18,10 +19,7 @@ import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.query.criteria.JpaRoot;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -51,48 +49,55 @@ public class GamesManager {
      */
     public static void fishing(MessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
-        User user = userInfo.getUser();
+        User user = null;
+        if (userInfo != null) {
+            user = userInfo.getUser();
+        }
         Contact subject = event.getSubject();
         //获取玩家钓鱼信息
-        FishInfo fishInfo = userInfo.getFishInfo();
+        FishInfo fishInfo = null;
+        if (userInfo != null) {
+            fishInfo = userInfo.getFishInfo();
+        }
         //能否钓鱼
-        if (!fishInfo.isFishRod()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你连鱼竿都没得，拿**钓？"));
+        if (fishInfo != null && !fishInfo.isFishRod()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你连鱼竿都没得，拿**钓？"));
             return;
         }
         //是否已经在钓鱼
-        if (fishInfo.getStatus()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你已经在钓鱼了！"));
+        if (fishInfo != null && fishInfo.getStatus()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你已经在钓鱼了！"));
             return;
         }
         //钓鱼冷却
-        if (playerCooling.containsKey(userInfo.getQq())) {
+        if (userInfo != null && playerCooling.containsKey(userInfo.getQq())) {
             Date date = playerCooling.get(userInfo.getQq());
             long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
             if (between < 10) {
-                subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你还差%s分钟来抛第二杆!", 10 - between));
+                subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你还差%s分钟来抛第二杆!", 10 - between));
                 return;
             } else {
                 playerCooling.remove(userInfo.getQq());
             }
-        } else {
-            playerCooling.put(userInfo.getQq(), new Date());
         }
         //是否已经在钓鱼
-        if (fishInfo.isStatus()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你已经在钓鱼了！"));
+        if (fishInfo != null && fishInfo.isStatus()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你已经在钓鱼了！"));
             return;
         }
         //获取鱼塘
-        FishPond fishPond = fishInfo.getFishPond();
+        FishPond fishPond = null;
+        if (fishInfo != null) {
+            fishPond = fishInfo.getFishPond();
+        }
         if (fishPond == null) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"默认鱼塘不存在!"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "默认鱼塘不存在!"));
             return;
         }
         //获取鱼塘限制鱼竿最低等级
         int minLevel = fishPond.getMinLevel();
         if (fishInfo.getRodLevel() < minLevel) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你的鱼竿太拉了，这里不让你来，升升级吧..."));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的鱼竿太拉了，这里不让你来，升升级吧..."));
             return;
         }
         //开始钓鱼
@@ -267,26 +272,30 @@ public class GamesManager {
      */
     public static void buyFishRod(MessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
-        User user = userInfo.getUser();
+        User user = null;
+        if (userInfo == null) {
+            return;
+        }
+        user = userInfo.getUser();
         FishInfo fishInfo = userInfo.getFishInfo();
 
         Contact subject = event.getSubject();
 
         if (fishInfo.isFishRod()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"你已经有一把钓鱼竿了，不用再买了！"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你已经有一把钓鱼竿了，不用再买了！"));
             return;
         }
 
         double moneyByUser = EconomyUtil.getMoneyByUser(user);
         if (moneyByUser - 500 < 0) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"我这把钓鱼竿可是神器！他能吸收你的金币来进化，卖你500还嫌贵？"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "我这把钓鱼竿可是神器！他能吸收你的金币来进化，卖你500还嫌贵？"));
             return;
         }
 
         if (EconomyUtil.minusMoneyToUser(user, 500)) {
             fishInfo.setFishRod(true);
             fishInfo.save();
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"拿好了，这鱼竿到手即不负责，永不提供售后！"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "拿好了，这鱼竿到手即不负责，永不提供售后！"));
         } else {
             Log.error("游戏管理:购买鱼竿失败!");
         }
@@ -306,11 +315,11 @@ public class GamesManager {
 
         FishInfo fishInfo = userInfo.getFishInfo();
         if (!fishInfo.isFishRod()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"鱼竿都没得，你升级个锤子!"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "鱼竿都没得，你升级个锤子!"));
             return;
         }
         if (fishInfo.getStatus()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"钓鱼期间不可升级鱼竿!"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "钓鱼期间不可升级鱼竿!"));
             return;
         }
         SingleMessage singleMessage = fishInfo.updateRod(userInfo);
@@ -331,20 +340,13 @@ public class GamesManager {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
 
-        List<FishRanking> rankingList = HibernateUtil.factory.fromSession(session -> {
-            HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
-            JpaCriteriaQuery<FishRanking> query = builder.createQuery(FishRanking.class);
-            JpaRoot<FishRanking> from = query.from(FishRanking.class);
-            query.select(from);
-            query.orderBy(builder.desc(from.get("money")));
-            List<FishRanking> list = session.createQuery(query).list();
-            if (list.size() == 0) {
-                return null;
-            }
-            return list.subList(0, Math.min(list.size(), 30));
-        });
-        if (rankingList == null || rankingList.size() == 0) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"暂时没人钓鱼!"));
+        List<FishRanking> rankingList = HibernateFactory.selectList(FishRanking.class);
+        rankingList.sort(Comparator.comparing(FishRanking::getMoney).reversed());
+        rankingList = rankingList.isEmpty() ? rankingList: rankingList.subList(0, Math.min(rankingList.size(), 30)) ;
+
+
+        if (rankingList.isEmpty()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "暂时没人钓鱼!"));
             return;
         }
         ForwardMessageBuilder iNodes = new ForwardMessageBuilder(subject);
@@ -372,7 +374,7 @@ public class GamesManager {
      * @date 2022/12/16 11:04
      */
     public static void refresh(MessageEvent event) {
-        Boolean status = HibernateUtil.factory.fromTransaction(session -> {
+        Boolean status = HibernateFactory.getSession().fromTransaction(session -> {
             HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
             JpaCriteriaQuery<FishInfo> query = builder.createQuery(FishInfo.class);
             JpaRoot<FishInfo> from = query.from(FishInfo.class);
@@ -392,21 +394,21 @@ public class GamesManager {
         });
         playerCooling.clear();
         if (status) {
-            event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"钓鱼状态刷新成功!"));
+            event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "钓鱼状态刷新成功!"));
         } else {
-            event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"钓鱼状态刷新成功!"));
+            event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "钓鱼状态刷新成功!"));
         }
     }
 
-/**
- * 查看鱼竿等级
- *
- * @param event 消息事件
- * @author Moyuyanli
- * @date 2022/12/23 16:12
- */
+    /**
+     * 查看鱼竿等级
+     *
+     * @param event 消息事件
+     * @author Moyuyanli
+     * @date 2022/12/23 16:12
+     */
     public static void viewFishLevel(MessageEvent event) {
-        int rodLevel = UserManager.getUserInfo(event.getSender()).getFishInfo().getRodLevel();
+        int rodLevel = Objects.requireNonNull(UserManager.getUserInfo(event.getSender())).getFishInfo().getRodLevel();
         event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的鱼竿等级为%s级", rodLevel));
     }
 

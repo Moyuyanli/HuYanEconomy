@@ -8,15 +8,18 @@ import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.entity.props.factory.PropsCardFactory;
 import cn.chahuyun.economy.plugin.PropsType;
 import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.util.StrUtil;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
-import net.mamoe.mirai.message.data.*;
+import net.mamoe.mirai.message.data.ForwardMessageBuilder;
+import net.mamoe.mirai.message.data.MessageChain;
+import net.mamoe.mirai.message.data.MessageChainBuilder;
+import net.mamoe.mirai.message.data.PlainText;
 
 import java.util.*;
 
@@ -83,7 +86,7 @@ public class PropsManagerImpl implements PropsManager {
                 Log.error("道具管理:获取所有道具-获取道具子类出错!", e);
                 continue;
             }
-            PropsBase fromSession = HibernateUtil.factory.fromSession(session -> session.get(aClass, backpack.getPropId()));
+            PropsBase fromSession = HibernateFactory.selectOne(aClass, backpack.getPropId());
             props.add(fromSession);
         }
         return props;
@@ -103,7 +106,7 @@ public class PropsManagerImpl implements PropsManager {
     @Override
     public <E extends PropsBase> List<E> getPropsByUserFromCode(UserInfo userInfo, String code, Class<E> clazz) {
         List<UserBackpack> backpacks = userInfo.getBackpacks();
-        if (backpacks == null || backpacks.size() == 0) {
+        if (backpacks == null || backpacks.isEmpty()) {
             return new ArrayList<>();
         }
         List<E> propList = new ArrayList<>();
@@ -111,7 +114,7 @@ public class PropsManagerImpl implements PropsManager {
 //            if (backpack.getPropsCode().equals(code)) {
 //                continue;
 //            }
-            E base = HibernateUtil.factory.fromSession(session -> session.get(clazz, backpack.getPropId()));
+            E base = HibernateFactory.selectOne(clazz, backpack.getPropId());
             propList.add(base);
         }
         return propList;
@@ -140,7 +143,7 @@ public class PropsManagerImpl implements PropsManager {
     @Override
     public UserInfo deleteProp(UserInfo userInfo, PropsBase props) {
         try {
-            return HibernateUtil.factory.fromTransaction(session -> {
+            return HibernateFactory.getSession().fromTransaction(session -> {
                 session.remove(props);
                 List<UserBackpack> backpacks = userInfo.getBackpacks();
                 backpacks.removeIf(filter -> filter.getPropId() == props.getId());
@@ -220,7 +223,7 @@ public class PropsManagerImpl implements PropsManager {
         String propCode = PropsType.getCode(no);
         if (propCode == null) {
             Log.warning("道具系统:购买道具为空");
-            subject.sendMessage(MessageUtil.formatMessageChain(message,"我这里不卖这个..."));
+            subject.sendMessage(MessageUtil.formatMessageChain(message, "我这里不卖这个..."));
             return;
         }
         Log.info("道具系统:购买道具-Code " + propCode);
@@ -316,7 +319,7 @@ public class PropsManagerImpl implements PropsManager {
         if (propCode.startsWith("K-")) {
             assert userInfo != null;
             List<PropsCard> propsByUserFromCode = getPropsByUserFromCode(userInfo, propCode, PropsCard.class);
-            if (propsByUserFromCode.size() == 0) {
+            if (propsByUserFromCode.isEmpty()) {
                 subject.sendMessage(messages.append("你的包里没有这个道具!").build());
                 return;
             }
@@ -331,7 +334,7 @@ public class PropsManagerImpl implements PropsManager {
                 }
                 propsCard.setStatus(true);
                 propsCard.setEnabledTime(new Date());
-                HibernateUtil.factory.fromTransaction(session -> session.merge(propsCard));
+                HibernateFactory.merge(propsCard);
                 num--;
                 success++;
             }
@@ -359,7 +362,7 @@ public class PropsManagerImpl implements PropsManager {
 
         assert userInfo != null;
         List<PropsBase> propsByUser = getPropsByUser(userInfo);
-        if (propsByUser.size() == 0) {
+        if (propsByUser.isEmpty()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的背包空荡荡的..."));
             return;
         }

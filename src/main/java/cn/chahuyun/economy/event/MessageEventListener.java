@@ -94,7 +94,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     if (group != null && !config.getLotteryGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getLotteryGroup().add(group.getId());
                     }
-                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"本群的猜签功能已开启!"));
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签功能已开启!"));
                 }
                 return;
             case "关闭 猜签":
@@ -103,7 +103,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     if (group != null && config.getLotteryGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getLotteryGroup().remove(group.getId());
                     }
-                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"本群的猜签功能已关闭!"));
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签功能已关闭!"));
                 }
                 return;
             case "开启 钓鱼":
@@ -112,7 +112,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     if (group != null && !config.getFishGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getFishGroup().add(group.getId());
                     }
-                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"本群的钓鱼功能已开启!"));
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的钓鱼功能已开启!"));
                 }
                 return;
             case "关闭 钓鱼":
@@ -121,7 +121,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     if (group != null && config.getFishGroup().contains(group.getId())) {
                         EconomyConfig.INSTANCE.getFishGroup().remove(group.getId());
                     }
-                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),"本群的钓鱼功能已关闭!"));
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的钓鱼功能已关闭!"));
                 }
                 return;
             case "购买鱼竿":

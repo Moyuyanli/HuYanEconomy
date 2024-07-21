@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.entity.bank;
 
-import cn.chahuyun.economy.utils.HibernateUtil;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.util.RandomUtil;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -65,11 +65,12 @@ public class BankInfo {
 
     /**
      * 构造一个银行信息
-     * @param code 银行编码
-     * @param name 银行名称
+     *
+     * @param code        银行编码
+     * @param name        银行名称
      * @param description 银行描述
-     * @param qq 银行管理者
-     * @param regTotal 注册金额
+     * @param qq          银行管理者
+     * @param regTotal    注册金额
      */
     public BankInfo(String code, String name, String description, long qq, double regTotal) {
         this.code = code;
@@ -84,10 +85,11 @@ public class BankInfo {
 
     /**
      * 保存
+     *
      * @return this
      */
     public BankInfo save() {
-        return HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+        return HibernateFactory.merge(this);
     }
 
 }

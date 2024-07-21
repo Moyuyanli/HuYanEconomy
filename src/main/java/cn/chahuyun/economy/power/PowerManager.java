@@ -36,7 +36,8 @@ public class PowerManager {
             Object newInstance = null;
             try {
                 newInstance = aClass.getConstructor().newInstance();
-            } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
+                     InvocationTargetException e) {
                 e.printStackTrace();
             }
             Object finalNewInstance = newInstance;
@@ -50,9 +51,7 @@ public class PowerManager {
                     }
                 }
                 return isPower;
-            }).forEach(it -> {
-                execute(finalNewInstance, it, eventEventChannel.filterIsInstance(MessageEvent.class));
-            });
+            }).forEach(it -> execute(finalNewInstance, it, eventEventChannel.filterIsInstance(MessageEvent.class)));
         }
     }
 

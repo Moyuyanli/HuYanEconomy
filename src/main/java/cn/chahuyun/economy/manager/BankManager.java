@@ -5,9 +5,9 @@ import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.bank.BankInfo;
 import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.cron.CronUtil;
@@ -17,9 +17,6 @@ import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
-import org.hibernate.query.criteria.HibernateCriteriaBuilder;
-import org.hibernate.query.criteria.JpaCriteriaQuery;
-import org.hibernate.query.criteria.JpaRoot;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 
 import java.util.List;
@@ -52,12 +49,7 @@ public class BankManager {
         }
         List<BankInfo> bankInfos = null;
         try {
-            bankInfos = HibernateUtil.factory.fromSession(session -> {
-                HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
-                JpaCriteriaQuery<BankInfo> query = builder.createQuery(BankInfo.class);
-                query.select(query.from(BankInfo.class));
-                return session.createQuery(query).list();
-            });
+            bankInfos = HibernateFactory.selectList(BankInfo.class);
         } catch (Exception e) {
             Log.error("银行管理:利息加载出错!", e);
         }
@@ -145,14 +137,7 @@ public class BankManager {
      * @date 2022/12/23 16:08
      */
     public static void viewBankInterest(MessageEvent event) {
-        BankInfo bankInfo = HibernateUtil.factory.fromSession(session -> {
-            HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
-            JpaCriteriaQuery<BankInfo> query = builder.createQuery(BankInfo.class);
-            JpaRoot<BankInfo> from = query.from(BankInfo.class);
-            query.select(from);
-            query.where(builder.equal(from.get("id"), 1));
-            return session.createQuery(query).getSingleResult();
-        });
+        BankInfo bankInfo = HibernateFactory.selectOne(BankInfo.class, 1);
         event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "今日银行利率是%s%%", bankInfo.getInterest()));
     }
 
@@ -193,7 +178,7 @@ class BankInterestTask implements Task {
                     bankInfo.setInterest(RandomUtil.randomInt(2, 9));
                 }
             }
-            if (bankInfo.getId() == 0) {
+            if (bankInfo.getId() == 1) {
                 int interest = bankInfo.getInterest();
                 Map<EconomyAccount, Double> accountByBank = EconomyUtil.getAccountByBank();
                 for (Map.Entry<EconomyAccount, Double> entry : accountByBank.entrySet()) {

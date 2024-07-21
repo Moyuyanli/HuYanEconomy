@@ -2,22 +2,21 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.7.20'
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.7.20'
 
-    id 'net.mamoe.mirai-console' version '2.13.0-RC2'
+    id 'net.mamoe.mirai-console' version '2.16.0'
 }
 
 group = 'cn.chahuyun'
-version = '0.1.16'
+version = '0.1.17'
 
 repositories {
     mavenCentral()
-//    maven { url 'https://maven.aliyun.com/repository/public' }
-//    maven { url "https://www.sonatype.org/nexus/" }
+    maven { url 'https://maven.aliyun.com/repository/public' }
 //    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
 }
 
 dependencies {
+
     //依赖
-    compileOnly "xyz.cssxsh.mirai:mirai-hibernate-plugin:2.5.1"
     compileOnly "xyz.cssxsh.mirai:mirai-economy-core:1.0.6"
     compileOnly "cn.chahuyun:HuYanSession:2.3.1"
     //使用库
@@ -26,8 +25,9 @@ dependencies {
 
     implementation 'cn.hutool:hutool-all:5.8.10'
     implementation 'org.apache.poi:poi-ooxml:4.1.2'
-    //测试库
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+
+    implementation "cn.chahuyun:hibernate-plus:1.0.7"
+
 }
 
 // hibernate 6 和 HikariCP 5 需要 jdk11

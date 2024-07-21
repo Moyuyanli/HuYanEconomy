@@ -2,7 +2,7 @@ package cn.chahuyun.economy.entity.fish;
 
 import cn.chahuyun.economy.plugin.FishManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.HibernateUtil;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -149,7 +149,7 @@ public class FishPond implements Serializable {
      * 保存
      */
     public FishPond save() {
-        return HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+        return HibernateFactory.merge(this);
     }
 
 }

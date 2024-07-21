@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.entity.fish;
 
-import cn.chahuyun.economy.utils.HibernateUtil;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.BetweenFormatter;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
@@ -83,7 +83,7 @@ public class FishRanking implements Serializable {
      * 保存
      */
     public FishRanking save() {
-        return HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+        return HibernateFactory.merge(this);
     }
 
     /**

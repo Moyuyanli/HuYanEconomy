@@ -1,13 +1,14 @@
 package cn.chahuyun.economy.plugin;
 
+import cn.chahuyun.HuYanSession;
 import cn.chahuyun.config.ConfigData;
-import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.manager.PropsManager;
 import cn.chahuyun.economy.manager.PropsManagerImpl;
 import cn.chahuyun.economy.utils.Log;
 import cn.hutool.cron.CronUtil;
+import lombok.Getter;
 
 /**
  * 插件管理<p>
@@ -24,7 +25,10 @@ public class PluginManager {
 
     /**
      * 插件的道具管理
+     * -- GETTER --
+     * 获取道具管理实现
      */
+    @Getter
     private static PropsManager propsManager = new PropsManagerImpl();
 
     private PluginManager() {
@@ -45,7 +49,7 @@ public class PluginManager {
         propsManager.registerProps(propsCard);
         try {
             //壶言会话
-            HuYanEconomy.INSTANCE.config.setOwner(ConfigData.INSTANCE.getOwner());
+            HuYanSession.config.setOwner(ConfigData.INSTANCE.getOwner());
             Log.info("检测到壶言会话,已同步主人!");
             isHuYanSessionPlugin = true;
         } catch (NoClassDefFoundError e) {
@@ -55,15 +59,6 @@ public class PluginManager {
 
     }
 
-
-    /**
-     * 获取道具管理实现
-     *
-     * @return 道具管理实现
-     */
-    public static PropsManager getPropsManager() {
-        return propsManager;
-    }
 
     /**
      * 设置道具管理的实现

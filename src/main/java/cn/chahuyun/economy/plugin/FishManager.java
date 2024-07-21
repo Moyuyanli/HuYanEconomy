@@ -1,13 +1,10 @@
 package cn.chahuyun.economy.plugin;
 
-import cn.chahuyun.config.EconomyPluginConfig;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.fish.Fish;
-import cn.chahuyun.economy.utils.HibernateUtil;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.ExcelUtil;
-import org.hibernate.query.criteria.HibernateCriteriaBuilder;
-import org.hibernate.query.criteria.JpaCriteriaQuery;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,12 +31,7 @@ public class FishManager {
      * 初始化鱼管理
      */
     public static void init() {
-        List<Fish> fishList = HibernateUtil.factory.fromSession(session -> {
-            HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
-            JpaCriteriaQuery<Fish> query = builder.createQuery(Fish.class);
-            query.select(query.from(Fish.class));
-            return session.createQuery(query).list();
-        });
+        List<Fish> fishList = HibernateFactory.selectList(Fish.class);
         if (fishList == null || fishList.size() == 0) {
             reloadFish();
             return;
@@ -89,7 +81,7 @@ public class FishManager {
         map.put("特殊标记", "special");
         List<Fish> fishList = reader.setHeaderAlias(map).readAll(Fish.class);
         for (Fish fish : fishList) {
-            HibernateUtil.factory.fromTransaction(session -> session.merge(fish));
+            HibernateFactory.merge(fish);
         }
         for (Fish fish : fishList) {
             int level = fish.getLevel();

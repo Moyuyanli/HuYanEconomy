@@ -3,8 +3,8 @@ package cn.chahuyun.economy.manager;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
@@ -13,9 +13,6 @@ import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.Image;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
-import org.hibernate.query.criteria.HibernateCriteriaBuilder;
-import org.hibernate.query.criteria.JpaCriteriaQuery;
-import org.hibernate.query.criteria.JpaRoot;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 
 import javax.imageio.ImageIO;
@@ -58,14 +55,7 @@ public class UserManager {
         long userId = user.getId();
         //查询用户
         try {
-            return HibernateUtil.factory.fromTransaction(session -> {
-                HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
-                JpaCriteriaQuery<UserInfo> query = builder.createQuery(UserInfo.class);
-                JpaRoot<UserInfo> from = query.from(UserInfo.class);
-                query.select(from);
-                query.where(builder.equal(from.get("qq"), userId));
-                return session.createQuery(query).getSingleResult().setUser(user);
-            });
+            return HibernateFactory.selectList(UserInfo.class, "qq", userId).get(0).setUser(user);
         } catch (Exception e) {
             //注册用户
             long group = 0;
@@ -75,7 +65,7 @@ public class UserManager {
             }
             UserInfo info = new UserInfo(userId, group, user.getNick(), new Date());
             try {
-                return HibernateUtil.factory.fromTransaction(session -> session.merge(info)).setUser(user);
+                return HibernateFactory.merge(info).setUser(user);
             } catch (Exception exception) {
                 Log.error("用户管理错误:注册用户失败", exception);
                 return null;
@@ -96,14 +86,7 @@ public class UserManager {
         String userId = account.getUuid();
         //查询用户
         try {
-            return HibernateUtil.factory.fromTransaction(session -> {
-                HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
-                JpaCriteriaQuery<UserInfo> query = builder.createQuery(UserInfo.class);
-                JpaRoot<UserInfo> from = query.from(UserInfo.class);
-                query.select(from);
-                query.where(builder.equal(from.get("id"), userId));
-                return session.createQuery(query).getSingleResult();
-            });
+            return HibernateFactory.selectOne(UserInfo.class, userId);
         } catch (Exception e) {
             return null;
         }

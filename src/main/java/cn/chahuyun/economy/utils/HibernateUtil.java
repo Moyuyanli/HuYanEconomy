@@ -1,8 +1,12 @@
 package cn.chahuyun.economy.utils;
 
-import org.hibernate.HibernateException;
-import org.hibernate.SessionFactory;
-import xyz.cssxsh.mirai.hibernate.MiraiHibernateConfiguration;
+import cn.chahuyun.config.EconomyConfig;
+import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.hibernateplus.Configuration;
+import cn.chahuyun.hibernateplus.DriveType;
+import cn.chahuyun.hibernateplus.HibernatePlusService;
+
+import java.nio.file.Path;
 
 /**
  * 说明
@@ -14,16 +18,6 @@ import xyz.cssxsh.mirai.hibernate.MiraiHibernateConfiguration;
 public class HibernateUtil {
 
 
-    /**
-     * 数据库连接前缀
-     */
-    private static final String SQL_PATH_PREFIX = "jdbc:h2:file:";
-
-    /**
-     * 会话工厂
-     */
-    public static SessionFactory factory = null;
-
     private HibernateUtil() {
 
     }
@@ -31,21 +25,35 @@ public class HibernateUtil {
     /**
      * Hibernate初始化
      *
-     * @param configuration Configuration
+     * @param economy 插件
      * @author Moyuyanli
      * @date 2022/7/30 23:04
      */
-    public static void init(MiraiHibernateConfiguration configuration) {
-        String path = SQL_PATH_PREFIX + "./data/cn.chahuyun.HuYanEconomy/HuYanEconomy";
-        configuration.setProperty("hibernate.connection.url", path);
-        configuration.scan("cn.chahuyun.entity");
-        try {
-            factory = configuration.buildSessionFactory();
-        } catch (HibernateException e) {
-            Log.error("请删除data中的HuYanEconomy.mv.db后重新启动！", e);
-            return;
+    public static void init(HuYanEconomy economy) {
+        EconomyConfig config = HuYanEconomy.config;
+
+        Configuration configuration = HibernatePlusService.createConfiguration(economy.getClass());
+        configuration.setPackageName("cn.chahuyun.economy.entity");
+
+
+        DriveType dataType = config.getDataType();
+        configuration.setDriveType(dataType);
+        Path dataFolderPath = economy.getDataFolderPath();
+        switch (dataType) {
+            case MYSQL:
+                configuration.setAddress(config.getMysqlUrl());
+                configuration.setUser(config.getMysqlUser());
+                configuration.setPassword(config.getMysqlPassword());
+                break;
+            case H2:
+                configuration.setAddress(dataFolderPath.resolve("HuYanEconomy.h2").toString());
+                break;
+            case SQLITE:
+                configuration.setAddress(dataFolderPath.resolve("HuYanEconomy").toString());
+                break;
         }
-        Log.info("H2数据库初始化成功!");
+
+        HibernatePlusService.loadingService(configuration);
     }
 
 

@@ -3,8 +3,8 @@ package cn.chahuyun.economy.entity.fish;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -14,11 +14,9 @@ import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.message.data.PlainText;
 import net.mamoe.mirai.message.data.SingleMessage;
-import org.hibernate.query.criteria.HibernateCriteriaBuilder;
-import org.hibernate.query.criteria.JpaCriteriaQuery;
-import org.hibernate.query.criteria.JpaRoot;
 
 import java.io.Serializable;
+import java.util.HashMap;
 
 /**
  * 钓鱼信息-玩家<p>
@@ -76,7 +74,7 @@ public class FishInfo implements Serializable {
      * 保存
      */
     public FishInfo save() {
-        return HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+        return HibernateFactory.merge(this);
     }
 
     /**
@@ -124,14 +122,9 @@ public class FishInfo implements Serializable {
         FishPond fishPond;
         try {
             //从数据库中查询该鱼塘
-            fishPond = HibernateUtil.factory.fromSession(session -> {
-                HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
-                JpaCriteriaQuery<FishPond> query = builder.createQuery(FishPond.class);
-                JpaRoot<FishPond> from = query.from(FishPond.class);
-                query.select(from);
-                query.where(builder.equal(from.get("code"), this.getDefaultFishPond()));
-                return session.createQuery(query).getSingleResult();
-            });
+            HashMap<String, String> map = new HashMap<>();
+            map.put("code", this.getDefaultFishPond());
+            fishPond = HibernateFactory.selectOne(FishPond.class, map);
             //如果不存在 或者报错，则进行新建改鱼塘
             if (fishPond != null) return fishPond;
         } catch (Exception e) {
@@ -146,7 +139,7 @@ public class FishInfo implements Serializable {
             assert botGroup != null;
             //注册新鱼塘
             FishPond finalFishPond = new FishPond(1, group, HuYanEconomy.config.getOwner(), botGroup.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
-            return HibernateUtil.factory.fromTransaction(session -> session.merge(finalFishPond));
+            return HibernateFactory.merge(finalFishPond);
         } else {
             //todo 私人鱼塘
             return null;

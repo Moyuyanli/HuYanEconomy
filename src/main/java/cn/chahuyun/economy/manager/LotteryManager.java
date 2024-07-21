@@ -4,9 +4,9 @@ import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.LotteryInfo;
 import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.cron.CronUtil;
 import cn.hutool.cron.task.Task;
@@ -18,9 +18,6 @@ import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
-import org.hibernate.query.criteria.HibernateCriteriaBuilder;
-import org.hibernate.query.criteria.JpaCriteriaQuery;
-import org.hibernate.query.criteria.JpaRoot;
 
 import java.util.*;
 
@@ -53,13 +50,7 @@ public class LotteryManager {
     public static void init(boolean type) {
         List<LotteryInfo> lotteryInfos;
         try {
-            lotteryInfos = HibernateUtil.factory.fromSession(session -> {
-                HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
-                JpaCriteriaQuery<LotteryInfo> query = builder.createQuery(LotteryInfo.class);
-                JpaRoot<LotteryInfo> from = query.from(LotteryInfo.class);
-                query.select(from);
-                return session.createQuery(query).list();
-            });
+            lotteryInfos = HibernateFactory.selectList(LotteryInfo.class);
         } catch (Exception e) {
             Log.error("彩票管理:彩票初始化失败!", e);
             return;
@@ -79,7 +70,7 @@ public class LotteryManager {
             }
         }
 
-        if (minutesLottery.size() > 0) {
+        if (!minutesLottery.isEmpty()) {
             //唯一id
             String minutesTaskId = "minutesTask";
             //始终删除一次  用于防止刷新的时候 添加定时任务报错
@@ -89,13 +80,13 @@ public class LotteryManager {
             //添加定时任务到调度器
             CronUtil.schedule(minutesTaskId, "0 * * * * ?", minutesTask);
         }
-        if (hoursLottery.size() > 0) {
+        if (!hoursLottery.isEmpty()) {
             String hoursTaskId = "hoursTask";
             CronUtil.remove(hoursTaskId);
             LotteryHoursTask hoursTask = new LotteryHoursTask(hoursTaskId, hoursLottery.values());
             CronUtil.schedule(hoursTaskId, "0 0 * * * ?", hoursTask);
         }
-        if (dayLottery.size() > 0) {
+        if (!dayLottery.isEmpty()) {
             String dayTaskId = "dayTask";
             CronUtil.remove(dayTaskId);
             var dayTask = new LotteryDayTask(dayTaskId, dayLottery.values());
@@ -153,23 +144,23 @@ public class LotteryManager {
                 typeString = "大签";
                 break;
             default:
-                subject.sendMessage(MessageUtil.formatMessageChain(message,"猜签类型错误!"));
+                subject.sendMessage(MessageUtil.formatMessageChain(message, "猜签类型错误!"));
                 return;
         }
 
         if (type == 1) {
             if (!(0 < money && money <= 1000)) {
-                subject.sendMessage(MessageUtil.formatMessageChain(message,"你投注的金额不属于这个签!"));
+                subject.sendMessage(MessageUtil.formatMessageChain(message, "你投注的金额不属于这个签!"));
                 return;
             }
         } else if (type == 2) {
             if (!(0 < money && money <= 10000)) {
-                subject.sendMessage(MessageUtil.formatMessageChain(message,"你投注的金额不属于这个签!"));
+                subject.sendMessage(MessageUtil.formatMessageChain(message, "你投注的金额不属于这个签!"));
                 return;
             }
         } else {
             if (!(0 < money && money <= 1000000)) {
-                subject.sendMessage(MessageUtil.formatMessageChain(message,"你投注的金额不属于这个签!"));
+                subject.sendMessage(MessageUtil.formatMessageChain(message, "你投注的金额不属于这个签!"));
                 return;
             }
         }
@@ -183,11 +174,11 @@ public class LotteryManager {
         }
         LotteryInfo lotteryInfo = new LotteryInfo(user.getId(), subject.getId(), money, type, number.toString());
         if (!EconomyUtil.minusMoneyToUser(user, money)) {
-            subject.sendMessage(MessageUtil.formatMessageChain(message,"猜签失败！"));
+            subject.sendMessage(MessageUtil.formatMessageChain(message, "猜签失败！"));
             return;
         }
         lotteryInfo.save();
-        subject.sendMessage(MessageUtil.formatMessageChain(message,"猜签成功:\n猜签类型:%s\n猜签号码:%s\n猜签金币:%s", typeString, number, money));
+        subject.sendMessage(MessageUtil.formatMessageChain(message, "猜签成功:\n猜签类型:%s\n猜签号码:%s\n猜签金币:%s", typeString, number, money));
         init(false);
     }
 
@@ -487,7 +478,7 @@ class LotteryDayTask implements Task {
             MessageChainBuilder singleMessages = new MessageChainBuilder();
             String format = String.format("本期大签开签啦！\n开签号码%s", currentString);
             singleMessages.append(format).append("\n以下是本期大签开签着:↓");
-            if (list.size() == 0) {
+            if (list.isEmpty()) {
                 singleMessages.append("无!");
             } else {
                 for (LotteryInfo lotteryInfo : list) {

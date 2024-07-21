@@ -2,7 +2,7 @@ package cn.chahuyun.economy.entity.props.factory;
 
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.plugin.PropsType;
-import cn.chahuyun.economy.utils.HibernateUtil;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 
 import java.util.Date;
 
@@ -35,7 +35,7 @@ public class PropsCardFactory implements PropsFactory {
         card.setGetTime(new Date());
         PropsCard finalCard = card;
         //添加道具到数据库
-        card = HibernateUtil.factory.fromTransaction(session -> session.merge(finalCard));
+        card = HibernateFactory.merge(finalCard);
         return card;
     }
 

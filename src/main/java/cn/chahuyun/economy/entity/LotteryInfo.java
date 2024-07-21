@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.entity;
 
-import cn.chahuyun.economy.utils.HibernateUtil;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -79,17 +79,14 @@ public class LotteryInfo implements Serializable {
      * 保存
      */
     public void save() {
-        HibernateUtil.factory.fromTransaction(session -> session.merge(this));
+        HibernateFactory.merge(this);
     }
 
     /**
      * 删除
      */
     public void remove() {
-        HibernateUtil.factory.fromTransaction(session -> {
-            session.remove(this);
-            return null;
-        });
+        HibernateFactory.delete(this);
     }
 
     /**

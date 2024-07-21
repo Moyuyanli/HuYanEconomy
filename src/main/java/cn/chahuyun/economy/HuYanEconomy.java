@@ -19,7 +19,6 @@ import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder;
 import net.mamoe.mirai.event.Event;
 import net.mamoe.mirai.event.EventChannel;
 import net.mamoe.mirai.event.GlobalEventChannel;
-import xyz.cssxsh.mirai.hibernate.MiraiHibernateConfiguration;
 
 public final class HuYanEconomy extends JavaPlugin {
     /**
@@ -29,7 +28,7 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String version = "0.1.16";
+    public static final String version = "0.1.17";
     /**
      * 配置
      */
@@ -45,7 +44,6 @@ public final class HuYanEconomy extends JavaPlugin {
                 .info("壶言经济")
                 .author("Moyuyanli")
                 //忽略依赖版本 true 可选依赖 false 必须依赖
-                .dependsOn("xyz.cssxsh.mirai.plugin.mirai-hibernate-plugin", false)
                 .dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", false)
                 .dependsOn("cn.chahuyun.HuYanSession", true)
                 .build());
@@ -53,17 +51,18 @@ public final class HuYanEconomy extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        EventChannel<Event> eventEventChannel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE);
-        //加载前置
-        MiraiHibernateConfiguration configuration = new MiraiHibernateConfiguration(this);
-        //初始化插件数据库
-        HibernateUtil.init(configuration);
         //加载配置
         reloadPluginConfig(EconomyConfig.INSTANCE);
         reloadPluginConfig(EconomyPluginConfig.INSTANCE);
         config = EconomyConfig.INSTANCE;
         //插件功能初始化
         PluginManager.init();
+        //初始化插件数据库
+        HibernateUtil.init(this);
+
+
+        EventChannel<Event> eventEventChannel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE);
+
         long configBot = config.getBot();
         if (configBot == 0) {
             Log.warning("插件管理机器人还没有配置，请尽快配置!");
@@ -74,7 +73,6 @@ public final class HuYanEconomy extends JavaPlugin {
             BankManager.init();
             eventEventChannel.registerListenerHost(new BotOnlineEventListener());
             eventEventChannel.registerListenerHost(new MessageEventListener());
-            PowerManager.init(eventEventChannel);
             Log.info("事件已监听!");
         }
         EconomyPluginConfig.INSTANCE.setFirstStart(false);
