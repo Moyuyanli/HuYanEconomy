@@ -1,6 +1,5 @@
 package cn.chahuyun.economy.manager;
 
-import cn.chahuyun.config.EconomyPluginConfig;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.bank.BankInfo;
@@ -44,7 +43,9 @@ public class BankManager {
     public static void init() {
         BankInfo one = HibernateFactory.selectOne(BankInfo.class, 1);
         if (one == null) {
-            new BankInfo("global", "主银行", "经济服务", HuYanEconomy.config.getOwner(), 0).save();
+            new BankInfo("global", "主银行", "经济服务", HuYanEconomy.config.getOwner(), 0)
+                    .setId(1)
+                    .save();
         }
         List<BankInfo> bankInfos = null;
         try {
