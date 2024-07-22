@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.event;
 
+import cn.chahuyun.authorize.annotation.MessageComponent;
 import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.manager.*;
@@ -23,6 +24,7 @@ import java.util.regex.Pattern;
  * @Description :消息检测
  * @Date 2022/7/9 18:11
  */
+//@MessageComponent
 public class MessageEventListener extends SimpleListenerHost {
 
 
@@ -51,7 +53,7 @@ public class MessageEventListener extends SimpleListenerHost {
      */
     @EventHandler()
     public void onMessage(@NotNull MessageEvent event) {
-        EconomyConfig config = HuYanEconomy.INSTANCE.config;
+        EconomyConfig config = HuYanEconomy.config;
         User sender = event.getSender();
         //主人
         boolean owner = config.getOwner() == sender.getId();
@@ -159,7 +161,7 @@ public class MessageEventListener extends SimpleListenerHost {
                 Log.info("银行指令");
                 BankManager.viewBankInterest(event);
                 return;
-
+            default:
         }
 
         String buyPropRegex = "购买 (\\S+)( \\S+)?|buy (\\S+)( \\S+)?";

@@ -243,14 +243,16 @@ public class UserManager {
              * Font.PLAIN（正常），Font.BOLD（粗体），Font.ITALIC（斜体）
              */
             // 设置画笔字体样式为黑体，粗体
-            pen.setFont(new Font("黑体", Font.BOLD, fontSize));
+            Font font = new Font("黑体", Font.BOLD, fontSize);
+            pen.setFont(font);
             pen.drawString(userInfoName, 200, 155);
 
 //            pen.setColor(); todo 称号预留
 
             pen.setColor(Color.black);
             fontSize = 24;
-            pen.setFont(new Font("黑体", Font.PLAIN, fontSize));
+            font = new Font("黑体", Font.PLAIN, fontSize);
+            pen.setFont(font);
             //id
             pen.drawString(String.valueOf(userInfo.getQq()), 172, 240);
             String format;
@@ -273,12 +275,14 @@ public class UserManager {
             if (String.valueOf(money).length() > 5) {
                 fontSize = 20;
             }
-            pen.setFont(new Font("黑体", Font.PLAIN, fontSize));
+            font = new Font("黑体", Font.PLAIN, fontSize);
+            pen.setFont(font);
             //写入总金币
             pen.drawString(String.valueOf(money), 600, 410);
 
             fontSize = 24;
-            pen.setFont(new Font("黑体", Font.PLAIN, fontSize));
+            font = new Font("黑体", Font.PLAIN, fontSize);
+            pen.setFont(font);
             //写入今日获得
             pen.drawString(String.valueOf(userInfo.getSignEarnings()), 810, 410);
 
@@ -286,7 +290,8 @@ public class UserManager {
             if (String.valueOf(bank).length() > 5) {
                 fontSize = 20;
             }
-            pen.setFont(new Font("黑体", Font.PLAIN, fontSize));
+            font = new Font("黑体", Font.PLAIN, fontSize);
+            pen.setFont(font);
             //写入银行金币
             pen.drawString(String.valueOf(bank), 600, 460);
 
@@ -296,15 +301,17 @@ public class UserManager {
             if (String.valueOf(bankEarnings).length() > 5) {
                 fontSize = 20;
             }
-            pen.setFont(new Font("黑体", Font.PLAIN, fontSize));
+            font = new Font("黑体", Font.PLAIN, fontSize);
+            pen.setFont(font);
             //写入银行收益金币
             pen.drawString(String.valueOf(bankEarnings), 810, 460);
 
             fontSize = 15;
             pen.setColor(new Color(255, 255, 255, 230));
-            pen.setFont(new Font("黑体", Font.ITALIC, fontSize));
+            font = new Font("黑体", Font.ITALIC, fontSize);
+            pen.setFont(font);
 
-            pen.drawString("by Mirai & HuYanEconomy(壶言经济) " + HuYanEconomy.version, 540, 525);
+            pen.drawString("by Mirai & HuYanEconomy(壶言经济) " + HuYanEconomy.VERSION, 540, 525);
 
             //关闭窗体，释放部分资源
             pen.dispose();

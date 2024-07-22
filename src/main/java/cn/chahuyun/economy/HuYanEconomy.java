@@ -8,7 +8,6 @@ import cn.chahuyun.economy.manager.BankManager;
 import cn.chahuyun.economy.manager.LotteryManager;
 import cn.chahuyun.economy.plugin.FishManager;
 import cn.chahuyun.economy.plugin.PluginManager;
-import cn.chahuyun.economy.power.PowerManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
@@ -28,7 +27,7 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String version = "0.1.17";
+    public static final String VERSION = "0.1.17";
     /**
      * 配置
      */
@@ -39,12 +38,13 @@ public final class HuYanEconomy extends JavaPlugin {
     public Bot bot;
 
     private HuYanEconomy() {
-        super(new JvmPluginDescriptionBuilder("cn.chahuyun.HuYanEconomy", version)
+        super(new JvmPluginDescriptionBuilder("cn.chahuyun.HuYanEconomy", VERSION)
                 .name("HuYanEconomy")
                 .info("壶言经济")
                 .author("Moyuyanli")
                 //忽略依赖版本 true 可选依赖 false 必须依赖
                 .dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", false)
+                .dependsOn("cn.chahuyun.HuYanAuthorize", true)
                 .dependsOn("cn.chahuyun.HuYanSession", true)
                 .build());
     }
@@ -76,7 +76,7 @@ public final class HuYanEconomy extends JavaPlugin {
             Log.info("事件已监听!");
         }
         EconomyPluginConfig.INSTANCE.setFirstStart(false);
-        Log.info(String.format("HuYanEconomy已加载！当前版本 %s !", version));
+        Log.info(String.format("HuYanEconomy已加载！当前版本 %s !", VERSION));
     }
 
     /**

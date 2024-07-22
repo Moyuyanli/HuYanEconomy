@@ -42,10 +42,9 @@ public class BankManager {
      * @date 2022/12/21 11:03
      */
     public static void init() {
-        if (EconomyPluginConfig.INSTANCE.getFirstStart()) {
-            BankInfo bankInfo = new BankInfo("global", "主银行", "经济服务", HuYanEconomy.config.getOwner(), 0);
-            bankInfo.setId(1);
-            bankInfo.save();
+        BankInfo one = HibernateFactory.selectOne(BankInfo.class, 1);
+        if (one == null) {
+            new BankInfo("global", "主银行", "经济服务", HuYanEconomy.config.getOwner(), 0).save();
         }
         List<BankInfo> bankInfos = null;
         try {
@@ -54,7 +53,7 @@ public class BankManager {
             Log.error("银行管理:利息加载出错!", e);
         }
         BankInterestTask bankInterestTask = new BankInterestTask("bank", bankInfos);
-        CronUtil.schedule("bank", "0 0 0 * * ?", bankInterestTask);
+        CronUtil.schedule("bank", "0 0 * * * ?", bankInterestTask);
     }
 
     /**
@@ -175,7 +174,7 @@ class BankInterestTask implements Task {
         for (BankInfo bankInfo : bankList) {
             if (bankInfo.isInterestSwitch()) {
                 if (DateUtil.thisDayOfWeek() == 2) {
-                    bankInfo.setInterest(RandomUtil.randomInt(2, 9));
+                    bankInfo.setInterest(RandomUtil.randomInt(1, 5));
                 }
             }
             if (bankInfo.getId() == 1) {
@@ -187,8 +186,10 @@ class BankInterestTask implements Task {
                         continue;
                     }
                     double v = entry.getValue() * (interest / 100.0);
+                    v = Double.parseDouble(String.format("%.1f", v));
                     if (EconomyUtil.plusMoneyToBankForAccount(entry.getKey(), v)) {
                         userInfo.setBankEarnings(v);
+                        userInfo.save();
                     } else {
                         Log.error("银行利息管理:" + id + "添加利息出错");
                     }
