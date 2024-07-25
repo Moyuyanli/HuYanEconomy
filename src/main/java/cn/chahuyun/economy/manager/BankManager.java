@@ -54,7 +54,7 @@ public class BankManager {
             Log.error("银行管理:利息加载出错!", e);
         }
         BankInterestTask bankInterestTask = new BankInterestTask("bank", bankInfos);
-        CronUtil.schedule("bank", "0 0 * * * ?", bankInterestTask);
+        CronUtil.schedule("bank", "0 0 0 * * ?", bankInterestTask);
     }
 
     /**
