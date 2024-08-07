@@ -2,13 +2,20 @@ package cn.chahuyun.economy.plugin;
 
 import cn.chahuyun.HuYanSession;
 import cn.chahuyun.config.ConfigData;
+import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.manager.PropsManager;
 import cn.chahuyun.economy.manager.PropsManagerImpl;
 import cn.chahuyun.economy.utils.Log;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.cron.CronUtil;
 import lombok.Getter;
+
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 
 /**
  * 插件管理<p>
@@ -49,14 +56,42 @@ public class PluginManager {
         propsManager.registerProps(propsCard);
         try {
             //壶言会话
-            HuYanSession.config.setOwner(ConfigData.INSTANCE.getOwner());
+            HuYanEconomy.config.setOwner(ConfigData.INSTANCE.getOwner());
             Log.info("检测到壶言会话,已同步主人!");
             isHuYanSessionPlugin = true;
         } catch (NoClassDefFoundError e) {
             isHuYanSessionPlugin = false;
         }
 
+        HuYanEconomy instance = HuYanEconomy.INSTANCE;
+        Path path = instance.getDataFolderPath();
+        File font = new File(path.resolve("font").toUri());
+        if (!font.exists()) {
+            font.mkdir();
+            FileUtil.writeFromStream(instance.getResourceAsStream("Maple UI.ttf"), path.resolve("font/Maple UI.ttf").toFile());
+        }
+        File bottom = new File(path.resolve("bottom").toUri());
+        if (!bottom.exists()) {
+            bottom.mkdir();
+            FileUtil.writeFromStream(instance.getResourceAsStream("bottom1.png"), path.resolve("bottom/bottom1.png").toFile());
+            FileUtil.writeFromStream(instance.getResourceAsStream("bottom2.png"), path.resolve("bottom/bottom2.png").toFile());
+            FileUtil.writeFromStream(instance.getResourceAsStream("bottom3.png"), path.resolve("bottom/bottom3.png").toFile());
+            FileUtil.writeFromStream(instance.getResourceAsStream("bottom4.png"), path.resolve("bottom/bottom4.png").toFile());
+            FileUtil.writeFromStream(instance.getResourceAsStream("bottom5.png"), path.resolve("bottom/bottom5.png").toFile());
+            FileUtil.writeFromStream(instance.getResourceAsStream("bottom6.png"), path.resolve("bottom/bottom6.png").toFile());
+            FileUtil.writeFromStream(instance.getResourceAsStream("bottom7.png"), path.resolve("bottom/bottom7.png").toFile());
+            FileUtil.writeFromStream(instance.getResourceAsStream("bottom8.png"), path.resolve("bottom/bottom8.png").toFile());
+        }
 
+        try {
+            ImageManager.init(instance);
+        } catch (IOException e) {
+            instance.getLogger().error("自定义图片加载失败!");
+            throw new RuntimeException(e);
+        } catch (FontFormatException e) {
+            instance.getLogger().error("自定义字体加载失败!");
+            throw new RuntimeException(e);
+        }
     }
 
 

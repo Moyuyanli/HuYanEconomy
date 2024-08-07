@@ -6,6 +6,7 @@ import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
+import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
 import cn.hutool.core.date.DateUtil;
@@ -146,9 +147,7 @@ public class SignManager {
         if (userInfoImageBase == null) {
             return;
         }
-        Graphics2D graphics = userInfoImageBase.createGraphics();
-        graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        Graphics2D graphics = ImageUtil.getG2d(userInfoImageBase);
 
         int fontSize = 20;
         graphics.setColor(Color.black);
@@ -201,10 +200,7 @@ public class SignManager {
 //            System.out.println("图片高度：" + image.getHeight() + " px");
 
             // 创建画笔(image为上一步的图片对象)
-            Graphics2D pen = image.createGraphics();
-            //图片与文字的抗锯齿
-            pen.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            pen.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            Graphics2D pen = ImageUtil.getG2d(image);
 
             String avatarUrl = user.getAvatarUrl(AvatarSpec.LARGE);
             BufferedImage avatar = ImageIO.read(new URL(avatarUrl));

@@ -1,8 +1,11 @@
 package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.plugin.ImageManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
+import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
@@ -127,10 +130,9 @@ public class UserManager {
             subject.sendMessage(singleMessages.build());
             return;
         }
-        Graphics2D graphics = userInfoImageBase.createGraphics();
+
+        Graphics2D graphics = ImageUtil.getG2d(userInfoImageBase);
         //图片与文字的抗锯齿
-        graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         graphics.setColor(Color.black);
         graphics.setFont(new Font("黑体", Font.PLAIN, 20));
 
@@ -186,220 +188,211 @@ public class UserManager {
      * @date 2022/12/5 16:11
      */
     public static BufferedImage getUserInfoImageBase(UserInfo userInfo) {
-        HuYanEconomy instance = HuYanEconomy.INSTANCE;
-        User user = userInfo.getUser();
         try {
-            InputStream asStream = instance.getResourceAsStream("sign" + (index % 4 == 0 ? 4 : index % 4) + ".png");
-            index++;
-            //验证
-            if (asStream == null) {
-                Log.error("用户管理:个人信息图片底图获取错误!");
-                return null;
+            BufferedImage bufferedImage = customBottom(userInfo);
+            if (bufferedImage == null) {
+                bufferedImage = builtInBottom(userInfo);
             }
-            //转图片处理
-            BufferedImage image = ImageIO.read(asStream);
-
-//            BufferedImage image = bottomImageBuild();
-
-
-            //创建画笔
-            Graphics2D pen = image.createGraphics();
-            //图片与文字的抗锯齿
-            pen.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            pen.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            //获取头像链接
-            String avatarUrl = user.getAvatarUrl(AvatarSpec.LARGE);
-            BufferedImage avatar = ImageIO.read(new URL(avatarUrl));
-            //圆角处理
-            BufferedImage avatarRounder = makeRoundedCorner(avatar, 50);
-            //写入头像
-            pen.drawImage(avatarRounder, 24, 25, null);
-
-            String userInfoName = userInfo.getName();
-            int fontSize;
-            //如果是群 根据管理员信息改变颜色
-            if (user instanceof Member) {
-                MemberPermission permission = ((Member) user).getPermission();
-                if (permission == MemberPermission.OWNER) {
-                    pen.setColor(Color.YELLOW);
-                } else if (permission == MemberPermission.ADMINISTRATOR) {
-                    pen.setColor(Color.GREEN);
-                } else {
-                    pen.setColor(Color.WHITE);
-                }
-            }
-            //根据名字长度改变大小
-            if (userInfoName.length() > 6) {
-                fontSize = 40;
-            } else {
-                fontSize = 60;
-            }
-            /*
-             * WHITE(白色)、LIGHT_GRAY（浅灰色）、GRAY（灰色）、DARK_GRAY（深灰色）、
-             * BLACK（黑色）、RED（红色）、PINK（粉红色）、ORANGE（橘黄色）、YELLOW（黄色）、
-             * GREEN（绿色）、MAGENTA（紫红色）、CYAN（青色）、BLUE（蓝色）
-             * 如果上面颜色都不满足你，或者你还想设置下字体透明度，你可以改为如下格式：
-             * pen.setColor(new Color(179, 250, 233, 100));
-             * Font.PLAIN（正常），Font.BOLD（粗体），Font.ITALIC（斜体）
-             */
-            // 设置画笔字体样式为黑体，粗体
-            Font font = new Font("黑体", Font.BOLD, fontSize);
-            pen.setFont(font);
-            pen.drawString(userInfoName, 200, 155);
-
-//            pen.setColor(); todo 称号预留
-
-            pen.setColor(Color.black);
-            fontSize = 24;
-            font = new Font("黑体", Font.PLAIN, fontSize);
-            pen.setFont(font);
-            //id
-            pen.drawString(String.valueOf(userInfo.getQq()), 172, 240);
-            String format;
-            if (userInfo.getSignTime() == null) {
-                format = "暂未签到";
-
-            } else {
-                format = DateUtil.format(userInfo.getSignTime(), "yyyy-MM-dd HH:mm:ss");
-            }
-            //签到时间
-            pen.drawString(format, 172, 320);
-            //连签次数
-            pen.drawString(String.valueOf(userInfo.getSignNumber()), 172, 360);
-            //其他称号
-//            pen.drawString("暂无", 172, 400);
-
-            double money = EconomyUtil.getMoneyByUser(user);
-            double bank = EconomyUtil.getMoneyByBank(user);
-            //写入金币
-            if (String.valueOf(money).length() > 5) {
-                fontSize = 20;
-            }
-            font = new Font("黑体", Font.PLAIN, fontSize);
-            pen.setFont(font);
-            //写入总金币
-            pen.drawString(String.valueOf(money), 600, 410);
-
-            fontSize = 24;
-            font = new Font("黑体", Font.PLAIN, fontSize);
-            pen.setFont(font);
-            //写入今日获得
-            pen.drawString(String.valueOf(userInfo.getSignEarnings()), 810, 410);
-
-            //写入银行
-            if (String.valueOf(bank).length() > 5) {
-                fontSize = 20;
-            }
-            font = new Font("黑体", Font.PLAIN, fontSize);
-            pen.setFont(font);
-            //写入银行金币
-            pen.drawString(String.valueOf(bank), 600, 460);
-
-            fontSize = 24;
-            double bankEarnings = userInfo.getBankEarnings();
-            //写入银行收益
-            if (String.valueOf(bankEarnings).length() > 5) {
-                fontSize = 20;
-            }
-            font = new Font("黑体", Font.PLAIN, fontSize);
-            pen.setFont(font);
-            //写入银行收益金币
-            pen.drawString(String.valueOf(bankEarnings), 810, 460);
-
-            fontSize = 15;
-            pen.setColor(new Color(255, 255, 255, 230));
-            font = new Font("黑体", Font.ITALIC, fontSize);
-            pen.setFont(font);
-
-            pen.drawString("by Mirai & HuYanEconomy(壶言经济) " + HuYanEconomy.VERSION, 540, 525);
-
-            //关闭窗体，释放部分资源
-            pen.dispose();
-            return image;
+            return bufferedImage;
         } catch (IOException exception) {
             Log.error("用户管理:个人信息基础信息绘图错误!", exception);
             return null;
         }
     }
 
-
-    private static BufferedImage bottomImageBuild() {
-        //插件的唯一实例
-        HuYanEconomy instance = HuYanEconomy.INSTANCE;
-        try {
-            //轮询获取底图
-            InputStream asStream = instance.getResourceAsStream("bottom" + (index % 8 == 0 ? 8 : index % 8) + ".png");
-            index++;
-            //验证
-            if (asStream == null) {
-                Log.error("用户管理:个人信息图片底图获取错误!");
-                return null;
-            }
-            //转图片处理
-            BufferedImage image = ImageIO.read(asStream);
-            //切小圆边角
-            BufferedImage bottom = makeRoundedCorner(image, 5);
-            //创建画笔
-            Graphics2D pen = bottom.createGraphics();
-
-            //图片与文字的抗锯齿
-            pen.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            pen.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            InputStream bottomStream = instance.getResourceAsStream("bottom.png");
-            if (bottomStream == null) {
-                Log.error("用户管理:个人信息图片底图获取错误!");
-                return null;
-            }
-            BufferedImage bottomImage = ImageIO.read(bottomStream);
-            pen.drawImage(bottomImage, null, 0, 0);
-
-            pen.dispose();
-
-            return bottom;
-        } catch (IOException e) {
-            Log.error("用户管理:个人信息基础信息绘图错误!", e);
+    private static BufferedImage customBottom(UserInfo userInfo) throws IOException {
+        BufferedImage bottom = ImageManager.getNextBottom();
+        if (bottom == null) {
             return null;
         }
+
+        User user = userInfo.getUser();
+
+        String avatarUrl = user.getAvatarUrl(AvatarSpec.LARGE);
+        BufferedImage avatar = ImageIO.read(new URL(avatarUrl));
+
+        avatar = ImageUtil.makeRoundedCorner(avatar, 50);
+
+        Graphics2D g2d = ImageUtil.getG2d(bottom);
+
+        g2d.drawImage(avatar, ImageDrawXY.AVATAR.getX(), ImageDrawXY.AVATAR.getY(), avatar.getWidth(), avatar.getHeight(), null);
+
+        Font font = ImageManager.getCustomFont();
+        g2d.setFont(font);
+        g2d.setColor(Color.BLACK);
+
+
+        g2d.drawString(String.valueOf(user.getId()), ImageDrawXY.ID.getX(), ImageDrawXY.ID.getY());
+
+        if (user instanceof Member) {
+            MemberPermission permission = ((Member) user).getPermission();
+            if (permission == MemberPermission.OWNER) {
+                g2d.setColor(Color.YELLOW);
+            } else if (permission == MemberPermission.ADMINISTRATOR) {
+                g2d.setColor(Color.GREEN);
+            } else {
+                g2d.setColor(Color.WHITE);
+            }
+        }
+
+        g2d.setFont(font.deriveFont(Font.BOLD, 60));
+        g2d.drawString(user.getNick(), ImageDrawXY.NICK_NAME.getX(), ImageDrawXY.NICK_NAME.getY());
+        g2d.setColor(Color.BLACK);
+
+        String signTime;
+        if (userInfo.getSignTime() == null) {
+            signTime = "暂未签到";
+        } else {
+            signTime = DateUtil.format(userInfo.getSignTime(), "yyyy-MM-dd HH:mm:ss");
+        }
+
+        g2d.setFont(font.deriveFont(Font.PLAIN, 24f));
+        g2d.drawString(signTime, ImageDrawXY.SIGN_TIME.getX(), ImageDrawXY.SIGN_TIME.getY());
+
+        g2d.drawString(String.valueOf(userInfo.getSignNumber()), ImageDrawXY.SIGN_NUM.getX(), ImageDrawXY.SIGN_NUM.getY());
+
+        String money = String.valueOf(EconomyUtil.getMoneyByUser(user));
+        String bank = String.valueOf(EconomyUtil.getMoneyByBank(user));
+
+        g2d.setFont(font.deriveFont(32f));
+        g2d.drawString(money, ImageDrawXY.MY_MONEY.getX(), ImageDrawXY.MY_MONEY.getY());
+        g2d.drawString(String.valueOf(userInfo.getSignEarnings()), ImageDrawXY.SIGN_OBTAIN.getX(), ImageDrawXY.SIGN_OBTAIN.getY());
+        g2d.drawString(bank, ImageDrawXY.BANK_MONEY.getX(), ImageDrawXY.BANK_MONEY.getY());
+        g2d.drawString(String.valueOf(userInfo.getBankEarnings()), ImageDrawXY.BANK_INTEREST.getX(), ImageDrawXY.BANK_INTEREST.getY());
+
+        g2d.dispose();
+        return bottom;
     }
 
-    /**
-     * 圆角处理
-     *
-     * @param image        BufferedImage 需要处理的图片
-     * @param cornerRadius 圆角度
-     * @return 处理后的图片
-     */
-    private static BufferedImage makeRoundedCorner(BufferedImage image, int cornerRadius) {
-        int w = image.getWidth();
-        int h = image.getHeight();
-        BufferedImage output = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = output.createGraphics();
+    private static BufferedImage builtInBottom(UserInfo userInfo) throws IOException {
+        HuYanEconomy instance = HuYanEconomy.INSTANCE;
+        User user = userInfo.getUser();
 
-        output = g2.getDeviceConfiguration().createCompatibleImage(w, h, Transparency.TRANSLUCENT);
-        g2.dispose();
-        g2 = output.createGraphics();
+        InputStream asStream = instance.getResourceAsStream("sign" + (index % 4 == 0 ? 4 : index % 4) + ".png");
+        index++;
+        //验证
+        if (asStream == null) {
+            Log.error("用户管理:个人信息图片底图获取错误!");
+            return null;
+        }
+        //转图片处理
+        BufferedImage image = ImageIO.read(asStream);
+
+        //创建画笔
+        Graphics2D pen = ImageUtil.getG2d(image);
+
+        //获取头像链接
+        String avatarUrl = user.getAvatarUrl(AvatarSpec.LARGE);
+
+        BufferedImage avatar = ImageIO.read(new URL(avatarUrl));
+        //圆角处理
+        BufferedImage avatarRounder = ImageUtil.makeRoundedCorner(avatar, 50);
+        //写入头像
+        pen.drawImage(avatarRounder, 24, 25, null);
+
+        String userInfoName = userInfo.getName();
+        int fontSize;
+        //如果是群 根据管理员信息改变颜色
+        if (user instanceof Member) {
+            MemberPermission permission = ((Member) user).getPermission();
+            if (permission == MemberPermission.OWNER) {
+                pen.setColor(Color.YELLOW);
+            } else if (permission == MemberPermission.ADMINISTRATOR) {
+                pen.setColor(Color.GREEN);
+            } else {
+                pen.setColor(Color.WHITE);
+            }
+        }
+        //根据名字长度改变大小
+        if (userInfoName.length() > 6) {
+            fontSize = 40;
+        } else {
+            fontSize = 60;
+        }
         /*
-        这里绘画圆角矩形
-        原图切圆边角
+         * WHITE(白色)、LIGHT_GRAY（浅灰色）、GRAY（灰色）、DARK_GRAY（深灰色）、
+         * BLACK（黑色）、RED（红色）、PINK（粉红色）、ORANGE（橘黄色）、YELLOW（黄色）、
+         * GREEN（绿色）、MAGENTA（紫红色）、CYAN（青色）、BLUE（蓝色）
+         * 如果上面颜色都不满足你，或者你还想设置下字体透明度，你可以改为如下格式：
+         * pen.setColor(new Color(179, 250, 233, 100));
+         * Font.PLAIN（正常），Font.BOLD（粗体），Font.ITALIC（斜体）
          */
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.fillRoundRect(0, 0, w, h, cornerRadius, cornerRadius);
-        g2.setComposite(AlphaComposite.SrcIn);
-        /*结束*/
+        // 设置画笔字体样式为黑体，粗体
+        Font font = new Font("黑体", Font.BOLD, fontSize);
+        pen.setFont(font);
+        pen.drawString(userInfoName, 200, 155);
+
+//            pen.setColor(); todo 称号预留
+
+        pen.setColor(Color.black);
+        fontSize = 24;
+        font = new Font("黑体", Font.PLAIN, fontSize);
+        pen.setFont(font);
+        //id
+        pen.drawString(String.valueOf(userInfo.getQq()), 172, 240);
+
+        String format;
+        if (userInfo.getSignTime() == null) {
+            format = "暂未签到";
+        } else {
+            format = DateUtil.format(userInfo.getSignTime(), "yyyy-MM-dd HH:mm:ss");
+        }
+        //签到时间
+        pen.drawString(format, 172, 320);
+        //连签次数
+        pen.drawString(String.valueOf(userInfo.getSignNumber()), 172, 360);
+        //其他称号
+//            pen.drawString("暂无", 172, 400);
+
+        double money = EconomyUtil.getMoneyByUser(user);
+        double bank = EconomyUtil.getMoneyByBank(user);
+        //写入金币
+        if (String.valueOf(money).length() > 5) {
+            fontSize = 20;
+        }
+        font = new Font("黑体", Font.PLAIN, fontSize);
+        pen.setFont(font);
+        //写入总金币
+        pen.drawString(String.valueOf(money), 600, 410);
+
+        fontSize = 24;
+        font = new Font("黑体", Font.PLAIN, fontSize);
+        pen.setFont(font);
+        //写入今日获得
+        pen.drawString(String.valueOf(userInfo.getSignEarnings()), 810, 410);
+
+        //写入银行
+        if (String.valueOf(bank).length() > 5) {
+            fontSize = 20;
+        }
+        font = new Font("黑体", Font.PLAIN, fontSize);
+        pen.setFont(font);
+        //写入银行金币
+        pen.drawString(String.valueOf(bank), 600, 460);
+
+        fontSize = 24;
+        double bankEarnings = userInfo.getBankEarnings();
+        //写入银行收益
+        if (String.valueOf(bankEarnings).length() > 5) {
+            fontSize = 20;
+        }
+        font = new Font("黑体", Font.PLAIN, fontSize);
+        pen.setFont(font);
+        //写入银行收益金币
+        pen.drawString(String.valueOf(bankEarnings), 810, 460);
+
+        fontSize = 15;
+        pen.setColor(new Color(255, 255, 255, 230));
+        font = new Font("黑体", Font.ITALIC, fontSize);
+        pen.setFont(font);
+
+        pen.drawString("by Mirai & HuYanEconomy(壶言经济) " + HuYanEconomy.VERSION, 540, 525);
+
+        //关闭窗体，释放部分资源
+        pen.dispose();
+        return image;
 
 
-        /*这里绘画原型图
-        原图切成圆形
-         */
-//        Ellipse2D.Double shape = new Ellipse2D.Double(0, 0, w, h);
-//        g2.setClip(shape);
-        /*结束*/
-
-        g2.drawImage(image, 0, 0, w, h, null);
-        g2.dispose();
-
-        return output;
     }
 
 
