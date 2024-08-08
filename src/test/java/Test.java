@@ -1,3 +1,4 @@
+import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.hutool.core.util.RandomUtil;
 
 import javax.imageio.ImageIO;
@@ -17,21 +18,21 @@ public class Test {
 
     public static void main(String[] args) throws Exception {
         int i = RandomUtil.randomInt(1, 9);
-        BufferedImage background = ImageIO.read(new File("G:\\IdeaProject\\github\\HuYanEconomy\\src\\test\\java\\bottom" + i + ".png"));
+        BufferedImage background = ImageIO.read(new File("D:\\ideaProjects\\github\\HuYanEconomy\\HuYanEconomy\\src\\test\\java\\bottom" + i + ".png"));
         int height = background.getHeight();
         System.out.println("height->" + height);
         int width = background.getWidth();
         System.out.printf("width -> %s %n", width);
 
 
-        BufferedImage bottom = ImageIO.read(new File("G:\\IdeaProject\\github\\HuYanEconomy\\src\\test\\java\\bottom.png"));
+        BufferedImage bottom = ImageIO.read(new File("D:\\ideaProjects\\github\\HuYanEconomy\\HuYanEconomy\\src\\test\\java\\bottom.png"));
 
         height = bottom.getHeight();
         width = bottom.getWidth();
         System.out.printf("height -> %s %n", height);
         System.out.printf("width -> %s %n", width);
 
-        File fontFile = new File("G:\\IdeaProject\\github\\HuYanEconomy\\src\\test\\java\\Maple UI.ttf");
+        File fontFile = new File("D:\\ideaProjects\\github\\HuYanEconomy\\HuYanEconomy\\src\\test\\java\\Maple UI.ttf");
         Font customFont = Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(24f);
 
         System.out.printf("font %s %n", customFont.getName());
@@ -79,6 +80,11 @@ public class Test {
         width = canvas.getWidth();
         System.out.printf("height -> %s %n", height);
         System.out.printf("width -> %s %n", width);
+
+        g2d.setFont(customFont.deriveFont(20f));
+        g2d.drawString("572490972", ImageDrawXY.ID.getX(), ImageDrawXY.ID.getY());
+        g2d.setFont(customFont.deriveFont(Font.BOLD,60f));
+        drawStringGradient("放空",230,200,Color.blue,Color.green,g2d);
 
         g2d.setFont(customFont);
         g2d.setColor(Color.BLACK);
@@ -205,7 +211,7 @@ public class Test {
             Rectangle2D bounds = layout.getBounds();
 
             // 如果当前行的宽度超过了maxWidth，则需要换行
-            if (bounds.getWidth() > max) {
+            if (bounds.getWidth() > maxWidth) {
                 // 计算每个单词的宽度
                 for (char word : line.toCharArray()) {
                     TextLayout wordLayout = new TextLayout(String.valueOf(word), font, frc);
@@ -232,6 +238,23 @@ public class Test {
         }
     }
 
+
+    public static void drawStringGradient(String text, int x, int y, Color sColor, Color eColor, Graphics2D g2d) {
+        // 获取字体的渲染上下文
+        FontRenderContext frc = g2d.getFontRenderContext();
+
+        // 计算文本宽度
+        float textWidth = (float) g2d.getFont().getStringBounds(text, frc).getWidth();
+
+        // 创建渐变
+        GradientPaint gradient = new GradientPaint(x, y, sColor, x + textWidth, y, eColor);
+
+        // 应用渐变
+        g2d.setPaint(gradient);
+
+        // 绘制文本
+        g2d.drawString(text, x, y);
+    }
 }
 
 

@@ -18,11 +18,15 @@ public enum ImageDrawXY {
     /**
      * QQ号
      */
-    ID(230, 120),
+    ID(230, 100),
+    /**
+     * 头衔
+     */
+    TITLE(230, 135),
     /**
      * 名称
      */
-    NICK_NAME(230, 180),
+    NICK_NAME(230, 200),
     /**
      * 签到时间
      */
@@ -50,7 +54,7 @@ public enum ImageDrawXY {
     /**
      * 银行存款
      */
-    BANK_MONEY(580, 530),
+    BANK_MONEY(585, 530),
     /**
      * 银行利息
      */

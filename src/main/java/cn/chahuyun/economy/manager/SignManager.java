@@ -2,8 +2,10 @@ package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.Constant;
+import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.props.PropsCard;
+import cn.chahuyun.economy.plugin.ImageManager;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.ImageUtil;
@@ -148,16 +150,21 @@ public class SignManager {
             return;
         }
         Graphics2D graphics = ImageUtil.getG2d(userInfoImageBase);
-
-        int fontSize = 20;
-        graphics.setColor(Color.black);
-        AtomicInteger x = new AtomicInteger(210);
-        graphics.setFont(new Font("黑体", Font.PLAIN, fontSize));
-        messages.forEach(v -> {
-            //写入签到信息
-            graphics.drawString(v.contentToString(), 520, x.get());
-            x.addAndGet(28);
-        });
+        if (PluginManager.isCustomImage) {
+            graphics.setColor(Color.BLACK);
+            graphics.setFont(ImageManager.getCustomFont());
+            ImageUtil.drawString(messages.contentToString(), ImageDrawXY.A_WORD.getX(), ImageDrawXY.A_WORD.getY(), 440, graphics);
+        }else {
+            int fontSize = 20;
+            graphics.setColor(Color.black);
+            AtomicInteger x = new AtomicInteger(210);
+            graphics.setFont(new Font("黑体", Font.PLAIN, fontSize));
+            messages.forEach(v -> {
+                //写入签到信息
+                graphics.drawString(v.contentToString(), 520, x.get());
+                x.addAndGet(28);
+            });
+        }
         //释放资源
         graphics.dispose();
 

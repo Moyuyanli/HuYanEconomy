@@ -4,6 +4,7 @@ import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.plugin.ImageManager;
+import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
@@ -131,36 +132,44 @@ public class UserManager {
             return;
         }
 
-        Graphics2D graphics = ImageUtil.getG2d(userInfoImageBase);
-        //图片与文字的抗锯齿
-        graphics.setColor(Color.black);
-        graphics.setFont(new Font("黑体", Font.PLAIN, 20));
-
-
         JSONObject entries = JSONUtil.parseObj(HttpUtil.get("https://v1.hitokoto.cn"));
         String hitokoto = entries.getStr("hitokoto");
         String author = entries.getStr("from_who");
         String from = entries.getStr("from");
 
-        String[] yiyan;
-        if (hitokoto.length() > 18) {
-            yiyan = new String[3];
-            yiyan[0] = hitokoto.substring(0, 18);
-            yiyan[1] = hitokoto.substring(18);
-            yiyan[2] = "--" + (author == null ? "无铭" : author) + ":" + from;
+        Graphics2D graphics = ImageUtil.getG2d(userInfoImageBase);
+        //图片与文字的抗锯齿
+        graphics.setColor(Color.black);
+        String signature = "--" + (author == null ? "无铭" : author) + ":" + from;
+        if (PluginManager.isCustomImage) {
+            graphics.setFont(ImageManager.getCustomFont());
+            ImageUtil.drawString(hitokoto, ImageDrawXY.A_WORD.getX(), ImageDrawXY.A_WORD.getY(), 440, graphics);
+            graphics.drawString(signature, ImageDrawXY.A_WORD_FAMOUS.getX(), ImageDrawXY.A_WORD_FAMOUS.getY());
         } else {
-            yiyan = new String[2];
-            yiyan[0] = hitokoto;
-            yiyan[1] = "--" + (author == null ? "无铭" : author) + ":" + from;
+            graphics.setFont(new Font("黑体", Font.PLAIN, 20));
+
+            String[] yiyan;
+            if (hitokoto.length() > 18) {
+                yiyan = new String[3];
+                yiyan[0] = hitokoto.substring(0, 18);
+                yiyan[1] = hitokoto.substring(18);
+                yiyan[2] = signature;
+            } else {
+                yiyan = new String[2];
+                yiyan[0] = hitokoto;
+                yiyan[1] = signature;
+            }
+
+            AtomicInteger x = new AtomicInteger(230);
+
+            for (String s : yiyan) {
+                //写入签到信息
+                graphics.drawString(s, 520, x.get());
+                x.addAndGet(28);
+            }
         }
 
-        AtomicInteger x = new AtomicInteger(230);
 
-        for (String s : yiyan) {
-            //写入签到信息
-            graphics.drawString(s, 520, x.get());
-            x.addAndGet(28);
-        }
         graphics.dispose();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         try {
@@ -219,25 +228,42 @@ public class UserManager {
 
         Font font = ImageManager.getCustomFont();
         g2d.setFont(font);
-        g2d.setColor(Color.BLACK);
-
+        g2d.setColor(Color.WHITE);
 
         g2d.drawString(String.valueOf(user.getId()), ImageDrawXY.ID.getX(), ImageDrawXY.ID.getY());
 
-        if (user instanceof Member) {
-            MemberPermission permission = ((Member) user).getPermission();
-            if (permission == MemberPermission.OWNER) {
-                g2d.setColor(Color.YELLOW);
-            } else if (permission == MemberPermission.ADMINISTRATOR) {
-                g2d.setColor(Color.GREEN);
-            } else {
-                g2d.setColor(Color.WHITE);
-            }
-        }
-
         g2d.setFont(font.deriveFont(Font.BOLD, 60));
-        g2d.drawString(user.getNick(), ImageDrawXY.NICK_NAME.getX(), ImageDrawXY.NICK_NAME.getY());
-        g2d.setColor(Color.BLACK);
+
+        String nick = user.getNick();
+        if (user instanceof Member) {
+            Member member = (Member) user;
+
+            String title = member.getSpecialTitle();
+            g2d.setFont(font.deriveFont(32f));
+            g2d.setColor(Color.magenta);
+
+            g2d.drawString(title,ImageDrawXY.TITLE.getX(), ImageDrawXY.TITLE.getY());
+
+            Color sColor;
+            Color eColor;
+            if (member.getPermission() == MemberPermission.OWNER) {
+                sColor = new Color(68, 138, 255);
+                eColor = new Color(100, 255, 218);
+            } else if (member.getPermission() == MemberPermission.ADMINISTRATOR) {
+                sColor = new Color(229, 219, 86);
+                eColor = new Color(24, 224, 63);
+            } else {
+                sColor = new Color(0, 0, 0);
+                eColor = new Color(0, 0, 0);
+            }
+            g2d.setFont(font.deriveFont(Font.BOLD, 60));
+            ImageUtil.drawStringGradient(nick, ImageDrawXY.NICK_NAME.getX(), ImageDrawXY.NICK_NAME.getY(), sColor, eColor, g2d);
+            g2d.setColor(Color.BLACK);
+        } else {
+            g2d.setFont(font.deriveFont(Font.BOLD, 60));
+            g2d.setColor(Color.BLACK);
+            g2d.drawString(nick, ImageDrawXY.NICK_NAME.getX(), ImageDrawXY.NICK_NAME.getY());
+        }
 
         String signTime;
         if (userInfo.getSignTime() == null) {
@@ -263,6 +289,7 @@ public class UserManager {
         g2d.dispose();
         return bottom;
     }
+
 
     private static BufferedImage builtInBottom(UserInfo userInfo) throws IOException {
         HuYanEconomy instance = HuYanEconomy.INSTANCE;

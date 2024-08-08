@@ -30,6 +30,7 @@ public class PluginManager {
      */
     public static boolean isHuYanSessionPlugin;
 
+    public static boolean isCustomImage;
     /**
      * 插件的道具管理
      * -- GETTER --
@@ -85,11 +86,14 @@ public class PluginManager {
 
         try {
             ImageManager.init(instance);
+            isCustomImage = true;
         } catch (IOException e) {
             instance.getLogger().error("自定义图片加载失败!");
+            isCustomImage = false;
             throw new RuntimeException(e);
         } catch (FontFormatException e) {
             instance.getLogger().error("自定义字体加载失败!");
+            isCustomImage = false;
             throw new RuntimeException(e);
         }
     }

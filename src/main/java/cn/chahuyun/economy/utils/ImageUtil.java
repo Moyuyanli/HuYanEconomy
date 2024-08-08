@@ -83,7 +83,7 @@ public class ImageUtil {
             Rectangle2D bounds = layout.getBounds();
 
             // 如果当前行的宽度超过了maxWidth，则需要换行
-            if (bounds.getWidth() > max) {
+            if (bounds.getWidth() > maxWidth) {
                 // 计算每个单词的宽度
                 for (char word : line.toCharArray()) {
                     TextLayout wordLayout = new TextLayout(String.valueOf(word), font, frc);
@@ -109,6 +109,34 @@ public class ImageUtil {
             areaX = x;
         }
     }
+
+    /**
+     * 设置渐变文字
+     *
+     * @param text   文本
+     * @param x      x
+     * @param y      y
+     * @param sColor 起始颜色
+     * @param eColor 结束颜色
+     * @param g2d    g2d,请先设置字体!
+     */
+    public static void drawStringGradient(String text, int x, int y, Color sColor, Color eColor, Graphics2D g2d) {
+        // 获取字体的渲染上下文
+        FontRenderContext frc = g2d.getFontRenderContext();
+
+        // 计算文本宽度
+        float textWidth = (float) g2d.getFont().getStringBounds(text, frc).getWidth();
+
+        // 创建渐变
+        GradientPaint gradient = new GradientPaint(x, y, sColor, x + textWidth, y, eColor);
+
+        // 应用渐变
+        g2d.setPaint(gradient);
+
+        // 绘制文本
+        g2d.drawString(text, x, y);
+    }
+
 
     /**
      * 规范g2d
