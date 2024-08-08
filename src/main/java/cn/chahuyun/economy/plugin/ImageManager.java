@@ -134,7 +134,10 @@ public class ImageManager {
             return null;
         }
         BufferedImage bufferedImage = bufferedImages.get(next++ % bufferedImages.size());
-        return bufferedImage.getSubimage(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight());
+        return new BufferedImage(bufferedImage.getColorModel(),
+                bufferedImage.copyData(null),
+                bufferedImage.getColorModel().isAlphaPremultiplied(),
+                null);
     }
 
 

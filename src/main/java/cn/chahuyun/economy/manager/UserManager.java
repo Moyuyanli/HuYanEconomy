@@ -180,7 +180,6 @@ public class UserManager {
             return;
         }
         Contact.sendImage(subject, new ByteArrayInputStream(stream.toByteArray()));
-
     }
 
 
@@ -256,7 +255,11 @@ public class UserManager {
                 sColor = new Color(0, 0, 0);
                 eColor = new Color(0, 0, 0);
             }
-            g2d.setFont(font.deriveFont(Font.BOLD, 60));
+            if (nick.length() > 16) {
+                g2d.setFont(font.deriveFont(Font.BOLD, 50f));
+            } else {
+                g2d.setFont(font.deriveFont(Font.BOLD, 60f));
+            }
             ImageUtil.drawStringGradient(nick, ImageDrawXY.NICK_NAME.getX(), ImageDrawXY.NICK_NAME.getY(), sColor, eColor, g2d);
             g2d.setColor(Color.BLACK);
         } else {
