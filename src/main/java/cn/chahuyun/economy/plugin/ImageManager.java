@@ -52,7 +52,9 @@ public class ImageManager {
         File[] files = bottom.listFiles();
         if (files != null) {
             for (File file : files) {
-                drawBottom(ImageIO.read(file), bottomPng);
+                if (canBeReadAsBufferedImage(file)) {
+                    drawBottom(ImageIO.read(file), bottomPng);
+                }
             }
         }
     }
@@ -140,5 +142,14 @@ public class ImageManager {
                 null);
     }
 
+
+    private static boolean canBeReadAsBufferedImage(File file) {
+        try {
+            BufferedImage image = ImageIO.read(file);
+            return image != null;
+        } catch (IOException e) {
+            return false;
+        }
+    }
 
 }
