@@ -2,6 +2,7 @@ package cn.chahuyun.economy.plugin;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.utils.ImageUtil;
+import cn.chahuyun.economy.utils.Log;
 import lombok.Getter;
 
 import javax.imageio.ImageIO;
@@ -30,6 +31,9 @@ public class ImageManager {
     private static Font customFont;
 
     protected static void init(HuYanEconomy instance) throws IOException, FontFormatException {
+
+        Log.info("开始加载自定义图片和字体...");
+
         Path path = instance.getDataFolderPath();
         File font = path.resolve("font").toFile();
         if (font.exists()) {
