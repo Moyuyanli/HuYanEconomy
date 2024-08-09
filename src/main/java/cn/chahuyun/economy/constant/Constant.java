@@ -12,6 +12,11 @@ import xyz.cssxsh.mirai.economy.service.EconomyCurrency;
 public class Constant {
 
     /**
+     * 壶言日志
+     */
+    public static final String TOPIC = "HuYanEconomy";
+
+    /**
      * 货币 [金币]
      */
     public static final EconomyCurrency CURRENCY_GOLD = new GoldEconomyCurrency();
