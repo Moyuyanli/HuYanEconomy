@@ -157,7 +157,6 @@ public class GamesManager {
                     break;
                 case "收线":
                 case "拉":
-                case "收":
                 case "0":
                     if (randomInt == 0) {
                         difficultyMin += 5;
