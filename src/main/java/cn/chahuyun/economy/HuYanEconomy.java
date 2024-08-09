@@ -2,6 +2,7 @@ package cn.chahuyun.economy;
 
 import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.config.EconomyPluginConfig;
+import cn.chahuyun.config.FishingMsgConfig;
 import cn.chahuyun.economy.event.BotOnlineEventListener;
 import cn.chahuyun.economy.event.MessageEventListener;
 import cn.chahuyun.economy.manager.BankManager;
@@ -33,6 +34,10 @@ public final class HuYanEconomy extends JavaPlugin {
      */
     public static EconomyConfig config;
     /**
+     * 钓鱼消息配置
+     */
+    public static FishingMsgConfig msgConfig;
+    /**
      * 插件所属bot
      */
     public Bot bot;
@@ -54,7 +59,9 @@ public final class HuYanEconomy extends JavaPlugin {
         //加载配置
         reloadPluginConfig(EconomyConfig.INSTANCE);
         reloadPluginConfig(EconomyPluginConfig.INSTANCE);
+        reloadPluginConfig(FishingMsgConfig.INSTANCE);
         config = EconomyConfig.INSTANCE;
+        msgConfig = FishingMsgConfig.INSTANCE;
         //插件功能初始化
         PluginManager.init();
         //初始化插件数据库

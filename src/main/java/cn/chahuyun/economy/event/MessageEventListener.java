@@ -11,6 +11,7 @@ import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;
 import net.mamoe.mirai.event.events.EventCancelledException;
+import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.MessageEvent;
 import org.jetbrains.annotations.NotNull;
 
@@ -137,7 +138,7 @@ public class MessageEventListener extends SimpleListenerHost {
             case "抛竿":
                 Log.info("游戏指令");
                 if (group != null && config.getFishGroup().contains(group.getId())) {
-                    GamesManager.fishing(event);
+                    GamesManager.fishing((GroupMessageEvent) event);
                 }
                 return;
             case "升级鱼竿":
