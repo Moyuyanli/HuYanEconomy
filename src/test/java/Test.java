@@ -1,4 +1,5 @@
 import cn.chahuyun.economy.constant.ImageDrawXY;
+import cn.chahuyun.economy.utils.ImageUtil;
 import cn.hutool.core.util.RandomUtil;
 
 import javax.imageio.ImageIO;
@@ -17,8 +18,8 @@ import java.io.File;
 public class Test {
 
     public static void main(String[] args) throws Exception {
-        int i = RandomUtil.randomInt(1, 9);
-        BufferedImage background = ImageIO.read(new File("D:\\ideaProjects\\github\\HuYanEconomy\\HuYanEconomy\\src\\test\\java\\bottom" + i + ".png"));
+//        int i = RandomUtil.randomInt(1, 9);
+        BufferedImage background = ImageIO.read(new File("D:\\ideaProjects\\github\\HuYanEconomy\\HuYanEconomy\\src\\test\\java\\bottom" + 3 + ".png"));
         int height = background.getHeight();
         System.out.println("height->" + height);
         int width = background.getWidth();
@@ -55,7 +56,7 @@ public class Test {
         // 计算缩放比例
         double scaleWidth = (double) 1024 / background.getWidth();
         double scaleHeight = (double) 576 / background.getHeight();
-        double scale = Math.min(scaleWidth, scaleHeight);
+        double scale = Math.max(scaleWidth, scaleHeight);
 
 
         System.out.printf("缩放比->%s %n", scale);
@@ -82,9 +83,18 @@ public class Test {
         System.out.printf("width -> %s %n", width);
 
         g2d.setFont(customFont.deriveFont(20f));
+        g2d.setColor(ImageUtil.hexColor("f44336"));
         g2d.drawString("572490972", ImageDrawXY.ID.getX(), ImageDrawXY.ID.getY());
+        drawStringGradient("[是放空!]",ImageDrawXY.TITLE.getX(), ImageDrawXY.TITLE.getY(),
+                ImageUtil.hexColor("f50057"),
+                ImageUtil.hexColor("e1f5c4"),
+                g2d
+                );
         g2d.setFont(customFont.deriveFont(Font.BOLD,60f));
-        drawStringGradient("放空",230,200,Color.blue,Color.green,g2d);
+        drawStringGradient("放空",230,200,
+                ImageUtil.hexColor("fce38a"),
+                ImageUtil.hexColor("f38181 "),
+                g2d);
 
         g2d.setFont(customFont);
         g2d.setColor(Color.BLACK);

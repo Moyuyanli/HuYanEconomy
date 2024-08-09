@@ -153,4 +153,19 @@ public class ImageUtil {
         return g2d;
     }
 
+    /**
+     * 十六进制颜色
+     * @param color 颜色
+     * @return Color
+     */
+    public static Color hexColor(String color) {
+        if (color != null && !color.isEmpty()) {
+            String string = color.length() == 7 ? color.substring(1) : color;
+            Integer r = Integer.valueOf(string.substring(0, 2), 16);
+            Integer g = Integer.valueOf(string.substring(2, 4), 16);
+            Integer b = Integer.valueOf(string.substring(4, 6), 16);
+            return new Color(r, g, b);
+        }
+        throw new IllegalArgumentException("构建颜色错误!");
+    }
 }

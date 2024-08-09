@@ -88,7 +88,7 @@ public class ImageManager {
         // 计算缩放比例
         double scaleWidth = (double) 1024 / background.getWidth();
         double scaleHeight = (double) 576 / background.getHeight();
-        double scale = Math.min(scaleWidth, scaleHeight);
+        double scale = Math.max(scaleWidth, scaleHeight);
 
         // 缩放后的宽度和高度
         int scaledWidth = (int) (background.getWidth() * scale);

@@ -240,7 +240,15 @@ public class UserManager {
             String title = member.getSpecialTitle();
             g2d.setFont(font.deriveFont(32f));
             g2d.setColor(Color.magenta);
-
+            if (title.isBlank()) {
+                title = member.getRankTitle();
+                g2d.setColor(Color.gray);
+            }
+            if (title.isBlank()) {
+                title = "无";
+                g2d.setColor(Color.WHITE);
+            }
+            title = String.format("[%s]", title);
             g2d.drawString(title,ImageDrawXY.TITLE.getX(), ImageDrawXY.TITLE.getY());
 
             Color sColor;
@@ -249,11 +257,11 @@ public class UserManager {
                 sColor = new Color(68, 138, 255);
                 eColor = new Color(100, 255, 218);
             } else if (member.getPermission() == MemberPermission.ADMINISTRATOR) {
-                sColor = new Color(229, 219, 86);
-                eColor = new Color(24, 224, 63);
+                sColor = new Color(72, 241, 155);
+                eColor = new Color(3, 211, 44);
             } else {
-                sColor = new Color(0, 0, 0);
-                eColor = new Color(0, 0, 0);
+                sColor = ImageUtil.hexColor("fce38a");
+                eColor = ImageUtil.hexColor("f38181");
             }
             if (nick.length() > 16) {
                 g2d.setFont(font.deriveFont(Font.BOLD, 50f));
