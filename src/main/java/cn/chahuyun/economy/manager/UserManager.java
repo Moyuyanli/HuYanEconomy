@@ -2,6 +2,7 @@ package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.ImageDrawXY;
+import cn.chahuyun.economy.entity.TitleInfo;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.plugin.ImageManager;
 import cn.chahuyun.economy.plugin.PluginManager;
@@ -28,6 +29,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -57,24 +60,17 @@ public class UserManager {
      */
     public static UserInfo getUserInfo(User user) {
         long userId = user.getId();
-        //查询用户
-        try {
-            return HibernateFactory.selectList(UserInfo.class, "qq", userId).get(0).setUser(user);
-        } catch (Exception e) {
-            //注册用户
-            long group = 0;
+        Map<String, String> map = new HashMap<>();
+        map.put("qq", String.valueOf(userId));
+        UserInfo userInfo = HibernateFactory.selectOne(UserInfo.class, map);
+        if (userInfo == null) {
             if (user instanceof Member) {
                 Member member = (Member) user;
-                group = member.getGroup().getId();
-            }
-            UserInfo info = new UserInfo(userId, group, user.getNick(), new Date());
-            try {
+                UserInfo info = new UserInfo(userId, member.getGroup().getId(), user.getNick(), new Date());
                 return HibernateFactory.merge(info).setUser(user);
-            } catch (Exception exception) {
-                Log.error("用户管理错误:注册用户失败", exception);
-                return null;
             }
         }
+        return userInfo.setUser(user);
     }
 
     /**
@@ -109,6 +105,9 @@ public class UserManager {
         User sender = event.getSender();
 
         UserInfo userInfo = getUserInfo(sender);
+
+        TitleManager.checkMonopoly(userInfo,event.getSubject());
+
         double moneyByUser = EconomyUtil.getMoneyByUser(sender);
 
         MessageChainBuilder singleMessages = new MessageChainBuilder();
@@ -227,54 +226,64 @@ public class UserManager {
 
         Font font = ImageManager.getCustomFont();
         g2d.setFont(font);
-        g2d.setColor(Color.WHITE);
+        g2d.setColor(Color.BLACK);
 
-        g2d.drawString(String.valueOf(user.getId()), ImageDrawXY.ID.getX(), ImageDrawXY.ID.getY());
 
-        g2d.setFont(font.deriveFont(Font.BOLD, 60));
+        String id = String.valueOf(user.getId());
+        TitleInfo title = TitleManager.getDefaultTitle(userInfo);
+        g2d.setFont(font.deriveFont(32f));
+        if (title.isGradient()) {
+            ImageUtil.drawStringGradient(title.getTitle(),
+                    ImageDrawXY.TITLE.getX(), ImageDrawXY.TITLE.getY(),
+                    title.getStartColor(), title.getEndColor(), g2d);
+            ImageUtil.drawStringGradient(id,
+                    ImageDrawXY.ID.getX(), ImageDrawXY.ID.getY(),
+                    title.getStartColor(), title.getEndColor(), g2d);
+        } else {
+            g2d.setColor(title.getStartColor());
+            g2d.drawString(id, ImageDrawXY.ID.getX(), ImageDrawXY.ID.getY());
+            g2d.drawString(title.getTitle(), ImageDrawXY.TITLE.getX(), ImageDrawXY.TITLE.getY());
+        }
 
         String nick = user.getNick();
-        if (user instanceof Member) {
-            Member member = (Member) user;
+        boolean gradient = false;
+        Color sColor = null;
+        Color eColor = null;
+        if (title.isImpactName()) {
+            gradient = true;
+            sColor = title.getStartColor();
+            eColor = title.getEndColor();
+        } else {
+            if (user instanceof Member) {
+                gradient = true;
+                Member member = (Member) user;
+                if (member.getPermission() == MemberPermission.OWNER) {
+                    sColor = new Color(68, 138, 255);
+                    eColor = new Color(100, 255, 218);
+                } else if (member.getPermission() == MemberPermission.ADMINISTRATOR) {
+                    sColor = new Color(72, 241, 155);
+                    eColor = new Color(140, 241, 72);
+                } else {
+                    sColor = ImageUtil.hexColor("fce38a");
+                    eColor = ImageUtil.hexColor("f38181");
+                }
+            }
+        }
 
-            String title = member.getSpecialTitle();
-            g2d.setFont(font.deriveFont(32f));
-            g2d.setColor(Color.magenta);
-            if (title.isBlank()) {
-                title = member.getRankTitle();
-                g2d.setColor(Color.gray);
-            }
-            if (title.isBlank()) {
-                title = "无";
-                g2d.setColor(Color.WHITE);
-            }
-            title = String.format("[%s]", title);
-            g2d.drawString(title,ImageDrawXY.TITLE.getX(), ImageDrawXY.TITLE.getY());
+        if (nick.length() > 16) {
+            g2d.setFont(font.deriveFont(Font.BOLD, 50f));
+        } else {
+            g2d.setFont(font.deriveFont(Font.BOLD, 60f));
+        }
 
-            Color sColor;
-            Color eColor;
-            if (member.getPermission() == MemberPermission.OWNER) {
-                sColor = new Color(68, 138, 255);
-                eColor = new Color(100, 255, 218);
-            } else if (member.getPermission() == MemberPermission.ADMINISTRATOR) {
-                sColor = new Color(72, 241, 155);
-                eColor = new Color(3, 211, 44);
-            } else {
-                sColor = ImageUtil.hexColor("fce38a");
-                eColor = ImageUtil.hexColor("f38181");
-            }
-            if (nick.length() > 16) {
-                g2d.setFont(font.deriveFont(Font.BOLD, 50f));
-            } else {
-                g2d.setFont(font.deriveFont(Font.BOLD, 60f));
-            }
+        if (gradient) {
             ImageUtil.drawStringGradient(nick, ImageDrawXY.NICK_NAME.getX(), ImageDrawXY.NICK_NAME.getY(), sColor, eColor, g2d);
             g2d.setColor(Color.BLACK);
         } else {
-            g2d.setFont(font.deriveFont(Font.BOLD, 60));
             g2d.setColor(Color.BLACK);
             g2d.drawString(nick, ImageDrawXY.NICK_NAME.getX(), ImageDrawXY.NICK_NAME.getY());
         }
+
 
         String signTime;
         if (userInfo.getSignTime() == null) {

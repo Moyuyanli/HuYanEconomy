@@ -7,6 +7,7 @@ import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.manager.PropsManager;
 import cn.chahuyun.economy.manager.PropsManagerImpl;
+import cn.chahuyun.economy.manager.TitleManager;
 import cn.chahuyun.economy.utils.Log;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.cron.CronUtil;
@@ -96,6 +97,8 @@ public class PluginManager {
             isCustomImage = false;
             throw new RuntimeException(e);
         }
+
+        TitleManager.init();
     }
 
 

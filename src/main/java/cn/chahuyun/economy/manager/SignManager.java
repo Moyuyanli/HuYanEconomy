@@ -128,10 +128,8 @@ public class SignManager {
         if (plainText != null) {
             messages.append(plainText);
         }
+        TitleManager.checkSignTitle(userInfo, subject);
         sendSignImage(userInfo, subject, messages.build());
-//        sendSignImage(userInfo, user, subject, moneyBytUser, goldNumber, messages.build());
-
-//        subject.sendMessage(messages.build());
     }
 
     /**
@@ -154,7 +152,7 @@ public class SignManager {
             graphics.setColor(Color.BLACK);
             graphics.setFont(ImageManager.getCustomFont());
             ImageUtil.drawString(messages.contentToString(), ImageDrawXY.A_WORD.getX(), ImageDrawXY.A_WORD.getY(), 440, graphics);
-        }else {
+        } else {
             int fontSize = 20;
             graphics.setColor(Color.black);
             AtomicInteger x = new AtomicInteger(210);

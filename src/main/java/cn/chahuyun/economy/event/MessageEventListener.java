@@ -1,6 +1,5 @@
 package cn.chahuyun.economy.event;
 
-import cn.chahuyun.authorize.annotation.MessageComponent;
 import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.manager.*;
@@ -90,6 +89,10 @@ public class MessageEventListener extends SimpleListenerHost {
                 Log.info("道具商店指令");
                 propsManager.propStore(event);
                 return;
+            case "我的称号":
+                Log.info("查询称号指令");
+                TitleManager.viewTitleInfo(event);
+                return;
             case "开启 猜签":
                 if (owner) {
                     Log.info("管理指令");
@@ -162,6 +165,20 @@ public class MessageEventListener extends SimpleListenerHost {
                 BankManager.viewBankInterest(event);
                 return;
             default:
+        }
+
+        String buyTitleRegex = "购买称号 (\\S+)";
+        if (Pattern.matches(buyTitleRegex, code)) {
+            Log.info("购买称号指令");
+            TitleManager.buyTitle(event);
+            return;
+        }
+
+        String userTitleRegex = "切换称号 (\\d+)";
+        if (Pattern.matches(userTitleRegex, code)) {
+            Log.info("切换称号指令");
+            TitleManager.userTitle(event);
+            return;
         }
 
         String buyPropRegex = "购买 (\\S+)( \\S+)?|buy (\\S+)( \\S+)?";
