@@ -1,6 +1,6 @@
 # HuYanEconomy 壶言壶言经济 --- 娱乐插件
 
-[![version](https://img.shields.io/gitea/v/release/moyuyanli/HuYanEconomy
+[![version](https://img.shields.io/github/v/release/moyuyanli/huyaneconomy
 )](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v0.1.19/HuYanEconomy-0.1.19.mirai2.jar)
 
 这里是壶言经济，一款mirai娱乐插件，设计灵感来自于论坛的经济帖子，心血来潮就创建了这个项目，从22年11月开始，中间慢慢填坑，
