@@ -552,4 +552,21 @@ public class EconomyUtil {
         }
     }
 
+    public static boolean Cheat(User user, double quantity) {
+        return Cheat(user, quantity, Constant.CURRENCY_GOLD);
+    }
+
+    public static boolean Cheat(User user, double quantity, EconomyCurrency currency) {
+        try (EconomyContext context = economyService.custom(HuYanEconomy.INSTANCE)) {
+            UserEconomyAccount account = economyService.account(user);
+            context.transaction(currency, balance -> {
+                balance.put(account, balance.get(account) + quantity);
+                return null;
+            });
+            return true;
+        } catch (Exception e) {
+            Log.error("经济转移出错:用户", e);
+            return false;
+        }
+    }
 }
