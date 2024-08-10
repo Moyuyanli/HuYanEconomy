@@ -138,7 +138,7 @@ public class FishInfo implements Serializable {
             Group botGroup = HuYanEconomy.INSTANCE.bot.getGroup(group);
             if (botGroup != null) {
                 //注册新鱼塘
-                FishPond finalFishPond = new FishPond(1, group, HuYanEconomy.config.getOwner(), botGroup.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
+                FishPond finalFishPond = new FishPond(1, group, HuYanEconomy.config.getOwner().get(0), botGroup.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
                 return HibernateFactory.merge(finalFishPond);
             } else {
                 FishPond finalFishPond = new FishPond(1, 0, 0, "空鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");

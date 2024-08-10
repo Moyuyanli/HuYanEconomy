@@ -56,7 +56,7 @@ public class MessageEventListener extends SimpleListenerHost {
         EconomyConfig config = HuYanEconomy.config;
         User sender = event.getSender();
         //主人
-        boolean owner = config.getOwner() == sender.getId();
+        boolean owner = config.getOwner().contains(sender.getId());
         Contact subject = event.getSubject();
         Group group = null;
         if (subject instanceof Group) {

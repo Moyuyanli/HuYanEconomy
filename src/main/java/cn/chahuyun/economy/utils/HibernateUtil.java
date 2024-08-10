@@ -35,7 +35,6 @@ public class HibernateUtil {
         Configuration configuration = HibernatePlusService.createConfiguration(economy.getClass());
         configuration.setPackageName("cn.chahuyun.economy.entity");
 
-
         DriveType dataType = config.getDataType();
         configuration.setDriveType(dataType);
         Path dataFolderPath = economy.getDataFolderPath();

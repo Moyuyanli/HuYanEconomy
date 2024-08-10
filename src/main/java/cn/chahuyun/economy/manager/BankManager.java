@@ -43,7 +43,7 @@ public class BankManager {
     public static void init() {
         BankInfo one = HibernateFactory.selectOne(BankInfo.class, 1);
         if (one == null) {
-            new BankInfo("global", "主银行", "经济服务", HuYanEconomy.config.getOwner(), 0)
+            new BankInfo("global", "主银行", "经济服务", HuYanEconomy.config.getOwner().get(0), 0)
                     .setId(1)
                     .save();
         }
