@@ -12,7 +12,9 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
+import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.User;
+import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.*;
 import org.hibernate.query.criteria.HibernateCriteriaBuilder;
@@ -22,6 +24,9 @@ import org.hibernate.query.criteria.JpaRoot;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static cn.chahuyun.economy.HuYanEconomy.config;
+import static cn.chahuyun.economy.HuYanEconomy.msgConfig;
 
 /**
  * 游戏管理<p>
@@ -47,7 +52,7 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/9 16:16
      */
-    public static void fishing(MessageEvent event) {
+    public static void fishing(GroupMessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = null;
         if (userInfo != null) {
@@ -61,12 +66,12 @@ public class GamesManager {
         }
         //能否钓鱼
         if (fishInfo != null && !fishInfo.isFishRod()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你连鱼竿都没得，拿**钓？"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getNoneRodMsg()));
             return;
         }
         //是否已经在钓鱼
         if (fishInfo != null && fishInfo.getStatus()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你已经在钓鱼了！"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getFishingNowMsg()));
             return;
         }
         //钓鱼冷却
@@ -82,7 +87,7 @@ public class GamesManager {
         }
         //是否已经在钓鱼
         if (fishInfo != null && fishInfo.isStatus()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你已经在钓鱼了！"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getFishingNowMsg()));
             return;
         }
         //获取鱼塘
@@ -97,11 +102,12 @@ public class GamesManager {
         //获取鱼塘限制鱼竿最低等级
         int minLevel = fishPond.getMinLevel();
         if (fishInfo.getRodLevel() < minLevel) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的鱼竿太拉了，这里不让你来，升升级吧..."));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getRodLevelNotEnough()));
             return;
         }
         //开始钓鱼
-        String start = String.format("%s开始钓鱼\n鱼塘:%s\n等级:%s\n最低鱼竿等级:%s\n%s", userInfo.getName(), fishPond.getName(), fishPond.getPondLevel(), fishPond.getMinLevel(), fishPond.getDescription());
+        Group group = event.getGroup();
+        String start = String.format("%s开始钓鱼\n鱼塘:%s\n等级:%s\n最低鱼竿等级:%s\n%s", userInfo.getName(), group.getName(), fishPond.getPondLevel(), fishPond.getMinLevel(), fishPond.getDescription());
         subject.sendMessage(start);
         Log.info(String.format("%s开始钓鱼", userInfo.getName()));
 
@@ -131,59 +137,62 @@ public class GamesManager {
             //获取下一条消息
             MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject, false);
             String nextMessageCode = newMessage.getMessage().serializeToMiraiCode();
-            int randomInt = RandomUtil.randomInt(0, 3);
-            switch (nextMessageCode) {
-                case "向左拉":
-                case "左":
-                case "1":
-                    if (randomInt == 1) {
-                        difficultyMin += 5;
-                        subject.sendMessage(successMessages[randomInt]);
-                    } else {
-                        difficultyMin -= 8;
-                        subject.sendMessage(failureMessages[randomInt]);
-                    }
-                    break;
-                case "向右拉":
-                case "右":
-                case "2":
-                    if (randomInt == 2) {
-                        difficultyMin += 5;
-                        subject.sendMessage(successMessages[randomInt]);
-                    } else {
-                        difficultyMin -= 8;
-                        subject.sendMessage(failureMessages[randomInt]);
-                    }
-                    break;
-                case "收线":
-                case "拉":
-                case "0":
-                    if (randomInt == 0) {
-                        difficultyMin += 5;
-                        subject.sendMessage(otherMessages[randomInt]);
-                    } else {
-                        difficultyMin -= 12;
-                        subject.sendMessage(failureMessages[randomInt]);
-                    }
-                    rankMax++;
-                    break;
-                case "放线":
-                case "放":
-                case "~":
-                    difficultyMin += 20;
-                    rankMax = 1;
-                    subject.sendMessage("你把你收回来的线，又放了出去!");
-                    break;
-                default:
-                    if (Pattern.matches("[!！收起提竿杆]{1,2}", nextMessageCode)) {
-                        if (pull == 0) {
-                            theRod = true;
+            if (nextMessageCode.startsWith(config.getPrefix())) {
+                nextMessageCode = nextMessageCode.substring(1);
+                int randomInt = RandomUtil.randomInt(0, 3);
+                switch (nextMessageCode) {
+                    case "向左拉":
+                    case "左":
+                    case "1":
+                        if (randomInt == 1) {
+                            difficultyMin += 5;
+                            subject.sendMessage(successMessages[randomInt]);
+                        } else {
+                            difficultyMin -= 8;
+                            subject.sendMessage(failureMessages[randomInt]);
                         }
-                        rankStatus = false;
-                    }
-                    break;
+                        break;
+                    case "向右拉":
+                    case "右":
+                    case "2":
+                        if (randomInt == 2) {
+                            difficultyMin += 5;
+                            subject.sendMessage(successMessages[randomInt]);
+                        } else {
+                            difficultyMin -= 8;
+                            subject.sendMessage(failureMessages[randomInt]);
+                        }
+                        break;
+                    case "收线":
+                    case "拉":
+                    case "0":
+                        if (randomInt == 0) {
+                            difficultyMin += 5;
+                            subject.sendMessage(otherMessages[randomInt]);
+                        } else {
+                            difficultyMin -= 12;
+                            subject.sendMessage(failureMessages[randomInt]);
+                        }
+                        rankMax++;
+                        break;
+                    case "放线":
+                    case "放":
+                    case "~":
+                        difficultyMin += 20;
+                        rankMax = 1;
+                        subject.sendMessage("你把你收回来的线，又放了出去!");
+                        break;
+                    default:
+                        if (Pattern.matches("[!！收起提竿杆]{1,2}", nextMessageCode)) {
+                            if (pull == 0) {
+                                theRod = true;
+                            }
+                            rankStatus = false;
+                        }
+                        break;
+                }
+                pull++;
             }
-            pull++;
         }
         //空军
         if (theRod) {
@@ -281,20 +290,20 @@ public class GamesManager {
         Contact subject = event.getSubject();
 
         if (fishInfo.isFishRod()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你已经有一把钓鱼竿了，不用再买了！"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getRepeatPurchaseRod()));
             return;
         }
 
         double moneyByUser = EconomyUtil.getMoneyByUser(user);
         if (moneyByUser - 500 < 0) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "我这把钓鱼竿可是神器！他能吸收你的金币来进化，卖你500还嫌贵？"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getCoinNotEnoughForRod()));
             return;
         }
 
         if (EconomyUtil.minusMoneyToUser(user, 500)) {
             fishInfo.setFishRod(true);
             fishInfo.save();
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "拿好了，这鱼竿到手即不负责，永不提供售后！"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getBuyFishingRodSuccess()));
         } else {
             Log.error("游戏管理:购买鱼竿失败!");
         }
@@ -314,11 +323,11 @@ public class GamesManager {
 
         FishInfo fishInfo = userInfo.getFishInfo();
         if (!fishInfo.isFishRod()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "鱼竿都没得，你升级个锤子!"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getNoneRodUpgradeMsg()));
             return;
         }
         if (fishInfo.getStatus()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "钓鱼期间不可升级鱼竿!"));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getUpgradeWhenFishing()));
             return;
         }
         SingleMessage singleMessage = fishInfo.updateRod(userInfo);

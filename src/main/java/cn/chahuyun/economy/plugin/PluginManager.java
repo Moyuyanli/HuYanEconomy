@@ -17,6 +17,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 
 /**
  * 插件管理<p>
@@ -58,7 +59,7 @@ public class PluginManager {
         propsManager.registerProps(propsCard);
         try {
             //壶言会话
-            HuYanEconomy.config.setOwner(ConfigData.INSTANCE.getOwner());
+            HuYanEconomy.config.setOwner(Collections.singletonList(ConfigData.INSTANCE.getOwner()));
             Log.info("检测到壶言会话,已同步主人!");
             isHuYanSessionPlugin = true;
         } catch (NoClassDefFoundError e) {

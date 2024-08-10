@@ -96,4 +96,26 @@ public class TransferManager {
         }
         return "转帐成功";
     }
+
+    public static void Cheat(MessageEvent event) {
+        Contact subject = event.getSubject();
+        UserInfo userInfo = UserManager.getUserInfo(event.getSender());
+        User user = userInfo.getUser();
+        MessageChain message = event.getMessage();
+        String code = message.serializeToMiraiCode();
+
+        String[] s = code.split(" ");
+        double money;
+        money = Double.parseDouble(s[s.length - 1]);
+
+        MessageChainBuilder chainBuilder = new MessageChainBuilder();
+        if (EconomyUtil.Cheat(user, money)) {
+            chainBuilder.append(String.format("成功作弊: 获取%s金币", money));
+            subject.sendMessage(chainBuilder.build());
+        } else {
+            subject.sendMessage("转账失败！请联系管理员!");
+            Log.error("转账管理:用户金币转移失败");
+        }
+    }
+
 }
