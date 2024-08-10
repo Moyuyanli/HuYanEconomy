@@ -14,7 +14,7 @@ import net.mamoe.mirai.console.data.value
 object EconomyConfig : AutoSavePluginConfig("Config") {
 
     @ValueDescription("主人\n")
-    var owner: List<Long> by value()
+    var owner: List<Long> by value(listOf())
 
     @ValueDescription("数据库类型(H2,MYSQL,SQLITE)")
     var dataType: DriveType by value(DriveType.H2)
