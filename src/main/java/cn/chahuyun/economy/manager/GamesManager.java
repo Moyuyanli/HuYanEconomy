@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static cn.chahuyun.economy.HuYanEconomy.config;
 import static cn.chahuyun.economy.HuYanEconomy.msgConfig;
 
 /**
@@ -136,7 +137,7 @@ public class GamesManager {
             //获取下一条消息
             MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject, false);
             String nextMessageCode = newMessage.getMessage().serializeToMiraiCode();
-            if (nextMessageCode.startsWith("#")) {
+            if (nextMessageCode.startsWith(config.getPrefix())) {
                 nextMessageCode = nextMessageCode.substring(1);
                 int randomInt = RandomUtil.randomInt(0, 3);
                 switch (nextMessageCode) {

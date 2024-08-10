@@ -25,7 +25,7 @@ dependencies {
     annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
 
     implementation 'cn.hutool:hutool-all:5.8.10'
-    implementation 'org.apache.poi:poi-ooxml:4.1.2'
+    implementation 'org.apache.poi:poi-ooxml:5.2.3'
 
     implementation "cn.chahuyun:hibernate-plus:1.0.7"
 

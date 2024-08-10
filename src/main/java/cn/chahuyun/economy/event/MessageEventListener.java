@@ -15,6 +15,7 @@ import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.MessageEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -65,7 +66,7 @@ public class MessageEventListener extends SimpleListenerHost {
 
         String code = event.getMessage().serializeToMiraiCode();
         PropsManager propsManager = PluginManager.getPropsManager();
-        if (code.startsWith("#")) {
+        if (code.startsWith(config.getPrefix())) {
             code = code.substring(1);
             switch (code) {
                 case "测试":
@@ -114,7 +115,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     }
                     return;
                 case "开启 钓鱼":
-                    if (owner) {
+                    if (owner || sender == Objects.requireNonNull(group).getOwner()) {
                         Log.info("管理指令");
                         if (group != null && !config.getFishGroup().contains(group.getId())) {
                             EconomyConfig.INSTANCE.getFishGroup().add(group.getId());
@@ -123,7 +124,7 @@ public class MessageEventListener extends SimpleListenerHost {
                     }
                     return;
                 case "关闭 钓鱼":
-                    if (owner) {
+                    if (owner || sender == Objects.requireNonNull(group).getOwner()) {
                         Log.info("管理指令");
                         if (group != null && config.getFishGroup().contains(group.getId())) {
                             EconomyConfig.INSTANCE.getFishGroup().remove(group.getId());
