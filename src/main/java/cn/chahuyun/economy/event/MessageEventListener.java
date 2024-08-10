@@ -66,174 +66,177 @@ public class MessageEventListener extends SimpleListenerHost {
 
         String code = event.getMessage().serializeToMiraiCode();
         PropsManager propsManager = PluginManager.getPropsManager();
-        if (code.startsWith(config.getPrefix())) {
+        if (!config.getPrefix().isBlank()) {
+            if (!code.startsWith(config.getPrefix())) {
+                return;
+            }
             code = code.substring(1);
-            switch (code) {
-                case "测试":
-                    return;
-                case "签到":
-                case "打卡":
-                case "sign":
-                    Log.info("签到指令");
-                    SignManager.sign(event);
-                    return;
-                case "个人信息":
-                case "info":
-                    Log.info("个人信息指令");
-                    UserManager.getUserInfoImage(event);
-                    return;
-                case "背包":
-                case "backpack":
-                    Log.info("背包指令");
-                    propsManager.viewUserBackpack(event);
-                    return;
-                case "道具商店":
-                case "shops":
-                    Log.info("道具商店指令");
-                    propsManager.propStore(event);
-                    return;
-                case "我的称号":
-                    Log.info("查询称号指令");
-                    TitleManager.viewTitleInfo(event);
-                    return;
-                case "开启 猜签":
-                    if (owner) {
-                        Log.info("管理指令");
-                        if (group != null && !config.getLotteryGroup().contains(group.getId())) {
-                            EconomyConfig.INSTANCE.getLotteryGroup().add(group.getId());
-                        }
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签功能已开启!"));
-                    }
-                    return;
-                case "关闭 猜签":
-                    if (owner) {
-                        Log.info("管理指令");
-                        if (group != null && config.getLotteryGroup().contains(group.getId())) {
-                            EconomyConfig.INSTANCE.getLotteryGroup().remove(group.getId());
-                        }
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签功能已关闭!"));
-                    }
-                    return;
-                case "开启 钓鱼":
-                    if (owner || sender == Objects.requireNonNull(group).getOwner()) {
-                        Log.info("管理指令");
-                        if (group != null && !config.getFishGroup().contains(group.getId())) {
-                            EconomyConfig.INSTANCE.getFishGroup().add(group.getId());
-                        }
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的钓鱼功能已开启!"));
-                    }
-                    return;
-                case "关闭 钓鱼":
-                    if (owner || sender == Objects.requireNonNull(group).getOwner()) {
-                        Log.info("管理指令");
-                        if (group != null && config.getFishGroup().contains(group.getId())) {
-                            EconomyConfig.INSTANCE.getFishGroup().remove(group.getId());
-                        }
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的钓鱼功能已关闭!"));
-                    }
-                    return;
-                case "购买鱼竿":
-                    Log.info("游戏指令");
-                    GamesManager.buyFishRod(event);
-                    return;
-                case "钓鱼":
-                case "抛竿":
-                    Log.info("游戏指令");
-                    if (group != null && config.getFishGroup().contains(group.getId())) {
-                        GamesManager.fishing((GroupMessageEvent) event);
-                    }
-                    return;
-                case "升级鱼竿":
-                    Log.info("游戏指令");
-                    GamesManager.upFishRod(event);
-                    return;
-                case "钓鱼排行榜":
-                case "钓鱼排行":
-                case "钓鱼榜":
-                    Log.info("游戏指令");
-                    GamesManager.fishTop(event);
-                    return;
-                case "鱼竿等级":
-                    Log.info("游戏指令");
-                    GamesManager.viewFishLevel(event);
-                    return;
-                case "刷新钓鱼":
-                    if (owner) {
-                        Log.info("游戏指令");
-                        GamesManager.refresh(event);
-                    }
-                    return;
-                case "银行利率":
-                    Log.info("银行指令");
-                    BankManager.viewBankInterest(event);
-                    return;
-                default:
-            }
-
-            String cheatPrice = "EconomyAdd (\\d+)";
-            if(owner){
-                if (Pattern.matches(cheatPrice, code)) {
+        }
+        switch (code) {
+            case "测试":
+                return;
+            case "签到":
+            case "打卡":
+            case "sign":
+                Log.info("签到指令");
+                SignManager.sign(event);
+                return;
+            case "个人信息":
+            case "info":
+                Log.info("个人信息指令");
+                UserManager.getUserInfoImage(event);
+                return;
+            case "背包":
+            case "backpack":
+                Log.info("背包指令");
+                propsManager.viewUserBackpack(event);
+                return;
+            case "道具商店":
+            case "shops":
+                Log.info("道具商店指令");
+                propsManager.propStore(event);
+                return;
+            case "我的称号":
+                Log.info("查询称号指令");
+                TitleManager.viewTitleInfo(event);
+                return;
+            case "开启 猜签":
+                if (owner) {
                     Log.info("管理指令");
-                    TransferManager.Cheat(event);
-                    return;
-                }
-            }
-
-            String buyTitleRegex = "购买称号 (\\S+)";
-            if (Pattern.matches(buyTitleRegex, code)) {
-                Log.info("购买称号指令");
-                TitleManager.buyTitle(event);
-                return;
-            }
-
-            String userTitleRegex = "切换称号 (\\d+)";
-            if (Pattern.matches(userTitleRegex, code)) {
-                Log.info("切换称号指令");
-                TitleManager.userTitle(event);
-                return;
-            }
-
-            String buyPropRegex = "购买 (\\S+)( \\S+)?|buy (\\S+)( \\S+)?";
-            if (Pattern.matches(buyPropRegex, code)) {
-                Log.info("购买指令");
-                propsManager.buyPropFromStore(event);
-                return;
-            }
-
-            String userPropRegex = "使用 (\\S+)( \\S+)?|use (\\S+)( \\S+)?";
-            if (Pattern.matches(userPropRegex, code)) {
-                Log.info("使用指令");
-                propsManager.userProp(event);
-                return;
-            }
-
-            String buyLotteryRegex = "猜签 (\\d+)( \\d+)|lottery (\\d+)( \\d+)";
-            if (Pattern.matches(buyLotteryRegex, code)) {
-                Log.info("彩票指令");
-                if (group != null && config.getLotteryGroup().contains(group.getId())) {
-                    LotteryManager.addLottery(event);
+                    if (group != null && !config.getLotteryGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getLotteryGroup().add(group.getId());
+                    }
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签功能已开启!"));
                 }
                 return;
-            }
-
-            String userToUserTransferRegex = "转账(\\[mirai:at:\\d+])? \\d+( \\d+)?";
-            if (Pattern.matches(userToUserTransferRegex, code)) {
-                Log.info("转账指令");
-                TransferManager.userToUser(event);
+            case "关闭 猜签":
+                if (owner) {
+                    Log.info("管理指令");
+                    if (group != null && config.getLotteryGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getLotteryGroup().remove(group.getId());
+                    }
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签功能已关闭!"));
+                }
                 return;
-            }
-
-            String walletToBankRegex = "存款 \\d+|deposit \\d+";
-            String bankToWalletRegex = "取款 \\d+|withdraw \\d+";
-            if (Pattern.matches(walletToBankRegex, code)) {
+            case "开启 钓鱼":
+                if (owner || sender == Objects.requireNonNull(group).getOwner()) {
+                    Log.info("管理指令");
+                    if (group != null && !config.getFishGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getFishGroup().add(group.getId());
+                    }
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的钓鱼功能已开启!"));
+                }
+                return;
+            case "关闭 钓鱼":
+                if (owner || sender == Objects.requireNonNull(group).getOwner()) {
+                    Log.info("管理指令");
+                    if (group != null && config.getFishGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getFishGroup().remove(group.getId());
+                    }
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的钓鱼功能已关闭!"));
+                }
+                return;
+            case "购买鱼竿":
+                Log.info("游戏指令");
+                GamesManager.buyFishRod(event);
+                return;
+            case "钓鱼":
+            case "抛竿":
+                Log.info("游戏指令");
+                if (group != null && config.getFishGroup().contains(group.getId())) {
+                    GamesManager.fishing((GroupMessageEvent) event);
+                }
+                return;
+            case "升级鱼竿":
+                Log.info("游戏指令");
+                GamesManager.upFishRod(event);
+                return;
+            case "钓鱼排行榜":
+            case "钓鱼排行":
+            case "钓鱼榜":
+                Log.info("游戏指令");
+                GamesManager.fishTop(event);
+                return;
+            case "鱼竿等级":
+                Log.info("游戏指令");
+                GamesManager.viewFishLevel(event);
+                return;
+            case "刷新钓鱼":
+                if (owner) {
+                    Log.info("游戏指令");
+                    GamesManager.refresh(event);
+                }
+                return;
+            case "银行利率":
                 Log.info("银行指令");
-                BankManager.deposit(event);
+                BankManager.viewBankInterest(event);
                 return;
-            } else if (Pattern.matches(bankToWalletRegex, code)) {
-                Log.info("银行指令");
-                BankManager.withdrawal(event);
+            default:
+        }
+
+        String cheatPrice = "EconomyAdd (\\d+)";
+        if(owner){
+            if (Pattern.matches(cheatPrice, code)) {
+                Log.info("管理指令");
+                TransferManager.Cheat(event);
                 return;
             }
+        }
+
+        String buyTitleRegex = "购买称号 (\\S+)";
+        if (Pattern.matches(buyTitleRegex, code)) {
+            Log.info("购买称号指令");
+            TitleManager.buyTitle(event);
+            return;
+        }
+
+        String userTitleRegex = "切换称号 (\\d+)";
+        if (Pattern.matches(userTitleRegex, code)) {
+            Log.info("切换称号指令");
+            TitleManager.userTitle(event);
+            return;
+        }
+
+        String buyPropRegex = "购买 (\\S+)( \\S+)?|buy (\\S+)( \\S+)?";
+        if (Pattern.matches(buyPropRegex, code)) {
+            Log.info("购买指令");
+            propsManager.buyPropFromStore(event);
+            return;
+        }
+
+        String userPropRegex = "使用 (\\S+)( \\S+)?|use (\\S+)( \\S+)?";
+        if (Pattern.matches(userPropRegex, code)) {
+            Log.info("使用指令");
+            propsManager.userProp(event);
+            return;
+        }
+
+        String buyLotteryRegex = "猜签 (\\d+)( \\d+)|lottery (\\d+)( \\d+)";
+        if (Pattern.matches(buyLotteryRegex, code)) {
+            Log.info("彩票指令");
+            if (group != null && config.getLotteryGroup().contains(group.getId())) {
+                LotteryManager.addLottery(event);
+            }
+            return;
+        }
+
+        String userToUserTransferRegex = "转账(\\[mirai:at:\\d+])? \\d+( \\d+)?";
+        if (Pattern.matches(userToUserTransferRegex, code)) {
+            Log.info("转账指令");
+            TransferManager.userToUser(event);
+            return;
+        }
+
+        String walletToBankRegex = "存款 \\d+|deposit \\d+";
+        String bankToWalletRegex = "取款 \\d+|withdraw \\d+";
+        if (Pattern.matches(walletToBankRegex, code)) {
+            Log.info("银行指令");
+            BankManager.deposit(event);
+            return;
+        } else if (Pattern.matches(bankToWalletRegex, code)) {
+            Log.info("银行指令");
+            BankManager.withdrawal(event);
+            return;
         }
 
 

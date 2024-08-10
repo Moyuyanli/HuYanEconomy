@@ -240,9 +240,9 @@ public class TitleManager {
     public static void checkMonopoly(UserInfo userInfo, Contact subject) {
         double moneyByUser = EconomyUtil.getMoneyByUser(userInfo.getUser());
         if (moneyByUser > 100000) {
-            Map<String, String> params = new HashMap<>();
-            params.put("userId", String.valueOf(userInfo.getQq()));
-            params.put("type", "0");
+            Map<String, Object> params = new HashMap<>();
+            params.put("userId", userInfo.getQq());
+            params.put("type", TitleTemplate.MONOPOLY);
             TitleInfo titleInfo = HibernateFactory.selectOne(TitleInfo.class, params);
             if (titleInfo == null) {
                 addTitleInfo(userInfo, TitleTemplate.MONOPOLY);
@@ -260,8 +260,8 @@ public class TitleManager {
      * @param userInfo 用户
      */
     public static boolean checkMonopoly(UserInfo userInfo) {
-        Map<String, String> params = new HashMap<>();
-        params.put("userId", String.valueOf(userInfo.getQq()));
+        Map<String, Object> params = new HashMap<>();
+        params.put("userId", userInfo.getQq());
         params.put("type", "0");
         TitleInfo titleInfo = HibernateFactory.selectOne(TitleInfo.class, params);
         return titleInfo != null;

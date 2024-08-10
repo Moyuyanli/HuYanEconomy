@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -60,9 +58,7 @@ public class UserManager {
      */
     public static UserInfo getUserInfo(User user) {
         long userId = user.getId();
-        Map<String, Object> map = new HashMap<>();
-        map.put("qq", userId);
-        UserInfo one = HibernateFactory.selectOne(UserInfo.class, map);
+        UserInfo one = HibernateFactory.selectOne(UserInfo.class, "qq",userId);
         if (one == null) {
             UserInfo info = new UserInfo(userId, 0, user.getNick(), new Date());
             if (user instanceof Member) {

@@ -67,7 +67,6 @@ public final class HuYanEconomy extends JavaPlugin {
         //初始化插件数据库
         HibernateUtil.init(this);
 
-
         EventChannel<Event> eventEventChannel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE);
 
         long configBot = config.getBot();

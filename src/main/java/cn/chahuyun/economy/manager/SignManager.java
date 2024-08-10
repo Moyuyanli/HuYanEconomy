@@ -129,6 +129,7 @@ public class SignManager {
             messages.append(plainText);
         }
         TitleManager.checkSignTitle(userInfo, subject);
+        TitleManager.checkMonopoly(userInfo, subject);
         sendSignImage(userInfo, subject, messages.build());
     }
 

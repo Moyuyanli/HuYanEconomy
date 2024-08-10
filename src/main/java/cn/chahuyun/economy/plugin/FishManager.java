@@ -6,6 +6,7 @@ import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.ExcelUtil;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,20 +33,11 @@ public class FishManager {
      */
     public static void init() {
         List<Fish> fishList = HibernateFactory.selectList(Fish.class);
-        if (fishList == null || fishList.size() == 0) {
+        if (fishList == null || fishList.isEmpty()) {
             reloadFish();
             return;
         }
-        for (Fish fish : fishList) {
-            int level = fish.getLevel();
-            if (fishMap.containsKey(level)) {
-                fishMap.get(level).add(fish);
-            } else {
-                fishMap.put(level, new ArrayList<>() {{
-                    add(fish);
-                }});
-            }
-        }
+        readFish(fishList);
     }
 
     /**
@@ -65,7 +57,7 @@ public class FishManager {
      */
     private static void reloadFish() {
         HuYanEconomy instance = HuYanEconomy.INSTANCE;
-        ExcelReader reader = ExcelUtil.getReader(instance.getResourceAsStream("fish.xlsx"));
+        InputStream resourceAsStream = instance.getResourceAsStream("fish.xls");
         Map<String, String> map = new HashMap<>();
         map.put("等级", "level");
         map.put("名称", "name");
@@ -79,11 +71,17 @@ public class FishManager {
         map.put("尺寸4阶", "dimensions4");
         map.put("难度", "difficulty");
         map.put("特殊标记", "special");
+        ExcelReader reader = ExcelUtil.getReader(resourceAsStream);
         List<Fish> fishList = reader.setHeaderAlias(map).readAll(Fish.class);
         for (Fish fish : fishList) {
             HibernateFactory.merge(fish);
         }
-        for (Fish fish : fishList) {
+        readFish(fishList);
+    }
+
+
+    private static void readFish(List<Fish> list) {
+        for (Fish fish : list) {
             int level = fish.getLevel();
             if (fishMap.containsKey(level)) {
                 fishMap.get(level).add(fish);
@@ -94,4 +92,5 @@ public class FishManager {
             }
         }
     }
+
 }
