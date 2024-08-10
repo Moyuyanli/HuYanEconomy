@@ -10,7 +10,7 @@ version = '0.1.19'
 
 repositories {
     mavenCentral()
-    maven { url 'https://maven.aliyun.com/repository/public' }
+//    maven { url 'https://maven.aliyun.com/repository/public' }
 //    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
 }
 
@@ -24,10 +24,10 @@ dependencies {
     implementation "org.projectlombok:lombok:1.18.24"
     annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
 
-    implementation 'cn.hutool:hutool-all:5.8.10'
-    implementation 'org.apache.poi:poi-ooxml:5.2.3'
+    implementation 'cn.hutool:hutool-all:5.8.30'
+    implementation 'org.apache.poi:poi-ooxml:5.3.0'
 
-    implementation "cn.chahuyun:hibernate-plus:1.0.7"
+    implementation "cn.chahuyun:hibernate-plus:1.0.8"
 
 }
 
