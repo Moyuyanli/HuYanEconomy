@@ -60,17 +60,18 @@ public class UserManager {
      */
     public static UserInfo getUserInfo(User user) {
         long userId = user.getId();
-        Map<String, String> map = new HashMap<>();
-        map.put("qq", String.valueOf(userId));
-        UserInfo userInfo = HibernateFactory.selectOne(UserInfo.class, map);
-        if (userInfo == null) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("qq", userId);
+        UserInfo one = HibernateFactory.selectOne(UserInfo.class, map);
+        if (one == null) {
+            UserInfo info = new UserInfo(userId, 0, user.getNick(), new Date());
             if (user instanceof Member) {
                 Member member = (Member) user;
-                UserInfo info = new UserInfo(userId, member.getGroup().getId(), user.getNick(), new Date());
-                return HibernateFactory.merge(info).setUser(user);
+               info.setRegisterGroup(member.getGroup().getId());
             }
+            return HibernateFactory.merge(info).setUser(user);
         }
-        return userInfo.setUser(user);
+        return one.setUser(user);
     }
 
     /**
