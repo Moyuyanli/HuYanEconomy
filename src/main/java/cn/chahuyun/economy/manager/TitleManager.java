@@ -55,6 +55,26 @@ public class TitleManager {
                 new TitleTemplateSimpleImpl(TitleCode.REGAL, TitleCode.REGAL_EXPIRED, "小富翁",
                         10000.0, true, false,
                         "[小富翁]", "eccc68", "ffa502"));
+
+
+        //修改版本迭代带来的错误数据
+        List<TitleInfo> titleInfos = HibernateFactory.selectList(TitleInfo.class);
+
+        for (TitleInfo titleInfo : titleInfos) {
+            if (titleInfo.getCode() == null) {
+                switch (titleInfo.getTitle()) {
+                    case "[只是个传说]":
+                        HibernateFactory.merge(titleInfo.setCode(TitleCode.SIGN_15).setName("签到狂人"));
+                        continue;
+                    case "[大富翁]":
+                        HibernateFactory.merge(titleInfo.setCode(TitleCode.MONOPOLY).setName("大富翁"));
+                        continue;
+                    case "[小富翁]":
+                        HibernateFactory.merge(titleInfo.setCode(TitleCode.REGAL).setName("小富翁"));
+                        continue;
+                }
+            }
+        }
     }
 
     /**
@@ -235,7 +255,7 @@ public class TitleManager {
             if (++index == i) {
                 titleInfo.setStatus(true);
                 HibernateFactory.merge(titleInfo);
-                subject.sendMessage(String.format("已切换称号为 %s ", titleInfo.getTitle()));
+                subject.sendMessage(String.format("已切换称号为 %s ", titleInfo.getName()));
             } else {
                 titleInfo.setStatus(false);
                 HibernateFactory.merge(titleInfo);
