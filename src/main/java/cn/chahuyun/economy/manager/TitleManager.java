@@ -180,6 +180,25 @@ public class TitleManager {
         }
     }
 
+
+    /**
+     * 查询拥有的称号
+     *
+     * @param event 消息事件
+     */
+    public static void viewCanByTitle(MessageEvent event) {
+        MessageChainBuilder builder = new MessageChainBuilder();
+        builder.append("可购买的称号如下:\n");
+        List<TitleTemplate> canBuyTemplate = TitleTemplateManager.getCanBuyTemplate();
+        for (TitleTemplate template : canBuyTemplate) {
+            builder.append(String.format("%s - %s 金币-有效期: %s%n", template.getTitleName(), template.getPrice(),
+                    template.getValidityPeriod() > 0 ? template.getValidityPeriod() + "天" : "永久"
+            ));
+        }
+        event.getSubject().sendMessage(builder.build());
+    }
+
+
     /**
      * 购买称号<p/>
      * 购买称号 xxx
@@ -200,25 +219,27 @@ public class TitleManager {
         String content = message.contentToString();
         User sender = event.getSender();
         for (TitleTemplate template : canBuyTemplate) {
-            if (template.getTitleName().equals(content)) {
+            if (template.getTitleName().equals(content.split(" +")[1])) {
                 double moneyByUser = EconomyUtil.getMoneyByUser(sender);
                 if (moneyByUser < template.getPrice()) {
                     subject.sendMessage(MessageUtil.formatMessageChain(message,
                             "你的金币不够 %s ,无法购买 %s 称号!", template.getPrice(), template.getTitleName()));
+                    return;
                 } else {
                     UserInfo userInfo = UserManager.getUserInfo(sender);
                     if (checkTitleIsExist(userInfo, template.getTemplateCode())) {
                         subject.sendMessage(MessageUtil.formatMessageChain(message,
                                 "你已经拥有 %s 称号!", template.getTitleName()));
+                        return;
                     }
                     if (EconomyUtil.minusMoneyToUser(sender, 10000)) {
                         if (addTitleInfo(userInfo, template.getTemplateCode())) {
                             subject.sendMessage(MessageUtil.formatMessageChain(message,
-                                    "你以成功购买 % 称号,有效期 % ", template.getTitleName(),
+                                    "你以成功购买 %s 称号,有效期 %s ", template.getTitleName(),
                                     template.getValidityPeriod() <= 0 ? "无限" : template.getValidityPeriod() + "天"
                             ));
                         } else {
-                            subject.sendMessage(MessageUtil.formatMessageChain(message, "购买 % 称号失败", template.getTitleName()));
+                            subject.sendMessage(MessageUtil.formatMessageChain(message, "购买 %s 称号失败", template.getTitleName()));
                         }
 
                     }

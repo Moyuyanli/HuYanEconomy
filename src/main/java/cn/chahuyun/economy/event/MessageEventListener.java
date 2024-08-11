@@ -100,6 +100,10 @@ public class MessageEventListener extends SimpleListenerHost {
                 Log.info("查询称号指令");
                 TitleManager.viewTitleInfo(event);
                 return;
+            case "称号商店":
+                Log.info("查询称号商店指令");
+                TitleManager.viewCanByTitle(event);
+                return;
             case "开启 猜签":
                 if (owner) {
                     Log.info("管理指令");
@@ -175,7 +179,7 @@ public class MessageEventListener extends SimpleListenerHost {
         }
 
         String cheatPrice = "EconomyAdd (\\d+)";
-        if(owner){
+        if (owner) {
             if (Pattern.matches(cheatPrice, code)) {
                 Log.info("管理指令");
                 TransferManager.Cheat(event);

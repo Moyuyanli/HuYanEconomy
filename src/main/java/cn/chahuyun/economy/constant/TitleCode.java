@@ -29,12 +29,12 @@ public class TitleCode {
     /**
      * 小富翁称号
      */
-    public final static String REGAL = "regal-15";
+    public final static String REGAL = "regal-30";
 
     /**
      * 小富翁称号-默认过期时间
      */
-    public final static Integer REGAL_EXPIRED = 15;
+    public final static Integer REGAL_EXPIRED = 30;
 
 }
 
