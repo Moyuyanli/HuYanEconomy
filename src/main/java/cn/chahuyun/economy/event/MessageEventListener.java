@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.event;
 
-import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.manager.*;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.utils.Log;

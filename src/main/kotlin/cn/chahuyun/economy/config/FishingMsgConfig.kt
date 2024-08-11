@@ -1,4 +1,4 @@
-package cn.chahuyun.config
+package cn.chahuyun.economy.config
 
 import net.mamoe.mirai.console.data.AutoSavePluginConfig
 import net.mamoe.mirai.console.data.ValueDescription

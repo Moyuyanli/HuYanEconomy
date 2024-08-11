@@ -1,8 +1,8 @@
 package cn.chahuyun.economy;
 
-import cn.chahuyun.config.EconomyConfig;
-import cn.chahuyun.config.EconomyPluginConfig;
-import cn.chahuyun.config.FishingMsgConfig;
+import cn.chahuyun.economy.config.EconomyConfig;
+import cn.chahuyun.economy.config.EconomyPluginConfig;
+import cn.chahuyun.economy.config.FishingMsgConfig;
 import cn.chahuyun.economy.event.BotOnlineEventListener;
 import cn.chahuyun.economy.event.MessageEventListener;
 import cn.chahuyun.economy.manager.BankManager;

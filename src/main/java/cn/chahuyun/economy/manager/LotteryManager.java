@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.manager;
 
-import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.entity.LotteryInfo;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;

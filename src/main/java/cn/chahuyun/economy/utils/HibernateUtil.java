@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.utils;
 
-import cn.chahuyun.config.EconomyConfig;
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.hibernateplus.Configuration;
 import cn.chahuyun.hibernateplus.DriveType;
 import cn.chahuyun.hibernateplus.HibernatePlusService;
