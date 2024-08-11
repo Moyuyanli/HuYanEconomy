@@ -1,11 +1,14 @@
 package cn.chahuyun.economy.manager;
 
-import cn.chahuyun.economy.constant.TitleTemplate;
+import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.TitleInfo;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.entity.title.TitleTemplate;
+import cn.chahuyun.economy.entity.title.TitleTemplateSimpleImpl;
+import cn.chahuyun.economy.plugin.TitleTemplateManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
+import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
-import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import net.mamoe.mirai.contact.Contact;
@@ -15,9 +18,13 @@ import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.At;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
+import net.mamoe.mirai.message.data.QuoteReply;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 称号管理
@@ -27,35 +34,27 @@ import java.util.*;
  */
 public class TitleManager {
 
-    private static final Map<TitleTemplate, TitleInfo> titleInfoMap = new HashMap<>(2);
-
 
     private TitleManager() {
     }
 
-
+    /**
+     * 初始化加载称号。<br>
+     * 这里有注册称号的案例。<br>
+     * 包含两个不可购买称号和一个可购买称号。<br>
+     * 详细注册信息查看 {@link TitleTemplateSimpleImpl}
+     */
     public static void init() {
-        titleInfoMap.put(TitleTemplate.SIGN_IN_MADMAN, TitleInfo.builder()
-                .gradient(true)
-                .impactName(false)
-                .type(TitleTemplate.SIGN_IN_MADMAN)
-                .title("[只是个传说]")
-                .sColor("ff7f50")
-                .eColor("ff6348").build());
-        titleInfoMap.put(TitleTemplate.MONOPOLY, TitleInfo.builder()
-                .gradient(true)
-                .impactName(true)
-                .type(TitleTemplate.MONOPOLY)
-                .title("[大富翁]")
-                .sColor("ff4757")
-                .eColor("ffa502").build());
-        titleInfoMap.put(TitleTemplate.LITTLE_RICH_MAN, TitleInfo.builder()
-                .gradient(true)
-                .impactName(false)
-                .type(TitleTemplate.LITTLE_RICH_MAN)
-                .title("[小富翁]")
-                .sColor("eccc68")
-                .eColor("ffa502").build());
+        TitleTemplateManager.registerTitleTemplate(
+                new TitleTemplateSimpleImpl(TitleCode.SIGN_15, TitleCode.SIGN_15_EXPIRED, "签到狂人",
+                        true, false,
+                        "[只是个传说]", "ff7f50", "ff6348"),
+                new TitleTemplateSimpleImpl(TitleCode.MONOPOLY, TitleCode.MONOPOLY_EXPIRED, "大富翁",
+                        true, true,
+                        "[大富翁]", "ff4757", "ffa502"),
+                new TitleTemplateSimpleImpl(TitleCode.REGAL, TitleCode.REGAL_EXPIRED, "小富翁",
+                        10000.0, true, false,
+                        "[小富翁]", "eccc68", "ffa502"));
     }
 
     /**
@@ -109,18 +108,23 @@ public class TitleManager {
     /**
      * 添加称号
      *
-     * @param userInfo 用户
-     * @param template 称号
+     * @param userInfo          用户
+     * @param titleTemplateCode 称号code
+     * @return true 添加成功 false 称号已存在或添加失败。
      */
-    public static void addTitleInfo(UserInfo userInfo, TitleTemplate template) {
-        TitleInfo titleInfo = titleInfoMap.get(template);
-        titleInfo.setUserId(userInfo.getQq());
-        titleInfo.setStatus(true);
-        if (template.getValidityPeriod() > 0) {
-            DateTime dateTime = DateUtil.offsetDay(new Date(), template.getValidityPeriod());
-            titleInfo.setDueTime(dateTime);
+    public static boolean addTitleInfo(UserInfo userInfo, String titleTemplateCode) {
+        TitleInfo title = TitleTemplateManager.createTitle(titleTemplateCode, userInfo);
+        if (title == null) {
+            throw new RuntimeException("称号code错误或该称号没有在称号模版管理中注册!");
         }
-        HibernateFactory.merge(titleInfo);
+        Map<String, Object> params = new HashMap<>();
+        params.put("code", title.getCode());
+        params.put("userId", title.getUserId());
+        TitleInfo selectOne = HibernateFactory.selectOne(TitleInfo.class, params);
+        if (selectOne != null) {
+            return false;
+        }
+        return HibernateFactory.merge(title).getId() != 0;
     }
 
     /**
@@ -132,20 +136,22 @@ public class TitleManager {
         Contact subject = event.getSubject();
         long id = event.getSender().getId();
 
+        MessageChainBuilder builder = new MessageChainBuilder();
+        builder.append(new QuoteReply(event.getSource()));
+
         List<TitleInfo> titleList = HibernateFactory.selectList(TitleInfo.class, "userId", id);
         if (titleList.isEmpty()) {
-            subject.sendMessage("你的称号为空!");
+            subject.sendMessage(builder.append("你的称号为空!").build());
             return;
         }
 
-        MessageChainBuilder builder = new MessageChainBuilder();
         builder.append("你拥有的称号如下:\n");
         int index = 0;
         for (TitleInfo titleInfo : titleList) {
             if (checkTitleTime(titleInfo)) {
                 continue;
             }
-            builder.append(String.format("%d-%s%n", ++index, titleInfo.getTitle()));
+            builder.append(String.format("%d-%s%n", ++index, titleInfo.getName()));
         }
         if (index != 0) {
             subject.sendMessage(builder.build());
@@ -161,35 +167,46 @@ public class TitleManager {
      * @param event 消息事件
      */
     public static void buyTitle(MessageEvent event) {
-        ArrayList<String> list = new ArrayList<>() {{
-            add("小富翁");
-        }};
-
         Contact subject = event.getSubject();
-        User sender = event.getSender();
         MessageChain message = event.getMessage();
-        String content = message.contentToString();
 
-        String[] split = content.split(" +");
-        if (!list.contains(split[1])) {
-            subject.sendMessage("没有这个称号!");
+        List<TitleTemplate> canBuyTemplate = TitleTemplateManager.getCanBuyTemplate();
+        if (canBuyTemplate.isEmpty()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(message, "没有称号售卖!"));
             return;
         }
 
-        UserInfo userInfo = UserManager.getUserInfo(sender);
-        switch (split[1]) {
-            case "小富翁":
+
+        String content = message.contentToString();
+        User sender = event.getSender();
+        for (TitleTemplate template : canBuyTemplate) {
+            if (template.getTitleName().equals(content)) {
                 double moneyByUser = EconomyUtil.getMoneyByUser(sender);
-                if (moneyByUser < 10000) {
-                    subject.sendMessage("你的金币不够 10000 ,无法购买小富翁称号!");
+                if (moneyByUser < template.getPrice()) {
+                    subject.sendMessage(MessageUtil.formatMessageChain(message,
+                            "你的金币不够 %s ,无法购买 %s 称号!", template.getPrice(), template.getTitleName()));
                 } else {
+                    UserInfo userInfo = UserManager.getUserInfo(sender);
+                    if (checkTitleIsExist(userInfo, template.getTemplateCode())) {
+                        subject.sendMessage(MessageUtil.formatMessageChain(message,
+                                "你已经拥有 %s 称号!", template.getTitleName()));
+                    }
                     if (EconomyUtil.minusMoneyToUser(sender, 10000)) {
-                        addTitleInfo(userInfo, TitleTemplate.LITTLE_RICH_MAN);
-                        subject.sendMessage("你以成功购买 小富翁 称号,有效期 15 天");
+                        if (addTitleInfo(userInfo, template.getTemplateCode())) {
+                            subject.sendMessage(MessageUtil.formatMessageChain(message,
+                                    "你以成功购买 % 称号,有效期 % ", template.getTitleName(),
+                                    template.getValidityPeriod() <= 0 ? "无限" : template.getValidityPeriod() + "天"
+                            ));
+                        } else {
+                            subject.sendMessage(MessageUtil.formatMessageChain(message, "购买 % 称号失败", template.getTitleName()));
+                        }
+
                     }
                 }
                 return;
+            }
         }
+        subject.sendMessage(MessageUtil.formatMessageChain(message, "没有这个称号!"));
     }
 
 
@@ -240,29 +257,28 @@ public class TitleManager {
     public static void checkMonopoly(UserInfo userInfo, Contact subject) {
         double moneyByUser = EconomyUtil.getMoneyByUser(userInfo.getUser());
         if (moneyByUser > 100000) {
-            Map<String, Object> params = new HashMap<>();
-            params.put("userId", userInfo.getQq());
-            params.put("type", TitleTemplate.MONOPOLY);
-            TitleInfo titleInfo = HibernateFactory.selectOne(TitleInfo.class, params);
-            if (titleInfo == null) {
-                addTitleInfo(userInfo, TitleTemplate.MONOPOLY);
-                MessageChainBuilder builder = new MessageChainBuilder();
-                builder.append(new At(userInfo.getQq()));
-                builder.append("恭喜!你的金币数量大于 100000 ,获得永久称号 [大富翁] !");
-                subject.sendMessage(builder.build());
+            if (checkTitleIsExist(userInfo, TitleCode.MONOPOLY)) {
+                return;
             }
+            addTitleInfo(userInfo, TitleCode.MONOPOLY);
+            MessageChainBuilder builder = new MessageChainBuilder();
+            builder.append(new At(userInfo.getQq()));
+            builder.append("恭喜!你的金币数量大于 100000 ,获得永久称号 [大富翁] !");
+            subject.sendMessage(builder.build());
         }
     }
 
     /**
-     * 检查大富翁称号
+     * 检查该用户是否有该称号
      *
-     * @param userInfo 用户
+     * @param userInfo  用户
+     * @param titleCode 称号code
+     * @return true 该用户存在该称号
      */
-    public static boolean checkMonopoly(UserInfo userInfo) {
+    public static boolean checkTitleIsExist(UserInfo userInfo, String titleCode) {
         Map<String, Object> params = new HashMap<>();
         params.put("userId", userInfo.getQq());
-        params.put("type", "0");
+        params.put("code", titleCode);
         TitleInfo titleInfo = HibernateFactory.selectOne(TitleInfo.class, params);
         return titleInfo != null;
     }
@@ -277,25 +293,23 @@ public class TitleManager {
     public static void checkSignTitle(UserInfo userInfo, Contact subject) {
         int signNumber = userInfo.getSignNumber();
         if (signNumber == 15) {
-            List<TitleInfo> titleInfo = HibernateFactory.selectList(TitleInfo.class, "userId", userInfo.getQq());
-            boolean in = true;
-            for (TitleInfo info : titleInfo) {
-                if (info.getType() == TitleTemplate.SIGN_IN_MADMAN) {
-                    in = false;
-                    break;
-                }
+            if (checkTitleIsExist(userInfo, TitleCode.SIGN_15)) {
+                return;
             }
-            if (in) {
-                addTitleInfo(userInfo, TitleTemplate.SIGN_IN_MADMAN);
-                MessageChainBuilder builder = new MessageChainBuilder();
-                builder.append(new At(userInfo.getQq()));
-                builder.append("恭喜!你已经连续签到 15 天,获得15天称号 [签到狂人] !");
-                subject.sendMessage(builder.build());
-            }
+            addTitleInfo(userInfo, TitleCode.SIGN_15);
+            MessageChainBuilder builder = new MessageChainBuilder();
+            builder.append(new At(userInfo.getQq()));
+            builder.append("恭喜!你已经连续签到 15 天,获得15天称号 签到狂人 !");
+            subject.sendMessage(builder.build());
         }
     }
 
-
+    /**
+     * 检查称号是否过期
+     *
+     * @param titleInfo 称号
+     * @return true 已经过期，同时在数据库中删除该称号。
+     */
     private static boolean checkTitleTime(TitleInfo titleInfo) {
         if (titleInfo.getDueTime() != null) {
             if (DateUtil.between(new Date(), titleInfo.getDueTime(), DateUnit.MINUTE, false) < 0) {

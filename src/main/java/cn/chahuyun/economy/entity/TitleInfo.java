@@ -1,9 +1,9 @@
 package cn.chahuyun.economy.entity;
 
-import cn.chahuyun.economy.constant.TitleTemplate;
 import cn.chahuyun.economy.utils.ImageUtil;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.Accessors;
 
 import java.awt.*;
 import java.io.Serializable;
@@ -22,6 +22,7 @@ import java.util.Date;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Accessors(chain = true)
 public class TitleInfo implements Serializable {
 
     @Id
@@ -32,9 +33,13 @@ public class TitleInfo implements Serializable {
      */
     private long userId;
     /**
-     *
+     * 称号类型
      */
-    private TitleTemplate type;
+    private String code;
+    /**
+     * 称号名称
+     */
+    private String name;
     /**
      * 使用状态
      */
