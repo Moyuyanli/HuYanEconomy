@@ -1,7 +1,7 @@
 # HuYanEconomy 壶言壶言经济 --- 娱乐插件
 
 [![version](https://img.shields.io/github/v/release/moyuyanli/huyaneconomy
-)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v0.1.19/HuYanEconomy-0.1.19.mirai2.jar)
+)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v0.2.1/HuYanEconomy-0.2.1.mirai2.jar)
 
 这里是壶言经济，一款mirai娱乐插件，设计灵感来自于论坛的经济帖子，心血来潮就创建了这个项目，从22年11月开始，中间慢慢填坑，
 陆陆续续的完成了一部分饼，由于大部分饼都没实现，所以没在论坛发布，但是在我群共享。
@@ -26,11 +26,14 @@
 
 ```yml
 # 主人
-owner: 123456
+owner:
+  - 123456
+# 指令触发前缀,空白则没有前缀
+prefix: ' '
 # 数据库类型(H2,MYSQL,SQLITE)
-dataType: H2
+dataType: MYSQL
 # mysql 连接地址
-mysqlUrl: 'localhost:3306/test'
+mysqlUrl: 'localhost:3306/economy'
 # mysql 用户名
 mysqlUser: root
 # mysql 密码
@@ -105,7 +108,7 @@ fishGroup: []
 
 ### 称号功能
 
-指令`我的称号`,`购买称号 (称号)`,`切换称号 (称号坐标)`;
+指令`我的称号`,`购买称号 (称号)`,`切换称号 (称号坐标)`,`称号商店`;
 
 称号默认获取群特殊头衔,没有就获取群活跃头衔，颜色不同。
 
