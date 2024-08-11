@@ -1,5 +1,6 @@
 package cn.chahuyun.economy;
 
+import cn.chahuyun.economy.command.EconomyCommand;
 import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.config.FishingMsgConfig;
@@ -15,6 +16,7 @@ import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.hutool.cron.CronUtil;
 import net.mamoe.mirai.Bot;
+import net.mamoe.mirai.console.command.CommandManager;
 import net.mamoe.mirai.console.plugin.jvm.JavaPlugin;
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder;
 import net.mamoe.mirai.event.Event;
@@ -61,6 +63,8 @@ public final class HuYanEconomy extends JavaPlugin {
         reloadPluginConfig(EconomyConfig.INSTANCE);
         reloadPluginConfig(EconomyPluginConfig.INSTANCE);
         reloadPluginConfig(FishingMsgConfig.INSTANCE);
+        //注册指令
+        CommandManager.INSTANCE.registerCommand(new EconomyCommand(), false);
         config = EconomyConfig.INSTANCE;
         msgConfig = FishingMsgConfig.INSTANCE;
         //插件功能初始化
