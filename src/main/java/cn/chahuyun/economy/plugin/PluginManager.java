@@ -2,6 +2,7 @@ package cn.chahuyun.economy.plugin;
 
 import cn.chahuyun.config.ConfigData;
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.manager.PropsManager;
@@ -62,8 +63,10 @@ public class PluginManager {
         propsManager.registerProps(propsCard);
         try {
             //壶言会话
-            HuYanEconomy.config.setOwner(Collections.singletonList(ConfigData.INSTANCE.getOwner()));
-            Log.info("检测到壶言会话,已同步主人!");
+            if (EconomyPluginConfig.INSTANCE.getFirstStart()) {
+                HuYanEconomy.config.setOwner(Collections.singletonList(ConfigData.INSTANCE.getOwner()));
+                Log.info("检测到壶言会话,已同步主人!");
+            }
             isHuYanSessionPlugin = true;
         } catch (NoClassDefFoundError e) {
             isHuYanSessionPlugin = false;
