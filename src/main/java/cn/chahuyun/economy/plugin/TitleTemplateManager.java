@@ -85,5 +85,15 @@ public final class TitleTemplateManager {
         return titleTemplateMap.values().stream().filter(TitleTemplate::getCanIBuy).collect(Collectors.toList());
     }
 
+    /**
+     * 获取称号模板
+     *
+     * @param code 模版code
+     * @return 称号模板，可能为null
+     */
+    public static TitleTemplate getTitleTemplate(String code) {
+        return titleTemplateMap.get(code);
+    }
+
 }
 

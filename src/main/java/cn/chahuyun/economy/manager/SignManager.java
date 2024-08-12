@@ -3,6 +3,7 @@ package cn.chahuyun.economy.manager;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.constant.ImageDrawXY;
+import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.plugin.ImageManager;
@@ -112,6 +113,9 @@ public class SignManager {
             if (doubleStatus) {
                 goldNumber = goldNumber * 2;
             }
+        }
+        if (TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.SIGN_15)) {
+            goldNumber = goldNumber * 2;
         }
         if (!EconomyUtil.plusMoneyToUser(userInfo.getUser(), goldNumber)) {
             subject.sendMessage("签到失败!");
