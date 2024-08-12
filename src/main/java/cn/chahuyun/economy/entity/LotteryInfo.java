@@ -75,12 +75,7 @@ public class LotteryInfo implements Serializable {
         this.number = number;
     }
 
-    /**
-     * 保存
-     */
-    public void save() {
-        HibernateFactory.merge(this);
-    }
+
 
     /**
      * 删除

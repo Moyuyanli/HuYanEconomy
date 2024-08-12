@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "cn.chahuyun"
-version = "0.2.1"
+version = "0.2.2"
 
 repositories {
     mavenCentral()
@@ -29,7 +29,7 @@ dependencies {
     implementation("cn.hutool:hutool-all:5.8.30")
     implementation("org.apache.poi:poi-ooxml:4.1.2")
 
-    implementation("cn.chahuyun:hibernate-plus:1.0.11")
+    implementation("cn.chahuyun:hibernate-plus:1.0.13")
 
 }
 

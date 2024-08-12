@@ -11,6 +11,7 @@ import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import net.mamoe.mirai.contact.AvatarSpec;
@@ -118,7 +119,7 @@ public class SignManager {
             return;
         }
         userInfo.setSignEarnings(goldNumber);
-        userInfo.save();
+        HibernateFactory.merge(userInfo);
         double moneyBytUser = EconomyUtil.getMoneyByUser(userInfo.getUser());
         messages.append(new PlainText("签到成功!"));
         messages.append(new PlainText(String.format("金币:%s(+%s)", moneyBytUser, goldNumber)));

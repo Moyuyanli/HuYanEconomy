@@ -43,9 +43,8 @@ public class BankManager {
     public static void init() {
         BankInfo one = HibernateFactory.selectOne(BankInfo.class, 1);
         if (one == null) {
-            new BankInfo("global", "主银行", "经济服务", HuYanEconomy.config.getOwner().get(0), 0)
-                    .setId(1)
-                    .save();
+            BankInfo bankInfo = new BankInfo("global", "主银行", "经济服务", HuYanEconomy.config.getOwner().get(0), 0);
+            HibernateFactory.merge(bankInfo);
         }
         List<BankInfo> bankInfos = null;
         try {
@@ -190,7 +189,7 @@ class BankInterestTask implements Task {
                     v = Double.parseDouble(String.format("%.1f", v));
                     if (EconomyUtil.plusMoneyToBankForAccount(entry.getKey(), v)) {
                         userInfo.setBankEarnings(v);
-                        userInfo.save();
+                        HibernateFactory.merge(userInfo);
                     } else {
                         Log.error("银行利息管理:" + id + "添加利息出错");
                     }
