@@ -37,6 +37,8 @@ public class HibernateUtil {
 
         DriveType dataType = config.getDataType();
         configuration.setDriveType(dataType);
+        configuration.setShowSql(true);
+        configuration.setFormatSql(true);
         Path dataFolderPath = economy.getDataFolderPath();
         switch (dataType) {
             case MYSQL:
