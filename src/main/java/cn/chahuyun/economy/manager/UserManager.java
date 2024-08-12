@@ -63,7 +63,7 @@ public class UserManager {
             UserInfo info = new UserInfo(userId, 0, user.getNick(), new Date());
             if (user instanceof Member) {
                 Member member = (Member) user;
-               info.setRegisterGroup(member.getGroup().getId());
+                info.setRegisterGroup(member.getGroup().getId());
             }
             return HibernateFactory.merge(info).setUser(user);
         }
@@ -103,7 +103,7 @@ public class UserManager {
 
         UserInfo userInfo = getUserInfo(sender);
 
-        TitleManager.checkMonopoly(userInfo,event.getSubject());
+        TitleManager.checkMonopoly(userInfo, event.getSubject());
 
         double moneyByUser = EconomyUtil.getMoneyByUser(sender);
 

@@ -177,7 +177,7 @@ public class LotteryManager {
             subject.sendMessage(MessageUtil.formatMessageChain(message, "猜签失败！"));
             return;
         }
-        lotteryInfo.save();
+        HibernateFactory.merge(lotteryInfo);
         subject.sendMessage(MessageUtil.formatMessageChain(message, "猜签成功:\n猜签类型:%s\n猜签号码:%s\n猜签金币:%s", typeString, number, money));
         init(false);
     }
@@ -298,7 +298,7 @@ class LotteryMinutesTask implements Task {
             }
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
-            lotteryInfo.save();
+            lotteryInfo = HibernateFactory.merge(lotteryInfo);
             LotteryManager.result(1, location, lotteryInfo);
         }
         for (Long group : groups) {
@@ -381,7 +381,7 @@ class LotteryHoursTask implements Task {
             }
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
-            lotteryInfo.save();
+            lotteryInfo = HibernateFactory.merge(lotteryInfo);
             LotteryManager.result(2, location, lotteryInfo);
         }
         for (Long group : groups) {
@@ -467,7 +467,7 @@ class LotteryDayTask implements Task {
             }
             lotteryInfo.setBonus(bonus);
             lotteryInfo.setCurrent(currentString.toString());
-            lotteryInfo.save();
+            lotteryInfo = HibernateFactory.merge(lotteryInfo);
             LotteryManager.result(3, location, lotteryInfo);
             if (location == 5) {
                 list.add(lotteryInfo);

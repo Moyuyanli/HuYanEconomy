@@ -142,7 +142,7 @@ public class FishPond implements Serializable {
      */
     public void addNumber() {
         this.number++;
-        save();
+        HibernateFactory.merge(this);
     }
 
     /**

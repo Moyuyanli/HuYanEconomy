@@ -79,12 +79,7 @@ public class FishRanking implements Serializable {
         this.date = new Date();
     }
 
-    /**
-     * 保存
-     */
-    public FishRanking save() {
-        return HibernateFactory.merge(this);
-    }
+
 
     /**
      * 显示排行榜信息

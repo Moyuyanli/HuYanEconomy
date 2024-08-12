@@ -25,7 +25,7 @@ import java.util.List;
  * @date 2022/11/14 9:45
  */
 @Entity(name = "UserInfo")
-@Table
+@Table(name = "UserInfo")
 @Getter
 @Setter
 public class UserInfo implements Serializable {
@@ -36,7 +36,6 @@ public class UserInfo implements Serializable {
     /**
      * qq号
      */
-    @Setter
     private long qq;
     /**
      * 名称
@@ -80,11 +79,11 @@ public class UserInfo implements Serializable {
      */
     @OneToMany(targetEntity = UserBackpack.class, mappedBy = "userId", fetch = FetchType.EAGER)
     private List<UserBackpack> backpacks;
-    /**
-     * 称号信息
-     */
-    @OneToMany(targetEntity = TitleInfo.class, mappedBy = "userId", fetch = FetchType.EAGER)
-    private List<TitleInfo> titleInfos;
+//    /**
+//     * 称号信息
+//     */
+//    @OneToMany(targetEntity = TitleInfo.class, mappedBy = "userId", fetch = FetchType.EAGER)
+//    private List<TitleInfo> titleInfos;
 
     @Transient
     private User user;
@@ -196,16 +195,7 @@ public class UserInfo implements Serializable {
                 "\n连续签到:" + this.getSignNumber() + "天\n";
     }
 
-    /**
-     * 保存
-     *
-     * @return 本身
-     * @author Moyuyanli
-     * @date 2022/12/6 8:49
-     */
-    public UserInfo save() {
-        return HibernateFactory.merge(this);
-    }
+
 
     /**
      * 设置user

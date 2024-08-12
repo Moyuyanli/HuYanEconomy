@@ -85,13 +85,6 @@ public class BankInfo {
         this.interest = RandomUtil.randomInt(2, 9);
     }
 
-    /**
-     * 保存
-     *
-     * @return this
-     */
-    public BankInfo save() {
-        return HibernateFactory.merge(this);
-    }
+
 
 }

@@ -70,12 +70,7 @@ public class FishInfo implements Serializable {
         this.defaultFishPond = "g-" + group;
     }
 
-    /**
-     * 保存
-     */
-    public FishInfo save() {
-        return HibernateFactory.merge(this);
-    }
+
 
     /**
      * 升级鱼竿<p>
@@ -164,7 +159,7 @@ public class FishInfo implements Serializable {
      */
     private void upFishRod() {
         this.setRodLevel(getRodLevel() + 1);
-        save();
+        HibernateFactory.merge(this);
     }
 
     /**
@@ -196,7 +191,7 @@ public class FishInfo implements Serializable {
             return true;
         } else {
             status = true;
-            save();
+            HibernateFactory.merge(this);
             return false;
         }
     }
@@ -215,7 +210,7 @@ public class FishInfo implements Serializable {
      */
     public void switchStatus() {
         this.status = false;
-        save();
+        HibernateFactory.merge(this);
     }
 
 }

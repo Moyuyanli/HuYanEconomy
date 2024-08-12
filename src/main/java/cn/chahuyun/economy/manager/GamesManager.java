@@ -271,7 +271,8 @@ public class GamesManager {
             playerCooling.remove(userInfo.getQq());
         }
         fishInfo.switchStatus();
-        new FishRanking(userInfo.getQq(), userInfo.getName(), dimensions, money, fishInfo.getRodLevel(), fish, fishPond).save();
+        FishRanking fishRanking = new FishRanking(userInfo.getQq(), userInfo.getName(), dimensions, money, fishInfo.getRodLevel(), fish, fishPond);
+        HibernateFactory.merge(fishRanking);
     }
 
     /**
@@ -305,7 +306,7 @@ public class GamesManager {
 
         if (EconomyUtil.minusMoneyToUser(user, 500)) {
             fishInfo.setFishRod(true);
-            fishInfo.save();
+            HibernateFactory.merge(fishInfo);
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getBuyFishingRodSuccess()));
         } else {
             Log.error("游戏管理:购买鱼竿失败!");
@@ -353,7 +354,7 @@ public class GamesManager {
 
         List<FishRanking> rankingList = HibernateFactory.selectList(FishRanking.class);
         rankingList.sort(Comparator.comparing(FishRanking::getMoney).reversed());
-        rankingList = rankingList.isEmpty() ? rankingList: rankingList.subList(0, Math.min(rankingList.size(), 30)) ;
+        rankingList = rankingList.isEmpty() ? rankingList : rankingList.subList(0, Math.min(rankingList.size(), 30));
 
 
         if (rankingList.isEmpty()) {
