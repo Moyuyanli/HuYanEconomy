@@ -324,6 +324,22 @@ public class TitleManager {
         return titleInfo != null;
     }
 
+    /**
+     * 检查该用户的对应称号是否启用
+     *
+     * @param userInfo  用户
+     * @param titleCode 称号code
+     * @return true 已启用
+     */
+    public static boolean checkTitleIsOnEnable(UserInfo userInfo, String titleCode) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("userId", userInfo.getQq());
+        params.put("code", titleCode);
+        params.put("status", 1);
+        TitleInfo titleInfo = HibernateFactory.selectOne(TitleInfo.class, params);
+        return titleInfo != null;
+    }
+
 
     /**
      * 检查连续签到称号
