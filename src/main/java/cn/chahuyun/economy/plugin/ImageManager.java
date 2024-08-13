@@ -32,7 +32,7 @@ public class ImageManager {
 
     protected static void init(HuYanEconomy instance) throws IOException, FontFormatException {
 
-        Log.info("开始加载自定义图片和字体...");
+        Log.info("开始加载字体...");
 
         Path path = instance.getDataFolderPath();
         File font = path.resolve("font").toFile();
@@ -45,7 +45,6 @@ public class ImageManager {
             customFont = new Font("宋体", Font.PLAIN, 24);
         }
 
-
         File bottom = path.resolve("bottom").toFile();
         if (!bottom.exists()) {
             return;
@@ -55,11 +54,32 @@ public class ImageManager {
 
         File[] files = bottom.listFiles();
         if (files != null) {
+            int totalFiles = files.length;
+            int step = totalFiles / 5; // 每个阶段应该处理的文件数量
+            int currentStep = 0;       // 当前处理到哪个阶段
+
+            // 输出初始进度
+            Log.info("开始加载自定义图片...");
+
             for (File file : files) {
                 if (canBeReadAsBufferedImage(file)) {
-                    drawBottom(ImageIO.read(file), bottomPng);
+                    try {
+                        BufferedImage image = ImageIO.read(file);
+                        drawBottom(image, bottomPng);
+                    } catch (IOException e) {
+                        Log.error("读取文件 " + file.getName() + " 出错: " + e.getMessage());
+                    }
+                }
+
+                // 检查是否到达下一个阶段
+                if (++currentStep % step == 0 || currentStep == totalFiles) {
+                    double percentage = (double) currentStep / totalFiles * 100;
+                    Log.info(String.format("处理进度: %.2f%%", percentage));
                 }
             }
+
+            // 输出完成信息
+            Log.info("自定义图片和字体加载完成!");
         }
     }
 
