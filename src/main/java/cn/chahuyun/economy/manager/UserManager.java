@@ -4,15 +4,16 @@ import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.entity.TitleInfo;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.entity.yiyan.YiYan;
 import cn.chahuyun.economy.plugin.ImageManager;
 import cn.chahuyun.economy.plugin.PluginManager;
+import cn.chahuyun.economy.plugin.YiYanManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.http.HttpUtil;
-import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.events.MessageEvent;
@@ -58,7 +59,7 @@ public class UserManager {
      */
     public static UserInfo getUserInfo(User user) {
         long userId = user.getId();
-        UserInfo one = HibernateFactory.selectOne(UserInfo.class, "qq",userId);
+        UserInfo one = HibernateFactory.selectOne(UserInfo.class, "qq", userId);
         if (one == null) {
             UserInfo info = new UserInfo(userId, 0, user.getNick(), new Date());
             if (user instanceof Member) {
@@ -128,15 +129,22 @@ public class UserManager {
             return;
         }
 
-        JSONObject entries = JSONUtil.parseObj(HttpUtil.get("https://v1.hitokoto.cn"));
-        String hitokoto = entries.getStr("hitokoto");
-        String author = entries.getStr("from_who");
-        String from = entries.getStr("from");
+        YiYan yiYan = YiYanManager.getYiyan();
+        if (yiYan == null) {
+            String str = HttpUtil.get("https://v1.hitokoto.cn");
+            Log.debug("yiyan->" + str);
+            if (str.isBlank()) {
+                yiYan = new YiYan(0, "无", "无", "无");
+            } else {
+                yiYan = JSONUtil.parseObj(str).toBean(YiYan.class);
+            }
+        }
 
         Graphics2D graphics = ImageUtil.getG2d(userInfoImageBase);
         //图片与文字的抗锯齿
         graphics.setColor(Color.black);
-        String signature = "--" + (author == null ? "无铭" : author) + ":" + from;
+        String hitokoto = yiYan.getHitokoto();
+        String signature = "--" + (yiYan.getAuthor() == null ? "无铭" : yiYan.getAuthor()) + ":" + yiYan.getFrom();
         if (PluginManager.isCustomImage) {
             graphics.setFont(ImageManager.getCustomFont());
             ImageUtil.drawString(hitokoto, ImageDrawXY.A_WORD.getX(), ImageDrawXY.A_WORD.getY(), 440, graphics);

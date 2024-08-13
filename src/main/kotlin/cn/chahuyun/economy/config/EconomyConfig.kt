@@ -19,7 +19,7 @@ object EconomyConfig : AutoSavePluginConfig("Config") {
     @ValueDescription("指令触发前缀,空白则没有前缀")
     var prefix: String by value(" ")
 
-    @ValueDescription("每日签到刷新时间(0-23)")
+    @ValueDescription("每日签到刷新时间(0-23)\n")
     var reSignTime : Int by value(4)
 
     @ValueDescription("数据库类型(H2,MYSQL,SQLITE)")

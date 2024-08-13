@@ -121,7 +121,7 @@ public class UserInfo implements Serializable {
         }
         //获取签到时间，向后偏移一天
         Calendar calendar = CalendarUtil.calendar(DateUtil.offsetDay(getSignTime(), 1));
-        //设置时间为 04:00:00
+        //自定义更新签到时间 默认为 04:00:00
         calendar.set(Calendar.HOUR_OF_DAY, config.getReSignTime());
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
