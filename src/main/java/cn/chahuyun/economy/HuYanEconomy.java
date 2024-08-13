@@ -11,6 +11,7 @@ import cn.chahuyun.economy.manager.LotteryManager;
 import cn.chahuyun.economy.manager.TitleManager;
 import cn.chahuyun.economy.plugin.FishManager;
 import cn.chahuyun.economy.plugin.PluginManager;
+import cn.chahuyun.economy.plugin.YiYanManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
@@ -83,6 +84,7 @@ public final class HuYanEconomy extends JavaPlugin {
             FishManager.init();
             BankManager.init();
             TitleManager.init();
+            YiYanManager.init();
             eventEventChannel.registerListenerHost(new BotOnlineEventListener());
             eventEventChannel.registerListenerHost(new MessageEventListener());
             Log.info("事件已监听!");
