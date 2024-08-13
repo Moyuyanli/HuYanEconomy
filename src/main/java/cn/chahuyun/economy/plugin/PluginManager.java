@@ -16,6 +16,8 @@ import lombok.Getter;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collections;
 
@@ -77,7 +79,11 @@ public class PluginManager {
         File font = new File(path.resolve("font").toUri());
         if (!font.exists()) {
             font.mkdir();
-            FileUtil.writeFromStream(instance.getResourceAsStream("Maple UI.ttf"), path.resolve("font/Maple UI.ttf").toFile());
+            try (InputStream in = new URL("https://data.chahuyun.cn/file/bot/Maple%20UI.ttf").openStream()) {
+                FileUtil.writeFromStream(in, path.resolve("font/Maple UI.ttf").toFile());
+            } catch (IOException e) {
+                Log.error("自定义字体下载失败,请手动前往github下载!", e);
+            }
         }
         File bottom = new File(path.resolve("bottom").toUri());
         if (!bottom.exists()) {
