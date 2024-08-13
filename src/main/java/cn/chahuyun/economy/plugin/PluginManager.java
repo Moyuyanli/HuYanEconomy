@@ -2,11 +2,13 @@ package cn.chahuyun.economy.plugin;
 
 import cn.chahuyun.config.ConfigData;
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.manager.PropsManager;
 import cn.chahuyun.economy.manager.PropsManagerImpl;
 import cn.chahuyun.economy.utils.Log;
+import cn.chahuyun.economy.version.CheckLatestVersion;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.cron.CronUtil;
 import lombok.Getter;
@@ -51,14 +53,20 @@ public class PluginManager {
     public static void init() {
         //插件加载的时候启动调度器
         CronUtil.start();
+
+        //检查插件版本
+        CheckLatestVersion.init();
+
         //加载道具
         PropsCard propsCard = new PropsCard(Constant.SIGN_DOUBLE_SINGLE_CARD, "签到双倍金币卡", 99, true, "张", "不要999，不要599，只要99金币，你的下一次签到将翻倍！", false, null, null, false, null);
 
         propsManager.registerProps(propsCard);
         try {
             //壶言会话
-            HuYanEconomy.config.setOwner(Collections.singletonList(ConfigData.INSTANCE.getOwner()));
-            Log.info("检测到壶言会话,已同步主人!");
+            if (EconomyPluginConfig.INSTANCE.getFirstStart()) {
+                HuYanEconomy.config.setOwner(Collections.singletonList(ConfigData.INSTANCE.getOwner()));
+                Log.info("检测到壶言会话,已同步主人!");
+            }
             isHuYanSessionPlugin = true;
         } catch (NoClassDefFoundError e) {
             isHuYanSessionPlugin = false;

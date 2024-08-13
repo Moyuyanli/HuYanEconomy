@@ -18,6 +18,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import static cn.chahuyun.economy.HuYanEconomy.config;
+
 /**
  * 用户信息<p>
  *
@@ -120,7 +122,7 @@ public class UserInfo implements Serializable {
         //获取签到时间，向后偏移一天
         Calendar calendar = CalendarUtil.calendar(DateUtil.offsetDay(getSignTime(), 1));
         //设置时间为 04:00:00
-        calendar.set(Calendar.HOUR_OF_DAY, 4);
+        calendar.set(Calendar.HOUR_OF_DAY, config.getReSignTime());
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         Date time = calendar.getTime();
