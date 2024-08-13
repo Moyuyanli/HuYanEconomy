@@ -5,6 +5,7 @@ import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.entity.props.PropsCard;
+import cn.chahuyun.economy.manager.GamesManager;
 import cn.chahuyun.economy.manager.PropsManager;
 import cn.chahuyun.economy.manager.PropsManagerImpl;
 import cn.chahuyun.economy.utils.Log;
@@ -72,6 +73,11 @@ public class PluginManager {
             isHuYanSessionPlugin = true;
         } catch (NoClassDefFoundError e) {
             isHuYanSessionPlugin = false;
+        }
+
+        // 插件启用时强制刷新钓鱼状态防止出现问题
+        if (!HuYanEconomy.config.getFishGroup().isEmpty()) {
+            GamesManager.refresh();
         }
 
         HuYanEconomy instance = HuYanEconomy.INSTANCE;

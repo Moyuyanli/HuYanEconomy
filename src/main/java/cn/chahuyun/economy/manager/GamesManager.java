@@ -408,7 +408,34 @@ public class GamesManager {
         if (status) {
             event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "钓鱼状态刷新成功!"));
         } else {
-            event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "钓鱼状态刷新成功!"));
+            event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "钓鱼状态刷新失败!"));
+        }
+    }
+
+    public static void refresh() {
+        Boolean status = HibernateFactory.getSession().fromTransaction(session -> {
+            HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
+            JpaCriteriaQuery<FishInfo> query = builder.createQuery(FishInfo.class);
+            JpaRoot<FishInfo> from = query.from(FishInfo.class);
+            query.select(from);
+            query.where(builder.equal(from.get("status"), true));
+            List<FishInfo> list;
+            try {
+                list = session.createQuery(query).list();
+            } catch (Exception e) {
+                return false;
+            }
+            for (FishInfo fishInfo : list) {
+                fishInfo.setStatus(false);
+                session.merge(fishInfo);
+            }
+            return true;
+        });
+        playerCooling.clear();
+        if (status) {
+            Log.info("钓鱼状态刷新成功!");
+        } else {
+            Log.warning("钓鱼状态刷新失败!");
         }
     }
 
