@@ -1,12 +1,13 @@
 # HuYanEconomy 壶言壶言经济 --- 娱乐插件
 
 [![version](https://img.shields.io/github/v/release/moyuyanli/huyaneconomy
-)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v0.2.1/HuYanEconomy-0.2.1.mirai2.jar)
+)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v0.2.5/HuYanEconomy-0.2.5.mirai2.jar)
 
 这里是壶言经济，一款mirai娱乐插件，设计灵感来自于论坛的经济帖子，心血来潮就创建了这个项目，从22年11月开始，中间慢慢填坑，
 陆陆续续的完成了一部分饼，由于大部分饼都没实现，所以没在论坛发布，但是在我群共享。
 
 或许有些人在一些群见过本插件的功能，就比如这个签到
+
 ![img.png](img.png)
 
 现在完成了一些基本功能，仍然有很多bug的存在，但是能用(叉腰)。
@@ -81,7 +82,7 @@ fishGroup: []
 
 背景图自动轮询。
 
-签到的冷却期是24个小时。
+签到的刷新是每天的4点，可自定义时间。
 随机获得`50~500`的金币奖励！
 概率不均衡
 
@@ -118,12 +119,15 @@ fishGroup: []
 * [小富翁] 花费1w金币购买`购买称号 小富翁`,期限15天。
 * [只是传说] 签到狂人称号,连续签到15天获得,期限15天。
 
-对于称号，还有特殊属性的饼没有实现。
-比如装备签到狂人称号的时候，签到获得金币翻倍。
-
-预计近期会实现。
+**特殊buff**：
+- 启用签到狂人称号时，签到获得的金币翻倍。
 
 `切换称号 0`是卸下所有称号，回到默认称号。
+
+现已开放称号自定义添加功能，目前只有依赖本插件实现。
+未来可能会实现通过配置文件自定义添加称号。
+
+更多请查看[TitleTemplateManager](https://github.com/Moyuyanli/HuYanEconomy/blob/master/src/main/java/cn/chahuyun/economy/plugin/TitleTemplateManager.java)
 
 ### 猜签功能
 
@@ -203,6 +207,10 @@ fishGroup: []
 - 道具功能重构
 - 增强功能间互动性
 - 教会功能
+
+## 相关插件
+
+- [Favorability](https://github.com/Travellerrr/Favorability)
 
 ## 建议和交流
 
