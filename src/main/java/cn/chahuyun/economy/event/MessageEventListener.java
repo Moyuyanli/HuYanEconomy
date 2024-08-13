@@ -42,7 +42,7 @@ public class MessageEventListener extends SimpleListenerHost {
         }
 
         // 处理事件处理时抛出的异常
-        Log.error(exception);
+        Log.error(exception.getCause());
     }
 
     /**
