@@ -217,12 +217,11 @@ public class RedPackManager {
         double perMoney;
 
         if (isRandomPack) {
-            List<Double> alreadyTakenMoney = redPack.getGetMoneys();
-            double alreadyTakenMoneySum = alreadyTakenMoney.stream().mapToDouble(Double::doubleValue).sum();
-            Log.debug("已领走钱数: "+ redPack.getGetMoneys());
+            double alreadyTakenMoney = redPack.getTakenMoneys();
+            Log.debug("已领走钱数: "+ redPack.getTakenMoneys());
             long alreadyTakenUser = redPack.getReceivers().size();
             Log.debug("已领走人数: "+ alreadyTakenUser);
-            money -= alreadyTakenMoneySum;
+            money -= alreadyTakenMoney;
             Log.debug("剩余钱数: "+ money);
             if (!((number-alreadyTakenUser) == 1)) {
                 money -= 0.01 * (number - alreadyTakenUser);
@@ -232,9 +231,9 @@ public class RedPackManager {
                 perMoney = Double.parseDouble(df.format(money));
             }
 
-            alreadyTakenMoney.add(perMoney);
+            alreadyTakenMoney += perMoney;
 
-            redPack.setGetMoneys(alreadyTakenMoney);
+            redPack.setTakenMoneys(alreadyTakenMoney);
 
         } else {
             perMoney = Double.parseDouble(df.format(money / number));

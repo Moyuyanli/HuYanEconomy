@@ -23,7 +23,7 @@ public class RedPack {
     private int number;
     private long createTime;
     private boolean isRandomPack;
-    private List<Double> getMoneys = new ArrayList<>();
+    private Double takenMoneys = 0.0;
     private List<Long> receivers = new ArrayList<>();
 
     public RedPack() {
