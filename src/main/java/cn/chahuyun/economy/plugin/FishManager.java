@@ -2,6 +2,7 @@ package cn.chahuyun.economy.plugin;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.fish.Fish;
+import cn.chahuyun.economy.entity.fish.FishInfo;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.poi.excel.ExcelReader;
 import cn.hutool.poi.excel.ExcelUtil;
@@ -38,6 +39,12 @@ public class FishManager {
             return;
         }
         readFish(fishList);
+
+        //启动刷新钓鱼状态
+        List<FishInfo> fishInfos = HibernateFactory.selectList(FishInfo.class);
+        for (FishInfo fishInfo : fishInfos) {
+            HibernateFactory.merge(fishInfo.setStatus(false));
+        }
     }
 
     /**
