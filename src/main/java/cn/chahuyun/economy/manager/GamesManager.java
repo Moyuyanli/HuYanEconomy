@@ -74,12 +74,13 @@ public class GamesManager {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getFishingNowMsg()));
             return;
         }
+        boolean isFishing = TitleManager.checkTitleIsExist(userInfo, TitleCode.FISHING);
         //钓鱼冷却
         if (playerCooling.containsKey(userInfo.getQq())) {
             Date date = playerCooling.get(userInfo.getQq());
             long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
             int expired = 10;
-            if (TitleManager.checkTitleIsExist(userInfo, TitleCode.FISHING)) {
+            if (isFishing) {
                 expired = 3;
             }
             if (between < expired) {
@@ -131,7 +132,7 @@ public class GamesManager {
 
         //随机睡眠
         try {
-            Thread.sleep(RandomUtil.randomInt(5000, 200000));
+            Thread.sleep(RandomUtil.randomInt(5000, isFishing ? 60000 : 200000));
         } catch (InterruptedException e) {
             Log.debug(e);
         }
