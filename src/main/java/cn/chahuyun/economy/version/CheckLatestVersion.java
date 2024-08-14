@@ -25,9 +25,9 @@ public class CheckLatestVersion {
             return;
         }
         if (!newVersion.substring(1).equals(HuYanEconomy.VERSION)) {
-            Log.warning(" 发现最新版本！版本：v" + newVersion);
-            Log.warning(" 发现最新版本！版本：v" + newVersion);
-            Log.warning(" 发现最新版本！版本：v" + newVersion);
+            Log.warning(" 发现最新版本！版本：" + newVersion);
+            Log.warning(" 发现最新版本！版本：" + newVersion);
+            Log.warning(" 发现最新版本！版本：" + newVersion);
             if (updateMsg != null) {
                 updateMsg = updateMsg.replace("#", "");
                 updateMsg = updateMsg.replace("\r\n", " ");
