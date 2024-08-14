@@ -179,7 +179,11 @@ public class TitleManager {
             if (checkTitleTime(titleInfo)) {
                 continue;
             }
-            builder.append(String.format("%d-%s%n", ++index, titleInfo.getName()));
+            String titleName = titleInfo.getName();
+            if (titleInfo.isStatus()) {
+                titleName += ":已启用";
+            }
+            builder.append(String.format("%d-%s%n", ++index, titleName));
         }
         if (index != 0) {
             subject.sendMessage(builder.build());
