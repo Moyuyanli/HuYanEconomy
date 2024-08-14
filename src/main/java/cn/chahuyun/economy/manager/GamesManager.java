@@ -138,7 +138,11 @@ public class GamesManager {
         int pull = 0;
         while (rankStatus) {
             //获取下一条消息
-            MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject, false);
+            MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject);
+            if (newMessage == null) {
+                subject.sendMessage("你的鱼跑了！！");
+                return;
+            }
             String nextMessageCode = newMessage.getMessage().serializeToMiraiCode();
             if (!config.getPrefix().isBlank()) {
                 if (!nextMessageCode.startsWith(config.getPrefix())) {
