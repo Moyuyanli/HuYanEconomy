@@ -1,18 +1,14 @@
 package cn.chahuyun.economy.utils;
 
 import cn.chahuyun.economy.HuYanEconomy;
-import kotlin.coroutines.EmptyCoroutineContext;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
-import net.mamoe.mirai.event.ConcurrencyKind;
-import net.mamoe.mirai.event.EventChannel;
-import net.mamoe.mirai.event.EventPriority;
 import net.mamoe.mirai.event.GlobalEventChannel;
 import net.mamoe.mirai.event.events.MessageEvent;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 公共工具
@@ -28,37 +24,32 @@ public class ShareUtils {
     /**
      * 获取用户的下一次消息事件
      *
-     * @param user 用户
-     * @param type 是否拦截该用户的其他指令响应
-     * @return MessageEvent
+     * @param user    用户
+     * @param subject 载体
+     * @return MessageEvent or null
      * @author Moyuyanli
      * @date 2022/8/20 12:37
      */
-    @NotNull
-    public static MessageEvent getNextMessageEventFromUser(User user, Contact subject, boolean type) {
-        EventChannel<MessageEvent> channel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE)
+    public static MessageEvent getNextMessageEventFromUser(User user, Contact subject) {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<MessageEvent> result = new AtomicReference<>();
+        GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE)
                 .filterIsInstance(MessageEvent.class)
-                .filter(event -> event.getSender() == user)
-                .filter(event -> event.getSubject() == subject);
-
-        CompletableFuture<MessageEvent> future = new CompletableFuture<>();
-
-        channel.subscribeOnce(MessageEvent.class, EmptyCoroutineContext.INSTANCE,
-                ConcurrencyKind.LOCKED, EventPriority.HIGH, event -> {
-                    if (type) {
-                        event.intercept();
-                    }
-                    future.complete(event);
-                }
-        );
-        MessageEvent event = null;
+                .filter(filter -> filter.getSubject().getId() == subject.getId() && filter.getSender().getId() == user.getId())
+                .subscribeOnce(MessageEvent.class, event -> {
+                    result.set(event);
+                    latch.countDown();
+                });
         try {
-            event = future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            Log.error("获取下一条消息出错!", e);
+            if (latch.await(10, TimeUnit.MINUTES)) {
+                return result.get();
+            } else {
+                Log.debug("获取用户下一条消息超时");
+                return null;
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException("获取用户下一条消息失败");
         }
-        assert event != null;
-        return event;
     }
 
 }

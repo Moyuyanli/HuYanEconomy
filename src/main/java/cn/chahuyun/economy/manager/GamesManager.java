@@ -138,64 +138,72 @@ public class GamesManager {
         int pull = 0;
         while (rankStatus) {
             //获取下一条消息
-            MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject, false);
-            String nextMessageCode = newMessage.getMessage().serializeToMiraiCode();
-            if (nextMessageCode.startsWith(config.getPrefix())) {
-                nextMessageCode = nextMessageCode.substring(1);
-                int randomInt = RandomUtil.randomInt(0, 3);
-                switch (nextMessageCode) {
-                    case "向左拉":
-                    case "左":
-                    case "1":
-                        if (randomInt == 1) {
-                            difficultyMin += 5;
-                            subject.sendMessage(successMessages[randomInt]);
-                        } else {
-                            difficultyMin -= 8;
-                            subject.sendMessage(failureMessages[randomInt]);
-                        }
-                        break;
-                    case "向右拉":
-                    case "右":
-                    case "2":
-                        if (randomInt == 2) {
-                            difficultyMin += 5;
-                            subject.sendMessage(successMessages[randomInt]);
-                        } else {
-                            difficultyMin -= 8;
-                            subject.sendMessage(failureMessages[randomInt]);
-                        }
-                        break;
-                    case "收线":
-                    case "拉":
-                    case "0":
-                        if (randomInt == 0) {
-                            difficultyMin += 5;
-                            subject.sendMessage(otherMessages[randomInt]);
-                        } else {
-                            difficultyMin -= 12;
-                            subject.sendMessage(failureMessages[randomInt]);
-                        }
-                        rankMax++;
-                        break;
-                    case "放线":
-                    case "放":
-                    case "~":
-                        difficultyMin += 20;
-                        rankMax = 1;
-                        subject.sendMessage("你把你收回来的线，又放了出去!");
-                        break;
-                    default:
-                        if (Pattern.matches("[!！收起提竿杆]{1,2}", nextMessageCode)) {
-                            if (pull == 0) {
-                                theRod = true;
-                            }
-                            rankStatus = false;
-                        }
-                        break;
-                }
-                pull++;
+            MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject);
+            if (newMessage == null) {
+                subject.sendMessage("你的鱼跑了！！");
+                return;
             }
+            String nextMessageCode = newMessage.getMessage().serializeToMiraiCode();
+            if (!config.getPrefix().isBlank()) {
+                if (!nextMessageCode.startsWith(config.getPrefix())) {
+                    continue;
+                }
+                nextMessageCode = nextMessageCode.substring(1);
+            }
+            nextMessageCode = nextMessageCode.substring(1);
+            int randomInt = RandomUtil.randomInt(0, 3);
+            switch (nextMessageCode) {
+                case "向左拉":
+                case "左":
+                case "1":
+                    if (randomInt == 1) {
+                        difficultyMin += 5;
+                        subject.sendMessage(successMessages[randomInt]);
+                    } else {
+                        difficultyMin -= 8;
+                        subject.sendMessage(failureMessages[randomInt]);
+                    }
+                    break;
+                case "向右拉":
+                case "右":
+                case "2":
+                    if (randomInt == 2) {
+                        difficultyMin += 5;
+                        subject.sendMessage(successMessages[randomInt]);
+                    } else {
+                        difficultyMin -= 8;
+                        subject.sendMessage(failureMessages[randomInt]);
+                    }
+                    break;
+                case "收线":
+                case "拉":
+                case "0":
+                    if (randomInt == 0) {
+                        difficultyMin += 5;
+                        subject.sendMessage(otherMessages[randomInt]);
+                    } else {
+                        difficultyMin -= 12;
+                        subject.sendMessage(failureMessages[randomInt]);
+                    }
+                    rankMax++;
+                    break;
+                case "放线":
+                case "放":
+                case "~":
+                    difficultyMin += 20;
+                    rankMax = 1;
+                    subject.sendMessage("你把你收回来的线，又放了出去!");
+                    break;
+                default:
+                    if (Pattern.matches("[!！收起提竿杆]{1,2}", nextMessageCode)) {
+                        if (pull == 0) {
+                            theRod = true;
+                        }
+                        rankStatus = false;
+                    }
+                    break;
+            }
+            pull++;
         }
         //空军
         if (theRod) {
@@ -284,7 +292,7 @@ public class GamesManager {
      */
     public static void buyFishRod(MessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
-        User user = null;
+        User user;
         if (userInfo == null) {
             return;
         }
@@ -349,8 +357,6 @@ public class GamesManager {
     public static void fishTop(MessageEvent event) {
         Bot bot = event.getBot();
         Contact subject = event.getSubject();
-        UserInfo userInfo = UserManager.getUserInfo(event.getSender());
-        User user = userInfo.getUser();
 
         List<FishRanking> rankingList = HibernateFactory.selectList(FishRanking.class);
         rankingList.sort(Comparator.comparing(FishRanking::getMoney).reversed());
