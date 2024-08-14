@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.Fish;
 import cn.chahuyun.economy.entity.fish.FishInfo;
@@ -58,15 +59,11 @@ public class GamesManager {
     public static void fishing(GroupMessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = null;
-        if (userInfo != null) {
-            user = userInfo.getUser();
-        }
+        user = userInfo.getUser();
         Contact subject = event.getSubject();
         //获取玩家钓鱼信息
         FishInfo fishInfo = null;
-        if (userInfo != null) {
-            fishInfo = userInfo.getFishInfo();
-        }
+        fishInfo = userInfo.getFishInfo();
         //能否钓鱼
         if (fishInfo != null && !fishInfo.isFishRod()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getNoneRodMsg()));
@@ -77,16 +74,23 @@ public class GamesManager {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getFishingNowMsg()));
             return;
         }
+        boolean isFishing = TitleManager.checkTitleIsExist(userInfo, TitleCode.FISHING);
         //钓鱼冷却
-        if (userInfo != null && playerCooling.containsKey(userInfo.getQq())) {
+        if (playerCooling.containsKey(userInfo.getQq())) {
             Date date = playerCooling.get(userInfo.getQq());
             long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
-            if (between < 10) {
+            int expired = 10;
+            if (isFishing) {
+                expired = 3;
+            }
+            if (between < expired) {
                 subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你还差%s分钟来抛第二杆!", 10 - between));
                 return;
             } else {
                 playerCooling.remove(userInfo.getQq());
             }
+        } else {
+            playerCooling.put(userInfo.getQq(), new Date());
         }
         //是否已经在钓鱼
         if (fishInfo != null && fishInfo.isStatus()) {
@@ -128,7 +132,7 @@ public class GamesManager {
 
         //随机睡眠
         try {
-            Thread.sleep(RandomUtil.randomInt(5000, 200000));
+            Thread.sleep(RandomUtil.randomInt(5000, isFishing ? 60000 : 200000));
         } catch (InterruptedException e) {
             Log.debug(e);
         }
@@ -149,8 +153,9 @@ public class GamesManager {
                     continue;
                 }
                 nextMessageCode = nextMessageCode.substring(1);
+            } else {
+                nextMessageCode = nextMessageCode.trim();
             }
-            nextMessageCode = nextMessageCode.substring(1);
             int randomInt = RandomUtil.randomInt(0, 3);
             switch (nextMessageCode) {
                 case "向左拉":
@@ -281,6 +286,7 @@ public class GamesManager {
         fishInfo.switchStatus();
         FishRanking fishRanking = new FishRanking(userInfo.getQq(), userInfo.getName(), dimensions, money, fishInfo.getRodLevel(), fish, fishPond);
         HibernateFactory.merge(fishRanking);
+        TitleManager.checkFishTitle(userInfo, subject);
     }
 
     /**
@@ -361,7 +367,6 @@ public class GamesManager {
         List<FishRanking> rankingList = HibernateFactory.selectList(FishRanking.class);
         rankingList.sort(Comparator.comparing(FishRanking::getMoney).reversed());
         rankingList = rankingList.isEmpty() ? rankingList : rankingList.subList(0, Math.min(rankingList.size(), 30));
-
 
         if (rankingList.isEmpty()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "暂时没人钓鱼!"));

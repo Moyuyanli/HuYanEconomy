@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.message.data.PlainText;
@@ -28,6 +29,7 @@ import java.util.HashMap;
 @Entity(name = "FishInfo")
 @Getter
 @Setter
+@Accessors(chain = true)
 public class FishInfo implements Serializable {
 
     @Id

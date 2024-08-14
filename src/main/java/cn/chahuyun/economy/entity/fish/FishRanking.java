@@ -29,7 +29,7 @@ public class FishRanking implements Serializable {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
     /**
-     * 吊起着qq
+     * 钓起着qq
      */
     private long qq;
     /**
