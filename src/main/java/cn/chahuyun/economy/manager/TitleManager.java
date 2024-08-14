@@ -59,7 +59,7 @@ public class TitleManager {
                         "[小富翁]", new Color(0xECCC68), new Color(0xffa502)),
                 new TitleTemplateSimpleImpl(TitleCode.FISHING, TitleCode.FISHING_EXPIRED, "钓鱼佬",
                         true, true,
-                        "[邓刚]", new Color(0x45BE9E), new Color(0x27E80F)),
+                        "[邓刚]", new Color(0xf02fc2), new Color(0x6094ea)),
                 new TitleTemplateSimpleImpl(TitleCode.BET_MONSTER, TitleCode.BET_MONSTER_EXPIRED, "赌怪",
                         true, true,
                         "[17张牌能秒我?]", new Color(0xFF0000), new Color(0x730000)));
