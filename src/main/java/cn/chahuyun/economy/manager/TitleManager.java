@@ -402,7 +402,7 @@ public class TitleManager {
     public static void checkFishTitle(UserInfo userInfo, Contact subject) {
         Map<String, Object> map = new HashMap<>();
         FishRanking fishRanking = HibernateFactory.selectOneByHql(FishRanking.class, "from FishRanking order by money desc limit 1", map);
-        if (fishRanking == null) {
+        if (fishRanking == null || fishRanking.getQq() != userInfo.getQq()) {
             return;
         }
         TitleInfo titleInfo = HibernateFactory.selectOne(TitleInfo.class, "code", TitleCode.FISHING);
