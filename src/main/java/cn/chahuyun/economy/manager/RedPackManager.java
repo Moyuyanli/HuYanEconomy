@@ -84,6 +84,7 @@ public class RedPackManager {
 
             if (redPack.getCreateTime() + 1000 * 60 * 60 * 24 < System.currentTimeMillis()) {
                 subject.sendMessage(new At(sender.getId()).plus("\n红包已过期！"));
+                expireRedPack(group, redPack);
                 HibernateFactory.delete(redPack);
                 return;
             }
@@ -186,5 +187,19 @@ public class RedPackManager {
             subject.sendMessage("红包已被领完！共计花费" + useTime + "秒! ");
             HibernateFactory.delete(redPack);
         }
+    }
+
+    public static void expireRedPack(Group group, RedPack redPack) {
+        long ownerId = redPack.getSender();
+        long money = redPack.getMoney();
+        int number = redPack.getNumber();
+        int receiversNumber = redPack.getReceivers().size();
+
+        User owner = group.get(ownerId);
+        long remainingMoney = money - ((money/number)*receiversNumber);
+
+        EconomyUtil.plusMoneyToUser(owner, remainingMoney);
+
+        group.sendMessage(new At(ownerId).plus("\n你的红包过期啦！退还金币 "+remainingMoney+" 个！"));
     }
 }
