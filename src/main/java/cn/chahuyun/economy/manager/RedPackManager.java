@@ -12,6 +12,7 @@ import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
+import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.At;
 import net.mamoe.mirai.message.data.ForwardMessageBuilder;
 import net.mamoe.mirai.message.data.Message;
@@ -21,7 +22,14 @@ import java.text.DecimalFormat;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * 红包管理类，用于处理红包的创建、领取、查询等操作。
+ */
 public class RedPackManager {
+    /**
+     * 创建红包。
+     * @param event 群消息事件
+     */
     public static void create(GroupMessageEvent event) {
         try {
             Group group = event.getGroup();
@@ -73,6 +81,10 @@ public class RedPackManager {
         }
     }
 
+    /**
+     * 领取红包。
+     * @param event 群消息事件
+     */
     public static void receive(GroupMessageEvent event) {
         Contact subject = event.getSubject();
         try {
@@ -107,6 +119,10 @@ public class RedPackManager {
         }
     }
 
+    /**
+     * 查询红包列表。
+     * @param event 群消息事件
+     */
     public static void queryRedPackList(GroupMessageEvent event) {
         Contact subject = event.getSubject();
         try {
@@ -148,6 +164,10 @@ public class RedPackManager {
         }
     }
 
+    /**
+     * 领取最新红包。
+     * @param event 消息事件
+     */
     public static void grabNewestRedPack(GroupMessageEvent event) {
         Contact subject = event.getSubject();
         try {
@@ -167,6 +187,12 @@ public class RedPackManager {
         }
     }
 
+    /**
+     * 获取红包。
+     * @param sender 发送者
+     * @param subject 联系对象
+     * @param redPack 红包
+     */
     private static void getRedPack (User sender, Contact subject, RedPack redPack) {
         double money = redPack.getMoney();
         long number = redPack.getNumber();
@@ -227,6 +253,11 @@ public class RedPackManager {
         }
     }
 
+    /**
+     * 红包过期处理。
+     * @param group 群组
+     * @param redPack 红包
+     */
     public static void expireRedPack(Group group, RedPack redPack) {
         long ownerId = redPack.getSender();
         long money = redPack.getMoney();
@@ -239,5 +270,49 @@ public class RedPackManager {
         EconomyUtil.plusMoneyToUser(owner, remainingMoney);
 
         group.sendMessage(new At(ownerId).plus("\n你的红包过期啦！退还金币 "+remainingMoney+" 个！"));
+    }
+
+    /**
+     * 查询全局红包列表。
+     * @param event 消息事件
+     */
+    public static void queryGlobalRedPackList(MessageEvent event) {
+        Contact subject = event.getSubject();
+        try {
+            Bot bot = event.getBot();
+            List<RedPack> redPacks = HibernateFactory.selectList(RedPack.class);
+
+            ForwardMessageBuilder forwardMessage = new ForwardMessageBuilder(subject);
+
+            if (redPacks.isEmpty()) {
+                subject.sendMessage("全局暂无红包！");
+                return;
+            }
+
+            redPacks.forEach(redPack -> {
+                int id = redPack.getId();
+                String name = redPack.getName();
+                long senderId = redPack.getSender();
+                long money = redPack.getMoney();
+                int number = redPack.getNumber();
+                long createTime = redPack.getCreateTime();
+                List<Long> receivers = redPack.getReceivers();
+
+                Message message = new PlainText("红包信息: \n"
+                        + "红包ID: " + id
+                        + "\n红包名称: " + name
+                        + "\n红包发送者QQ号: " + senderId
+                        + "\n红包金额: " + money
+                        + "\n红包人数: " + number
+                        + "\n红包创建时间: " + TimeConvertUtil.timeConvert(createTime)
+                        + "\n红包领取者: " + receivers
+                );
+                forwardMessage.add(bot, message);
+            });
+            subject.sendMessage(forwardMessage.build());
+        } catch (Exception e) {
+            subject.sendMessage("查询失败! 原因: "+e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 }

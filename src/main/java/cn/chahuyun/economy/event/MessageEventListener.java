@@ -185,6 +185,14 @@ public class MessageEventListener extends SimpleListenerHost {
                 Log.info("抢红包指令");
                 RedPackManager.grabNewestRedPack((GroupMessageEvent) event);
                 return;
+            case "全局红包列表":
+            case "全局查询红包":
+            case "全局查看红包":
+            case "全局红包查询":
+                if(owner) {
+                    Log.info("管理指令");
+                    RedPackManager.queryGlobalRedPackList(event);
+                }
             default:
         }
 
