@@ -19,6 +19,7 @@ import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.Image;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
+import org.jetbrains.annotations.NotNull;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 
 import javax.imageio.ImageIO;
@@ -57,6 +58,7 @@ public class UserManager {
      * @author Moyuyanli
      * @date 2022/11/14 17:08
      */
+    @NotNull
     public static UserInfo getUserInfo(User user) {
         long userId = user.getId();
         UserInfo one = HibernateFactory.selectOne(UserInfo.class, "qq", userId);
