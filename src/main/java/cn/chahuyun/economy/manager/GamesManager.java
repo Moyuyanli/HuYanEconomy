@@ -156,7 +156,6 @@ public class GamesManager {
             } else {
                 nextMessageCode = nextMessageCode.trim();
             }
-            nextMessageCode = nextMessageCode.substring(1);
             int randomInt = RandomUtil.randomInt(0, 3);
             switch (nextMessageCode) {
                 case "向左拉":
