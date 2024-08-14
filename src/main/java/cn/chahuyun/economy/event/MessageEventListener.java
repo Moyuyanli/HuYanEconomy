@@ -177,8 +177,14 @@ public class MessageEventListener extends SimpleListenerHost {
                 return;
             case "红包列表":
             case "查询红包":
+            case "查看红包":
                 Log.info("红包查询指令");
                 RedPackManager.queryRedPackList((GroupMessageEvent) event);
+                return;
+            case "抢红包":
+                Log.info("抢红包指令");
+                RedPackManager.grabNewestRedPack((GroupMessageEvent) event);
+                return;
             default:
         }
 
@@ -251,12 +257,14 @@ public class MessageEventListener extends SimpleListenerHost {
         if (Pattern.matches(createRedPack, code) && event.getSubject() instanceof Group) {
             Log.info("发红包指令");
             RedPackManager.create((GroupMessageEvent) event);
+            return;
         }
 
         String receiveRedPack = "领红包 \\d+|收红包 \\d+";
         if (Pattern.matches(receiveRedPack, code) && event.getSubject() instanceof Group) {
             Log.info("收红包指令");
             RedPackManager.receive((GroupMessageEvent) event);
+            return;
         }
 
 
