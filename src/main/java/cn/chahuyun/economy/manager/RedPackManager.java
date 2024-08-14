@@ -3,8 +3,10 @@ package cn.chahuyun.economy.manager;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.redpack.RedPack;
 import cn.chahuyun.economy.utils.EconomyUtil;
+import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.TimeConvertUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
+import cn.hutool.core.util.RandomUtil;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
@@ -29,13 +31,21 @@ public class RedPackManager {
             String[] info = message.split(" ");
             long money = Long.parseLong(info[1]);
             int number = Integer.parseInt(info[2]);
+            String typeMsg = info[3];
+
+            boolean random = typeMsg.contains("随机");
 
             if (((double) money / number) < 0.01) {
                 subject.sendMessage(new At(sender.getId()).plus("\n你发的红包太小啦! 要保证每份红包金额不能低于0.01"));
                 return;
             }
 
-            RedPack redPack = new RedPack(sender.getNick()+"的红包", group.getId(), sender.getId(), money, number, System.currentTimeMillis());
+            if (money > EconomyUtil.getMoneyByUser(sender)) {
+                subject.sendMessage(new At(sender.getId()).plus("\n你的金币不够啦!"));
+                return;
+            }
+
+            RedPack redPack = new RedPack(sender.getNick()+"的红包", group.getId(), sender.getId(), money, number, random, System.currentTimeMillis());
 
             EconomyUtil.plusMoneyToUser(sender, -money);
 
@@ -91,10 +101,8 @@ public class RedPackManager {
 
             getRedPack(sender, subject, redPack);
 
-
-
         } catch (Exception e) {
-            subject.sendMessage("红包领取失败! 原因: "+e.getCause());
+            subject.sendMessage("红包领取失败! 原因: "+e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -107,6 +115,11 @@ public class RedPackManager {
             List<RedPack> redPacks = HibernateFactory.selectList(RedPack.class, "groupId", group.getId());
 
             ForwardMessageBuilder forwardMessage = new ForwardMessageBuilder(subject);
+
+            if (redPacks.isEmpty()) {
+                subject.sendMessage("本群暂无红包！");
+                return;
+            }
 
             redPacks.forEach(redPack -> {
                 int id = redPack.getId();
@@ -130,7 +143,7 @@ public class RedPackManager {
             });
             subject.sendMessage(forwardMessage.build());
         } catch (Exception e) {
-            subject.sendMessage("查询失败! 原因: "+e.getCause());
+            subject.sendMessage("查询失败! 原因: "+e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -149,14 +162,16 @@ public class RedPackManager {
 
             getRedPack(sender, subject, redPacks.get(0));
         } catch (Exception e) {
-            subject.sendMessage("领取失败! 原因: "+e.getCause());
+            subject.sendMessage("领取失败! 原因: "+e.getMessage());
             throw new RuntimeException(e);
         }
     }
 
     private static void getRedPack (User sender, Contact subject, RedPack redPack) {
-        long money = redPack.getMoney();
+        double money = redPack.getMoney();
         long number = redPack.getNumber();
+        boolean isRandomPack = redPack.isRandomPack();
+
 
         List<Long> receivers = redPack.getReceivers();
         if (!receivers.isEmpty()&&receivers.contains(sender.getId())) {
@@ -171,10 +186,33 @@ public class RedPackManager {
         }
 
 
-
         // 领取措施
         DecimalFormat df = new DecimalFormat("#.00");
-        double perMoney = Double.parseDouble(df.format((double) money / number));
+        double perMoney;
+
+        if (isRandomPack) {
+            List<Double> alreadyTakenMoney = redPack.getGetMoneys();
+            double alreadyTakenMoneySum = alreadyTakenMoney.stream().mapToDouble(Double::doubleValue).sum();
+            Log.debug("已领走钱数: "+ redPack.getGetMoneys());
+            long alreadyTakenUser = redPack.getReceivers().size();
+            Log.debug("已领走人数: "+ alreadyTakenUser);
+            money -= alreadyTakenMoneySum;
+            Log.debug("剩余钱数: "+ money);
+            if (!((number-alreadyTakenUser) == 1)) {
+                money -= 0.01 * (number - alreadyTakenUser);
+                perMoney = Double.parseDouble(df.format(RandomUtil.randomDouble(0.01, money)));
+                Log.debug("获得钱数: "+perMoney);
+            } else {
+                perMoney = Double.parseDouble(df.format(money));
+            }
+
+            alreadyTakenMoney.add(perMoney);
+
+            redPack.setGetMoneys(alreadyTakenMoney);
+
+        } else {
+            perMoney = Double.parseDouble(df.format(money / number));
+        }
         EconomyUtil.plusMoneyToUser(sender, perMoney);
         receivers.add(sender.getId());
         redPack.setReceivers(receivers);

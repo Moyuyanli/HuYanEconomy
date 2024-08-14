@@ -253,7 +253,7 @@ public class MessageEventListener extends SimpleListenerHost {
             return;
         }
 
-        String createRedPack = "发红包 \\d+ \\d+";
+        String createRedPack = "发红包 \\d+ \\d+ \\S+";
         if (Pattern.matches(createRedPack, code) && event.getSubject() instanceof Group) {
             Log.info("发红包指令");
             RedPackManager.create((GroupMessageEvent) event);
