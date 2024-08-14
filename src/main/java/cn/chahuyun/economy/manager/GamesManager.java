@@ -152,6 +152,8 @@ public class GamesManager {
                     continue;
                 }
                 nextMessageCode = nextMessageCode.substring(1);
+            } else {
+                nextMessageCode = nextMessageCode.trim();
             }
             nextMessageCode = nextMessageCode.substring(1);
             int randomInt = RandomUtil.randomInt(0, 3);
