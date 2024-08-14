@@ -36,5 +36,22 @@ public class TitleCode {
      */
     public final static Integer REGAL_EXPIRED = 30;
 
+    /**
+     * 钓鱼称号
+     */
+    public final static String FISHING = "fishing";
+    /**
+     * 钓鱼称号-默认过期时间
+     */
+    public final static Integer FISHING_EXPIRED = -1;
+
+    /**
+     * 赌怪称号
+     */
+    public final static String BET_MONSTER = "bet-monster";
+    /**
+     * 赌怪称号-默认过期时间
+     */
+    public final static Integer BET_MONSTER_EXPIRED = -1;
 }
 

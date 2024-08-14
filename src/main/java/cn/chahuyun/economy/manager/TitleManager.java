@@ -3,6 +3,7 @@ package cn.chahuyun.economy.manager;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.TitleInfo;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.entity.fish.FishRanking;
 import cn.chahuyun.economy.entity.title.TitleTemplate;
 import cn.chahuyun.economy.entity.title.TitleTemplateSimpleImpl;
 import cn.chahuyun.economy.plugin.TitleTemplateManager;
@@ -21,6 +22,7 @@ import net.mamoe.mirai.message.data.MessageChainBuilder;
 import net.mamoe.mirai.message.data.QuoteReply;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -48,13 +50,19 @@ public class TitleManager {
         TitleTemplateManager.registerTitleTemplate(
                 new TitleTemplateSimpleImpl(TitleCode.SIGN_15, TitleCode.SIGN_15_EXPIRED, "签到狂人",
                         true, false,
-                        "[只是个传说]", "ff7f50", "ff6348"),
+                        "[只是个传说]", new Color(0xff7f50), new Color(0xff6348)),
                 new TitleTemplateSimpleImpl(TitleCode.MONOPOLY, TitleCode.MONOPOLY_EXPIRED, "大富翁",
                         true, true,
-                        "[大富翁]", "ff4757", "ffa502"),
+                        "[大富翁]", new Color(0xff4757), new Color(0xffa502)),
                 new TitleTemplateSimpleImpl(TitleCode.REGAL, TitleCode.REGAL_EXPIRED, "小富翁",
                         10000.0, true, false,
-                        "[小富翁]", "eccc68", "ffa502"));
+                        "[小富翁]", new Color(0xECCC68), new Color(0xffa502)),
+                new TitleTemplateSimpleImpl(TitleCode.FISHING, TitleCode.FISHING_EXPIRED, "钓鱼佬",
+                        true, true,
+                        "[邓刚]", new Color(0x45BE9E), new Color(0x27E80F)),
+                new TitleTemplateSimpleImpl(TitleCode.BET_MONSTER, TitleCode.BET_MONSTER_EXPIRED, "赌怪",
+                        true, true,
+                        "[17张牌能秒我?]", new Color(0xFF0000), new Color(0x730000)));
 
 
         //修改版本迭代带来的错误数据
@@ -290,26 +298,6 @@ public class TitleManager {
 
 
     /**
-     * 检查大富翁称号
-     *
-     * @param userInfo 用户
-     * @param subject  消息载体
-     */
-    public static void checkMonopoly(UserInfo userInfo, Contact subject) {
-        double moneyByUser = EconomyUtil.getMoneyByUser(userInfo.getUser());
-        if (moneyByUser > 100000) {
-            if (checkTitleIsExist(userInfo, TitleCode.MONOPOLY)) {
-                return;
-            }
-            addTitleInfo(userInfo, TitleCode.MONOPOLY);
-            MessageChainBuilder builder = new MessageChainBuilder();
-            builder.append(new At(userInfo.getQq()));
-            builder.append("恭喜!你的金币数量大于 100000 ,获得永久称号 [大富翁] !");
-            subject.sendMessage(builder.build());
-        }
-    }
-
-    /**
      * 检查该用户是否有该称号
      *
      * @param userInfo  用户
@@ -342,6 +330,46 @@ public class TitleManager {
 
 
     /**
+     * 检查称号是否过期
+     *
+     * @param titleInfo 称号
+     * @return true 已经过期，同时在数据库中删除该称号。
+     */
+    private static boolean checkTitleTime(TitleInfo titleInfo) {
+        if (titleInfo.getDueTime() != null) {
+            if (DateUtil.between(new Date(), titleInfo.getDueTime(), DateUnit.MINUTE, false) < 0) {
+                HibernateFactory.delete(titleInfo);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //================================== 外部称号检查 ==================================
+
+
+    /**
+     * 检查大富翁称号
+     *
+     * @param userInfo 用户
+     * @param subject  消息载体
+     */
+    public static void checkMonopoly(UserInfo userInfo, Contact subject) {
+        double moneyByUser = EconomyUtil.getMoneyByUser(userInfo.getUser());
+        if (moneyByUser > 100000) {
+            if (checkTitleIsExist(userInfo, TitleCode.MONOPOLY)) {
+                return;
+            }
+            addTitleInfo(userInfo, TitleCode.MONOPOLY);
+            MessageChainBuilder builder = new MessageChainBuilder();
+            builder.append(new At(userInfo.getQq()));
+            builder.append("恭喜!你的金币数量大于 100000 ,获得永久称号 [大富翁] !");
+            subject.sendMessage(builder.build());
+        }
+    }
+
+
+    /**
      * 检查连续签到称号
      *
      * @param userInfo 用户信息
@@ -362,18 +390,29 @@ public class TitleManager {
     }
 
     /**
-     * 检查称号是否过期
+     * 检查钓鱼佬称号
      *
-     * @param titleInfo 称号
-     * @return true 已经过期，同时在数据库中删除该称号。
+     * @param userInfo 用户信息
+     * @param subject  载体
      */
-    private static boolean checkTitleTime(TitleInfo titleInfo) {
-        if (titleInfo.getDueTime() != null) {
-            if (DateUtil.between(new Date(), titleInfo.getDueTime(), DateUnit.MINUTE, false) < 0) {
+    public static void checkFishTitle(UserInfo userInfo, Contact subject) {
+        Map<String, Object> map = new HashMap<>();
+        FishRanking fishRanking = HibernateFactory.selectOneByHql(FishRanking.class, "from FishRanking order by money desc limit 1", map);
+        if (fishRanking == null) {
+            return;
+        }
+        TitleInfo titleInfo = HibernateFactory.selectOne(TitleInfo.class, "code", TitleCode.FISHING);
+
+        if (checkTitleIsExist(userInfo, TitleCode.FISHING)) {
+            return;
+        }
+        if (addTitleInfo(userInfo, TitleCode.FISHING)) {
+            subject.sendMessage(MessageUtil.formatMessageChain(userInfo.getQq(), "恭喜你斩获钓鱼榜榜首!获得钓鱼佬称号!"));
+            if (titleInfo != null) {
                 HibernateFactory.delete(titleInfo);
-                return true;
             }
         }
-        return false;
     }
+
+
 }
