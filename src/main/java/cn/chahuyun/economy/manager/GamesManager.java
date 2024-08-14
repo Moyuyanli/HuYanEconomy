@@ -84,7 +84,7 @@ public class GamesManager {
                 expired = 3;
             }
             if (between < expired) {
-                subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你还差%s分钟来抛第二杆!", 10 - between));
+                subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你还差%s分钟来抛第二杆!", expired - between));
                 return;
             } else {
                 playerCooling.remove(userInfo.getQq());
