@@ -1,7 +1,7 @@
 # HuYanEconomy 壶言壶言经济 --- 娱乐插件
 
 [![version](https://img.shields.io/github/v/release/moyuyanli/huyaneconomy
-)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v0.2.5/HuYanEconomy-0.2.5.mirai2.jar)
+)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v0.2.7/HuYanEconomy-0.2.7.mirai2.jar)
 
 这里是壶言经济，一款mirai娱乐插件，设计灵感来自于论坛的经济帖子，心血来潮就创建了这个项目，从22年11月开始，中间慢慢填坑，
 陆陆续续的完成了一部分饼，由于大部分饼都没实现，所以没在论坛发布，但是在我群共享。
@@ -42,9 +42,9 @@ mysqlPassword: 123456
 # 插件单一管理botQQ
 bot: 123456
 # 启用的彩票群列表
-lotteryGroup: []
+lotteryGroup: [ ]
 # 启用的钓鱼群列表
-fishGroup: []
+fishGroup: [ ]
 ```
 
 请设置主人用于管理本插件！
@@ -62,9 +62,10 @@ fishGroup: []
 基于[mirai-economy-core](https://github.com/cssxsh/mirai-economy-core)经济前置，注册货币为`hy-gold`。
 
 目前实现功能有:
-* 转账
-* 存款
-* 取款
+
+* [x] 转账
+* [x] 存款
+* [x] 取款
 
 未来可能实现的功能
 
@@ -113,14 +114,17 @@ fishGroup: []
 
 称号默认获取群特殊头衔,没有就获取群活跃头衔，颜色不同。
 
-除此之外的称号,都会有自己特有的颜色，目前只实现了3个称号:
+除此之外的称号,都会有自己特有的颜色，目前只实现了4个称号:
 
 * [大富翁] 金币到达10w自动获得，期限永久，高贵的黄金渐变色!
-* [小富翁] 花费1w金币购买`购买称号 小富翁`,期限15天。
+* [小富翁] 花费1w金币购买`购买称号 小富翁`,期限30天。
 * [只是传说] 签到狂人称号,连续签到15天获得,期限15天。
+* [邓刚] 钓鱼佬称号,钓鱼榜榜首持有，无期限。
 
 **特殊buff**：
+
 - 启用签到狂人称号时，签到获得的金币翻倍。
+- 启用钓鱼佬称号时，钓鱼cd为3分钟，并且上钩更快!
 
 `切换称号 0`是卸下所有称号，回到默认称号。
 
@@ -136,6 +140,7 @@ fishGroup: []
 本功能需要在对应群开启，本功能有高强主动发送消息动作，高风险账号慎用！
 
 签有3类：
+
 * 小签 只需要3个号码 1分钟开启一次 最大金额 1000
 * 中签 4个号码 一小时开启一次 最大金额 10000
 * 大签 5个号码 一天开启一次 最大金额 1000000
@@ -143,17 +148,20 @@ fishGroup: []
 中奖倍率
 
 小签:
+
 - 1:0.7
 - 2:6
 - 3:160
 
 中签:
+
 - 1:0.5
 - 2:2.5
 - 3:35
 - 4:1250
 
 大签:
+
 - 1:0.3
 - 2:1.4
 - 3:12
@@ -172,6 +180,7 @@ fishGroup: []
 钓鱼需要一把鱼竿，一把500金币，可以升级。
 
 鱼上钩后需要操作！
+
 * `向左拉|左|1` 左操作
 * `向右拉|右|2` 右操作
 * `收线|拉|0` 收线操作
@@ -193,6 +202,16 @@ fishGroup: []
 
 设计之初还有自定义鱼塘，目前已经鸽了很久了，
 
+### 红包功能
+
+**在此感谢[Travellerrr](https://github.com/Travellerrr)编写了此功能。**
+
+指令`发红包 (额度) (个数) [sj|随机]`,`领红包 (红包id)`,`收红包 (红包id)`,`抢红包`,`红包列表`,`全局红包列表`;
+
+通过发红包指令`发红包 100 10`可以发一个均分100的10个红包,结尾加上`sj`或`随机`可以将红包改为随机红包。
+
+红包24小时到期，到期没有领的红包自动退回账号。
+
 ### 道具功能
 
 指令`背包`,`backpack`,`道具商店`,`shops`,`购买 (道具) (数量)`,`buy (道具) (数量)`,`使用 (道具) (数量)`,`use (道具) (数量)`;
@@ -201,12 +220,12 @@ fishGroup: []
 
 ## 未完成的规划
 
-- 赌博功能
-- 抢劫功能
-- 红包功能
-- 道具功能重构
-- 增强功能间互动性
-- 教会功能
+- [ ] 赌博功能
+- [ ] 抢劫功能
+- [x] 红包功能
+- [ ] 道具功能重构
+- [ ] 增强功能间互动性
+- [ ] 教会功能
 
 ## 相关插件
 
@@ -214,7 +233,8 @@ fishGroup: []
 
 ## 建议和交流
 
-如果在使用本插件的时候预计bug,或是有好的建议,请优先前往[github](https://github.com/Moyuyanli/HuYanEconomy/issues)提issues,
+如果在使用本插件的时候预计bug,或是有好的建议,请优先前往[github](https://github.com/Moyuyanli/HuYanEconomy/issues)
+提issues,
 再考虑到我的插件群[不是云的茶壶云(390444068)](https://jq.qq.com/?_wv=1027&k=yFqKaMUW)提问。
 
 
