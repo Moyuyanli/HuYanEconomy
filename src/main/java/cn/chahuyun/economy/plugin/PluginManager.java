@@ -74,6 +74,7 @@ public class PluginManager {
             isHuYanSessionPlugin = false;
         }
 
+
         HuYanEconomy instance = HuYanEconomy.INSTANCE;
         Path path = instance.getDataFolderPath();
         File font = new File(path.resolve("font").toUri());

@@ -175,6 +175,24 @@ public class MessageEventListener extends SimpleListenerHost {
                 Log.info("银行指令");
                 BankManager.viewBankInterest(event);
                 return;
+            case "红包列表":
+            case "查询红包":
+            case "查看红包":
+                Log.info("红包查询指令");
+                RedPackManager.queryRedPackList((GroupMessageEvent) event);
+                return;
+            case "抢红包":
+                Log.info("抢红包指令");
+                RedPackManager.grabNewestRedPack((GroupMessageEvent) event);
+                return;
+            case "全局红包列表":
+            case "全局查询红包":
+            case "全局查看红包":
+            case "全局红包查询":
+                if(owner) {
+                    Log.info("管理指令");
+                    RedPackManager.queryGlobalRedPackList(event);
+                }
             default:
         }
 
@@ -240,6 +258,20 @@ public class MessageEventListener extends SimpleListenerHost {
         } else if (Pattern.matches(bankToWalletRegex, code)) {
             Log.info("银行指令");
             BankManager.withdrawal(event);
+            return;
+        }
+
+        String createRedPack = "发红包 \\d+ \\d+ \\S+";
+        if (Pattern.matches(createRedPack, code) && event.getSubject() instanceof Group) {
+            Log.info("发红包指令");
+            RedPackManager.create((GroupMessageEvent) event);
+            return;
+        }
+
+        String receiveRedPack = "领红包 \\d+|收红包 \\d+";
+        if (Pattern.matches(receiveRedPack, code) && event.getSubject() instanceof Group) {
+            Log.info("收红包指令");
+            RedPackManager.receive((GroupMessageEvent) event);
             return;
         }
 

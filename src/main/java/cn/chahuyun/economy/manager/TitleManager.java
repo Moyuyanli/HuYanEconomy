@@ -169,7 +169,7 @@ public class TitleManager {
 
         List<TitleInfo> titleList = HibernateFactory.selectList(TitleInfo.class, "userId", id);
         if (titleList.isEmpty()) {
-            subject.sendMessage(builder.append("你的称号为空!").build());
+            subject.sendMessage(builder.append("你还没有称号!").build());
             return;
         }
 
@@ -188,7 +188,7 @@ public class TitleManager {
         if (index != 0) {
             subject.sendMessage(builder.build());
         } else {
-            subject.sendMessage("你的称号为空!");
+            subject.sendMessage("你还没有称号!");
         }
     }
 

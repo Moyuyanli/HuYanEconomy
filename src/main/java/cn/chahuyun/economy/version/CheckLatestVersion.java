@@ -12,8 +12,6 @@ public class CheckLatestVersion {
 
     /**
      * 检查版本
-     *
-     * @author Travellerr
      */
     public static void init() {
         String response = HttpUtil.get("https://api.github.com/repos/Moyuyanli/HuYanEconomy/releases/latest");
@@ -29,8 +27,13 @@ public class CheckLatestVersion {
             Log.warning(" 发现最新版本！版本：" + newVersion);
             Log.warning(" 发现最新版本！版本：" + newVersion);
             if (updateMsg != null) {
-                updateMsg = updateMsg.replace("#", "");
-                updateMsg = updateMsg.replace("\r\n", " ");
+                updateMsg = updateMsg.replace("#", "")
+                        .replace("`", "")
+                        .replace("*", "")
+                        .replace("_", "")
+                        .replace("\r\n", " ")
+                        .replaceAll("/(https?://)?(([0-9a-z.]+\\.[a-z]+)|(([0-9]{1,3}\\.){3}[0-9]{1,3}))(:[0-9]+)?(/[0-9a-z%/.\\-_]*)?(\\?[0-9a-z=&%_\\-]*)?(#[0-9a-z=&%_\\-]*)?/gi", "");
+
                 Log.warning(updateMsg);
             } else {
                 Log.error(" 无法获取更新日志！");
