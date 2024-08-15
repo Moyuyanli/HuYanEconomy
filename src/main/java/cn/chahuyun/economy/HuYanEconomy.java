@@ -4,6 +4,7 @@ import cn.chahuyun.economy.command.EconomyCommand;
 import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.config.FishingMsgConfig;
+import cn.chahuyun.economy.constant.Icon;
 import cn.chahuyun.economy.event.BotOnlineEventListener;
 import cn.chahuyun.economy.event.MessageEventListener;
 import cn.chahuyun.economy.manager.BankManager;
@@ -32,7 +33,7 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String VERSION = "0.2.6";
+    public static final String VERSION = "0.3.0";
     /**
      * 配置
      */
@@ -60,6 +61,7 @@ public final class HuYanEconomy extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        Icon.init(getLogger());
         //加载配置
         reloadPluginConfig(EconomyConfig.INSTANCE);
         reloadPluginConfig(EconomyPluginConfig.INSTANCE);

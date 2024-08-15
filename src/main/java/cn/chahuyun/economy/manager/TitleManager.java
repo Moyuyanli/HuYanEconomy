@@ -327,7 +327,7 @@ public class TitleManager {
         Map<String, Object> params = new HashMap<>();
         params.put("userId", userInfo.getQq());
         params.put("code", titleCode);
-        params.put("status", 1);
+        params.put("status", true);
         TitleInfo titleInfo = HibernateFactory.selectOne(TitleInfo.class, params);
         return titleInfo != null;
     }
