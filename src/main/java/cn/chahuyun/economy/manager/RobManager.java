@@ -29,6 +29,8 @@ public class RobManager {
     static String[] robFailedVariable = {"${对象}"};
     // 抢劫成功消息变量
     static String[] robSuccessVariable = {"${对象}", "${金币}"};
+    // 抢劫赔钱消息变量
+    static String[] loseMoneyVariable = {"${对象}", "${金币}"};
     // 抢劫入狱消息变量
     static String[] robJailVariable = {"${对象}", "${金币}", "${时间}"};
 
@@ -86,6 +88,8 @@ public class RobManager {
 
         // 判断是否被抓
         if (getInJail(subject, sender, robInfo, chance, victimName, robMoney)) return;
+
+        if (loseMoney(subject, sender, chance, 50, victimName, robMoney)) return;
 
         // 更新抢劫信息
         updateRobInfo(sender, robInfo, robConfig.getRobCoolTime(),false);
@@ -228,12 +232,27 @@ public class RobManager {
         return false;
     }
 
-    private static boolean robFailed(Contact subject, User sender, int chance, int successChance, String victimName) {
-        if (chance <= successChance) {
+    private static boolean robFailed(Contact subject, User sender, int chance, int failedChance, String victimName) {
+        if (chance <= failedChance) {
             int msgIndex = RandomUtil.randomInt(0, robConfig.getRobFailMsg().size());
             String msg = robConfig.getRobFailMsg().get(msgIndex);
             // 替换消息中的变量
             msg = ShareUtils.replacer(msg, robFailedVariable, victimName);
+            // 发送消息
+            subject.sendMessage(new At(sender.getId()).plus("\n你失败了！\n" + msg));
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean loseMoney(Contact subject, User sender, int chance, int loseChance, String victimName, double robMoney) {
+        if (chance <= loseChance) {
+            int msgIndex = RandomUtil.randomInt(0, robConfig.getLoseMoneyMsg().size());
+            String msg = robConfig.getLoseMoneyMsg().get(msgIndex);
+            // 替换消息中的变量
+            msg = ShareUtils.replacer(msg, loseMoneyVariable, victimName, robMoney);
+            //扣除抢劫者对应金钱
+            EconomyUtil.plusMoneyToUser(sender, -robMoney);
             // 发送消息
             subject.sendMessage(new At(sender.getId()).plus("\n你失败了！\n" + msg));
             return true;

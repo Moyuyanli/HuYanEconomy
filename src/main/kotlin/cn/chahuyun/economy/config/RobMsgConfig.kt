@@ -24,6 +24,11 @@ object RobMsgConfig : AutoSavePluginConfig("RobMsgConfig") {
         "你在抢 \${对象} 的金币时被发现了!"
     ))
 
+    @ValueDescription("抢夺赔钱消息")
+    var loseMoneyMsg: List<String> by value(listOf(
+        "你在抢 \${对象} 的金币时被抓住了!因此赔了 \${金币} 元"
+    ))
+
     @ValueDescription("被抓入狱消息")
     var robJailMsg: List<String> by value(listOf(
         "你在抢 \${对象} 的金币时被警察抓到了!你被关进了监狱，并罚款 \${金币} 元!CD延长至: \${时间}"
