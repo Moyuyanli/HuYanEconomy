@@ -52,6 +52,14 @@ public class ShareUtils {
         }
     }
 
+    /**
+     * 替换字符串中的变量
+     *
+     * @param s 原始字符串
+     * @param variable 变量数组
+     * @param content 替换内容数组
+     * @return 替换后的字符串
+     */
     public static String replacer(String s, String[] variable, Object... content) {
         for (int i = 0; i < variable.length; i++) {
             s = s.replace(variable[i], content[i].toString());

@@ -181,12 +181,24 @@ public class RobManager {
         HibernateFactory.merge(robInfo);
     }
 
+    /**
+     * 重置抢夺冷却，将监狱信息设为<code>false</code>
+     * @param event 消息事件
+     */
     public static void release(MessageEvent event) {
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, event.getSender().getId());
         updateRobInfo(event.getSender(), robInfo,0 ,false);
         event.getSubject().sendMessage(new At(event.getSender().getId()).plus("\n你已成功释放！"));
     }
 
+    /**
+     * 检查用户是否在冷却中或是否在监狱中
+     *
+     * @param subject 消息主体
+     * @param sender  发送者
+     * @param robInfo 抢劫信息
+     * @return 如果用户在冷却中或监狱中，发送消息并返回 true，否则返回 false
+     */
     private static boolean checkCoolDown(Contact subject, User sender, RobInfo robInfo) {
 
         // 获取当前时间
@@ -211,6 +223,17 @@ public class RobManager {
 
     }
 
+    /**
+     * 判断用户是否被抓
+     *
+     * @param subject 消息主体
+     * @param sender  发送者
+     * @param robInfo 抢劫信息
+     * @param chance  抢劫成功率
+     * @param victimName 被抢劫者的名字
+     * @param robMoney 抢劫金额
+     * @return 如果用户被抓，发送消息并返回 true，否则返回 false
+     */
     private static boolean getInJail(Contact subject, User sender, RobInfo robInfo, int chance, String victimName, double robMoney) {
         if (chance <= 50) {
             // 获取抢劫入狱消息
@@ -232,6 +255,16 @@ public class RobManager {
         return false;
     }
 
+    /**
+     * 判断用户是否抢劫失败
+     *
+     * @param subject 消息主体
+     * @param sender  发送者
+     * @param chance  抢劫成功率
+     * @param failedChance 失败率
+     * @param victimName 被抢劫者的名字
+     * @return 如果用户抢劫失败，发送消息并返回 true，否则返回 false
+     */
     private static boolean robFailed(Contact subject, User sender, int chance, int failedChance, String victimName) {
         if (chance <= failedChance) {
             int msgIndex = RandomUtil.randomInt(0, robConfig.getRobFailMsg().size());
@@ -245,6 +278,17 @@ public class RobManager {
         return false;
     }
 
+    /**
+     * 判断用户是否赔钱
+     *
+     * @param subject 消息主体
+     * @param sender  发送者
+     * @param chance  抢劫成功率
+     * @param loseChance 赔钱率
+     * @param victimName 被抢劫者的名字
+     * @param robMoney 抢劫金额
+     * @return 如果用户赔钱，发送消息并返回 true，否则返回 false
+     */
     private static boolean loseMoney(Contact subject, User sender, int chance, int loseChance, String victimName, double robMoney) {
         if (chance <= loseChance) {
             int msgIndex = RandomUtil.randomInt(0, robConfig.getLoseMoneyMsg().size());
