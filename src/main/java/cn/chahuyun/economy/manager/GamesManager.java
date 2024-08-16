@@ -145,6 +145,7 @@ public class GamesManager {
             MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject);
             if (newMessage == null) {
                 subject.sendMessage("你的鱼跑了！！");
+                fishInfo.switchStatus();
                 return;
             }
             String nextMessageCode = newMessage.getMessage().serializeToMiraiCode();
