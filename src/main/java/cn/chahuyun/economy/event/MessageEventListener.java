@@ -188,6 +188,18 @@ public class MessageEventListener extends SimpleListenerHost {
                     Log.info("红包查看指令");
                     RedPackManager.queryGlobalRedPackList(event);
                 }
+                return;
+            case "释放出狱":
+                if(owner) {
+                    Log.info("监狱指令");
+                    RobManager.release(event);
+                }
+                return;
+            case "抢银行":
+                if (event instanceof GroupMessageEvent) {
+                    RobManager.robBank((GroupMessageEvent) event);
+                }
+                return;
             default:
         }
 
@@ -267,6 +279,13 @@ public class MessageEventListener extends SimpleListenerHost {
         if (Pattern.matches(receiveRedPack, code) && event.getSubject() instanceof Group) {
             Log.info("收红包指令");
             RedPackManager.receive((GroupMessageEvent) event);
+            return;
+        }
+
+        String robRegex = "抢劫 ?\\[mirai:at:\\d+] ?";
+        if (Pattern.matches(robRegex, code) && event.getSubject() instanceof Group) {
+            Log.info("抢劫指令");
+            RobManager.robOther((GroupMessageEvent) event);
             return;
         }
 

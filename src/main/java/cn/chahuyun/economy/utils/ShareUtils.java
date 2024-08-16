@@ -52,4 +52,12 @@ public class ShareUtils {
         }
     }
 
+    public static String replacer(String s, String[] variable, Object... content) {
+        for (int i = 0; i < variable.length; i++) {
+            s = s.replace(variable[i], content[i].toString());
+        }
+        return s;
+    }
+
+
 }
