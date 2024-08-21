@@ -4,6 +4,7 @@ import cn.chahuyun.economy.command.EconomyCommand;
 import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.config.FishingMsgConfig;
+import cn.chahuyun.economy.config.RobMsgConfig;
 import cn.chahuyun.economy.constant.Icon;
 import cn.chahuyun.economy.event.BotOnlineEventListener;
 import cn.chahuyun.economy.event.MessageEventListener;
@@ -43,6 +44,10 @@ public final class HuYanEconomy extends JavaPlugin {
      */
     public static FishingMsgConfig msgConfig;
     /**
+     * 抢劫消息配置
+     */
+    public static RobMsgConfig robConfig;
+    /**
      * 插件所属bot
      */
     public Bot bot;
@@ -66,10 +71,12 @@ public final class HuYanEconomy extends JavaPlugin {
         reloadPluginConfig(EconomyConfig.INSTANCE);
         reloadPluginConfig(EconomyPluginConfig.INSTANCE);
         reloadPluginConfig(FishingMsgConfig.INSTANCE);
+        reloadPluginConfig(RobMsgConfig.INSTANCE);
         //注册指令
         CommandManager.INSTANCE.registerCommand(new EconomyCommand(), false);
         config = EconomyConfig.INSTANCE;
         msgConfig = FishingMsgConfig.INSTANCE;
+        robConfig = RobMsgConfig.INSTANCE;
         //插件功能初始化
         PluginManager.init();
         //初始化插件数据库
