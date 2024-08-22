@@ -129,8 +129,36 @@ fishGroup: [ ]
 
 `切换称号 0`是卸下所有称号，回到默认称号。
 
-现已开放称号自定义添加功能，目前只有依赖本插件实现。
-未来可能会实现通过配置文件自定义添加称号。
+现已开放称号自定义添加功能。
+
+~~未来可能会实现通过配置文件自定义添加称号。~~
+
+自定义称号功能已经实现,在`data/cn.chahuyun.HuYanEconomy/title.json`中编辑,插件启动后将自动扫描注册到称号列表中。
+
+目前只有购买一种途径获得，也没办法配置buff。
+
+```json5
+{
+  // 称号code
+  "templateCode": "template",
+  // 过期时间(天)
+  "validityPeriod": -1,
+  // 称号名称(不是称号)
+  "titleName": "模板",
+  // 价格 0.0
+  "price": 0,
+  // 是否渐变色
+  "gradient": false,
+  // 颜色是否影响名称
+  "impactName": false,
+  // 称号
+  "title": "[模板]",
+  // 起始颜色,当渐变关闭时，此颜色就是唯一颜色
+  "sColor": "#00000",
+  // 结束颜色
+  "eColor": "#ffffff"
+}
+```
 
 更多请查看[TitleTemplateManager](https://github.com/Moyuyanli/HuYanEconomy/blob/master/src/main/java/cn/chahuyun/economy/plugin/TitleTemplateManager.java)
 
