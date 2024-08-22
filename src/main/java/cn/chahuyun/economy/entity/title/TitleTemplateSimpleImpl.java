@@ -88,15 +88,15 @@ public final class TitleTemplateSimpleImpl extends TitleTemplate {
     /**
      * 创建一个可以购买的称号模板。
      *
-     * @param templateCode   模版code
-     * @param titleName      称号名称,不是称号
+     * @param templateCode 模版code
      * @param validityPeriod 过期天数
-     * @param price          称号价格
-     * @param gradient       是否渐变
-     * @param impactName     是否影响名称
-     * @param title          称号名称
-     * @param sColor         起始颜色
-     * @param eColor         结束颜色
+     * @param titleName 称号名称,不是称号
+     * @param price 称号价格
+     * @param gradient 是否渐变
+     * @param impactName 是否影响名称
+     * @param title 称号名称
+     * @param sColor 起始颜色
+     * @param eColor 结束颜色
      */
     @Deprecated(since = "0.2.5")
     public TitleTemplateSimpleImpl(String templateCode, Integer validityPeriod, String titleName, Double price, boolean gradient, boolean impactName, String title, String sColor, String eColor) {
