@@ -35,7 +35,7 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String VERSION = "0.3.0";
+    public static final String VERSION = "1.4.0";
     /**
      * 配置
      */
