@@ -1,6 +1,8 @@
 import cn.chahuyun.economy.constant.ImageDrawXY;
+import cn.chahuyun.economy.entity.title.CustomTitle;
 import cn.chahuyun.economy.utils.ImageUtil;
-import cn.hutool.core.util.RandomUtil;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -18,6 +20,23 @@ import java.io.File;
 public class Test {
 
     public static void main(String[] args) throws Exception {
+        titleTest();
+    }
+
+
+    public static void titleTest() {
+        CustomTitle titleTemplateSimple = new CustomTitle(
+                "template", -1,
+                "模板", 0.0,
+                false, false, "[模板]",
+                "#00000", "#ffffff");
+        JSONObject entries = JSONUtil.parseObj(titleTemplateSimple);
+        System.out.printf("json-> %s",entries.toStringPretty());
+    }
+
+
+    public static void imageTest() throws Exception {
+
 //        int i = RandomUtil.randomInt(1, 9);
         BufferedImage background = ImageIO.read(new File("D:\\ideaProjects\\github\\HuYanEconomy\\HuYanEconomy\\src\\test\\java\\bottom" + 3 + ".png"));
         int height = background.getHeight();
@@ -89,7 +108,7 @@ public class Test {
                 ImageUtil.hexColor("f50057"),
                 ImageUtil.hexColor("e1f5c4"),
                 g2d
-                );
+        );
         g2d.setFont(customFont.deriveFont(Font.BOLD,60f));
         drawStringGradient("放空",230,200,
                 ImageUtil.hexColor("fce38a"),

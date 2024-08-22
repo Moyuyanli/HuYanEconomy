@@ -145,6 +145,7 @@ public class GamesManager {
             MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject);
             if (newMessage == null) {
                 subject.sendMessage("你的鱼跑了！！");
+                fishInfo.switchStatus();
                 return;
             }
             String nextMessageCode = newMessage.getMessage().serializeToMiraiCode();
@@ -156,39 +157,42 @@ public class GamesManager {
             } else {
                 nextMessageCode = nextMessageCode.trim();
             }
-            int randomInt = RandomUtil.randomInt(0, 3);
+            int randomDifficultyInt = RandomUtil.randomInt(0, 4);
+            int randomLevelInt = RandomUtil.randomInt(0, 4);
+
+            int message = RandomUtil.randomInt(0, 3);
             switch (nextMessageCode) {
                 case "向左拉":
                 case "左":
                 case "1":
-                    if (randomInt == 1) {
+                    if (randomDifficultyInt % 2 == 1) {
                         difficultyMin += 5;
-                        subject.sendMessage(successMessages[randomInt]);
+                        subject.sendMessage(successMessages[message]);
                     } else {
                         difficultyMin -= 8;
-                        subject.sendMessage(failureMessages[randomInt]);
+                        subject.sendMessage(failureMessages[message]);
                     }
                     break;
                 case "向右拉":
                 case "右":
                 case "2":
-                    if (randomInt == 2) {
+                    if (randomDifficultyInt % 2 == 0) {
                         difficultyMin += 5;
-                        subject.sendMessage(successMessages[randomInt]);
+                        subject.sendMessage(successMessages[message]);
                     } else {
                         difficultyMin -= 8;
-                        subject.sendMessage(failureMessages[randomInt]);
+                        subject.sendMessage(failureMessages[message]);
                     }
                     break;
                 case "收线":
                 case "拉":
                 case "0":
-                    if (randomInt == 0) {
+                    if (randomLevelInt % 2 == 0) {
                         difficultyMin += 5;
-                        subject.sendMessage(otherMessages[randomInt]);
+                        subject.sendMessage(otherMessages[message]);
                     } else {
                         difficultyMin -= 12;
-                        subject.sendMessage(failureMessages[randomInt]);
+                        subject.sendMessage(failureMessages[message]);
                     }
                     rankMax++;
                     break;

@@ -76,11 +76,12 @@ public class RedPackManager {
             int residual = pack.getNumber();
             double residualMoney = pack.getMoney();
             ArrayList<Double> doubles = new ArrayList<>();
-            for (int i = 1; i <= pack.getNumber(); i++) {
-                double v = RandomUtil.randomDouble(0.1, residualMoney - ((residual - i) * 0.1));
+            for (int i = 1; i < pack.getNumber(); i++) {
+                double v = RandomUtil.randomDouble(0.1, residualMoney - ((residual - i) * 0.5));
                 doubles.add(v);
                 residualMoney -= v;
             }
+            doubles.add(residualMoney);
             pack.setRandomPackList(doubles);
         }
 

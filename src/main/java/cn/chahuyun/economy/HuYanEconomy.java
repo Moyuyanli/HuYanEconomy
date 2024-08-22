@@ -4,6 +4,7 @@ import cn.chahuyun.economy.command.EconomyCommand;
 import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.config.FishingMsgConfig;
+import cn.chahuyun.economy.config.RobMsgConfig;
 import cn.chahuyun.economy.constant.Icon;
 import cn.chahuyun.economy.event.BotOnlineEventListener;
 import cn.chahuyun.economy.event.MessageEventListener;
@@ -12,6 +13,7 @@ import cn.chahuyun.economy.manager.LotteryManager;
 import cn.chahuyun.economy.manager.TitleManager;
 import cn.chahuyun.economy.plugin.FishManager;
 import cn.chahuyun.economy.plugin.PluginManager;
+import cn.chahuyun.economy.plugin.TitleTemplateManager;
 import cn.chahuyun.economy.plugin.YiYanManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
@@ -33,7 +35,7 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String VERSION = "0.3.0";
+    public static final String VERSION = "1.4.0";
     /**
      * 配置
      */
@@ -42,6 +44,10 @@ public final class HuYanEconomy extends JavaPlugin {
      * 钓鱼消息配置
      */
     public static FishingMsgConfig msgConfig;
+    /**
+     * 抢劫消息配置
+     */
+    public static RobMsgConfig robConfig;
     /**
      * 插件所属bot
      */
@@ -66,10 +72,12 @@ public final class HuYanEconomy extends JavaPlugin {
         reloadPluginConfig(EconomyConfig.INSTANCE);
         reloadPluginConfig(EconomyPluginConfig.INSTANCE);
         reloadPluginConfig(FishingMsgConfig.INSTANCE);
+        reloadPluginConfig(RobMsgConfig.INSTANCE);
         //注册指令
         CommandManager.INSTANCE.registerCommand(new EconomyCommand(), false);
         config = EconomyConfig.INSTANCE;
         msgConfig = FishingMsgConfig.INSTANCE;
+        robConfig = RobMsgConfig.INSTANCE;
         //插件功能初始化
         PluginManager.init();
         //初始化插件数据库
@@ -87,6 +95,9 @@ public final class HuYanEconomy extends JavaPlugin {
             BankManager.init();
             TitleManager.init();
             YiYanManager.init();
+            //注册自定义称号
+            TitleTemplateManager.loadingCustomTitle();
+
             eventEventChannel.registerListenerHost(new BotOnlineEventListener());
             eventEventChannel.registerListenerHost(new MessageEventListener());
             Log.info("事件已监听!");

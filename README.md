@@ -63,13 +63,12 @@ fishGroup: [ ]
 
 目前实现功能有:
 
-* [x] 转账
-* [x] 存款
-* [x] 取款
+- [x] 转账
+- [x] 存款
+- [x] 取款
+- [x] 抢劫
+- [x] 红包
 
-未来可能实现的功能
-
-* 抢劫
 
 ### 签到功能
 
@@ -129,8 +128,36 @@ fishGroup: [ ]
 
 `切换称号 0`是卸下所有称号，回到默认称号。
 
-现已开放称号自定义添加功能，目前只有依赖本插件实现。
-未来可能会实现通过配置文件自定义添加称号。
+现已开放称号自定义添加功能。
+
+~~未来可能会实现通过配置文件自定义添加称号。~~
+
+自定义称号功能已经实现,在`data/cn.chahuyun.HuYanEconomy/title.json`中编辑,插件启动后将自动扫描注册到称号列表中。
+
+目前只有购买一种途径获得，也没办法配置buff。
+
+```json5
+{
+  // 称号code
+  "templateCode": "template",
+  // 过期时间(天)
+  "validityPeriod": -1,
+  // 称号名称(不是称号)
+  "titleName": "模板",
+  // 价格 0.0
+  "price": 0,
+  // 是否渐变色
+  "gradient": false,
+  // 颜色是否影响名称
+  "impactName": false,
+  // 称号
+  "title": "[模板]",
+  // 起始颜色,当渐变关闭时，此颜色就是唯一颜色
+  "sColor": "#00000",
+  // 结束颜色
+  "eColor": "#ffffff"
+}
+```
 
 更多请查看[TitleTemplateManager](https://github.com/Moyuyanli/HuYanEconomy/blob/master/src/main/java/cn/chahuyun/economy/plugin/TitleTemplateManager.java)
 
@@ -212,6 +239,20 @@ fishGroup: [ ]
 通过发红包指令`发红包 100 10`可以发一个均分100的10个红包,结尾加上`sj`或`随机`可以将红包改为随机红包。
 
 红包24小时到期，到期没有领的红包自动退回账号。
+
+### 抢劫功能
+
+**在此感谢[Travellerrr](https://github.com/Travellerrr)编写了此功能。**
+
+指令`释放出狱`,`抢银行`,`抢劫 (id)`;
+
+抢劫一个人，概率成功，概率失败。
+
+被抓进监狱后将无法响应大部分指令，需要保释(要钱!!)。
+
+你也可以抢银行!
+
+快快拿起你的阿卡，抢银行吧！！！
 
 ### 道具功能
 
