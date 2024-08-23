@@ -1,7 +1,7 @@
 # HuYanEconomy 壶言壶言经济 --- 娱乐插件
 
 [![version](https://img.shields.io/github/v/release/moyuyanli/huyaneconomy
-)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v0.3.0/HuYanEconomy-0.3.0.mirai2.jar)
+)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v1.4.2/HuYanEconomy-1.4.2.mirai2.jar)
 
 这里是壶言经济，一款mirai娱乐插件，设计灵感来自于论坛的经济帖子，心血来潮就创建了这个项目，从22年11月开始，中间慢慢填坑，
 陆陆续续的完成了一部分饼，由于大部分饼都没实现，所以没在论坛发布，但是在我群共享。
@@ -244,7 +244,7 @@ fishGroup: [ ]
 
 **在此感谢[Travellerrr](https://github.com/Travellerrr)编写了此功能。**
 
-指令`释放出狱`,`抢银行`,`抢劫 (id)`;
+指令`释放出狱`,`抢银行`,`抢劫 (@id)`,`保释 (@id)`,[管理员指令]`平账 (@id)`;
 
 抢劫一个人，概率成功，概率失败。
 
