@@ -358,7 +358,8 @@ public class RobManager {
         }
 
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, sender.getId());
-        if (checkCoolDown(subject, atMember, robInfo)) {
+        if (robInfo != null && checkCoolDown(subject, atMember, robInfo)) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你在监狱，怎么保释?"));
             return;
         }
 
