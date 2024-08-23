@@ -7,7 +7,6 @@ import cn.hutool.json.JSONUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -44,10 +43,10 @@ public class YiYanManager {
 
     private static void getYiYanRequest() {
         CompletableFuture.runAsync(() -> {
-            YiYan yiYan = JSONUtil.parseObj(HttpUtil.get("https://v1.hitokoto.cn")).toBean(YiYan.class);
-            yiyanList.add(yiYan);
-            lock.lock();
             try {
+                YiYan yiYan = JSONUtil.parseObj(HttpUtil.get("https://v1.hitokoto.cn")).toBean(YiYan.class);
+                yiyanList.add(yiYan);
+                lock.lock();
                 condition.signalAll(); // 通知所有等待的线程
             } finally {
                 lock.unlock();
