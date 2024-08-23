@@ -220,7 +220,7 @@ public class RobManager {
             if (robInfo.isInJail()) {
                 msg = MessageUtil.formatMessageChain(sender.getId(), "你还要被关%s了!%n这就想往出跑了？", TimeConvertUtil.secondConvert(remainingCooldown));
             } else {
-                msg = MessageUtil.formatMessageChain(sender.getId(), "再等%s吧!%最近风气有点不好。", TimeConvertUtil.secondConvert(remainingCooldown));
+                msg = MessageUtil.formatMessageChain(sender.getId(), "再等%s吧!%n最近风气有点不好。", TimeConvertUtil.secondConvert(remainingCooldown));
             }
 
             // 发送消息
