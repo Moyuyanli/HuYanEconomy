@@ -244,7 +244,7 @@ public class TitleManager {
                                 "你已经拥有 %s 称号!", template.getTitleName()));
                         return;
                     }
-                    if (EconomyUtil.minusMoneyToUser(sender, 10000)) {
+                    if (EconomyUtil.minusMoneyToUser(sender, template.getPrice())) {
                         if (addTitleInfo(userInfo, template.getTemplateCode())) {
                             subject.sendMessage(MessageUtil.formatMessageChain(message,
                                     "你以成功购买 %s 称号,有效期 %s ", template.getTitleName(),
