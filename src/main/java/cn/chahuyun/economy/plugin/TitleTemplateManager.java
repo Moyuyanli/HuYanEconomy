@@ -7,7 +7,6 @@ import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.title.CustomTitle;
 import cn.chahuyun.economy.entity.title.TitleTemplate;
 import cn.chahuyun.economy.manager.TitleManager;
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONArray;
@@ -147,8 +146,8 @@ public final class TitleTemplateManager {
                 continue;
             }
 
-            if (BeanUtil.hasNullField(customTitle)) {
-                log.warn("自定义称号错误:{}", customTitle.getTitleName());
+            if (customTitle.hasNullField()) {
+                log.warn("自定义称号错误:{} ,所有属性必填!", customTitle.getTitleName());
                 continue;
             }
 

@@ -31,4 +31,15 @@ public class CustomTitle {
         return new TitleTemplateSimpleImpl(templateCode, validityPeriod, titleName, price, gradient, impactName, title, sColor, eColor);
     }
 
+    /**
+     * 判断是否有空对象
+     *
+     * @return true 有
+     */
+    public Boolean hasNullField() {
+        return templateCode.isBlank() || validityPeriod == null ||
+                titleName.isBlank() || price == null || gradient == null ||
+                impactName == null || title.isBlank() || sColor.isBlank() || eColor.isBlank();
+    }
+
 }
