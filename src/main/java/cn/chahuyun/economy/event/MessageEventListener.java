@@ -290,15 +290,15 @@ public class MessageEventListener extends SimpleListenerHost {
         }
 
 
-        String flatAccountRegex = "平账  ?\\[mirai:at:\\d+] ?";
+        String flatAccountRegex = "平账 ?\\[mirai:at:\\d+] ?";
         if (Pattern.matches(flatAccountRegex, code) && event.getSubject() instanceof Group) {
             Log.info("平账指令");
             RobManager.flatAccount((GroupMessageEvent) event);
             return;
         }
 
-        String bailRegex = "保释  ?\\[mirai:at:\\d+] ?";
-        if (Pattern.matches(flatAccountRegex, code) && event.getSubject() instanceof Group) {
+        String bailRegex = "保释 ?\\[mirai:at:\\d+] ?";
+        if (Pattern.matches(bailRegex, code) && event.getSubject() instanceof Group) {
             Log.info("保释指令");
             RobManager.bail((GroupMessageEvent) event);
             return;
