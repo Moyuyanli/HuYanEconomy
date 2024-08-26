@@ -134,8 +134,11 @@ public class RobManager {
         // 计算抢劫成功率
         int chance = RandomUtil.randomInt(0, 101);
 
+
+        int i = RandomUtil.randomInt(3, 8);
+
         // 计算抢劫金额
-        double successMoney = Math.round(RandomUtil.randomDouble(10000, 100000) * 10.0) / 10.0;
+        double successMoney = Math.round(RandomUtil.randomDouble(10000 * (i - 2), 10000 * (i + 1)) * 10.0) / 10.0;
         double failedMoney = Math.round(RandomUtil.randomDouble(1000, 5000) * 10.0) / 10.0;
 
         // 判断是否被抓
