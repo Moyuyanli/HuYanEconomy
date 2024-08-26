@@ -52,7 +52,7 @@ public class RobManager {
         // 获取抢劫信息
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, sender.getId());
 
-        if (checkCoolDown(subject, sender, robInfo,true)) return;
+        if (checkCoolDown(subject, sender, robInfo, true)) return;
 
         // 获取消息内容
         String message = event.getMessage().contentToString();
@@ -129,7 +129,7 @@ public class RobManager {
         // 获取抢劫信息
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, sender.getId());
 
-        if (checkCoolDown(subject, sender, robInfo,true)) return;
+        if (checkCoolDown(subject, sender, robInfo, true)) return;
 
         // 计算抢劫成功率
         int chance = RandomUtil.randomInt(0, 101);
@@ -212,24 +212,28 @@ public class RobManager {
     private static boolean checkCoolDown(Contact subject, User sender, RobInfo robInfo, boolean send) {
         // 获取当前时间
         Date now = new Date();
-        // 判断是否在冷却中
-        if (robInfo != null && (now.getTime() - robInfo.getLastRobTime().getTime()) < robInfo.getCooling() * 1000) {
-            // 计算剩余冷却时间
-            long remainingCooldown = (robInfo.getCooling() * 1000 - (now.getTime() - robInfo.getLastRobTime().getTime())) / 1000;
-            // 判断是否在监狱中
 
-            Message msg;
-            if (robInfo.isInJail()) {
-                msg = MessageUtil.formatMessageChain(sender.getId(), "你还要被关%s了!%n这就想往出跑了？", TimeConvertUtil.secondConvert(remainingCooldown));
-            } else {
-                msg = MessageUtil.formatMessageChain(sender.getId(), "再等%s吧!%n最近风气有点不好。", TimeConvertUtil.secondConvert(remainingCooldown));
-            }
+        if (robInfo != null) {
+            Date lastRobTime = robInfo.getLastRobTime();
+            // 判断是否在冷却中
+            if (lastRobTime != null && (now.getTime() - lastRobTime.getTime()) < robInfo.getCooling() * 1000) {
+                // 计算剩余冷却时间
+                long remainingCooldown = (robInfo.getCooling() * 1000 - (now.getTime() - lastRobTime.getTime())) / 1000;
+                // 判断是否在监狱中
 
-            if (send) {
-                // 发送消息
-                subject.sendMessage(msg);
+                Message msg;
+                if (robInfo.isInJail()) {
+                    msg = MessageUtil.formatMessageChain(sender.getId(), "你还要被关%s了!%n这就想往出跑了？", TimeConvertUtil.secondConvert(remainingCooldown));
+                } else {
+                    msg = MessageUtil.formatMessageChain(sender.getId(), "再等%s吧!%n最近风气有点不好。", TimeConvertUtil.secondConvert(remainingCooldown));
+                }
+
+                if (send) {
+                    // 发送消息
+                    subject.sendMessage(msg);
+                }
+                return true;
             }
-            return true;
         }
 
         if (EconomyUtil.getMoneyByUser(sender) <= 0) {
@@ -364,7 +368,7 @@ public class RobManager {
         }
 
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, sender.getId());
-        if (robInfo != null && checkCoolDown(subject, atMember, robInfo,false)) {
+        if (robInfo != null && checkCoolDown(subject, atMember, robInfo, false)) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你在监狱，怎么保释?"));
             return;
         }
