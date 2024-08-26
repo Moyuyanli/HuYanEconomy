@@ -71,10 +71,15 @@ public class YiYanManager {
 
     private static void getYiYanRequest() {
         CompletableFuture.runAsync(() -> {
-            YiYan yiYan = JSONUtil.parseObj(HttpUtil.get("https://v1.hitokoto.cn")).toBean(YiYan.class);
-            yiyanList.add(yiYan);
-            // 通知一个
-            condition.signal();
+            try {
+                YiYan yiYan = JSONUtil.parseObj(HttpUtil.get("https://v1.hitokoto.cn")).toBean(YiYan.class);
+                yiyanList.add(yiYan);
+            } catch (Exception e) {
+                yiyanList.add(new YiYan(-1, "这里是小狐狸哒~", "kemomimi", "小狐狸语录"));
+            } finally {
+                // 通知一个
+                condition.signal();
+            }
         });
     }
 
