@@ -96,4 +96,14 @@ public class ShareUtils {
         return null;
     }
 
+    /**
+     * 四舍五入后，保留一位小数
+     *
+     * @param value 值
+     * @return double, 保留一位小数
+     */
+    public static double rounding(double value) {
+        return Math.round(value * 10.0) / 10.0;
+    }
+
 }
