@@ -10,6 +10,7 @@ import cn.chahuyun.economy.event.BotOnlineEventListener;
 import cn.chahuyun.economy.event.MessageEventListener;
 import cn.chahuyun.economy.manager.BankManager;
 import cn.chahuyun.economy.manager.LotteryManager;
+import cn.chahuyun.economy.manager.RobManager;
 import cn.chahuyun.economy.manager.TitleManager;
 import cn.chahuyun.economy.plugin.FishManager;
 import cn.chahuyun.economy.plugin.PluginManager;
@@ -35,7 +36,7 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String VERSION = "1.4.4";
+    public static final String VERSION = "1.4.5";
     /**
      * 配置
      */
@@ -95,6 +96,7 @@ public final class HuYanEconomy extends JavaPlugin {
             BankManager.init();
             TitleManager.init();
             YiYanManager.init();
+            RobManager.init();
             //注册自定义称号
             TitleTemplateManager.loadingCustomTitle();
 

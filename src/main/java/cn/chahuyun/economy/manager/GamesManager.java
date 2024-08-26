@@ -58,22 +58,21 @@ public class GamesManager {
      */
     public static void fishing(GroupMessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
-        User user = null;
-        user = userInfo.getUser();
+        User user = userInfo.getUser();
         Contact subject = event.getSubject();
         //获取玩家钓鱼信息
-        FishInfo fishInfo = null;
-        fishInfo = userInfo.getFishInfo();
+        FishInfo fishInfo = userInfo.getFishInfo();
         //能否钓鱼
-        if (fishInfo != null && !fishInfo.isFishRod()) {
+        if (fishInfo == null || fishInfo.isFishRod()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getNoneRodMsg()));
             return;
         }
         //是否已经在钓鱼
-        if (fishInfo != null && fishInfo.getStatus()) {
+        if (fishInfo.getStatus()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getFishingNowMsg()));
             return;
         }
+        //钓鱼佬称号buff
         boolean isFishing = TitleManager.checkTitleIsExist(userInfo, TitleCode.FISHING);
         //钓鱼冷却
         if (playerCooling.containsKey(userInfo.getQq())) {
@@ -82,6 +81,8 @@ public class GamesManager {
             int expired = 10;
             if (isFishing) {
                 expired = 3;
+            } else {
+                expired = ((expired * 60) - (fishInfo.getRodLevel() * 3)) / 60;
             }
             if (between < expired) {
                 subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你还差%s分钟来抛第二杆!", expired - between));
@@ -93,15 +94,12 @@ public class GamesManager {
             playerCooling.put(userInfo.getQq(), new Date());
         }
         //是否已经在钓鱼
-        if (fishInfo != null && fishInfo.isStatus()) {
+        if (fishInfo.isStatus()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getFishingNowMsg()));
             return;
         }
         //获取鱼塘
-        FishPond fishPond = null;
-        if (fishInfo != null) {
-            fishPond = fishInfo.getFishPond();
-        }
+        FishPond fishPond = fishInfo.getFishPond();
         if (fishPond == null) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "默认鱼塘不存在!"));
             return;
@@ -166,10 +164,10 @@ public class GamesManager {
                 case "左":
                 case "1":
                     if (randomDifficultyInt % 2 == 1) {
-                        difficultyMin += 5;
+                        difficultyMin += 8;
                         subject.sendMessage(successMessages[message]);
                     } else {
-                        difficultyMin -= 8;
+                        difficultyMin -= 10;
                         subject.sendMessage(failureMessages[message]);
                     }
                     break;
@@ -177,10 +175,10 @@ public class GamesManager {
                 case "右":
                 case "2":
                     if (randomDifficultyInt % 2 == 0) {
-                        difficultyMin += 5;
+                        difficultyMin += 8;
                         subject.sendMessage(successMessages[message]);
                     } else {
-                        difficultyMin -= 8;
+                        difficultyMin -= 10;
                         subject.sendMessage(failureMessages[message]);
                     }
                     break;
@@ -188,7 +186,7 @@ public class GamesManager {
                 case "拉":
                 case "0":
                     if (randomLevelInt % 2 == 0) {
-                        difficultyMin += 5;
+                        difficultyMin += 8;
                         subject.sendMessage(otherMessages[message]);
                     } else {
                         difficultyMin -= 12;
@@ -257,7 +255,10 @@ public class GamesManager {
             List<Fish> levelFishList = fishPond.getFishList(rank);
             //过滤掉难度不够的鱼
             List<Fish> collect;
-            collect = levelFishList.stream().filter(it -> it.getDifficulty() <= difficulty).collect(Collectors.toList());
+            collect = levelFishList.stream()
+                    .filter(it -> it.getDifficulty() <= difficulty)
+                    .sorted(Comparator.comparing(Fish::getDescription))
+                    .collect(Collectors.toList());
             //如果没有了
             int size = collect.size();
             if (size == 0) {
@@ -270,7 +271,7 @@ public class GamesManager {
                 winning = true;
             }
             //roll鱼
-            fish = collect.get(RandomUtil.randomInt(size > 6 ? size - 6 : 0, size));
+            fish = collect.get(RandomUtil.randomInt(0, Math.min(6, size)));
             break;
         }
         //roll尺寸
