@@ -4,6 +4,7 @@ import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.redpack.RedPack;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.MessageUtil;
+import cn.chahuyun.economy.utils.ShareUtils;
 import cn.chahuyun.economy.utils.TimeConvertUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUnit;
@@ -73,11 +74,23 @@ public class RedPackManager {
         // TODO 自定义红包名字
 
         if (random) {
+            //个数
             int residual = pack.getNumber();
+            //总额
             double residualMoney = pack.getMoney();
+            // 最小金额
+            double coefficient = 0.5;
+
+            //随机一下，30%的概率全随机红包，70%的概率稍微均分红包
+            if (RandomUtil.randomInt(0, 11) <= 7) {
+                long round = Math.round(residualMoney / residual);
+                coefficient = ShareUtils.rounding(RandomUtil.randomDouble(Math.min(5, round / 5), round * 5));
+            }
+
             ArrayList<Double> doubles = new ArrayList<>();
             for (int i = 1; i < pack.getNumber(); i++) {
-                double v = RandomUtil.randomDouble(0.1, residualMoney - ((residual - i) * 0.5));
+                double v = RandomUtil.randomDouble(0.1, residualMoney - ((residual - i) * coefficient));
+                v = ShareUtils.rounding(v);
                 doubles.add(v);
                 residualMoney -= v;
             }
