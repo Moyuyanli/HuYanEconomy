@@ -176,13 +176,13 @@ public class RobManager {
             robInfo = RobInfo.builder()
                     .userId(sender.getId())
                     .lastRobTime(new Date())
-                    .cooldown(cooldown)
+                    .cooling(cooldown)
                     .isInJail(isCauseJail)
                     .build();
         } else {
             // 更新抢劫信息
             robInfo.setLastRobTime(new Date());
-            robInfo.setCooldown(cooldown);
+            robInfo.setCooling(cooldown);
             robInfo.setInJail(isCauseJail);
         }
 
@@ -210,13 +210,12 @@ public class RobManager {
      * @return 如果用户在冷却中或监狱中，发送消息并返回 true，否则返回 false
      */
     private static boolean checkCoolDown(Contact subject, User sender, RobInfo robInfo) {
-
         // 获取当前时间
         Date now = new Date();
         // 判断是否在冷却中
-        if (robInfo != null && (now.getTime() - robInfo.getLastRobTime().getTime()) < robInfo.getCooldown() * 1000) {
+        if (robInfo != null && (now.getTime() - robInfo.getLastRobTime().getTime()) < robInfo.getCooling() * 1000) {
             // 计算剩余冷却时间
-            long remainingCooldown = (robInfo.getCooldown() * 1000 - (now.getTime() - robInfo.getLastRobTime().getTime())) / 1000;
+            long remainingCooldown = (robInfo.getCooling() * 1000 - (now.getTime() - robInfo.getLastRobTime().getTime())) / 1000;
             // 判断是否在监狱中
 
             Message msg;
@@ -366,16 +365,19 @@ public class RobManager {
             return;
         }
 
-        double moneyByUser = EconomyUtil.getMoneyByUser(sender);
-
-        if (moneyByUser < 500) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的钱不够 500 ,怎么保释？"));
-            return;
-        }
 
         RobInfo one = HibernateFactory.selectOne(RobInfo.class, atMember.getId());
         if (one == null || !one.isInJail()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "他不在监狱，你要保释谁?"));
+            return;
+        }
+
+        double bailMoney = one.getCooling() * 5;
+
+        double moneyByUser = EconomyUtil.getMoneyByUser(sender);
+
+        if (moneyByUser < bailMoney) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的钱不够 %d ,怎么保释？", bailMoney));
             return;
         }
 
