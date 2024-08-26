@@ -155,6 +155,10 @@ public class MessageEventListener extends SimpleListenerHost {
                 Log.info("游戏指令");
                 GamesManager.upFishRod(event);
                 return;
+            case "富豪榜":
+                Log.info("经济指令");
+                BankManager.viewRegalTop(event);
+                return;
             case "钓鱼排行榜":
             case "钓鱼排行":
             case "钓鱼榜":

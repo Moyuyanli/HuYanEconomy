@@ -11,15 +11,21 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.cron.CronUtil;
 import cn.hutool.cron.task.Task;
+import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
+import net.mamoe.mirai.message.data.ForwardMessageBuilder;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
+import net.mamoe.mirai.message.data.PlainText;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 银行管理<p>
@@ -138,6 +144,44 @@ public class BankManager {
     public static void viewBankInterest(MessageEvent event) {
         BankInfo bankInfo = HibernateFactory.selectOne(BankInfo.class, 1);
         event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "今日银行利率是%s%%", bankInfo.getInterest()));
+    }
+
+    /**
+     * 富豪榜
+     * @param event 消息
+     */
+    public static void viewRegalTop(MessageEvent event) {
+        Contact subject = event.getSubject();
+        Bot bot = event.getBot();
+
+        ForwardMessageBuilder builder = new ForwardMessageBuilder(subject);
+        builder.add(bot, new PlainText("以下是银行存款排行榜:"));
+
+        Map<EconomyAccount, Double> accountByBank = EconomyUtil.getAccountByBank();
+
+        LinkedHashMap<EconomyAccount, Double> collect = accountByBank.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(10)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue,
+                        LinkedHashMap::new
+                ));
+
+        int index = 1;
+        for (Map.Entry<EconomyAccount, Double> entry : collect.entrySet()) {
+            UserInfo userInfo = UserManager.getUserInfo(entry.getKey());
+            PlainText plainText = MessageUtil.formatMessage(
+                    "top:%d%n" +
+                            "用户:%s%n" +
+                            "存款:%.1f",
+                    index, userInfo.getName(), entry.getValue()
+            );
+            builder.add(bot, plainText);
+        }
+
+        subject.sendMessage(builder.build());
     }
 
 }
