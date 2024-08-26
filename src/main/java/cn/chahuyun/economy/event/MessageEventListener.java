@@ -204,12 +204,11 @@ public class MessageEventListener extends SimpleListenerHost {
         }
 
         String cheatPrice = "EconomyAdd (\\d+)";
-        if (owner) {
-            if (Pattern.matches(cheatPrice, code)) {
-                Log.info("管理指令");
-                TransferManager.Cheat(event);
-                return;
-            }
+
+        if (owner && Pattern.matches(cheatPrice, code)) {
+            Log.info("管理指令");
+            TransferManager.Cheat(event);
+            return;
         }
 
         String buyTitleRegex = "购买称号 (\\S+)";
@@ -291,7 +290,7 @@ public class MessageEventListener extends SimpleListenerHost {
 
 
         String flatAccountRegex = "平账 ?\\[mirai:at:\\d+] ?";
-        if (Pattern.matches(flatAccountRegex, code) && event.getSubject() instanceof Group) {
+        if (owner && Pattern.matches(flatAccountRegex, code) && event.getSubject() instanceof Group) {
             Log.info("平账指令");
             RobManager.flatAccount((GroupMessageEvent) event);
             return;
