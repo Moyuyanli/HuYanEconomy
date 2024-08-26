@@ -21,10 +21,7 @@ import net.mamoe.mirai.message.data.MessageChainBuilder;
 import net.mamoe.mirai.message.data.PlainText;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -148,6 +145,7 @@ public class BankManager {
 
     /**
      * 富豪榜
+     *
      * @param event 消息
      */
     public static void viewRegalTop(MessageEvent event) {
@@ -172,11 +170,13 @@ public class BankManager {
         int index = 1;
         for (Map.Entry<EconomyAccount, Double> entry : collect.entrySet()) {
             UserInfo userInfo = UserManager.getUserInfo(entry.getKey());
+            String name = Objects.requireNonNull(bot.getGroup(userInfo.getRegisterGroup())).getName();
             PlainText plainText = MessageUtil.formatMessage(
                     "top:%d%n" +
                             "用户:%s%n" +
+                            "注册群:%s%n" +
                             "存款:%.1f",
-                    index, userInfo.getName(), entry.getValue()
+                    index++, userInfo.getName(), name, entry.getValue()
             );
             builder.add(bot, plainText);
         }
