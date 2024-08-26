@@ -63,7 +63,7 @@ public class GamesManager {
         //获取玩家钓鱼信息
         FishInfo fishInfo = userInfo.getFishInfo();
         //能否钓鱼
-        if (fishInfo == null || fishInfo.isFishRod()) {
+        if (fishInfo == null || !fishInfo.isFishRod()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getNoneRodMsg()));
             return;
         }
