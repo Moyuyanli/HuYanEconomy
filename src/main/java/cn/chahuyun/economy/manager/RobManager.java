@@ -52,7 +52,7 @@ public class RobManager {
         // 获取抢劫信息
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, sender.getId());
 
-        if (checkCoolDown(subject, sender, robInfo)) return;
+        if (checkCoolDown(subject, sender, robInfo,true)) return;
 
         // 获取消息内容
         String message = event.getMessage().contentToString();
@@ -129,7 +129,7 @@ public class RobManager {
         // 获取抢劫信息
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, sender.getId());
 
-        if (checkCoolDown(subject, sender, robInfo)) return;
+        if (checkCoolDown(subject, sender, robInfo,true)) return;
 
         // 计算抢劫成功率
         int chance = RandomUtil.randomInt(0, 101);
@@ -209,7 +209,7 @@ public class RobManager {
      * @param robInfo 抢劫信息
      * @return 如果用户在冷却中或监狱中，发送消息并返回 true，否则返回 false
      */
-    private static boolean checkCoolDown(Contact subject, User sender, RobInfo robInfo) {
+    private static boolean checkCoolDown(Contact subject, User sender, RobInfo robInfo, boolean send) {
         // 获取当前时间
         Date now = new Date();
         // 判断是否在冷却中
@@ -225,13 +225,17 @@ public class RobManager {
                 msg = MessageUtil.formatMessageChain(sender.getId(), "再等%s吧!%n最近风气有点不好。", TimeConvertUtil.secondConvert(remainingCooldown));
             }
 
-            // 发送消息
-            subject.sendMessage(msg);
+            if (send) {
+                // 发送消息
+                subject.sendMessage(msg);
+            }
             return true;
         }
 
         if (EconomyUtil.getMoneyByUser(sender) <= 0) {
-            subject.sendMessage(MessageUtil.formatMessageChain(sender.getId(), robConfig.getRobNotEnoughMsg()));
+            if (send) {
+                subject.sendMessage(MessageUtil.formatMessageChain(sender.getId(), robConfig.getRobNotEnoughMsg()));
+            }
             return true;
         }
 
@@ -360,7 +364,7 @@ public class RobManager {
         }
 
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, sender.getId());
-        if (robInfo != null && checkCoolDown(subject, atMember, robInfo)) {
+        if (robInfo != null && checkCoolDown(subject, atMember, robInfo,false)) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你在监狱，怎么保释?"));
             return;
         }
