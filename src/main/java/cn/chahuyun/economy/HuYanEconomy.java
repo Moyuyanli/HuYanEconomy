@@ -35,7 +35,7 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String VERSION = "1.4.3";
+    public static final String VERSION = "1.4.4";
     /**
      * 配置
      */
@@ -90,7 +90,7 @@ public final class HuYanEconomy extends JavaPlugin {
             Log.warning("插件管理机器人还没有配置，请尽快配置!");
         } else {
             EconomyUtil.init();
-            LotteryManager.init(true);
+            LotteryManager.init();
             FishManager.init();
             BankManager.init();
             TitleManager.init();

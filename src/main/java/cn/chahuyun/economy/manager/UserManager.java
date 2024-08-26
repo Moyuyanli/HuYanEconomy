@@ -82,13 +82,14 @@ public class UserManager {
      * @author Moyuyanli
      * @date 2022/11/14 17:08
      */
+    @NotNull
     public static UserInfo getUserInfo(EconomyAccount account) {
         String userId = account.getUuid();
         //查询用户
         try {
             return HibernateFactory.selectOne(UserInfo.class, userId);
         } catch (Exception e) {
-            return null;
+            throw new RuntimeException("该经济账号不存在用户信息");
         }
     }
 

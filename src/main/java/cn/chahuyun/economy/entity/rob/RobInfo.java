@@ -27,7 +27,7 @@ public class RobInfo {
     /**
      * 抢劫冷却时间
      */
-    private Long cooldown;
+    private Long cooling;
     /**
      * 是否在监狱中
      */
