@@ -390,7 +390,7 @@ public class RobManager {
         double moneyByUser = EconomyUtil.getMoneyByUser(sender);
 
         if (moneyByUser < bailMoney) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的钱不够 %d ,怎么保释？", bailMoney));
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的钱不够 %.1f ,怎么保释？", bailMoney));
             return;
         }
 
