@@ -43,6 +43,10 @@ object EconomyConfig : AutoSavePluginConfig("Config") {
     @ValueDescription("启用的钓鱼群列表\n")
     var fishGroup: List<Long> by value()
 
+    @ValueDescription("启用抢劫功能的群列表")
+    var robGroup: List<Long> by value()
+
+
 
 
 }

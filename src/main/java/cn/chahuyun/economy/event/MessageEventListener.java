@@ -140,6 +140,24 @@ public class MessageEventListener extends SimpleListenerHost {
                     subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的钓鱼功能已关闭!"));
                 }
                 return;
+            case "开启 抢劫":
+                if (owner || sender == Objects.requireNonNull(group).getOwner()) {
+                    Log.info("管理指令");
+                    if (group != null && !config.getRobGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getRobGroup().add(group.getId());
+                    }
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫功能已开启!"));
+                }
+                return;
+            case "关闭 抢劫":
+                if (owner || sender == Objects.requireNonNull(group).getOwner()) {
+                    Log.info("管理指令");
+                    if (group != null && config.getRobGroup().contains(group.getId())) {
+                        EconomyConfig.INSTANCE.getRobGroup().remove(group.getId());
+                    }
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫功能已关闭!"));
+                }
+                return;
             case "购买鱼竿":
                 Log.info("游戏指令");
                 GamesManager.buyFishRod(event);
@@ -200,8 +218,10 @@ public class MessageEventListener extends SimpleListenerHost {
                 }
                 return;
             case "抢银行":
-                if (event instanceof GroupMessageEvent) {
-                    RobManager.robBank((GroupMessageEvent) event);
+                if (group != null && config.getRobGroup().contains(group.getId())) {
+                    if (event instanceof GroupMessageEvent) {
+                        RobManager.robBank((GroupMessageEvent) event);
+                    }
                 }
                 return;
             default:
@@ -286,7 +306,7 @@ public class MessageEventListener extends SimpleListenerHost {
         }
 
         String robRegex = "抢劫 ?\\[mirai:at:\\d+] ?";
-        if (Pattern.matches(robRegex, code) && event.getSubject() instanceof Group) {
+        if (group != null && config.getRobGroup().contains(group.getId()) && Pattern.matches(robRegex, code) && event.getSubject() instanceof Group) {
             Log.info("抢劫指令");
             RobManager.robOther((GroupMessageEvent) event);
             return;
@@ -301,7 +321,7 @@ public class MessageEventListener extends SimpleListenerHost {
         }
 
         String bailRegex = "保释 ?\\[mirai:at:\\d+] ?";
-        if (Pattern.matches(bailRegex, code) && event.getSubject() instanceof Group) {
+        if (group != null && config.getRobGroup().contains(group.getId()) && Pattern.matches(bailRegex, code) && event.getSubject() instanceof Group) {
             Log.info("保释指令");
             RobManager.bail((GroupMessageEvent) event);
             return;
