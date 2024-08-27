@@ -33,4 +33,7 @@ public class RobInfo {
      */
     private boolean isInJail;
 
+    public Long getCooling() {
+        return cooling;
+    }
 }
