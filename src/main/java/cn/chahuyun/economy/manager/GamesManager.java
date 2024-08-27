@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.Fish;
@@ -14,6 +15,8 @@ import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.cron.CronUtil;
+import cn.hutool.cron.task.Task;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
@@ -49,6 +52,68 @@ public class GamesManager {
     private GamesManager() {
     }
 
+    public static void init() {
+        Task task = new Task() {
+
+            /**
+             * 执行作业
+             * <p>
+             * 作业的具体实现需考虑异常情况，默认情况下任务异常在监听中统一监听处理，如果不加入监听，异常会被忽略<br>
+             * 因此最好自行捕获异常后处理
+             */
+            @Override
+            public void execute() {
+                List<FishPond> pondType = HibernateFactory.selectList(FishPond.class, "pondType", 1);
+                for (FishPond fishPond : pondType) {
+                    double fishPondMoney = fishPond.getFishPondMoney();
+
+                    switch (fishPond.getPondLevel()) {
+                        case 6:
+                            if (fishPondMoney >= 30000) {
+                                if (EconomyUtil.plusMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), -30000)) {
+                                    Bot bot = HuYanEconomy.INSTANCE.bot;
+                                    Group group = bot.getGroup(fishPond.getId());
+                                    if (group != null) {
+                                        group.sendMessage(String.format(
+                                                "鱼塘 %s 已经积攒够了升级的资金！开始升级鱼塘了！%n" +
+                                                        "鱼塘等级: 6 -> 7", fishPond.getName()
+                                        ));
+                                    } else {
+                                        Objects.requireNonNull(bot.getFriend(fishPond.getAdmin())).sendMessage("群鱼塘升级了");
+                                    }
+                                    fishPond.setPondLevel(7);
+                                    fishPond.save();
+                                }
+                            }
+                            break;
+                        case 7:
+                            if (fishPondMoney >= 100000) {
+                                if (EconomyUtil.plusMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), -100000)) {
+                                    Bot bot = HuYanEconomy.INSTANCE.bot;
+                                    Group group = bot.getGroup(fishPond.getId());
+                                    if (group != null) {
+                                        group.sendMessage(String.format(
+                                                "鱼塘 %s 已经积攒够了升级的资金！开始升级鱼塘了！%n" +
+                                                        "鱼塘等级: 7 -> 8%n" +
+                                                        "最低鱼竿等级: 0 -> 10", fishPond.getName()
+                                        ));
+                                    } else {
+                                        Objects.requireNonNull(bot.getFriend(fishPond.getAdmin())).sendMessage("群鱼塘升级了");
+                                    }
+                                    fishPond.setPondLevel(8);
+                                    fishPond.setMinLevel(10);
+                                    fishPond.save();
+                                }
+                            }
+
+                    }
+                }
+            }
+        };
+
+        CronUtil.schedule("0 0 12 * * ?", task);
+    }
+
     /**
      * 开始钓鱼游戏
      *
@@ -59,11 +124,11 @@ public class GamesManager {
     public static void fishing(GroupMessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
-        Contact subject = event.getSubject();
+        Group subject = event.getSubject();
         //获取玩家钓鱼信息
         FishInfo fishInfo = userInfo.getFishInfo();
         //能否钓鱼
-        if (fishInfo == null || fishInfo.isFishRod()) {
+        if (fishInfo == null || !fishInfo.isFishRod()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getNoneRodMsg()));
             return;
         }
@@ -99,7 +164,7 @@ public class GamesManager {
             return;
         }
         //获取鱼塘
-        FishPond fishPond = fishInfo.getFishPond();
+        FishPond fishPond = fishInfo.getFishPond(subject);
         if (fishPond == null) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "默认鱼塘不存在!"));
             return;
@@ -111,8 +176,7 @@ public class GamesManager {
             return;
         }
         //开始钓鱼
-        Group group = event.getGroup();
-        String start = String.format("%s开始钓鱼\n鱼塘:%s\n等级:%s\n最低鱼竿等级:%s\n%s", userInfo.getName(), group.getName(), fishPond.getPondLevel(), fishPond.getMinLevel(), fishPond.getDescription());
+        String start = String.format("%s开始钓鱼\n鱼塘:%s\n等级:%s\n最低鱼竿等级:%s\n%s", userInfo.getName(), fishPond.getName(), fishPond.getPondLevel(), fishPond.getMinLevel(), fishPond.getDescription());
         subject.sendMessage(start);
         Log.info(String.format("%s开始钓鱼", userInfo.getName()));
 
@@ -142,7 +206,7 @@ public class GamesManager {
             //获取下一条消息
             MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject);
             if (newMessage == null) {
-                subject.sendMessage("你的鱼跑了！！");
+                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你的鱼跑了！！"));
                 fishInfo.switchStatus();
                 return;
             }
@@ -165,10 +229,10 @@ public class GamesManager {
                 case "1":
                     if (randomDifficultyInt % 2 == 1) {
                         difficultyMin += 8;
-                        subject.sendMessage(successMessages[message]);
+                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), successMessages[message]));
                     } else {
                         difficultyMin -= 10;
-                        subject.sendMessage(failureMessages[message]);
+                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), failureMessages[message]));
                     }
                     break;
                 case "向右拉":
@@ -176,21 +240,21 @@ public class GamesManager {
                 case "2":
                     if (randomDifficultyInt % 2 == 0) {
                         difficultyMin += 8;
-                        subject.sendMessage(successMessages[message]);
+                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), successMessages[message]));
                     } else {
                         difficultyMin -= 10;
-                        subject.sendMessage(failureMessages[message]);
+                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), failureMessages[message]));
                     }
                     break;
                 case "收线":
                 case "拉":
                 case "0":
                     if (randomLevelInt % 2 == 0) {
-                        difficultyMin += 8;
-                        subject.sendMessage(otherMessages[message]);
+                        difficultyMin += 12;
+                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), otherMessages[message]));
                     } else {
-                        difficultyMin -= 12;
-                        subject.sendMessage(failureMessages[message]);
+                        difficultyMin -= 15;
+                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), failureMessages[message]));
                     }
                     rankMax++;
                     break;
@@ -199,7 +263,7 @@ public class GamesManager {
                 case "~":
                     difficultyMin += 20;
                     rankMax = 1;
-                    subject.sendMessage("你把你收回来的线，又放了出去!");
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你把你收回来的线，又放了出去!"));
                     break;
                 default:
                     if (Pattern.matches("[!！收起提竿杆]{1,2}", nextMessageCode)) {
@@ -215,7 +279,7 @@ public class GamesManager {
         //空军
         if (theRod) {
             if (RandomUtil.randomInt(0, 101) >= 50) {
-                subject.sendMessage(errorMessages[RandomUtil.randomInt(0, 5)]);
+                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(),errorMessages[RandomUtil.randomInt(0, 5)]));
                 fishInfo.switchStatus();
                 return;
             }
@@ -242,7 +306,7 @@ public class GamesManager {
         boolean winning = false;
         while (true) {
             if (rank == 0) {
-                subject.sendMessage("切线了我去！");
+                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "切线了我去！"));
                 fishInfo.switchStatus();
                 return;
             }
