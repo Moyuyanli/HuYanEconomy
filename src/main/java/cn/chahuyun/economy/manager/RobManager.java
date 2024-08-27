@@ -37,9 +37,7 @@ public class RobManager {
     static String[] robJailVariable = {"${对象}", "${金币}", "${时间}"};
 
 
-    public static void init() {
-        HibernateFactory.selectList(RobInfo.class).stream().filter(it -> it.getCooling() == null).forEach(HibernateFactory::delete);
-    }
+
 
     /**
      * 抢劫其他玩家
@@ -385,7 +383,7 @@ public class RobManager {
             return;
         }
 
-        double bailMoney = one.getCooling() * 5;
+        double bailMoney = one.getCooling() * 3;
 
         double moneyByUser = EconomyUtil.getMoneyByUser(sender);
 
