@@ -83,12 +83,15 @@ public class RedPackManager {
 
             //随机一下，30%的概率全随机红包，70%的概率稍微均分红包
             if (RandomUtil.randomInt(0, 11) <= 7) {
+                //拿总金额 / 红包个数 = 均分金额
                 long round = Math.round(residualMoney / residual);
-                coefficient = ShareUtils.rounding(RandomUtil.randomDouble(Math.min(5, round / 5), round * 5));
+                // 最小保底金额 = 5 或者 均分金额/5 ~ 均分金额*5
+                coefficient = ShareUtils.rounding(RandomUtil.randomDouble(Math.min(5, round / 1.5), round * 1.5));
             }
 
             ArrayList<Double> doubles = new ArrayList<>();
             for (int i = 1; i < pack.getNumber(); i++) {
+
                 double v = RandomUtil.randomDouble(0.1, residualMoney - ((residual - i) * coefficient));
                 v = ShareUtils.rounding(v);
                 doubles.add(v);
