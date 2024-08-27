@@ -210,7 +210,8 @@ public class GamesManager {
                 fishInfo.switchStatus();
                 return;
             }
-            String nextMessageCode = newMessage.getMessage().serializeToMiraiCode();
+            MessageChain nextMessage = newMessage.getMessage();
+            String nextMessageCode = nextMessage.serializeToMiraiCode();
             if (!config.getPrefix().isBlank()) {
                 if (!nextMessageCode.startsWith(config.getPrefix())) {
                     continue;
@@ -229,10 +230,10 @@ public class GamesManager {
                 case "1":
                     if (randomDifficultyInt % 2 == 1) {
                         difficultyMin += 8;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), successMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, successMessages[message]));
                     } else {
                         difficultyMin -= 10;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), failureMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, failureMessages[message]));
                     }
                     break;
                 case "向右拉":
@@ -240,10 +241,10 @@ public class GamesManager {
                 case "2":
                     if (randomDifficultyInt % 2 == 0) {
                         difficultyMin += 8;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), successMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, successMessages[message]));
                     } else {
                         difficultyMin -= 10;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), failureMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, failureMessages[message]));
                     }
                     break;
                 case "收线":
@@ -251,10 +252,10 @@ public class GamesManager {
                 case "0":
                     if (randomLevelInt % 2 == 0) {
                         difficultyMin += 12;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), otherMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, otherMessages[message]));
                     } else {
                         difficultyMin -= 15;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), failureMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, failureMessages[message]));
                     }
                     rankMax++;
                     break;
@@ -263,7 +264,7 @@ public class GamesManager {
                 case "~":
                     difficultyMin += 20;
                     rankMax = 1;
-                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你把你收回来的线，又放了出去!"));
+                    subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, "你把你收回来的线，又放了出去!"));
                     break;
                 default:
                     if (Pattern.matches("[!！收起提竿杆]{1,2}", nextMessageCode)) {
@@ -279,7 +280,7 @@ public class GamesManager {
         //空军
         if (theRod) {
             if (RandomUtil.randomInt(0, 101) >= 50) {
-                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(),errorMessages[RandomUtil.randomInt(0, 5)]));
+                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), errorMessages[RandomUtil.randomInt(0, 5)]));
                 fishInfo.switchStatus();
                 return;
             }
@@ -306,7 +307,7 @@ public class GamesManager {
         boolean winning = false;
         while (true) {
             if (rank == 0) {
-                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "切线了我去！"));
+                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), " 切线了我去！"));
                 fishInfo.switchStatus();
                 return;
             }
