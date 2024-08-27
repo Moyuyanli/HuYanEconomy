@@ -37,8 +37,6 @@ public class RobManager {
     static String[] robJailVariable = {"${对象}", "${金币}", "${时间}"};
 
 
-
-
     /**
      * 抢劫其他玩家
      *
@@ -400,4 +398,17 @@ public class RobManager {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "保释失败了!"));
         }
     }
+
+    /**
+     * 是否在医药
+     *
+     * @param user 用户
+     * @return true 在
+     */
+    public static Boolean isHospital(User user) {
+        RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, user.getId());
+        return robInfo != null && robInfo.getType() == 2;
+    }
+
+
 }
