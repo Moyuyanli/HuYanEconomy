@@ -220,6 +220,8 @@ public class LotteryManager {
      */
     public static void result(int type, int location, LotteryInfo lotteryInfo) {
         if (location == 0) {
+            // 我找你半年了，原来问题出在这里，艹!
+            lotteryInfo.remove();
             return;
         }
         Bot bot = HuYanEconomy.INSTANCE.bot;
