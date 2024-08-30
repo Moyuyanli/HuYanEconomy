@@ -279,6 +279,7 @@ public class MessageEventListener extends SimpleListenerHost {
             return;
         }
 
+        /*
         String walletToBankRegex = "存款 \\d+|deposit \\d+";
         String bankToWalletRegex = "取款 \\d+|withdraw \\d+";
         if (Pattern.matches(walletToBankRegex, code)) {
@@ -290,6 +291,8 @@ public class MessageEventListener extends SimpleListenerHost {
             BankManager.withdrawal(event);
             return;
         }
+
+         */
 
         String createRedPack = "发红包( \\d+){2}( (sj|随机))?";
         if (Pattern.matches(createRedPack, code) && event.getSubject() instanceof Group) {

@@ -1,5 +1,7 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.constant.ImageDrawXY;
@@ -38,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Moyuyanli
  * @date 2022/11/14 12:25
  */
+@EventComponent
 public class SignManager {
 
     private static int index = 0;
@@ -53,6 +56,7 @@ public class SignManager {
      * @author Moyuyanli
      * @date 2022/11/15 14:53
      */
+    @MessageAuthorize(text = {"签到","打卡","sign"})
     public static void sign(MessageEvent event) {
         User user = event.getSender();
         Contact subject = event.getSubject();

@@ -1,5 +1,8 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.bank.BankInfo;
@@ -31,6 +34,7 @@ import java.util.stream.Collectors;
  * @author Moyuyanli
  * @date 2022/11/14 12:26
  */
+@EventComponent
 public class BankManager {
 
     private BankManager() {
@@ -66,6 +70,10 @@ public class BankManager {
      * @author Moyuyanli
      * @date 2022/12/21 11:04
      */
+    @MessageAuthorize(
+            text = "存款 \\d+|deposit \\d+",
+            messageMatching = MessageMatchingEnum.REGULAR
+    )
     public static void deposit(MessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
@@ -102,6 +110,10 @@ public class BankManager {
      * @author Moyuyanli
      * @date 2022/12/21 11:04
      */
+    @MessageAuthorize(
+            text = "取款 \\d+|withdraw \\d+",
+            messageMatching = MessageMatchingEnum.REGULAR
+    )
     public static void withdrawal(MessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();

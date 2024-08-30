@@ -8,7 +8,10 @@ import cn.chahuyun.economy.config.RobMsgConfig;
 import cn.chahuyun.economy.constant.Icon;
 import cn.chahuyun.economy.event.BotOnlineEventListener;
 import cn.chahuyun.economy.event.MessageEventListener;
-import cn.chahuyun.economy.manager.*;
+import cn.chahuyun.economy.manager.BankManager;
+import cn.chahuyun.economy.manager.GamesManager;
+import cn.chahuyun.economy.manager.LotteryManager;
+import cn.chahuyun.economy.manager.TitleManager;
 import cn.chahuyun.economy.plugin.FishManager;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.plugin.TitleTemplateManager;
@@ -58,7 +61,7 @@ public final class HuYanEconomy extends JavaPlugin {
                 .author("Moyuyanli")
                 //忽略依赖版本 true 可选依赖 false 必须依赖
                 .dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", false)
-                .dependsOn("cn.chahuyun.HuYanAuthorize", true)
+                .dependsOn("cn.chahuyun.HuYanAuthorize", false)
                 .dependsOn("cn.chahuyun.HuYanSession", true)
                 .build());
     }
