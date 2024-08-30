@@ -20,6 +20,7 @@ import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 彩票管理<p>
@@ -33,10 +34,8 @@ import java.util.*;
  */
 public class LotteryManager {
 
-
-    private static final Map<String, LotteryInfo> minutesLottery = new HashMap<>();
-    private static final Map<String, LotteryInfo> hoursLottery = new HashMap<>();
-    private static final Map<String, LotteryInfo> dayLottery = new HashMap<>();
+    private static final AtomicBoolean minuteTiming = new AtomicBoolean(false);
+    private static final AtomicBoolean hoursTiming = new AtomicBoolean(false);
 
     private LotteryManager() {
     }
@@ -47,7 +46,7 @@ public class LotteryManager {
      * @author Moyuyanli
      * @date 2022/12/6 11:23
      */
-    public static void init(boolean type) {
+    public static void init() {
         List<LotteryInfo> lotteryInfos;
         try {
             lotteryInfos = HibernateFactory.selectList(LotteryInfo.class);
@@ -56,6 +55,10 @@ public class LotteryManager {
             return;
         }
 
+
+        Map<String, LotteryInfo> minutesLottery = new HashMap<>();
+        Map<String, LotteryInfo> hoursLottery = new HashMap<>();
+        Map<String, LotteryInfo> dayLottery = new HashMap<>();
 
         for (LotteryInfo lotteryInfo : lotteryInfos) {
             switch (lotteryInfo.getType()) {
@@ -71,27 +74,45 @@ public class LotteryManager {
         }
 
         if (!minutesLottery.isEmpty()) {
-            //唯一id
-            String minutesTaskId = "minutesTask";
-            //始终删除一次  用于防止刷新的时候 添加定时任务报错
-            CronUtil.remove(minutesTaskId);
-            //建立任务类
-            LotteryMinutesTask minutesTask = new LotteryMinutesTask(minutesTaskId, minutesLottery.values());
-            //添加定时任务到调度器
-            CronUtil.schedule(minutesTaskId, "0 * * * * ?", minutesTask);
+            extractedMinutes();
         }
+
         if (!hoursLottery.isEmpty()) {
-            String hoursTaskId = "hoursTask";
-            CronUtil.remove(hoursTaskId);
-            LotteryHoursTask hoursTask = new LotteryHoursTask(hoursTaskId, hoursLottery.values());
-            CronUtil.schedule(hoursTaskId, "0 0 * * * ?", hoursTask);
+            extractedHours();
         }
+
         if (!dayLottery.isEmpty()) {
             String dayTaskId = "dayTask";
             CronUtil.remove(dayTaskId);
-            var dayTask = new LotteryDayTask(dayTaskId, dayLottery.values());
+            var dayTask = new LotteryDayTask(dayTaskId);
             CronUtil.schedule(dayTaskId, "0 0 0 * * ?", dayTask);
         }
+    }
+
+    private static void extractedHours() {
+        if (hoursTiming.get()) {
+            return;
+        }
+        String hoursTaskId = "hoursTask";
+        CronUtil.remove(hoursTaskId);
+        LotteryHoursTask hoursTask = new LotteryHoursTask(hoursTaskId);
+        CronUtil.schedule(hoursTaskId, "0 0 * * * ?", hoursTask);
+        hoursTiming.set(true);
+    }
+
+    private static void extractedMinutes() {
+        if (minuteTiming.get()) {
+            return;
+        }
+        //唯一id
+        String minutesTaskId = "minutesTask";
+        //始终删除一次  用于防止刷新的时候 添加定时任务报错
+        CronUtil.remove(minutesTaskId);
+        //建立任务类
+        LotteryMinutesTask minutesTask = new LotteryMinutesTask(minutesTaskId);
+        //添加定时任务到调度器
+        CronUtil.schedule(minutesTaskId, "0 * * * * ?", minutesTask);
+        minuteTiming.set(true);
     }
 
     /**
@@ -179,13 +200,19 @@ public class LotteryManager {
         }
         HibernateFactory.merge(lotteryInfo);
         subject.sendMessage(MessageUtil.formatMessageChain(message, "猜签成功:\n猜签类型:%s\n猜签号码:%s\n猜签金币:%s", typeString, number, money));
-        init(false);
+
+        if (type == 1) {
+            extractedMinutes();
+        } else if (type == 2) {
+            extractedHours();
+        }
     }
 
     /**
      * 发送彩票结果信息
      * <p>
      *
+     * @param type        彩票类型
      * @param location    猜中数量
      * @param lotteryInfo 彩票信息
      * @author Moyuyanli
@@ -193,6 +220,8 @@ public class LotteryManager {
      */
     public static void result(int type, int location, LotteryInfo lotteryInfo) {
         if (location == 0) {
+            // 我找你半年了，原来问题出在这里，艹!
+            lotteryInfo.remove();
             return;
         }
         Bot bot = HuYanEconomy.INSTANCE.bot;
@@ -201,23 +230,29 @@ public class LotteryManager {
         NormalMember member = group.get(lotteryInfo.getQq());
         assert member != null;
         lotteryInfo.remove();
-        switch (type) {
-            case 1:
-                minutesLottery.remove(lotteryInfo.getNumber());
-                break;
-            case 2:
-                hoursLottery.remove(lotteryInfo.getNumber());
-                break;
-            case 3:
-                dayLottery.remove(lotteryInfo.getNumber());
-        }
+
         if (!EconomyUtil.plusMoneyToUser(member, lotteryInfo.getBonus())) {
             member.sendMessage("奖金添加失败，请联系管理员!");
             return;
         }
+
         member.sendMessage(lotteryInfo.toMessage());
-        if (location == 3) {
-            group.sendMessage(String.format("得签着:%s(%s),奖励%s金币", member.getNick(), member.getId(), lotteryInfo.getBonus()));
+        switch (type) {
+            case 1:
+                if (location == 3) {
+                    group.sendMessage(String.format("得签着:%s(%s),奖励%s金币", member.getNick(), member.getId(), lotteryInfo.getBonus()));
+                }
+                break;
+            case 2:
+                if (location == 4) {
+                    group.sendMessage(String.format("得签着:%s(%s),奖励%s金币", member.getNick(), member.getId(), lotteryInfo.getBonus()));
+                }
+                break;
+            case 3:
+                if (location == 5) {
+                    group.sendMessage(String.format("得签着:%s(%s),奖励%s金币", member.getNick(), member.getId(), lotteryInfo.getBonus()));
+                }
+                break;
         }
     }
 
@@ -241,11 +276,9 @@ public class LotteryManager {
 class LotteryMinutesTask implements Task {
 
     private final String id;
-    private List<LotteryInfo> lotteryInfos;
 
-    LotteryMinutesTask(String id, Collection<LotteryInfo> lotteryInfos) {
+    LotteryMinutesTask(String id) {
         this.id = id;
-        this.lotteryInfos = List.copyOf(lotteryInfos);
     }
 
     /**
@@ -271,7 +304,11 @@ class LotteryMinutesTask implements Task {
 
         Set<Long> groups = new HashSet<>();
 
-        for (LotteryInfo lotteryInfo : lotteryInfos) {
+        List<LotteryInfo> lotteryInfoList = HibernateFactory.selectList(LotteryInfo.class, "type", 1);
+        if (lotteryInfoList == null || lotteryInfoList.isEmpty()) {
+            return;
+        }
+        for (LotteryInfo lotteryInfo : lotteryInfoList) {
             groups.add(lotteryInfo.getGroup());
             //位置正确的数量
             int location = 0;
@@ -301,11 +338,12 @@ class LotteryMinutesTask implements Task {
             lotteryInfo = HibernateFactory.merge(lotteryInfo);
             LotteryManager.result(1, location, lotteryInfo);
         }
+
         for (Long group : groups) {
             String format = String.format("本期小签开签啦！\n开签号码%s", currentString);
             Objects.requireNonNull(bot.getGroup(group)).sendMessage(format);
         }
-        lotteryInfos = new ArrayList<>();
+
         //定时任务执行完成，清除自身  我这里需要 其实可以不用
         CronUtil.remove(id);
     }
@@ -320,12 +358,9 @@ class LotteryMinutesTask implements Task {
  */
 class LotteryHoursTask implements Task {
     private final String id;
-    private final List<LotteryInfo> lotteryInfos;
 
-
-    LotteryHoursTask(String id, Collection<LotteryInfo> lotteryInfos) {
+    LotteryHoursTask(String id) {
         this.id = id;
-        this.lotteryInfos = List.copyOf(lotteryInfos);
     }
 
     /**
@@ -343,6 +378,8 @@ class LotteryHoursTask implements Task {
                 String.valueOf(RandomUtil.randomInt(0, 10)),
                 String.valueOf(RandomUtil.randomInt(0, 10))
         };
+
+
         StringBuilder currentString = new StringBuilder(current[0]);
         for (int i = 1; i < current.length; i++) {
             String s = current[i];
@@ -351,6 +388,10 @@ class LotteryHoursTask implements Task {
 
         Set<Long> groups = new HashSet<>();
 
+        List<LotteryInfo> lotteryInfos = HibernateFactory.selectList(LotteryInfo.class, "type", 2);
+        if (lotteryInfos == null || lotteryInfos.isEmpty()) {
+            return;
+        }
         for (LotteryInfo lotteryInfo : lotteryInfos) {
             groups.add(lotteryInfo.getGroup());
             //位置正确的数量
@@ -402,11 +443,10 @@ class LotteryHoursTask implements Task {
 class LotteryDayTask implements Task {
 
     private final String id;
-    private final List<LotteryInfo> lotteryInfos;
 
-    LotteryDayTask(String id, Collection<LotteryInfo> lotteryInfos) {
+
+    LotteryDayTask(String id) {
         this.id = id;
-        this.lotteryInfos = List.copyOf(lotteryInfos);
     }
 
     /**
@@ -425,6 +465,7 @@ class LotteryDayTask implements Task {
                 String.valueOf(RandomUtil.randomInt(0, 10)),
                 String.valueOf(RandomUtil.randomInt(0, 10))
         };
+
         StringBuilder currentString = new StringBuilder(current[0]);
         for (int i = 1; i < current.length; i++) {
             String s = current[i];
@@ -433,6 +474,11 @@ class LotteryDayTask implements Task {
 
         Set<Long> groups = new HashSet<>();
         List<LotteryInfo> list = new ArrayList<>();
+
+        List<LotteryInfo> lotteryInfos = HibernateFactory.selectList(LotteryInfo.class, "type", 2);
+        if (lotteryInfos == null || lotteryInfos.isEmpty()) {
+            return;
+        }
 
         for (LotteryInfo lotteryInfo : lotteryInfos) {
             groups.add(lotteryInfo.getGroup());
@@ -473,6 +519,7 @@ class LotteryDayTask implements Task {
                 list.add(lotteryInfo);
             }
         }
+
         for (Long group : groups) {
             Group botGroup = bot.getGroup(group);
             MessageChainBuilder singleMessages = new MessageChainBuilder();

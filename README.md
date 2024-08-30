@@ -1,7 +1,7 @@
 # HuYanEconomy 壶言壶言经济 --- 娱乐插件
 
 [![version](https://img.shields.io/github/v/release/moyuyanli/huyaneconomy
-)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v1.4.2/HuYanEconomy-1.4.2.mirai2.jar)
+)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v1.4.4/HuYanEconomy-1.4.4.mirai2.jar)
 
 这里是壶言经济，一款mirai娱乐插件，设计灵感来自于论坛的经济帖子，心血来潮就创建了这个项目，从22年11月开始，中间慢慢填坑，
 陆陆续续的完成了一部分饼，由于大部分饼都没实现，所以没在论坛发布，但是在我群共享。
@@ -57,6 +57,15 @@ fishGroup: [ ]
 
 ## 功能列表
 
+由于一些功能上的设计缺陷，修复他们需要改动数据库，导致数据库的数据错误，因此需要执行修复指令：`hye repair`;
+
+建议在控制台执行,并且最好是启动后先执行。只需要执行一次就行
+
+目前已知需要修复版本:
+
+- 1.4.3 -> 1.4.4
+- 1.4.5 -> 1.4.6
+
 ### 经济功能
 
 基于[mirai-economy-core](https://github.com/cssxsh/mirai-economy-core)经济前置，注册货币为`hy-gold`。
@@ -98,7 +107,7 @@ fishGroup: [ ]
 
 ### 银行功能
 
-指令`存款 (额度)`,`deposit (额度)`,`取款 (额度)`,`withdraw (额度)`,`银行利率`;
+指令`存款 (额度)`,`deposit (额度)`,`取款 (额度)`,`withdraw (额度)`,`银行利率`,`富豪榜`;
 
 银行功能设计之初支持多银行管理。
 但是目前只实现了主银行，也就是全局银行。
@@ -244,7 +253,9 @@ fishGroup: [ ]
 
 **在此感谢[Travellerrr](https://github.com/Travellerrr)编写了此功能。**
 
-指令`释放出狱`,`抢银行`,`抢劫 (@id)`,`保释 (@id)`,[管理员指令]`平账 (@id)`;
+指令`开启 抢劫`,`关闭 抢劫`,`释放出狱`,`抢银行`,`抢劫 (@id)`,`保释 (@id)`,[管理员指令]`平账 (@id)`;
+
+本功能需要在对应群开启。
 
 抢劫一个人，概率成功，概率失败。
 
@@ -263,8 +274,6 @@ fishGroup: [ ]
 ## 未完成的规划
 
 - [ ] 赌博功能
-- [ ] 抢劫功能
-- [x] 红包功能
 - [ ] 道具功能重构
 - [ ] 增强功能间互动性
 - [ ] 教会功能

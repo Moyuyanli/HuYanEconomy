@@ -7,6 +7,7 @@ import cn.hutool.json.JSONUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -24,32 +25,60 @@ public class YiYanManager {
     private static final Lock lock = new ReentrantLock();
     private static final Condition condition = lock.newCondition();
 
+    /**
+     * 队列数量
+     */
+    private static Integer queue = 0;
+
+    /**
+     * 请求队列启动
+     */
+    private static AtomicBoolean start = new AtomicBoolean();
+
     private YiYanManager() {
     }
 
     public static void init() {
-        CompletableFuture.runAsync(() -> {
-            for (int i = 0; i < 5; i++) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
-                }
-                getYiYanRequest();
-            }
-        });
+        queue = 5;
+        start.set(false);
+        CompletableFuture.runAsync(YiYanManager::request);
     }
+
+    /**
+     * 启动请求一言请求队列
+     */
+    private synchronized static void request() {
+        if (start.get()) return;
+        start.set(true);
+        while (queue > 0) {
+            getYiYanRequest();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            } finally {
+                if (yiyanList.size() >= 8) {
+                    queue = 0;
+                } else {
+                    queue--;
+                }
+            }
+        }
+        start.set(false);
+    }
+
 
     private static void getYiYanRequest() {
         CompletableFuture.runAsync(() -> {
             try {
                 YiYan yiYan = JSONUtil.parseObj(HttpUtil.get("https://v1.hitokoto.cn")).toBean(YiYan.class);
                 yiyanList.add(yiYan);
-                lock.lock();
-                condition.signalAll(); // 通知所有等待的线程
+            } catch (Exception e) {
+                yiyanList.add(new YiYan(-1, "这里是小狐狸哒~", "kemomimi", "小狐狸语录"));
             } finally {
-                lock.unlock();
+                // 通知一个
+                condition.signal();
             }
         });
     }
@@ -59,7 +88,7 @@ public class YiYanManager {
      *
      * @return 一言
      */
-    public static synchronized YiYan getYiyan() {
+    public static YiYan getYiyan() {
         lock.lock();
         try {
             while (yiyanList.isEmpty()) {
@@ -69,7 +98,10 @@ public class YiYanManager {
             YiYan yiYan = yiyanList.get(0);
             yiyanList.remove(0);
             // 发起新的异步请求以补充列表
-            getYiYanRequest();
+            queue++;
+            if (!start.get()) {
+                CompletableFuture.runAsync(YiYanManager::request);
+            }
             return yiYan;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

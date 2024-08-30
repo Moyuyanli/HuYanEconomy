@@ -73,7 +73,6 @@ public class FishInfo implements Serializable {
     }
 
 
-
     /**
      * 升级鱼竿<p>
      *
@@ -133,18 +132,40 @@ public class FishInfo implements Serializable {
         if (split.length == 2) {
             long group = Long.parseLong(split[1]);
             Group botGroup = HuYanEconomy.INSTANCE.bot.getGroup(group);
+            FishPond finalFishPond;
             if (botGroup != null) {
                 //注册新鱼塘
-                FishPond finalFishPond = new FishPond(1, group, HuYanEconomy.config.getOwner().get(0), botGroup.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
-                return HibernateFactory.merge(finalFishPond);
+                finalFishPond = new FishPond(1, group, HuYanEconomy.config.getOwner().get(0), botGroup.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
             } else {
-                FishPond finalFishPond = new FishPond(1, 0, 0, "空鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
-                return HibernateFactory.merge(finalFishPond);
+                finalFishPond = new FishPond(1, 0, 0, "空鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
             }
+            return HibernateFactory.merge(finalFishPond);
         } else {
             //todo 私人鱼塘
             return null;
         }
+    }
+
+    /**
+     * 获取群鱼塘<p>
+     *
+     * @author Moyuyanli
+     * @date 2022/12/8 15:11
+     * @see FishPond
+     */
+    public FishPond getFishPond(Group group) {
+        FishPond fishPond;
+
+        //从数据库中查询该鱼塘
+        fishPond = HibernateFactory.selectOne(FishPond.class, "code", "g-" + group.getId());
+        //如果不存在 或者报错，则进行新建改鱼塘
+        if (fishPond != null) {
+            return fishPond;
+        }
+
+        //注册新鱼塘
+        fishPond = new FishPond(1, group.getId(), HuYanEconomy.config.getOwner().get(0), group.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
+        return HibernateFactory.merge(fishPond);
     }
 
     /**

@@ -8,9 +8,7 @@ import cn.chahuyun.economy.config.RobMsgConfig;
 import cn.chahuyun.economy.constant.Icon;
 import cn.chahuyun.economy.event.BotOnlineEventListener;
 import cn.chahuyun.economy.event.MessageEventListener;
-import cn.chahuyun.economy.manager.BankManager;
-import cn.chahuyun.economy.manager.LotteryManager;
-import cn.chahuyun.economy.manager.TitleManager;
+import cn.chahuyun.economy.manager.*;
 import cn.chahuyun.economy.plugin.FishManager;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.plugin.TitleTemplateManager;
@@ -35,7 +33,7 @@ public final class HuYanEconomy extends JavaPlugin {
     /**
      * 全局版本
      */
-    public static final String VERSION = "1.4.2";
+    public static final String VERSION = "1.4.6";
     /**
      * 配置
      */
@@ -90,11 +88,13 @@ public final class HuYanEconomy extends JavaPlugin {
             Log.warning("插件管理机器人还没有配置，请尽快配置!");
         } else {
             EconomyUtil.init();
-            LotteryManager.init(true);
+            LotteryManager.init();
             FishManager.init();
             BankManager.init();
             TitleManager.init();
             YiYanManager.init();
+            GamesManager.init();
+
             //注册自定义称号
             TitleTemplateManager.loadingCustomTitle();
 

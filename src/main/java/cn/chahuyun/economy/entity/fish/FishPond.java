@@ -3,6 +3,8 @@ package cn.chahuyun.economy.entity.fish;
 import cn.chahuyun.economy.plugin.FishManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
+import cn.hutool.core.builder.EqualsBuilder;
+import cn.hutool.core.builder.HashCodeBuilder;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -152,4 +154,38 @@ public class FishPond implements Serializable {
         return HibernateFactory.merge(this);
     }
 
+
+    public int getId() {
+        return id;
+    }
+
+    public FishPond setId(int id) {
+        this.id = id;
+        return this;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public FishPond setCode(String code) {
+        this.code = code;
+        return this;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+
+        if (object == null || getClass() != object.getClass()) return false;
+
+        FishPond fishPond = (FishPond) object;
+
+        return new EqualsBuilder().append(code, fishPond.code).isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 37).append(code).toHashCode();
+    }
 }

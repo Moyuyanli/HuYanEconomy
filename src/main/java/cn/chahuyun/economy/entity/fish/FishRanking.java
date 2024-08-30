@@ -105,5 +105,30 @@ public class FishRanking implements Serializable {
         return new PlainText(message);
     }
 
+    public int getId() {
+        return id;
+    }
 
+    public FishRanking setId(int id) {
+        this.id = id;
+        return this;
+    }
+
+    public Fish getFish() {
+        return fish;
+    }
+
+    public FishRanking setFish(Fish fish) {
+        this.fish = fish;
+        return this;
+    }
+
+    public FishPond getFishPond() {
+        return fishPond;
+    }
+
+    public FishRanking setFishPond(FishPond fishPond) {
+        this.fishPond = fishPond;
+        return this;
+    }
 }

@@ -36,6 +36,7 @@ public class RobManager {
     // 抢劫入狱消息变量
     static String[] robJailVariable = {"${对象}", "${金币}", "${时间}"};
 
+
     /**
      * 抢劫其他玩家
      *
@@ -52,7 +53,7 @@ public class RobManager {
         // 获取抢劫信息
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, sender.getId());
 
-        if (checkCoolDown(subject, sender, robInfo)) return;
+        if (checkCoolDown(subject, sender, robInfo, true)) return;
 
         // 获取消息内容
         String message = event.getMessage().contentToString();
@@ -129,13 +130,16 @@ public class RobManager {
         // 获取抢劫信息
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, sender.getId());
 
-        if (checkCoolDown(subject, sender, robInfo)) return;
+        if (checkCoolDown(subject, sender, robInfo, true)) return;
 
         // 计算抢劫成功率
         int chance = RandomUtil.randomInt(0, 101);
 
+
+        int i = RandomUtil.randomInt(3, 8);
+
         // 计算抢劫金额
-        double successMoney = Math.round(RandomUtil.randomDouble(10000, 100000) * 10.0) / 10.0;
+        double successMoney = Math.round(RandomUtil.randomDouble(10000 * (i - 2), 10000 * (i + 1)) * 10.0) / 10.0;
         double failedMoney = Math.round(RandomUtil.randomDouble(1000, 5000) * 10.0) / 10.0;
 
         // 判断是否被抓
@@ -173,13 +177,13 @@ public class RobManager {
             robInfo = RobInfo.builder()
                     .userId(sender.getId())
                     .lastRobTime(new Date())
-                    .cooldown(cooldown)
+                    .cooling(cooldown)
                     .isInJail(isCauseJail)
                     .build();
         } else {
             // 更新抢劫信息
             robInfo.setLastRobTime(new Date());
-            robInfo.setCooldown(cooldown);
+            robInfo.setCooling(cooldown);
             robInfo.setInJail(isCauseJail);
         }
 
@@ -206,30 +210,37 @@ public class RobManager {
      * @param robInfo 抢劫信息
      * @return 如果用户在冷却中或监狱中，发送消息并返回 true，否则返回 false
      */
-    private static boolean checkCoolDown(Contact subject, User sender, RobInfo robInfo) {
-
+    private static boolean checkCoolDown(Contact subject, User sender, RobInfo robInfo, boolean send) {
         // 获取当前时间
         Date now = new Date();
-        // 判断是否在冷却中
-        if (robInfo != null && (now.getTime() - robInfo.getLastRobTime().getTime()) < robInfo.getCooldown() * 1000) {
-            // 计算剩余冷却时间
-            long remainingCooldown = (robInfo.getCooldown() * 1000 - (now.getTime() - robInfo.getLastRobTime().getTime())) / 1000;
-            // 判断是否在监狱中
 
-            Message msg;
-            if (robInfo.isInJail()) {
-                msg = MessageUtil.formatMessageChain(sender.getId(), "你还要被关%s了!%n这就想往出跑了？", TimeConvertUtil.secondConvert(remainingCooldown));
-            } else {
-                msg = MessageUtil.formatMessageChain(sender.getId(), "再等%s吧!%n最近风气有点不好。", TimeConvertUtil.secondConvert(remainingCooldown));
+        if (robInfo != null) {
+            Date lastRobTime = robInfo.getLastRobTime();
+            // 判断是否在冷却中
+            if (lastRobTime != null && (now.getTime() - lastRobTime.getTime()) < robInfo.getCooling() * 1000) {
+                // 计算剩余冷却时间
+                long remainingCooldown = (robInfo.getCooling() * 1000 - (now.getTime() - lastRobTime.getTime())) / 1000;
+                // 判断是否在监狱中
+
+                Message msg;
+                if (robInfo.isInJail()) {
+                    msg = MessageUtil.formatMessageChain(sender.getId(), "你还要被关%s了!%n这就想往出跑了？", TimeConvertUtil.secondConvert(remainingCooldown));
+                } else {
+                    msg = MessageUtil.formatMessageChain(sender.getId(), "再等%s吧!%n最近风气有点不好。", TimeConvertUtil.secondConvert(remainingCooldown));
+                }
+
+                if (send) {
+                    // 发送消息
+                    subject.sendMessage(msg);
+                }
+                return true;
             }
-
-            // 发送消息
-            subject.sendMessage(msg);
-            return true;
         }
 
         if (EconomyUtil.getMoneyByUser(sender) <= 0) {
-            subject.sendMessage(MessageUtil.formatMessageChain(sender.getId(), robConfig.getRobNotEnoughMsg()));
+            if (send) {
+                subject.sendMessage(MessageUtil.formatMessageChain(sender.getId(), robConfig.getRobNotEnoughMsg()));
+            }
             return true;
         }
 
@@ -358,21 +369,24 @@ public class RobManager {
         }
 
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, sender.getId());
-        if (robInfo != null && checkCoolDown(subject, atMember, robInfo)) {
+        if (robInfo != null && checkCoolDown(subject, atMember, robInfo, false)) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你在监狱，怎么保释?"));
             return;
         }
 
-        double moneyByUser = EconomyUtil.getMoneyByUser(sender);
-
-        if (moneyByUser < 500) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的钱不够 500 ,怎么保释？"));
-            return;
-        }
 
         RobInfo one = HibernateFactory.selectOne(RobInfo.class, atMember.getId());
         if (one == null || !one.isInJail()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "他不在监狱，你要保释谁?"));
+            return;
+        }
+
+        double bailMoney = one.getCooling() * 3;
+
+        double moneyByUser = EconomyUtil.getMoneyByUser(sender);
+
+        if (moneyByUser < bailMoney) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的钱不够 %.1f ,怎么保释？", bailMoney));
             return;
         }
 
@@ -384,4 +398,17 @@ public class RobManager {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "保释失败了!"));
         }
     }
+
+    /**
+     * 是否在医药
+     *
+     * @param user 用户
+     * @return true 在
+     */
+    public static Boolean isHospital(User user) {
+        RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, user.getId());
+        return robInfo != null && robInfo.getType() == 2;
+    }
+
+
 }
