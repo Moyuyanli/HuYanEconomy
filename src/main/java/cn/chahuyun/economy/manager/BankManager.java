@@ -16,6 +16,7 @@ import cn.hutool.cron.CronUtil;
 import cn.hutool.cron.task.Task;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
+import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.ForwardMessageBuilder;
@@ -24,7 +25,10 @@ import net.mamoe.mirai.message.data.MessageChainBuilder;
 import net.mamoe.mirai.message.data.PlainText;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -36,9 +40,6 @@ import java.util.stream.Collectors;
  */
 @EventComponent
 public class BankManager {
-
-    private BankManager() {
-    }
 
     /**
      * 初始化银行<p>
@@ -150,7 +151,12 @@ public class BankManager {
      * @author Moyuyanli
      * @date 2022/12/23 16:08
      */
+    @MessageAuthorize(
+            text = {"今日利率", "银行利率"}
+    )
     public static void viewBankInterest(MessageEvent event) {
+        Log.info("银行指令");
+
         BankInfo bankInfo = HibernateFactory.selectOne(BankInfo.class, 1);
         event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "今日银行利率是%s%%", bankInfo.getInterest()));
     }
@@ -160,7 +166,12 @@ public class BankManager {
      *
      * @param event 消息
      */
+    @MessageAuthorize(
+            text = {"富豪榜", "经济排行"}
+    )
     public static void viewRegalTop(MessageEvent event) {
+        Log.info("经济指令");
+
         Contact subject = event.getSubject();
         Bot bot = event.getBot();
 
@@ -182,7 +193,13 @@ public class BankManager {
         int index = 1;
         for (Map.Entry<EconomyAccount, Double> entry : collect.entrySet()) {
             UserInfo userInfo = UserManager.getUserInfo(entry.getKey());
-            String name = Objects.requireNonNull(bot.getGroup(userInfo.getRegisterGroup())).getName();
+            Group group = bot.getGroup(userInfo.getRegisterGroup());
+            String name;
+            if (group == null) {
+                name = String.valueOf(userInfo.getRegisterGroup());
+            } else {
+                name = group.getName();
+            }
             PlainText plainText = MessageUtil.formatMessage(
                     "top:%d%n" +
                             "用户:%s%n" +

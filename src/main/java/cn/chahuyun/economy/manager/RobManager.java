@@ -1,10 +1,12 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.MessageMatchingEnum;
+import cn.chahuyun.authorize.constant.PermConstant;
+import cn.chahuyun.economy.constant.PermCode;
 import cn.chahuyun.economy.entity.rob.RobInfo;
-import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.MessageUtil;
-import cn.chahuyun.economy.utils.ShareUtils;
-import cn.chahuyun.economy.utils.TimeConvertUtil;
+import cn.chahuyun.economy.utils.*;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.util.RandomUtil;
 import net.mamoe.mirai.contact.Contact;
@@ -26,6 +28,7 @@ import static cn.chahuyun.economy.HuYanEconomy.robConfig;
  * @author Moyuyanli
  * @date 2022/11/15 10:01
  */
+@EventComponent
 public class RobManager {
     // 抢劫失败消息变量
     static String[] robFailedVariable = {"${对象}"};
@@ -42,7 +45,14 @@ public class RobManager {
      *
      * @param event 群消息事件
      */
+    @MessageAuthorize(
+            text = "抢劫 ?\\[mirai:at:\\d+] ?",
+            messageMatching = MessageMatchingEnum.REGULAR,
+            groupPermissions = PermCode.ROB_PERM
+    )
     public static void robOther(GroupMessageEvent event) {
+        Log.info("抢劫指令");
+
         // 获取发送者
         User sender = event.getSender();
         // 获取群组
@@ -121,7 +131,13 @@ public class RobManager {
      *
      * @param event 群消息事件
      */
+    @MessageAuthorize(
+            text = "抢银行",
+            groupPermissions = PermCode.ROB_PERM
+    )
     public static void robBank(GroupMessageEvent event) {
+        Log.info("抢银行指令");
+
         // 获取发送者
         User sender = event.getSender();
         // 获取消息主体
@@ -196,7 +212,13 @@ public class RobManager {
      *
      * @param event 消息事件
      */
+    @MessageAuthorize(
+            text = "释放出狱",
+            userPermissions = PermConstant.OWNER
+    )
     public static void release(MessageEvent event) {
+        Log.info("监狱指令");
+
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, event.getSender().getId());
         updateRobInfo(event.getSender(), robInfo, 0, false);
         event.getSubject().sendMessage(new At(event.getSender().getId()).plus("\n你已成功释放！"));
@@ -333,7 +355,15 @@ public class RobManager {
      *
      * @param event 消息事件
      */
+    @MessageAuthorize(
+            text = "平账 ?\\[mirai:at:\\d+] ?",
+            messageMatching = MessageMatchingEnum.REGULAR,
+            userPermissions = {PermConstant.OWNER,PermConstant.ADMIN},
+            groupPermissions = PermCode.ROB_PERM
+    )
     public static void flatAccount(GroupMessageEvent event) {
+        Log.info("平账指令");
+
         Member atMember = ShareUtils.getAtMember(event);
         Group subject = event.getSubject();
 
@@ -358,7 +388,15 @@ public class RobManager {
      *
      * @param event 群消息事件
      */
+    @MessageAuthorize(
+            text = "保释 ?\\[mirai:at:\\d+] ?",
+            messageMatching = MessageMatchingEnum.REGULAR,
+            userPermissions = {PermConstant.OWNER,PermConstant.ADMIN},
+            groupPermissions = PermCode.ROB_PERM
+    )
     public static void bail(GroupMessageEvent event) {
+        Log.info("保释指令");
+
         Member atMember = ShareUtils.getAtMember(event);
         Group subject = event.getSubject();
         Member sender = event.getSender();

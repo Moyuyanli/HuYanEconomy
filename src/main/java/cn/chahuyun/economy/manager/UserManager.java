@@ -1,5 +1,7 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.entity.TitleInfo;
@@ -41,13 +43,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Moyuyanli
  * @date 2022/11/14 16:20
  */
+@EventComponent
 public class UserManager {
 
     private static int index = 1;
 
-    private UserManager() {
-
-    }
 
     /**
      * 获取用户信息<p>
@@ -101,7 +101,10 @@ public class UserManager {
      * @author Moyuyanli
      * @date 2022/11/23 9:37
      */
+    @MessageAuthorize(text = {"个人信息","info"})
     public static void getUserInfoImage(MessageEvent event) {
+        Log.info("个人信息指令");
+
         Contact subject = event.getSubject();
         User sender = event.getSender();
 

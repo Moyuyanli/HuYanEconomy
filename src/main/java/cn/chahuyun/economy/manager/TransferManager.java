@@ -1,5 +1,9 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.MessageMatchingEnum;
+import cn.chahuyun.authorize.constant.PermConstant;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.bank.Bank;
 import cn.chahuyun.economy.entity.bank.action.Transfer;
@@ -22,12 +26,9 @@ import net.mamoe.mirai.message.data.SingleMessage;
  * @author Moyuyanli
  * @date 2022/11/14 12:27
  */
+@EventComponent
 public class TransferManager {
 
-
-    private TransferManager() {
-
-    }
 
     /**
      * 用户转账给另一个用户操作<p>
@@ -36,7 +37,13 @@ public class TransferManager {
      * @author Moyuyanli
      * @date 2022/12/9 21:06
      */
+    @MessageAuthorize(
+            text = "转账(\\[mirai:at:\\d+])? \\d+( \\d+)?",
+            messageMatching = MessageMatchingEnum.REGULAR
+    )
     public static void userToUser(MessageEvent event) {
+        Log.info("转账指令");
+
         Contact subject = event.getSubject();
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
@@ -97,7 +104,14 @@ public class TransferManager {
         return "转帐成功";
     }
 
+    @MessageAuthorize(
+            text = "greedisgood \\d+",
+            messageMatching = MessageMatchingEnum.REGULAR,
+            userPermissions = {PermConstant.OWNER,PermConstant.ADMIN}
+    )
     public static void Cheat(MessageEvent event) {
+        Log.info("作弊指令");
+
         Contact subject = event.getSubject();
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();

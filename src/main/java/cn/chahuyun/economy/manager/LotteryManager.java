@@ -1,7 +1,11 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.config.EconomyConfig;
+import cn.chahuyun.economy.constant.PermCode;
 import cn.chahuyun.economy.entity.LotteryInfo;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
@@ -32,13 +36,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Moyuyanli
  * @date 2022/11/15 10:01
  */
+@EventComponent
 public class LotteryManager {
 
     private static final AtomicBoolean minuteTiming = new AtomicBoolean(false);
     private static final AtomicBoolean hoursTiming = new AtomicBoolean(false);
 
-    private LotteryManager() {
-    }
 
     /**
      * 初始化彩票<p>
@@ -122,7 +125,14 @@ public class LotteryManager {
      * @author Moyuyanli
      * @date 2022/12/6 11:23
      */
+    @MessageAuthorize(
+            text = "猜签 (\\d+)( \\d+)|lottery (\\d+)( \\d+)",
+            messageMatching = MessageMatchingEnum.REGULAR,
+            groupPermissions = PermCode.LOTTERY_PERM
+    )
     public static void addLottery(MessageEvent event) {
+        Log.info("彩票指令");
+
         User user = event.getSender();
         Contact subject = event.getSubject();
 

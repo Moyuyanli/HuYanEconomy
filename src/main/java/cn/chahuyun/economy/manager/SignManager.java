@@ -45,9 +45,6 @@ public class SignManager {
 
     private static int index = 0;
 
-    private SignManager() {
-
-    }
 
     /**
      * 签到<p>
@@ -58,6 +55,8 @@ public class SignManager {
      */
     @MessageAuthorize(text = {"签到","打卡","sign"})
     public static void sign(MessageEvent event) {
+        Log.info("签到指令");
+
         User user = event.getSender();
         Contact subject = event.getSubject();
         MessageChain message = event.getMessage();

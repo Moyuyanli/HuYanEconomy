@@ -1,6 +1,11 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.PermConstant;
+import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.constant.PermCode;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.Fish;
@@ -42,6 +47,7 @@ import static cn.chahuyun.economy.HuYanEconomy.msgConfig;
  * @author Moyuyanli
  * @date 2022/11/14 12:26
  */
+@EventComponent
 public class GamesManager {
 
     /**
@@ -49,8 +55,6 @@ public class GamesManager {
      */
     private static final Map<Long, Date> playerCooling = new HashMap<>();
 
-    private GamesManager() {
-    }
 
     public static void init() {
         Task task = new Task() {
@@ -121,7 +125,13 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/9 16:16
      */
+    @MessageAuthorize(
+            text = {"钓鱼", "抛竿"},
+            groupPermissions = PermCode.FISH_PERM
+    )
     public static void fishing(GroupMessageEvent event) {
+        Log.info("钓鱼指令");
+
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
         Group subject = event.getSubject();
@@ -212,6 +222,7 @@ public class GamesManager {
             }
             MessageChain nextMessage = newMessage.getMessage();
             String nextMessageCode = nextMessage.serializeToMiraiCode();
+            /*
             if (!config.getPrefix().isBlank()) {
                 if (!nextMessageCode.startsWith(config.getPrefix())) {
                     continue;
@@ -220,6 +231,7 @@ public class GamesManager {
             } else {
                 nextMessageCode = nextMessageCode.trim();
             }
+             */
             int randomDifficultyInt = RandomUtil.randomInt(0, 4);
             int randomLevelInt = RandomUtil.randomInt(0, 4);
 
@@ -366,7 +378,13 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/9 16:15
      */
+    @MessageAuthorize(
+            text = {"购买鱼竿"},
+            groupPermissions = PermCode.FISH_PERM
+    )
     public static void buyFishRod(MessageEvent event) {
+        Log.info("购买鱼竿指令");
+
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user;
         if (userInfo == null) {
@@ -404,7 +422,13 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/11 22:27
      */
+    @MessageAuthorize(
+            text = {"升级鱼竿"},
+            groupPermissions = PermCode.FISH_PERM
+    )
     public static void upFishRod(MessageEvent event) {
+        Log.info("升级鱼竿指令");
+
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
 
         Contact subject = event.getSubject();
@@ -430,7 +454,12 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/14 15:27
      */
+    @MessageAuthorize(
+            text = {"钓鱼榜", "钓鱼排行"}
+    )
     public static void fishTop(MessageEvent event) {
+        Log.info("钓鱼榜指令");
+
         Bot bot = event.getBot();
         Contact subject = event.getSubject();
 
@@ -466,7 +495,14 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/16 11:04
      */
+    @MessageAuthorize(
+            text = "刷新钓鱼",
+            userPermissions = {PermConstant.OWNER,PermConstant.ADMIN},
+            groupPermissions = PermCode.FISH_PERM
+    )
     public static void refresh(MessageEvent event) {
+        Log.info("刷新钓鱼指令");
+
         Boolean status = HibernateFactory.getSession().fromTransaction(session -> {
             HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
             JpaCriteriaQuery<FishInfo> query = builder.createQuery(FishInfo.class);
@@ -501,9 +537,35 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/23 16:12
      */
+    @MessageAuthorize(
+            text = "鱼竿等级",
+            groupPermissions = PermCode.FISH_PERM
+    )
     public static void viewFishLevel(MessageEvent event) {
+        Log.info("鱼竿等级指令");
+
         int rodLevel = Objects.requireNonNull(UserManager.getUserInfo(event.getSender())).getFishInfo().getRodLevel();
         event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的鱼竿等级为%s级", rodLevel));
+    }
+
+    @MessageAuthorize(
+            text = "开启 钓鱼",
+            userPermissions = {PermConstant.OWNER,PermConstant.ADMIN}
+    )
+    public void startFish(GroupMessageEvent event) {
+        Group group = event.getGroup();
+        cn.chahuyun.authorize.entity.User user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        if (util.checkUserHasPerm(user, PermCode.FISH_PERM)) {
+            group.sendMessage("本群的钓鱼已经开启了!");
+            return;
+        }
+
+        util.addUserToPermGroupByName(user,)
+
+
     }
 
 }
