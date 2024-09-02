@@ -1,5 +1,7 @@
 package cn.chahuyun.economy;
 
+import cn.chahuyun.authorize.PermissionServer;
+import cn.chahuyun.authorize.exception.ExceptionHandle;
 import cn.chahuyun.economy.command.EconomyCommand;
 import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.config.EconomyPluginConfig;
@@ -12,10 +14,7 @@ import cn.chahuyun.economy.manager.BankManager;
 import cn.chahuyun.economy.manager.GamesManager;
 import cn.chahuyun.economy.manager.LotteryManager;
 import cn.chahuyun.economy.manager.TitleManager;
-import cn.chahuyun.economy.plugin.FishManager;
-import cn.chahuyun.economy.plugin.PluginManager;
-import cn.chahuyun.economy.plugin.TitleTemplateManager;
-import cn.chahuyun.economy.plugin.YiYanManager;
+import cn.chahuyun.economy.plugin.*;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
@@ -61,7 +60,7 @@ public final class HuYanEconomy extends JavaPlugin {
                 .author("Moyuyanli")
                 //忽略依赖版本 true 可选依赖 false 必须依赖
                 .dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", false)
-                .dependsOn("cn.chahuyun.HuYanAuthorize", false)
+                .dependsOn("cn.chahuyun.HuYanAuthorize", ">= 1.1.0", false)
                 .dependsOn("cn.chahuyun.HuYanSession", true)
                 .build());
     }
@@ -81,8 +80,11 @@ public final class HuYanEconomy extends JavaPlugin {
         robConfig = RobMsgConfig.INSTANCE;
         //插件功能初始化
         PluginManager.init();
+        //插件权限code注册
+        PermCodeManager.init(this);
         //初始化插件数据库
         HibernateUtil.init(this);
+
 
         EventChannel<Event> eventEventChannel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE);
 
@@ -102,6 +104,9 @@ public final class HuYanEconomy extends JavaPlugin {
             TitleTemplateManager.loadingCustomTitle();
 
             eventEventChannel.registerListenerHost(new BotOnlineEventListener());
+
+            PermissionServer.INSTANCE.init(this, "cn.chahuyun.economy.manager",new ExceptionHandle());
+
             eventEventChannel.registerListenerHost(new MessageEventListener());
             Log.info("事件已监听!");
         }
