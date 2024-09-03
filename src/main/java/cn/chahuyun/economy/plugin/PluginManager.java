@@ -66,7 +66,7 @@ public class PluginManager {
         try {
             //壶言会话
             if (EconomyPluginConfig.INSTANCE.getFirstStart()) {
-                HuYanEconomy.config.setOwner(Collections.singletonList(ConfigData.INSTANCE.getOwner()));
+                HuYanEconomy.config.setOwner(ConfigData.INSTANCE.getOwner());
                 Log.info("检测到壶言会话,已同步主人!");
             }
             isHuYanSessionPlugin = true;

@@ -164,7 +164,7 @@ public class FishInfo implements Serializable {
         }
 
         //注册新鱼塘
-        fishPond = new FishPond(1, group.getId(), HuYanEconomy.config.getOwner().get(0), group.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
+        fishPond = new FishPond(1, group.getId(), HuYanEconomy.config.getOwner(), group.getName() + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！");
         return HibernateFactory.merge(fishPond);
     }
 
