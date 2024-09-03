@@ -89,7 +89,7 @@ public final class HuYanEconomy extends JavaPlugin {
         EventChannel<Event> eventEventChannel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE);
 
         long configBot = config.getBot();
-        if (configBot == 0) {
+        if (configBot == 123456) {
             Log.warning("插件管理机器人还没有配置，请尽快配置!");
         } else {
             EconomyUtil.init();
