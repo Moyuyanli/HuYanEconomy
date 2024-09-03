@@ -11,7 +11,6 @@ import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.cron.CronUtil;
 import cn.hutool.cron.task.Task;
 import net.mamoe.mirai.Bot;
@@ -51,7 +50,7 @@ public class BankManager {
     public static void init() {
         BankInfo one = HibernateFactory.selectOne(BankInfo.class, 1);
         if (one == null) {
-            BankInfo bankInfo = new BankInfo("global", "主银行", "经济服务", HuYanEconomy.config.getOwner().get(0), 0);
+            BankInfo bankInfo = new BankInfo("global", "主银行", "经济服务", HuYanEconomy.config.getOwner(), 0);
             HibernateFactory.merge(bankInfo);
         }
         List<BankInfo> bankInfos = null;
@@ -71,10 +70,7 @@ public class BankManager {
      * @author Moyuyanli
      * @date 2022/12/21 11:04
      */
-    @MessageAuthorize(
-            text = "存款 \\d+|deposit \\d+",
-            messageMatching = MessageMatchingEnum.REGULAR
-    )
+    @MessageAuthorize(text = "存款 \\d+|deposit \\d+", messageMatching = MessageMatchingEnum.REGULAR)
     public static void deposit(MessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
@@ -111,10 +107,7 @@ public class BankManager {
      * @author Moyuyanli
      * @date 2022/12/21 11:04
      */
-    @MessageAuthorize(
-            text = "取款 \\d+|withdraw \\d+",
-            messageMatching = MessageMatchingEnum.REGULAR
-    )
+    @MessageAuthorize(text = "取款 \\d+|withdraw \\d+", messageMatching = MessageMatchingEnum.REGULAR)
     public static void withdrawal(MessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
@@ -151,14 +144,12 @@ public class BankManager {
      * @author Moyuyanli
      * @date 2022/12/23 16:08
      */
-    @MessageAuthorize(
-            text = {"今日利率", "银行利率"}
-    )
+    @MessageAuthorize(text = {"本周利率", "银行利率"})
     public static void viewBankInterest(MessageEvent event) {
         Log.info("银行指令");
 
         BankInfo bankInfo = HibernateFactory.selectOne(BankInfo.class, 1);
-        event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "今日银行利率是%s%%", bankInfo.getInterest()));
+        event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本周银行利率是%s%%", bankInfo.getInterest()));
     }
 
     /**
@@ -166,9 +157,7 @@ public class BankManager {
      *
      * @param event 消息
      */
-    @MessageAuthorize(
-            text = {"富豪榜", "经济排行"}
-    )
+    @MessageAuthorize(text = {"富豪榜", "经济排行"})
     public static void viewRegalTop(MessageEvent event) {
         Log.info("经济指令");
 
@@ -180,15 +169,7 @@ public class BankManager {
 
         Map<EconomyAccount, Double> accountByBank = EconomyUtil.getAccountByBank();
 
-        LinkedHashMap<EconomyAccount, Double> collect = accountByBank.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                .limit(10)
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (oldValue, newValue) -> oldValue,
-                        LinkedHashMap::new
-                ));
+        LinkedHashMap<EconomyAccount, Double> collect = accountByBank.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(10).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 
         int index = 1;
         for (Map.Entry<EconomyAccount, Double> entry : collect.entrySet()) {
@@ -200,13 +181,7 @@ public class BankManager {
             } else {
                 name = group.getName();
             }
-            PlainText plainText = MessageUtil.formatMessage(
-                    "top:%d%n" +
-                            "用户:%s%n" +
-                            "注册群:%s%n" +
-                            "存款:%.1f",
-                    index++, userInfo.getName(), name, entry.getValue()
-            );
+            PlainText plainText = MessageUtil.formatMessage("top:%d%n" + "用户:%s%n" + "注册群:%s%n" + "存款:%.1f", index++, userInfo.getName(), name, entry.getValue());
             builder.add(bot, plainText);
         }
 
@@ -247,7 +222,7 @@ class BankInterestTask implements Task {
         for (BankInfo bankInfo : bankList) {
             if (bankInfo.isInterestSwitch()) {
                 if (DateUtil.thisDayOfWeek() == 2) {
-                    bankInfo.setInterest(RandomUtil.randomInt(1, 5));
+                    bankInfo.setInterest(BankInfo.randomInterest());
                 }
             }
             if (bankInfo.getId() == 1) {
@@ -255,9 +230,6 @@ class BankInterestTask implements Task {
                 Map<EconomyAccount, Double> accountByBank = EconomyUtil.getAccountByBank();
                 for (Map.Entry<EconomyAccount, Double> entry : accountByBank.entrySet()) {
                     UserInfo userInfo = UserManager.getUserInfo(entry.getKey());
-                    if (userInfo == null) {
-                        continue;
-                    }
                     double v = entry.getValue() * (interest / 100.0);
                     v = Double.parseDouble(String.format("%.1f", v));
                     if (EconomyUtil.plusMoneyToBankForAccount(entry.getKey(), v)) {

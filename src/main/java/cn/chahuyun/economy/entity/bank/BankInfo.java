@@ -1,6 +1,5 @@
 package cn.chahuyun.economy.entity.bank;
 
-import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.util.RandomUtil;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -82,9 +81,18 @@ public class BankInfo {
         this.regTime = new Date();
         this.regTotal = regTotal;
         this.interestSwitch = true;
-        this.interest = RandomUtil.randomInt(2, 9);
+        this.interest = randomInterest();
     }
 
-
+    public static Integer randomInterest() {
+        int i = RandomUtil.randomInt(1, 101);
+        if (i <= 70) {
+            return RandomUtil.randomInt(1, 4);
+        } else if (i <= 99) {
+            return RandomUtil.randomInt(4, 8);
+        } else {
+            return RandomUtil.randomInt(-3, 0);
+        }
+    }
 
 }
