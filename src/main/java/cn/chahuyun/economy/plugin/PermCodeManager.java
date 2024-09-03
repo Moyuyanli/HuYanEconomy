@@ -3,11 +3,8 @@ package cn.chahuyun.economy.plugin;
 import cn.chahuyun.authorize.PermissionServer;
 import cn.chahuyun.authorize.entity.Perm;
 import cn.chahuyun.authorize.entity.PermGroup;
-import cn.chahuyun.authorize.entity.User;
 import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.economy.constant.PermCode;
-import cn.chahuyun.hibernateplus.HibernateFactory;
-import lombok.val;
 import net.mamoe.mirai.console.plugin.jvm.JvmPlugin;
 
 /**
@@ -31,18 +28,29 @@ public class PermCodeManager {
 
         PermUtil util = PermUtil.INSTANCE;
 
-        val group = util.selectOneByName(PermCode.FISH_PERM_GROUP);
+        PermGroup group = util.selectPermGroupOneByName(PermCode.FISH_PERM_GROUP);
 
         if (group == null) {
-            PermGroup permGroup = new PermGroup(PermCode.FISH_PERM_GROUP, null);
-            Perm perm = HibernateFactory.selectOne(Perm.class, "code", PermCode.FISH_PERM);
-            permGroup.getPerms().add(perm);
-
-            HibernateFactory.merge(permGroup);
+            group = util.talkPermGroupByName(PermCode.FISH_PERM_GROUP);
+            Perm perm = util.takePerm(PermCode.FISH_PERM);
+            util.addPermToPermGroupByPermGroup(perm, group);
         }
 
+        group = util.selectPermGroupOneByName(PermCode.ROB_PERM_GROUP);
 
-        User.Companion
+        if (group == null) {
+            group = util.talkPermGroupByName(PermCode.ROB_PERM_GROUP);
+            Perm perm = util.takePerm(PermCode.ROB_PERM);
+            util.addPermToPermGroupByPermGroup(perm, group);
+        }
+
+        group = util.selectPermGroupOneByName(PermCode.LOTTERY_PERM_GROUP);
+
+        if (group == null) {
+            group = util.talkPermGroupByName(PermCode.LOTTERY_PERM_GROUP);
+            Perm perm = util.takePerm(PermCode.LOTTERY_PERM);
+            util.addPermToPermGroupByPermGroup(perm, group);
+        }
 
     }
 
