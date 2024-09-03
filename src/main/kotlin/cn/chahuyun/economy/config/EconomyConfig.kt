@@ -14,7 +14,7 @@ import net.mamoe.mirai.console.data.value
 object EconomyConfig : AutoSavePluginConfig("Config") {
 
     @ValueDescription("主人\n")
-    var owner: List<Long> by value(listOf())
+    var owner: Long by value()
 
     @ValueDescription("指令触发前缀,空白则没有前缀")
     var prefix: String by value(" ")
