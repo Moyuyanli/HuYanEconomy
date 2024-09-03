@@ -1,9 +1,11 @@
 package cn.chahuyun.economy.entity.rob;
 
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
+import net.mamoe.mirai.contact.User;
 
 import java.util.Date;
 
@@ -32,5 +34,17 @@ public class RobInfo {
      * 是否在监狱中
      */
     private boolean isInJail;
+
+    /**
+     * 存在位置<p>
+     * <li>0.正常</li>
+     * <li>1.监狱</li>
+     * <li>2.医院</li>
+     */
+    private int type;
+
+    public Long getCooling() {
+        return cooling;
+    }
 
 }

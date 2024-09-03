@@ -1,7 +1,7 @@
 # HuYanEconomy 壶言壶言经济 --- 娱乐插件
 
 [![version](https://img.shields.io/github/v/release/moyuyanli/huyaneconomy
-)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v1.4.4/HuYanEconomy-1.4.4.mirai2.jar)
+)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v1.4.7/HuYanEconomy-1.4.7.mirai2.jar)
 
 这里是壶言经济，一款mirai娱乐插件，设计灵感来自于论坛的经济帖子，心血来潮就创建了这个项目，从22年11月开始，中间慢慢填坑，
 陆陆续续的完成了一部分饼，由于大部分饼都没实现，所以没在论坛发布，但是在我群共享。
@@ -21,15 +21,36 @@
 
 * [mirai-economy-core](https://github.com/cssxsh/mirai-economy-core)
   依赖于:[mirai-hibernate-plugin](https://github.com/cssxsh/mirai-hibernate-plugin)
+* [HuYanAuthorize](https://github.com/Moyuyanli/HuYanAuthorize)
 
 前置插件和插件本体一起放入plugins文件夹后，启动一次mirai，再停止。
-进入`config/cn.chahuyun.HuYanEconomy`中配置`config`:
+进入`config/cn.chahuyun.HuYanAuthorize`中配置`AuthorizeConfig.yml`:
+
+这里的主人，才是真主人。
 
 ```yml
 # 主人
-owner:
-  - 123456
-# 指令触发前缀,空白则没有前缀
+owner: 123456
+# 是否开启方法代理
+proxySwitch: false
+# 数据库类型(H2,SQLITE,MYSQL)
+dataType: H2
+# mysql数据库连接地址
+mysqlUrl: '127.0.0.1:3306/authorize'
+# mysql数据库用户名
+mysqlUser: root
+# mysql数据库密码
+mysqlPassword: 123456
+```
+
+进入`config/cn.chahuyun.HuYanEconomy`中配置`config`:
+
+这里的主人暂时不可用。
+
+```yml
+# 主人
+owner: 123456
+# 指令触发前缀,空白则没有前缀(暂时不可用)
 prefix: ' '
 # 数据库类型(H2,MYSQL,SQLITE)
 dataType: MYSQL
@@ -41,10 +62,6 @@ mysqlUser: root
 mysqlPassword: 123456
 # 插件单一管理botQQ
 bot: 123456
-# 启用的彩票群列表
-lotteryGroup: [ ]
-# 启用的钓鱼群列表
-fishGroup: [ ]
 ```
 
 请设置主人用于管理本插件！
@@ -78,7 +95,6 @@ fishGroup: [ ]
 - [x] 抢劫
 - [x] 红包
 
-
 ### 签到功能
 
 指令`sign`,`签到`,`打卡`;
@@ -97,7 +113,7 @@ fishGroup: [ ]
 
 ### 用户功能
 
-指令`个人信息`,`info`;
+指令`个人信息`,`info`,`money`,`经济信息`,`我的资金`;
 
 可以生成一张当前用户的个人信息。
 同时获取[一言](https://hitokoto.cn/)
@@ -114,7 +130,13 @@ fishGroup: [ ]
 
 以后可能会完成之前画的饼。
 
-银行每日有利息，利息每日变动,`1~5`%。
+银行有每周利息，利息随概率变动。
+
+变动规则:
+
+* 70% `1~3`%
+* 29% `4~7`%
+* 1% `-3~-1`%(经济危机！！！)
 
 ### 称号功能
 
@@ -270,6 +292,13 @@ fishGroup: [ ]
 指令`背包`,`backpack`,`道具商店`,`shops`,`购买 (道具) (数量)`,`buy (道具) (数量)`,`使用 (道具) (数量)`,`use (道具) (数量)`;
 
 道具系统有bug，并且结构设计的有点问题，目前在考虑重构，敬请期待!
+
+### 管理指令
+
+| 指令                | 用处     |
+|-------------------|--------|
+| `reedisgood (金额)` | 获取指定金额 |
+
 
 ## 未完成的规划
 

@@ -14,9 +14,9 @@ import net.mamoe.mirai.console.data.value
 object EconomyConfig : AutoSavePluginConfig("Config") {
 
     @ValueDescription("主人\n")
-    var owner: List<Long> by value(listOf())
+    var owner: Long by value(123456L)
 
-    @ValueDescription("指令触发前缀,空白则没有前缀")
+    @ValueDescription("指令触发前缀,空白则没有前缀(暂时不可用)")
     var prefix: String by value(" ")
 
     @ValueDescription("每日签到刷新时间(0-23)\n")
@@ -36,17 +36,5 @@ object EconomyConfig : AutoSavePluginConfig("Config") {
 
     @ValueDescription("插件单一管理botQQ\n")
     val bot: Long by value()
-
-    @ValueDescription("启用的彩票群列表\n")
-    var lotteryGroup: List<Long> by value()
-
-    @ValueDescription("启用的钓鱼群列表\n")
-    var fishGroup: List<Long> by value()
-
-    @ValueDescription("启用抢劫功能的群列表")
-    var robGroup: List<Long> by value()
-
-
-
 
 }

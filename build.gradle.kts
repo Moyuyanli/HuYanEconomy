@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "cn.chahuyun"
-version = "1.4.6"
+version = "1.4.7"
 
 repositories {
     mavenCentral()
@@ -21,7 +21,7 @@ dependencies {
     //依赖
     compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
     compileOnly("cn.chahuyun:HuYanSession:2.3.1")
-    compileOnly("cn.chahuyun:HuYanAuthorize:1.0.0")
+    compileOnly("cn.chahuyun:HuYanAuthorize:1.1.4")
     //使用库
     implementation("org.projectlombok:lombok:1.18.24")
     annotationProcessor("org.projectlombok:lombok:1.18.24")

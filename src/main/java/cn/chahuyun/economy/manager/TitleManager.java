@@ -1,5 +1,8 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.TitleInfo;
 import cn.chahuyun.economy.entity.UserInfo;
@@ -8,6 +11,7 @@ import cn.chahuyun.economy.entity.title.TitleTemplate;
 import cn.chahuyun.economy.entity.title.TitleTemplateSimpleImpl;
 import cn.chahuyun.economy.plugin.TitleTemplateManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
+import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUnit;
@@ -34,11 +38,9 @@ import java.util.Map;
  * @author Moyuyanli
  * @date 2022/12/5 17:02
  */
+@EventComponent
 public class TitleManager {
 
-
-    private TitleManager() {
-    }
 
     /**
      * 初始化加载称号。<br>
@@ -160,7 +162,10 @@ public class TitleManager {
      *
      * @param event 消息事件
      */
+    @MessageAuthorize(text = {"我的称号","称号列表","拥有称号"})
     public static void viewTitleInfo(MessageEvent event) {
+        Log.info("查询称号指令");
+
         Contact subject = event.getSubject();
         long id = event.getSender().getId();
 
@@ -198,7 +203,10 @@ public class TitleManager {
      *
      * @param event 消息事件
      */
+    @MessageAuthorize(text = "称号商店")
     public static void viewCanByTitle(MessageEvent event) {
+        Log.info("查询称号商店指令");
+
         MessageChainBuilder builder = new MessageChainBuilder();
         builder.append("可购买的称号如下:\n");
         List<TitleTemplate> canBuyTemplate = TitleTemplateManager.getCanBuyTemplate();
@@ -217,7 +225,13 @@ public class TitleManager {
      *
      * @param event 消息事件
      */
+    @MessageAuthorize(
+            text = "购买称号 (\\S+)",
+            messageMatching = MessageMatchingEnum.REGULAR
+    )
     public static void buyTitle(MessageEvent event) {
+        Log.info("购买称号指令");
+
         Contact subject = event.getSubject();
         MessageChain message = event.getMessage();
 
@@ -268,7 +282,13 @@ public class TitleManager {
      *
      * @param event 消息
      */
+    @MessageAuthorize(
+            text = "切换称号 (\\d+)",
+            messageMatching = MessageMatchingEnum.REGULAR
+    )
     public static void userTitle(MessageEvent event) {
+        Log.info("切换称号指令");
+
         User user = event.getSender();
         Contact subject = event.getSubject();
         MessageChain message = event.getMessage();

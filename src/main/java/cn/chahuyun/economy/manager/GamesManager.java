@@ -1,6 +1,13 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.PermConstant;
+import cn.chahuyun.authorize.entity.Perm;
+import cn.chahuyun.authorize.entity.PermGroup;
+import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.constant.PermCode;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.Fish;
@@ -32,7 +39,6 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static cn.chahuyun.economy.HuYanEconomy.config;
 import static cn.chahuyun.economy.HuYanEconomy.msgConfig;
 
 /**
@@ -42,6 +48,7 @@ import static cn.chahuyun.economy.HuYanEconomy.msgConfig;
  * @author Moyuyanli
  * @date 2022/11/14 12:26
  */
+@EventComponent
 public class GamesManager {
 
     /**
@@ -49,8 +56,6 @@ public class GamesManager {
      */
     private static final Map<Long, Date> playerCooling = new HashMap<>();
 
-    private GamesManager() {
-    }
 
     public static void init() {
         Task task = new Task() {
@@ -121,7 +126,13 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/9 16:16
      */
+    @MessageAuthorize(
+            text = {"钓鱼", "抛竿"},
+            groupPermissions = PermCode.FISH_PERM
+    )
     public static void fishing(GroupMessageEvent event) {
+        Log.info("钓鱼指令");
+
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
         Group subject = event.getSubject();
@@ -210,7 +221,9 @@ public class GamesManager {
                 fishInfo.switchStatus();
                 return;
             }
-            String nextMessageCode = newMessage.getMessage().serializeToMiraiCode();
+            MessageChain nextMessage = newMessage.getMessage();
+            String nextMessageCode = nextMessage.serializeToMiraiCode();
+            /*
             if (!config.getPrefix().isBlank()) {
                 if (!nextMessageCode.startsWith(config.getPrefix())) {
                     continue;
@@ -219,6 +232,7 @@ public class GamesManager {
             } else {
                 nextMessageCode = nextMessageCode.trim();
             }
+             */
             int randomDifficultyInt = RandomUtil.randomInt(0, 4);
             int randomLevelInt = RandomUtil.randomInt(0, 4);
 
@@ -229,10 +243,10 @@ public class GamesManager {
                 case "1":
                     if (randomDifficultyInt % 2 == 1) {
                         difficultyMin += 8;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), successMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, successMessages[message]));
                     } else {
                         difficultyMin -= 10;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), failureMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, failureMessages[message]));
                     }
                     break;
                 case "向右拉":
@@ -240,10 +254,10 @@ public class GamesManager {
                 case "2":
                     if (randomDifficultyInt % 2 == 0) {
                         difficultyMin += 8;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), successMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, successMessages[message]));
                     } else {
                         difficultyMin -= 10;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), failureMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, failureMessages[message]));
                     }
                     break;
                 case "收线":
@@ -251,10 +265,10 @@ public class GamesManager {
                 case "0":
                     if (randomLevelInt % 2 == 0) {
                         difficultyMin += 12;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), otherMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, otherMessages[message]));
                     } else {
                         difficultyMin -= 15;
-                        subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), failureMessages[message]));
+                        subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, failureMessages[message]));
                     }
                     rankMax++;
                     break;
@@ -263,7 +277,7 @@ public class GamesManager {
                 case "~":
                     difficultyMin += 20;
                     rankMax = 1;
-                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你把你收回来的线，又放了出去!"));
+                    subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, "你把你收回来的线，又放了出去!"));
                     break;
                 default:
                     if (Pattern.matches("[!！收起提竿杆]{1,2}", nextMessageCode)) {
@@ -279,7 +293,7 @@ public class GamesManager {
         //空军
         if (theRod) {
             if (RandomUtil.randomInt(0, 101) >= 50) {
-                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(),errorMessages[RandomUtil.randomInt(0, 5)]));
+                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), errorMessages[RandomUtil.randomInt(0, 5)]));
                 fishInfo.switchStatus();
                 return;
             }
@@ -306,7 +320,7 @@ public class GamesManager {
         boolean winning = false;
         while (true) {
             if (rank == 0) {
-                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "切线了我去！"));
+                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), " 切线了我去！"));
                 fishInfo.switchStatus();
                 return;
             }
@@ -365,7 +379,13 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/9 16:15
      */
+    @MessageAuthorize(
+            text = {"购买鱼竿"},
+            groupPermissions = PermCode.FISH_PERM
+    )
     public static void buyFishRod(MessageEvent event) {
+        Log.info("购买鱼竿指令");
+
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user;
         if (userInfo == null) {
@@ -403,7 +423,13 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/11 22:27
      */
+    @MessageAuthorize(
+            text = {"升级鱼竿"},
+            groupPermissions = PermCode.FISH_PERM
+    )
     public static void upFishRod(MessageEvent event) {
+        Log.info("升级鱼竿指令");
+
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
 
         Contact subject = event.getSubject();
@@ -429,7 +455,12 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/14 15:27
      */
+    @MessageAuthorize(
+            text = {"钓鱼榜", "钓鱼排行"}
+    )
     public static void fishTop(MessageEvent event) {
+        Log.info("钓鱼榜指令");
+
         Bot bot = event.getBot();
         Contact subject = event.getSubject();
 
@@ -465,7 +496,14 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/16 11:04
      */
+    @MessageAuthorize(
+            text = "刷新钓鱼",
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN},
+            groupPermissions = PermCode.FISH_PERM
+    )
     public static void refresh(MessageEvent event) {
+        Log.info("刷新钓鱼指令");
+
         Boolean status = HibernateFactory.getSession().fromTransaction(session -> {
             HibernateCriteriaBuilder builder = session.getCriteriaBuilder();
             JpaCriteriaQuery<FishInfo> query = builder.createQuery(FishInfo.class);
@@ -500,9 +538,67 @@ public class GamesManager {
      * @author Moyuyanli
      * @date 2022/12/23 16:12
      */
+    @MessageAuthorize(
+            text = "鱼竿等级",
+            groupPermissions = PermCode.FISH_PERM
+    )
     public static void viewFishLevel(MessageEvent event) {
+        Log.info("鱼竿等级指令");
+
         int rodLevel = Objects.requireNonNull(UserManager.getUserInfo(event.getSender())).getFishInfo().getRodLevel();
         event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的鱼竿等级为%s级", rodLevel));
+    }
+
+    @MessageAuthorize(
+            text = "开启 钓鱼",
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+    )
+    public void startFish(GroupMessageEvent event) {
+        Log.info("管理指令");
+
+        Group group = event.getGroup();
+        cn.chahuyun.authorize.entity.User user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+
+        PermUtil util = PermUtil.INSTANCE;
+
+
+        if (util.checkUserHasPerm(user, PermCode.FISH_PERM)) {
+            group.sendMessage("本群的钓鱼已经开启了!");
+            return;
+        }
+
+        if (util.addUserToPermGroupByName(user, PermCode.FISH_PERM_GROUP)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群钓鱼开启成功!"));
+        } else {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群钓鱼开启失败!"));
+        }
+    }
+
+    @MessageAuthorize(
+            text = "关闭 钓鱼",
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+    )
+    public void offFish(GroupMessageEvent event) {
+        Log.info("管理指令");
+
+        Group group = event.getGroup();
+        cn.chahuyun.authorize.entity.User user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+
+        PermUtil util = PermUtil.INSTANCE;
+
+
+        if (!util.checkUserHasPerm(user, PermCode.FISH_PERM)) {
+            group.sendMessage("本群的钓鱼已经关闭了!");
+            return;
+        }
+
+        PermGroup permGroup = util.talkPermGroupByName(PermCode.FISH_PERM_GROUP);
+        Perm perm = util.takePerm(PermCode.FISH_PERM);
+        permGroup.getPerms().remove(perm);
+
+        permGroup.save();
+
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群钓鱼关闭成功!"));
     }
 
 }

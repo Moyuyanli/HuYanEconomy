@@ -1,12 +1,18 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.MessageMatchingEnum;
+import cn.chahuyun.authorize.constant.PermConstant;
+import cn.chahuyun.authorize.entity.Perm;
+import cn.chahuyun.authorize.entity.PermGroup;
+import cn.chahuyun.authorize.utils.PermUtil;
+import cn.chahuyun.economy.constant.PermCode;
 import cn.chahuyun.economy.entity.rob.RobInfo;
-import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.MessageUtil;
-import cn.chahuyun.economy.utils.ShareUtils;
-import cn.chahuyun.economy.utils.TimeConvertUtil;
+import cn.chahuyun.economy.utils.*;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.util.RandomUtil;
+import lombok.val;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
@@ -26,6 +32,7 @@ import static cn.chahuyun.economy.HuYanEconomy.robConfig;
  * @author Moyuyanli
  * @date 2022/11/15 10:01
  */
+@EventComponent
 public class RobManager {
     // 抢劫失败消息变量
     static String[] robFailedVariable = {"${对象}"};
@@ -37,14 +44,19 @@ public class RobManager {
     static String[] robJailVariable = {"${对象}", "${金币}", "${时间}"};
 
 
-
-
     /**
      * 抢劫其他玩家
      *
      * @param event 群消息事件
      */
+    @MessageAuthorize(
+            text = "抢劫 ?\\[mirai:at:\\d+] ?",
+            messageMatching = MessageMatchingEnum.REGULAR,
+            groupPermissions = PermCode.ROB_PERM
+    )
     public static void robOther(GroupMessageEvent event) {
+        Log.info("抢劫指令");
+
         // 获取发送者
         User sender = event.getSender();
         // 获取群组
@@ -123,7 +135,13 @@ public class RobManager {
      *
      * @param event 群消息事件
      */
+    @MessageAuthorize(
+            text = "抢银行",
+            groupPermissions = PermCode.ROB_PERM
+    )
     public static void robBank(GroupMessageEvent event) {
+        Log.info("抢银行指令");
+
         // 获取发送者
         User sender = event.getSender();
         // 获取消息主体
@@ -198,7 +216,13 @@ public class RobManager {
      *
      * @param event 消息事件
      */
+    @MessageAuthorize(
+            text = "释放出狱",
+            userPermissions = PermConstant.OWNER
+    )
     public static void release(MessageEvent event) {
+        Log.info("监狱指令");
+
         RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, event.getSender().getId());
         updateRobInfo(event.getSender(), robInfo, 0, false);
         event.getSubject().sendMessage(new At(event.getSender().getId()).plus("\n你已成功释放！"));
@@ -335,7 +359,15 @@ public class RobManager {
      *
      * @param event 消息事件
      */
+    @MessageAuthorize(
+            text = "平账 ?\\[mirai:at:\\d+] ?",
+            messageMatching = MessageMatchingEnum.REGULAR,
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN},
+            groupPermissions = PermCode.ROB_PERM
+    )
     public static void flatAccount(GroupMessageEvent event) {
+        Log.info("平账指令");
+
         Member atMember = ShareUtils.getAtMember(event);
         Group subject = event.getSubject();
 
@@ -360,7 +392,15 @@ public class RobManager {
      *
      * @param event 群消息事件
      */
+    @MessageAuthorize(
+            text = "保释 ?\\[mirai:at:\\d+] ?",
+            messageMatching = MessageMatchingEnum.REGULAR,
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN},
+            groupPermissions = PermCode.ROB_PERM
+    )
     public static void bail(GroupMessageEvent event) {
+        Log.info("保释指令");
+
         Member atMember = ShareUtils.getAtMember(event);
         Group subject = event.getSubject();
         Member sender = event.getSender();
@@ -400,4 +440,66 @@ public class RobManager {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "保释失败了!"));
         }
     }
+
+    /**
+     * 是否在医药
+     *
+     * @param user 用户
+     * @return true 在
+     */
+    public static Boolean isHospital(User user) {
+        RobInfo robInfo = HibernateFactory.selectOne(RobInfo.class, user.getId());
+        return robInfo != null && robInfo.getType() == 2;
+    }
+
+
+    @MessageAuthorize(
+            text = "开启 抢劫",
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+    )
+    public void startRob(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+
+        if (util.checkUserHasPerm(user, PermCode.ROB_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫已经开启了!"));
+            return;
+        }
+
+        if (util.addUserToPermGroupByName(user, PermCode.ROB_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫开启成功!"));
+        } else {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫开启失败!"));
+        }
+
+    }
+
+    @MessageAuthorize(
+            text = "关闭 抢劫",
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+    )
+    public void endRob(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+
+        if (!util.checkUserHasPerm(user, PermCode.ROB_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫已经关闭!"));
+            return;
+        }
+
+        PermGroup permGroup = util.talkPermGroupByName(PermCode.ROB_PERM_GROUP);
+        Perm perm = util.takePerm(PermCode.ROB_PERM);
+
+        permGroup.getPerms().remove(perm);
+        permGroup.save();
+
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫关闭成功!"));
+    }
+
 }

@@ -1,11 +1,12 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.MessageMatchingEnum;
+import cn.chahuyun.authorize.constant.PermConstant;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.redpack.RedPack;
-import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.MessageUtil;
-import cn.chahuyun.economy.utils.ShareUtils;
-import cn.chahuyun.economy.utils.TimeConvertUtil;
+import cn.chahuyun.economy.utils.*;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
@@ -27,13 +28,21 @@ import java.util.*;
 /**
  * 红包管理类，用于处理红包的创建、领取、查询等操作。
  */
+@EventComponent
 public class RedPackManager {
+
     /**
      * 创建红包。
      *
      * @param event 群消息事件
      */
+    @MessageAuthorize(
+            text = "发红包( \\d+){2}( (sj|随机))?",
+            messageMatching = MessageMatchingEnum.REGULAR
+    )
     public static void create(GroupMessageEvent event) {
+        Log.info("发红包指令");
+
         Group group = event.getGroup();
         User sender = event.getSender();
         Contact subject = event.getSubject();
@@ -83,12 +92,15 @@ public class RedPackManager {
 
             //随机一下，30%的概率全随机红包，70%的概率稍微均分红包
             if (RandomUtil.randomInt(0, 11) <= 7) {
+                //拿总金额 / 红包个数 = 均分金额
                 long round = Math.round(residualMoney / residual);
-                coefficient = ShareUtils.rounding(RandomUtil.randomDouble(Math.min(5, round / 5), round * 5));
+                // 最小保底金额 = 5 或者 均分金额/5 ~ 均分金额*5
+                coefficient = ShareUtils.rounding(RandomUtil.randomDouble(Math.min(5, round / 1.5), round * 1.5));
             }
 
             ArrayList<Double> doubles = new ArrayList<>();
             for (int i = 1; i < pack.getNumber(); i++) {
+
                 double v = RandomUtil.randomDouble(0.1, residualMoney - ((residual - i) * coefficient));
                 v = ShareUtils.rounding(v);
                 doubles.add(v);
@@ -128,7 +140,13 @@ public class RedPackManager {
      *
      * @param event 群消息事件
      */
+    @MessageAuthorize(
+            text = "领红包 \\d+|收红包 \\d+",
+            messageMatching = MessageMatchingEnum.REGULAR
+    )
     public static void receive(GroupMessageEvent event) {
+        Log.info("收红包指令");
+
         Contact subject = event.getSubject();
         Group group = event.getGroup();
         User sender = event.getSender();
@@ -165,7 +183,10 @@ public class RedPackManager {
      *
      * @param event 群消息事件
      */
+    @MessageAuthorize(text = "红包列表")
     public static void queryRedPackList(GroupMessageEvent event) {
+        Log.info("红包查询指令");
+
         Contact subject = event.getSubject();
         try {
             Group group = event.getGroup();
@@ -227,7 +248,10 @@ public class RedPackManager {
      *
      * @param event 消息事件
      */
+    @MessageAuthorize(text = "抢红包")
     public static void grabNewestRedPack(GroupMessageEvent event) {
+        Log.info("抢红包指令");
+
         Contact subject = event.getSubject();
         try {
             Group group = event.getGroup();
@@ -322,7 +346,13 @@ public class RedPackManager {
      *
      * @param event 消息事件
      */
+    @MessageAuthorize(
+            text = "全局红包列表",
+            userPermissions = PermConstant.OWNER
+    )
     public static void queryGlobalRedPackList(MessageEvent event) {
+        Log.info("红包查看指令");
+
         Contact subject = event.getSubject();
         try {
             Bot bot = event.getBot();
