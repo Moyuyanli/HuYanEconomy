@@ -4,11 +4,15 @@ import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.authorize.constant.PermConstant;
+import cn.chahuyun.authorize.entity.Perm;
+import cn.chahuyun.authorize.entity.PermGroup;
+import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.economy.constant.PermCode;
 import cn.chahuyun.economy.entity.rob.RobInfo;
 import cn.chahuyun.economy.utils.*;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.util.RandomUtil;
+import lombok.val;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
@@ -358,7 +362,7 @@ public class RobManager {
     @MessageAuthorize(
             text = "平账 ?\\[mirai:at:\\d+] ?",
             messageMatching = MessageMatchingEnum.REGULAR,
-            userPermissions = {PermConstant.OWNER,PermConstant.ADMIN},
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN},
             groupPermissions = PermCode.ROB_PERM
     )
     public static void flatAccount(GroupMessageEvent event) {
@@ -391,7 +395,7 @@ public class RobManager {
     @MessageAuthorize(
             text = "保释 ?\\[mirai:at:\\d+] ?",
             messageMatching = MessageMatchingEnum.REGULAR,
-            userPermissions = {PermConstant.OWNER,PermConstant.ADMIN},
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN},
             groupPermissions = PermCode.ROB_PERM
     )
     public static void bail(GroupMessageEvent event) {
@@ -448,5 +452,54 @@ public class RobManager {
         return robInfo != null && robInfo.getType() == 2;
     }
 
+
+    @MessageAuthorize(
+            text = "开启 抢劫",
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+    )
+    public void startRob(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+
+        if (util.checkUserHasPerm(user, PermCode.ROB_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫已经开启了!"));
+            return;
+        }
+
+        if (util.addUserToPermGroupByName(user, PermCode.ROB_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫开启成功!"));
+        } else {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫开启失败!"));
+        }
+
+    }
+
+    @MessageAuthorize(
+            text = "关闭 抢劫",
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+    )
+    public void endRob(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+
+        if (!util.checkUserHasPerm(user, PermCode.ROB_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫已经关闭!"));
+            return;
+        }
+
+        PermGroup permGroup = util.talkPermGroupByName(PermCode.ROB_PERM_GROUP);
+        Perm perm = util.takePerm(PermCode.ROB_PERM);
+
+        permGroup.getPerms().remove(perm);
+        permGroup.save();
+
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫关闭成功!"));
+    }
 
 }

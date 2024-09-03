@@ -3,6 +3,10 @@ package cn.chahuyun.economy.manager;
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
+import cn.chahuyun.authorize.constant.PermConstant;
+import cn.chahuyun.authorize.entity.Perm;
+import cn.chahuyun.authorize.entity.PermGroup;
+import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.constant.PermCode;
@@ -14,11 +18,13 @@ import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.cron.CronUtil;
 import cn.hutool.cron.task.Task;
+import lombok.val;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.NormalMember;
 import net.mamoe.mirai.contact.User;
+import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
@@ -271,6 +277,56 @@ public class LotteryManager {
      */
     public static void close() {
         CronUtil.stop();
+    }
+
+
+    @MessageAuthorize(
+            text = "开启 猜签",
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+    )
+    public void startLottery(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+
+        if (util.checkUserHasPerm(user, PermCode.LOTTERY_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签已经开启了!"));
+            return;
+        }
+
+        if (util.addUserToPermGroupByName(user, PermCode.LOTTERY_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签开启成功!"));
+        } else {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签开启失败!"));
+        }
+
+    }
+
+    @MessageAuthorize(
+            text = "关闭 猜签",
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+    )
+    public void endLottery(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+
+        if (!util.checkUserHasPerm(user, PermCode.LOTTERY_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签已经关闭!"));
+            return;
+        }
+
+        PermGroup permGroup = util.talkPermGroupByName(PermCode.LOTTERY_PERM_GROUP);
+        Perm perm = util.takePerm(PermCode.LOTTERY_PERM);
+
+        permGroup.getPerms().remove(perm);
+        permGroup.save();
+
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签关闭成功!"));
     }
 
 }

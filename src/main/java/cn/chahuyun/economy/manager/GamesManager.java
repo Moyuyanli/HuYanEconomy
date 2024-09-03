@@ -3,6 +3,8 @@ package cn.chahuyun.economy.manager;
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.PermConstant;
+import cn.chahuyun.authorize.entity.Perm;
+import cn.chahuyun.authorize.entity.PermGroup;
 import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.PermCode;
@@ -37,7 +39,6 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static cn.chahuyun.economy.HuYanEconomy.config;
 import static cn.chahuyun.economy.HuYanEconomy.msgConfig;
 
 /**
@@ -497,7 +498,7 @@ public class GamesManager {
      */
     @MessageAuthorize(
             text = "刷新钓鱼",
-            userPermissions = {PermConstant.OWNER,PermConstant.ADMIN},
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN},
             groupPermissions = PermCode.FISH_PERM
     )
     public static void refresh(MessageEvent event) {
@@ -550,22 +551,54 @@ public class GamesManager {
 
     @MessageAuthorize(
             text = "开启 钓鱼",
-            userPermissions = {PermConstant.OWNER,PermConstant.ADMIN}
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
     )
     public void startFish(GroupMessageEvent event) {
+        Log.info("管理指令");
+
         Group group = event.getGroup();
         cn.chahuyun.authorize.entity.User user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
 
         PermUtil util = PermUtil.INSTANCE;
+
 
         if (util.checkUserHasPerm(user, PermCode.FISH_PERM)) {
             group.sendMessage("本群的钓鱼已经开启了!");
             return;
         }
 
-        util.addUserToPermGroupByName(user,)
+        if (util.addUserToPermGroupByName(user, PermCode.FISH_PERM_GROUP)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群钓鱼开启成功!"));
+        } else {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群钓鱼开启失败!"));
+        }
+    }
+
+    @MessageAuthorize(
+            text = "关闭 钓鱼",
+            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+    )
+    public void offFish(GroupMessageEvent event) {
+        Log.info("管理指令");
+
+        Group group = event.getGroup();
+        cn.chahuyun.authorize.entity.User user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+
+        PermUtil util = PermUtil.INSTANCE;
 
 
+        if (!util.checkUserHasPerm(user, PermCode.FISH_PERM)) {
+            group.sendMessage("本群的钓鱼已经关闭了!");
+            return;
+        }
+
+        PermGroup permGroup = util.talkPermGroupByName(PermCode.FISH_PERM_GROUP);
+        Perm perm = util.takePerm(PermCode.FISH_PERM);
+        permGroup.getPerms().remove(perm);
+
+        permGroup.save();
+
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群钓鱼关闭成功!"));
     }
 
 }
