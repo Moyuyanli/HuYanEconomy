@@ -136,20 +136,11 @@ public class LotteryManager {
             messageMatching = MessageMatchingEnum.REGULAR,
             groupPermissions = PermCode.LOTTERY_PERM
     )
-    public static void addLottery(MessageEvent event) {
+    public static void addLottery(GroupMessageEvent event) {
         Log.info("彩票指令");
 
         User user = event.getSender();
         Contact subject = event.getSubject();
-
-        if (subject instanceof Group) {
-            Group group = (Group) subject;
-            List<Long> longs = EconomyConfig.INSTANCE.getLotteryGroup();
-            if (!longs.contains(group.getId())) {
-                return;
-            }
-        }
-
 
         MessageChain message = event.getMessage();
         String code = message.serializeToMiraiCode();
