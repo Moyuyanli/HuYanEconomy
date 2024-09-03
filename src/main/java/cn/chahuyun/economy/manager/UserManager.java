@@ -13,6 +13,7 @@ import cn.chahuyun.economy.plugin.YiYanManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
+import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.http.HttpUtil;
@@ -20,6 +21,7 @@ import cn.hutool.json.JSONUtil;
 import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.Image;
+import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
 import org.jetbrains.annotations.NotNull;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
@@ -87,7 +89,11 @@ public class UserManager {
         String userId = account.getUuid();
         //查询用户
         try {
-            return HibernateFactory.selectOne(UserInfo.class, userId);
+            UserInfo userInfo = HibernateFactory.selectOne(UserInfo.class, userId);
+            if (userInfo == null) {
+                throw new RuntimeException();
+            }
+            return userInfo;
         } catch (Exception e) {
             throw new RuntimeException("该经济账号不存在用户信息");
         }
@@ -101,7 +107,7 @@ public class UserManager {
      * @author Moyuyanli
      * @date 2022/11/23 9:37
      */
-    @MessageAuthorize(text = {"个人信息","info"})
+    @MessageAuthorize(text = {"个人信息", "info"})
     public static void getUserInfoImage(MessageEvent event) {
         Log.info("个人信息指令");
 
@@ -192,6 +198,25 @@ public class UserManager {
         Contact.sendImage(subject, new ByteArrayInputStream(stream.toByteArray()));
     }
 
+
+    @MessageAuthorize(text = {"money", "经济信息", "我的资金"})
+    public void moneyInfo(MessageEvent event) {
+        Contact subject = event.getSubject();
+        MessageChain message = event.getMessage();
+        User user = event.getSender();
+
+        double money = EconomyUtil.getMoneyByUser(user);
+        double bank = EconomyUtil.getMoneyByBank(user);
+
+        subject.sendMessage(MessageUtil.formatMessageChain(message, "你的经济状况:%n" +
+                        "钱包余额:%.1f%n" +
+                        "银行存款:%.1f",
+                money, bank
+        ));
+    }
+
+
+    //===============================================================
 
     /**
      * 绘制个人信息基础信息<p>
