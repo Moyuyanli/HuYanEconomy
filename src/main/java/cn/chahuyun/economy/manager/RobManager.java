@@ -469,7 +469,7 @@ public class RobManager {
             return;
         }
 
-        if (util.addUserToPermGroupByName(user, PermCode.ROB_PERM)) {
+        if (util.addUserToPermGroupByName(user, PermCode.ROB_PERM_GROUP)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫开启成功!"));
         } else {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫开启失败!"));
