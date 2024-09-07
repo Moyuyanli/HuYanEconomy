@@ -7,6 +7,7 @@ import cn.chahuyun.authorize.entity.Perm;
 import cn.chahuyun.authorize.entity.PermGroup;
 import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.constant.FishPondLevelConstant;
 import cn.chahuyun.economy.constant.PermCode;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserInfo;
@@ -24,6 +25,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.cron.CronUtil;
 import cn.hutool.cron.task.Task;
+import lombok.val;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
@@ -72,45 +74,26 @@ public class GamesManager {
                 for (FishPond fishPond : pondType) {
                     double fishPondMoney = fishPond.getFishPondMoney();
 
-                    switch (fishPond.getPondLevel()) {
-                        case 6:
-                            if (fishPondMoney >= 30000) {
-                                if (EconomyUtil.plusMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), -30000)) {
-                                    Bot bot = HuYanEconomy.INSTANCE.bot;
-                                    Group group = bot.getGroup(fishPond.getId());
-                                    if (group != null) {
-                                        group.sendMessage(String.format(
-                                                "鱼塘 %s 已经积攒够了升级的资金！开始升级鱼塘了！%n" +
-                                                        "鱼塘等级: 6 -> 7", fishPond.getName()
-                                        ));
-                                    } else {
-                                        Objects.requireNonNull(bot.getFriend(fishPond.getAdmin())).sendMessage("群鱼塘升级了");
-                                    }
-                                    fishPond.setPondLevel(7);
-                                    fishPond.save();
-                                }
-                            }
-                            break;
-                        case 7:
-                            if (fishPondMoney >= 100000) {
-                                if (EconomyUtil.plusMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), -100000)) {
-                                    Bot bot = HuYanEconomy.INSTANCE.bot;
-                                    Group group = bot.getGroup(fishPond.getId());
-                                    if (group != null) {
-                                        group.sendMessage(String.format(
-                                                "鱼塘 %s 已经积攒够了升级的资金！开始升级鱼塘了！%n" +
-                                                        "鱼塘等级: 7 -> 8%n" +
-                                                        "最低鱼竿等级: 0 -> 10", fishPond.getName()
-                                        ));
-                                    } else {
-                                        Objects.requireNonNull(bot.getFriend(fishPond.getAdmin())).sendMessage("群鱼塘升级了");
-                                    }
-                                    fishPond.setPondLevel(8);
-                                    fishPond.setMinLevel(10);
-                                    fishPond.save();
-                                }
-                            }
+                    int level = fishPond.getPondLevel() - 1;
+                    FishPondLevelConstant value = FishPondLevelConstant.values()[level];
 
+                    if (fishPondMoney >= value.getAmount()) {
+                        if (EconomyUtil.plusMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), -30000)) {
+                            Bot bot = HuYanEconomy.INSTANCE.bot;
+                            Group group = bot.getGroup(fishPond.getId());
+                            if (group != null) {
+                                group.sendMessage(String.format(
+                                        "鱼塘 %s 已经积攒够了升级的资金！开始升级鱼塘了！%n" +
+                                                "鱼塘等级:%d -> %d%n" +
+                                                "最低鱼竿等级:%d", fishPond.getName(), level + 1, level + 2, value.getMinFishLevel()
+                                ));
+                            } else {
+                                Objects.requireNonNull(bot.getFriend(fishPond.getAdmin())).sendMessage("群鱼塘升级了");
+                            }
+                            fishPond.setPondLevel(level + 2);
+                            fishPond.setMinLevel(value.getMinFishLevel());
+                            fishPond.save();
+                        }
                     }
                 }
             }
@@ -213,6 +196,7 @@ public class GamesManager {
         //开始拉扯
         boolean rankStatus = true;
         int pull = 0;
+        int put = 0;
         while (rankStatus) {
             //获取下一条消息
             MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject);
@@ -242,41 +226,49 @@ public class GamesManager {
                 case "左":
                 case "1":
                     if (randomDifficultyInt % 2 == 1) {
-                        difficultyMin += 8;
+                        difficultyMin += 15;
                         subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, successMessages[message]));
                     } else {
-                        difficultyMin -= 10;
+                        difficultyMin -= 18;
                         subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, failureMessages[message]));
                     }
+                    pull++;
                     break;
                 case "向右拉":
                 case "右":
                 case "2":
                     if (randomDifficultyInt % 2 == 0) {
-                        difficultyMin += 8;
+                        difficultyMin += 15;
                         subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, successMessages[message]));
                     } else {
-                        difficultyMin -= 10;
+                        difficultyMin -= 18;
                         subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, failureMessages[message]));
                     }
+                    pull++;
                     break;
                 case "收线":
                 case "拉":
                 case "0":
                     if (randomLevelInt % 2 == 0) {
-                        difficultyMin += 12;
+                        difficultyMin += 18;
                         subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, otherMessages[message]));
                     } else {
-                        difficultyMin -= 15;
+                        difficultyMin -= 20;
                         subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, failureMessages[message]));
                     }
                     rankMax++;
+                    pull++;
                     break;
                 case "放线":
                 case "放":
                 case "~":
-                    difficultyMin += 20;
-                    rankMax = 1;
+                    if (pull > 0) {
+                        difficultyMin += 15;
+                        rankMax = 1;
+                        pull--;
+                    } else {
+                        rankMax--;
+                    }
                     subject.sendMessage(MessageUtil.formatMessageChain(nextMessage, "你把你收回来的线，又放了出去!"));
                     break;
                 default:
@@ -599,6 +591,31 @@ public class GamesManager {
         permGroup.save();
 
         group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群钓鱼关闭成功!"));
+    }
+
+
+    @MessageAuthorize(
+            text = "鱼塘等级"
+    )
+    public void viewFishPond(GroupMessageEvent event) {
+        Group group = event.getGroup();
+        FishPond fishPond = UserManager.getUserInfo(event.getSender()).getFishInfo().getFishPond(group);
+
+        int level = fishPond.getPondLevel();
+
+        val value = FishPondLevelConstant.values()[level - 1];
+        val money = EconomyUtil.getMoneyByBankFromId(fishPond.getCode(), null);
+
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),
+                "当前鱼塘信息:%n" +
+                        "鱼塘名称:%s%n" +
+                        "鱼塘等级:%d%n" +
+                        "鱼塘最低鱼竿等级:%d%n" +
+                        "鱼塘升级所需金额:%d%n" +
+                        "鱼塘金额:%.1f%n" +
+                        "鱼塘升级进度:%.1f%%",
+                fishPond.getName(), level, fishPond.getMinLevel(), value.getAmount(), money, (value.getAmount() / money)
+        ));
     }
 
 }
