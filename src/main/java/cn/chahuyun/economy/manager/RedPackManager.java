@@ -95,15 +95,18 @@ public class RedPackManager {
                 //拿总金额 / 红包个数 = 均分金额
                 long round = Math.round(residualMoney / residual);
                 // 最小保底金额 = 5 或者 均分金额/5 ~ 均分金额*5
-                coefficient = ShareUtils.rounding(RandomUtil.randomDouble(Math.min(5, round / 1.5), round * 1.5));
+                coefficient = ShareUtils.rounding(RandomUtil.randomDouble(Math.min(5, round * 0.3), round * 0.9));
             }
 
             ArrayList<Double> doubles = new ArrayList<>();
+            //循环红包个数到最后一个，最后一个直接拿余额
             for (int i = 1; i < pack.getNumber(); i++) {
-
+                //从 0.1 到 红包总金额-每个红包的平均金额*红包个数 取随机值
                 double v = RandomUtil.randomDouble(0.1, residualMoney - ((residual - i) * coefficient));
                 v = ShareUtils.rounding(v);
+                //添加到红包列表
                 doubles.add(v);
+                //红包金额减去刚刚随机的红包金额
                 residualMoney -= v;
             }
             doubles.add(residualMoney);
