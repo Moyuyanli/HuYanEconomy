@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.plugin;
 
+import cn.chahuyun.authorize.BuildConstants;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
@@ -142,7 +143,7 @@ public class ImageManager {
         g2d.drawString("今日收益", 858, infoY);
 
         g2d.setFont(customFont.deriveFont(12f));
-        g2d.drawString("by Mirai & HuYanEconomy(壶言经济) v" + HuYanEconomy.VERSION, 730, 573);
+        g2d.drawString("by Mirai & HuYanEconomy(壶言经济) v" + BuildConstants.VERSION, 730, 573);
 
         // 释放资源
         g2d.dispose();

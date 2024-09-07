@@ -1,9 +1,7 @@
 package cn.chahuyun.economy.constant;
 
-import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.authorize.BuildConstants;
 import net.mamoe.mirai.utils.MiraiLogger;
-
-import java.util.regex.Pattern;
 
 /**
  * @author Moyuyanli
@@ -19,7 +17,7 @@ public class Icon {
     private static final String icon6 = " |_|  |_|\\__,_||_|\\__,_|_| |_|______\\___\\___/|_| |_|\\___/|_| |_| |_|\\__, |";
     private static final String icon7 = "                                                                     __/ |";
     private static final String icon8 = "                                                                    |___/ ";
-    private static final String icon9 = "                                                              v " + HuYanEconomy.VERSION;
+    private static final String icon9 = "                                                              v " + BuildConstants.VERSION;
 
     /**
      * 打印log

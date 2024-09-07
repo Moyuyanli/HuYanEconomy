@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.BuildConstants;
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.economy.HuYanEconomy;
@@ -469,7 +470,7 @@ public class UserManager {
         font = new Font("黑体", Font.ITALIC, fontSize);
         pen.setFont(font);
 
-        pen.drawString("by Mirai & HuYanEconomy(壶言经济) " + HuYanEconomy.VERSION, 540, 525);
+        pen.drawString("by Mirai & HuYanEconomy(壶言经济) " + BuildConstants.VERSION, 540, 525);
 
         //关闭窗体，释放部分资源
         pen.dispose();
