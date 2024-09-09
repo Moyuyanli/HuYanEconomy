@@ -5,10 +5,11 @@ plugins {
     id("net.mamoe.mirai-console") version "2.16.0"
 
     id("me.him188.maven-central-publish") version "1.0.0-dev-3"
+    id("com.github.gmazzo.buildconfig") version "3.1.0"
 }
 
 group = "cn.chahuyun"
-version = "1.4.8"
+version = "1.4.9"
 
 repositories {
     mavenCentral()
@@ -54,4 +55,16 @@ mavenCentralPublish {
     publication {
         artifact(tasks["buildPlugin"])
     }
+}
+
+buildConfig {
+    className("BuildConstants")
+    packageName("cn.chahuyun.authorize")
+    useKotlinOutput()
+    buildConfigField("String", "VERSION", "\"${project.version}\"")
+    buildConfigField(
+        "java.time.Instant",
+        "BUILD_TIME",
+        "java.time.Instant.ofEpochSecond(${System.currentTimeMillis() / 1000L}L)"
+    )
 }

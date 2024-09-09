@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.version;
 
 
-import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.authorize.BuildConstants;
 import cn.chahuyun.economy.utils.Log;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
@@ -22,7 +22,7 @@ public class CheckLatestVersion {
             Log.error(" 无法获取最新版本号！");
             return;
         }
-        if (!newVersion.substring(1).equals(HuYanEconomy.VERSION)) {
+        if (!newVersion.substring(1).equals(BuildConstants.VERSION)) {
             Log.warning(" 发现最新版本！版本：" + newVersion);
             Log.warning(" 发现最新版本！版本：" + newVersion);
             Log.warning(" 发现最新版本！版本：" + newVersion);
@@ -40,7 +40,7 @@ public class CheckLatestVersion {
             }
             return;
         }
-        Log.info(" 已是最新版本！版本: " + HuYanEconomy.VERSION);
+        Log.info(" 已是最新版本！版本: " + BuildConstants.VERSION);
 
     }
 }

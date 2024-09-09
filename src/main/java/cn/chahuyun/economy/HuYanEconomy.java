@@ -1,5 +1,6 @@
 package cn.chahuyun.economy;
 
+import cn.chahuyun.authorize.BuildConstants;
 import cn.chahuyun.authorize.PermissionServer;
 import cn.chahuyun.authorize.exception.ExceptionHandle;
 import cn.chahuyun.economy.command.EconomyCommand;
@@ -33,10 +34,6 @@ public final class HuYanEconomy extends JavaPlugin {
      */
     public static final HuYanEconomy INSTANCE = new HuYanEconomy();
     /**
-     * 全局版本
-     */
-    public static final String VERSION = "1.4.8";
-    /**
      * 配置
      */
     public static EconomyConfig config;
@@ -54,7 +51,7 @@ public final class HuYanEconomy extends JavaPlugin {
     public Bot bot;
 
     private HuYanEconomy() {
-        super(new JvmPluginDescriptionBuilder("cn.chahuyun.HuYanEconomy", VERSION)
+        super(new JvmPluginDescriptionBuilder("cn.chahuyun.HuYanEconomy", BuildConstants.VERSION)
                 .name("HuYanEconomy")
                 .info("壶言经济")
                 .author("Moyuyanli")
@@ -111,7 +108,7 @@ public final class HuYanEconomy extends JavaPlugin {
             Log.info("事件已监听!");
         }
         EconomyPluginConfig.INSTANCE.setFirstStart(false);
-        Log.info(String.format("HuYanEconomy已加载！当前版本 %s !", VERSION));
+        Log.info(String.format("HuYanEconomy已加载！当前版本 %s !", getDescription().getVersion()));
     }
 
     /**
