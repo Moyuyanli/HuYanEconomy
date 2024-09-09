@@ -612,7 +612,7 @@ public class GamesManager {
                         "鱼塘升级所需金额:%d%n" +
                         "鱼塘金额:%.1f%n" +
                         "鱼塘升级进度:%.1f%%",
-                fishPond.getName(), level, fishPond.getMinLevel(), value.getAmount(), money, (value.getAmount() / money)
+                fishPond.getName(), level, fishPond.getMinLevel(), value.getAmount(), money, (money / value.getAmount())
         ));
     }
 
