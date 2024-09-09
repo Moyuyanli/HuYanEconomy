@@ -166,6 +166,38 @@ public class EconomyUtil {
 
 
     /**
+     * 从 [自定义银行] 获取 [金币] 余额<p>
+     *
+     * @param userId      用户code
+     * @param description 描述
+     * @return 余额
+     */
+    public static double getMoneyFromPluginBankForId(String userId, String description) {
+        return getMoneyFromPluginBankForId(userId, description,Constant.CURRENCY_GOLD);
+    }
+
+    /**
+     * 从 [自定义银行] 获取 [货币] 余额<p>
+     *
+     * @param userId      用户code
+     * @param description 描述
+     * @param currency    货币
+     * @return 余额
+     */
+    public static double getMoneyFromPluginBankForId(String userId, String description, EconomyCurrency currency) {
+        try (GlobalEconomyContext context = economyService.custom(HuYanEconomy.INSTANCE)) {
+            EconomyAccount account = economyService.account(userId, description);
+            DecimalFormat format = new DecimalFormat("#.0");
+            double v = context.get(account, currency);
+            return Double.parseDouble(format.format(v));
+        } catch (Exception e) {
+            Log.error("经济获取出错:获取自定义银行用户余额", e);
+            return 0;
+        }
+    }
+
+
+    /**
      * 转账<p>
      * 用户 [钱包] 到 用户 [钱包]<p>
      * 默认货币 [金币] <p>
@@ -424,8 +456,8 @@ public class EconomyUtil {
      * @author Moyuyanli
      * @date 2022年12月12日09:14:45
      */
-    public static boolean plusMoneyToBankForId(String userId, String description, double quantity) {
-        return plusMoneyToBankForId(userId, description, quantity, Constant.CURRENCY_GOLD);
+    public static boolean plusMoneyToPluginBankForId(String userId, String description, double quantity) {
+        return plusMoneyToPluginBankForId(userId, description, quantity, Constant.CURRENCY_GOLD);
     }
 
     /**
@@ -440,7 +472,7 @@ public class EconomyUtil {
      * @author Moyuyanli
      * @date 2022年12月12日09:14:48
      */
-    public static boolean plusMoneyToBankForId(String userId, String description, double quantity, EconomyCurrency currency) {
+    public static boolean plusMoneyToPluginBankForId(String userId, String description, double quantity, EconomyCurrency currency) {
         try (EconomyContext context = economyService.custom(HuYanEconomy.INSTANCE)) {
             EconomyAccount account = economyService.account(userId, description);
             context.plusAssign(account, currency, quantity);
