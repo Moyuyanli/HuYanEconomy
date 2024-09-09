@@ -494,9 +494,8 @@ public class RobManager {
         }
 
         PermGroup permGroup = util.talkPermGroupByName(PermCode.ROB_PERM_GROUP);
-        Perm perm = util.takePerm(PermCode.ROB_PERM);
 
-        permGroup.getPerms().remove(perm);
+        permGroup.getUsers().remove(user);
         permGroup.save();
 
         group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫关闭成功!"));

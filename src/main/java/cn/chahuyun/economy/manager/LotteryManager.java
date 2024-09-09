@@ -312,9 +312,8 @@ public class LotteryManager {
         }
 
         PermGroup permGroup = util.talkPermGroupByName(PermCode.LOTTERY_PERM_GROUP);
-        Perm perm = util.takePerm(PermCode.LOTTERY_PERM);
 
-        permGroup.getPerms().remove(perm);
+        permGroup.getUsers().remove(user);
         permGroup.save();
 
         group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签关闭成功!"));

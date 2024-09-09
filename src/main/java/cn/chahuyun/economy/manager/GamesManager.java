@@ -593,8 +593,7 @@ public class GamesManager {
         }
 
         PermGroup permGroup = util.talkPermGroupByName(PermCode.FISH_PERM_GROUP);
-        Perm perm = util.takePerm(PermCode.FISH_PERM);
-        permGroup.getPerms().remove(perm);
+        permGroup.getUsers().remove(user);
 
         permGroup.save();
 
