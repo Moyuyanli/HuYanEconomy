@@ -262,7 +262,7 @@ public class GamesManager {
                 case "放线":
                 case "放":
                 case "~":
-                    if (pull > 0) {
+                    if (pull > 2) {
                         difficultyMin += 15;
                         rankMax = 1;
                         pull--;
@@ -603,7 +603,7 @@ public class GamesManager {
         int level = fishPond.getPondLevel();
 
         val value = FishPondLevelConstant.values()[level - 1];
-        val money = EconomyUtil.getMoneyByBankFromId(fishPond.getCode(), null);
+        double money = fishPond.getFishPondMoney();
 
         group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(),
                 "当前鱼塘信息:%n" +
