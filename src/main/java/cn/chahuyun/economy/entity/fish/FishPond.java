@@ -108,7 +108,7 @@ public class FishPond implements Serializable {
      * @date 2022/12/12 9:56
      */
     public double getFishPondMoney() {
-        return EconomyUtil.getMoneyByBankFromId(getCode(), getDescription());
+        return EconomyUtil.getMoneyFromPluginBankForId(getCode(), getDescription());
     }
 
     /**

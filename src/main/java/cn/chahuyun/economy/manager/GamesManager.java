@@ -3,7 +3,6 @@ package cn.chahuyun.economy.manager;
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.PermConstant;
-import cn.chahuyun.authorize.entity.Perm;
 import cn.chahuyun.authorize.entity.PermGroup;
 import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.economy.HuYanEconomy;
@@ -78,7 +77,7 @@ public class GamesManager {
                     FishPondLevelConstant value = FishPondLevelConstant.values()[level];
 
                     if (fishPondMoney >= value.getAmount()) {
-                        if (EconomyUtil.plusMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), -30000)) {
+                        if (EconomyUtil.plusMoneyToPluginBankForId(fishPond.getCode(), fishPond.getDescription(), -30000)) {
                             Bot bot = HuYanEconomy.INSTANCE.bot;
                             Group group = bot.getGroup(fishPond.getId());
                             if (group != null) {
@@ -348,7 +347,7 @@ public class GamesManager {
         int dimensions = fish.getDimensions(winning);
         int money = fish.getPrice() * dimensions;
         double v = money * (1 - fishPond.getRebate());
-        if (EconomyUtil.plusMoneyToUser(user, v) && EconomyUtil.plusMoneyToBankForId(fishPond.getCode(), fishPond.getDescription(), money * fishPond.getRebate())) {
+        if (EconomyUtil.plusMoneyToUser(user, v) && EconomyUtil.plusMoneyToPluginBankForId(fishPond.getCode(), fishPond.getDescription(), money * fishPond.getRebate())) {
             fishPond.addNumber();
             String format = String.format("\n起竿咯！\n%s\n等级:%s\n单价:%s\n尺寸:%d\n总金额:%d\n%s", fish.getName(), fish.getLevel(), fish.getPrice(), dimensions, money, fish.getDescription());
             MessageChainBuilder messages = new MessageChainBuilder();
