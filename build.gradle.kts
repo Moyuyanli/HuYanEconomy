@@ -20,7 +20,7 @@ repositories {
 dependencies {
 
     //依赖
-    compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.1.0")
+    compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
     compileOnly("cn.chahuyun:HuYanSession:2.3.1")
     compileOnly("cn.chahuyun:HuYanAuthorize:1.2.0")
     //使用库
