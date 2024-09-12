@@ -56,8 +56,8 @@ public final class HuYanEconomy extends JavaPlugin {
                 .info("壶言经济")
                 .author("Moyuyanli")
                 //忽略依赖版本 true 可选依赖 false 必须依赖
-                .dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", false)
-                .dependsOn("cn.chahuyun.HuYanAuthorize", ">= 1.1.4", false)
+                .dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", ">=1.0.6", false)
+                .dependsOn("cn.chahuyun.HuYanAuthorize", ">= 1.2.0", false)
                 .dependsOn("cn.chahuyun.HuYanSession", true)
                 .build());
     }
@@ -102,7 +102,7 @@ public final class HuYanEconomy extends JavaPlugin {
 
             eventEventChannel.registerListenerHost(new BotOnlineEventListener());
 
-            PermissionServer.INSTANCE.init(this, "cn.chahuyun.economy.manager", new ExceptionHandle());
+            PermissionServer.INSTANCE.registerMessageEvent(this, "cn.chahuyun.economy.manager", new ExceptionHandle(),EconomyConfig.INSTANCE.getPrefix());
 
             eventEventChannel.registerListenerHost(new MessageEventListener());
             Log.info("事件已监听!");
