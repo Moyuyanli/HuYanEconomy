@@ -1,7 +1,7 @@
 # HuYanEconomy 壶言壶言经济 --- 娱乐插件
 
 [![version](https://img.shields.io/github/v/release/moyuyanli/huyaneconomy
-)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v1.4.7/HuYanEconomy-1.4.7.mirai2.jar)
+)](https://github.com/Moyuyanli/HuYanEconomy/releases) [![download](https://img.shields.io/github/downloads/moyuyanli/huyaneconomy/total)](https://github.com/Moyuyanli/HuYanEconomy/releases/download/v1.5.0/HuYanEconomy-1.5..mirai2.jar)
 
 这里是壶言经济，一款mirai娱乐插件，设计灵感来自于论坛的经济帖子，心血来潮就创建了这个项目，从22年11月开始，中间慢慢填坑，
 陆陆续续的完成了一部分饼，由于大部分饼都没实现，所以没在论坛发布，但是在我群共享。
@@ -50,8 +50,8 @@ mysqlPassword: 123456
 ```yml
 # 主人
 owner: 123456
-# 指令触发前缀,空白则没有前缀(暂时不可用)
-prefix: ' '
+# 指令触发前缀
+prefix: ''
 # 数据库类型(H2,MYSQL,SQLITE)
 dataType: MYSQL
 # mysql 连接地址
@@ -97,7 +97,7 @@ bot: 123456
 
 ### 签到功能
 
-指令`sign`,`签到`,`打卡`;
+指令`sign`,`签到`,`打卡`,`关闭签到`,`开启签到`;
 
 完成签到会生成一张图片签到信息，当图片签到失败后会发送文字签到。
 签到图片目前支持背景自定义。
@@ -232,7 +232,7 @@ bot: 123456
 #### 钓鱼功能
 
 指令`开启 钓鱼`,`关闭 钓鱼`,`购买鱼竿`,`钓鱼`,`抛竿`,`升级鱼竿`,`钓鱼排行榜`,`钓鱼排行`,`钓鱼榜`,`鱼竿等级`,
-`刷新钓鱼`;
+`刷新钓鱼`,`鱼塘等级`;
 
 本功能需要开启才能使用，本功能具有高刷屏风险，如果没有高管理能力，慎用！
 
@@ -265,7 +265,9 @@ bot: 123456
 
 **在此感谢[Travellerrr](https://github.com/Travellerrr)编写了此功能。**
 
-指令`发红包 (额度) (个数) [sj|随机]`,`领红包 (红包id)`,`收红包 (红包id)`,`抢红包`,`红包列表`,`全局红包列表`;
+指令`发红包 (额度) (个数) [sj|随机]`,`领红包 (红包id)`,`收红包 (红包id)`,`抢红包`,`红包列表`,`全局红包列表`,`开启 红包`,`关闭 红包`;
+
+本功能需要在对应群开启。
 
 通过发红包指令`发红包 100 10`可以发一个均分100的10个红包,结尾加上`sj`或`随机`可以将红包改为随机红包。
 
@@ -299,6 +301,11 @@ bot: 123456
 |-------------------|--------|
 | `reedisgood (金额)` | 获取指定金额 |
 
+Console指令
+
+| 指令      | 用处       |
+|---------|----------|
+| `hye v` | 查询壶言经济版本 |
 
 ## 未完成的规划
 
