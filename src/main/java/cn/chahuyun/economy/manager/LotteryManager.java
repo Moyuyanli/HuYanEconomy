@@ -2,14 +2,13 @@ package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.AuthPerm;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
-import cn.chahuyun.authorize.constant.PermConstant;
-import cn.chahuyun.authorize.entity.Perm;
 import cn.chahuyun.authorize.entity.PermGroup;
 import cn.chahuyun.authorize.utils.PermUtil;
+import cn.chahuyun.authorize.utils.UserUtil;
 import cn.chahuyun.economy.HuYanEconomy;
-import cn.chahuyun.economy.config.EconomyConfig;
-import cn.chahuyun.economy.constant.PermCode;
+import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.entity.LotteryInfo;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
@@ -25,7 +24,6 @@ import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.NormalMember;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
-import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
 
@@ -45,8 +43,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @EventComponent
 public class LotteryManager {
 
-    private static final AtomicBoolean minuteTiming = new AtomicBoolean(false);
-    private static final AtomicBoolean hoursTiming = new AtomicBoolean(false);
+    static final AtomicBoolean minuteTiming = new AtomicBoolean(false);
+    static final AtomicBoolean hoursTiming = new AtomicBoolean(false);
 
 
     /**
@@ -134,7 +132,7 @@ public class LotteryManager {
     @MessageAuthorize(
             text = "猜签 (\\d+)( \\d+)|lottery (\\d+)( \\d+)",
             messageMatching = MessageMatchingEnum.REGULAR,
-            groupPermissions = PermCode.LOTTERY_PERM
+            groupPermissions = EconPerm.LOTTERY_PERM
     )
     public static void addLottery(GroupMessageEvent event) {
         Log.info("彩票指令");
@@ -273,21 +271,21 @@ public class LotteryManager {
 
     @MessageAuthorize(
             text = "开启 猜签",
-            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
     )
     public void startLottery(GroupMessageEvent event) {
         Group group = event.getGroup();
 
         PermUtil util = PermUtil.INSTANCE;
 
-        val user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+        val user = UserUtil.INSTANCE.group(group.getId());
 
-        if (util.checkUserHasPerm(user, PermCode.LOTTERY_PERM)) {
+        if (util.checkUserHasPerm(user, EconPerm.LOTTERY_PERM)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签已经开启了!"));
             return;
         }
 
-        if (util.addUserToPermGroupByName(user, PermCode.LOTTERY_PERM_GROUP)) {
+        if (util.addUserToPermGroupByName(user, EconPerm.LOTTERY_PERM_GROUP)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签开启成功!"));
         } else {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签开启失败!"));
@@ -297,21 +295,21 @@ public class LotteryManager {
 
     @MessageAuthorize(
             text = "关闭 猜签",
-            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
     )
     public void endLottery(GroupMessageEvent event) {
         Group group = event.getGroup();
 
         PermUtil util = PermUtil.INSTANCE;
 
-        val user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+        val user = UserUtil.INSTANCE.group(group.getId());
 
-        if (!util.checkUserHasPerm(user, PermCode.LOTTERY_PERM)) {
+        if (!util.checkUserHasPerm(user, EconPerm.LOTTERY_PERM)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签已经关闭!"));
             return;
         }
 
-        PermGroup permGroup = util.talkPermGroupByName(PermCode.LOTTERY_PERM_GROUP);
+        PermGroup permGroup = util.talkPermGroupByName(EconPerm.LOTTERY_PERM_GROUP);
 
         permGroup.getUsers().remove(user);
         permGroup.save();
@@ -402,6 +400,7 @@ class LotteryMinutesTask implements Task {
 
         //定时任务执行完成，清除自身  我这里需要 其实可以不用
         CronUtil.remove(id);
+        LotteryManager.minuteTiming.set(false);
     }
 }
 
@@ -485,7 +484,9 @@ class LotteryHoursTask implements Task {
             String format = String.format("本期中签开签啦！\n开签号码%s", currentString);
             Objects.requireNonNull(bot.getGroup(group)).sendMessage(format);
         }
+
         CronUtil.remove(id);
+        LotteryManager.hoursTiming.set(false);
     }
 }
 
