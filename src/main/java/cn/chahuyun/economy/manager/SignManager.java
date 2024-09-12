@@ -162,7 +162,7 @@ public class SignManager {
             return;
         }
 
-        if (util.addUserToPermGroupByName(user, EconPerm.SIGN_BLACK_GROUP)) {
+        if (util.addUserToPermGroupByName(user, EconPerm.GROUP.SIGN_BLACK_GROUP)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫关闭成功!"));
         } else {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫关闭失败!"));
@@ -186,7 +186,7 @@ public class SignManager {
             return;
         }
 
-        PermGroup permGroup = util.talkPermGroupByName(EconPerm.SIGN_BLACK_GROUP);
+        PermGroup permGroup = util.talkPermGroupByName(EconPerm.GROUP.SIGN_BLACK_GROUP);
 
         permGroup.getUsers().remove(user);
         permGroup.save();

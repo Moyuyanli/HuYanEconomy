@@ -285,7 +285,7 @@ public class LotteryManager {
             return;
         }
 
-        if (util.addUserToPermGroupByName(user, EconPerm.LOTTERY_PERM_GROUP)) {
+        if (util.addUserToPermGroupByName(user, EconPerm.GROUP.LOTTERY_PERM_GROUP)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签开启成功!"));
         } else {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签开启失败!"));
@@ -309,7 +309,7 @@ public class LotteryManager {
             return;
         }
 
-        PermGroup permGroup = util.talkPermGroupByName(EconPerm.LOTTERY_PERM_GROUP);
+        PermGroup permGroup = util.talkPermGroupByName(EconPerm.GROUP.LOTTERY_PERM_GROUP);
 
         permGroup.getUsers().remove(user);
         permGroup.save();

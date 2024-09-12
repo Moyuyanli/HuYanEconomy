@@ -559,7 +559,7 @@ public class GamesManager {
             return;
         }
 
-        if (util.addUserToPermGroupByName(user, EconPerm.FISH_PERM_GROUP)) {
+        if (util.addUserToPermGroupByName(user, EconPerm.GROUP.FISH_PERM_GROUP)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群钓鱼开启成功!"));
         } else {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群钓鱼开启失败!"));
@@ -584,7 +584,7 @@ public class GamesManager {
             return;
         }
 
-        PermGroup permGroup = util.talkPermGroupByName(EconPerm.FISH_PERM_GROUP);
+        PermGroup permGroup = util.talkPermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP);
         permGroup.getUsers().remove(user);
 
         permGroup.save();

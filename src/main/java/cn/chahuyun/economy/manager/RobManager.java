@@ -469,7 +469,7 @@ public class RobManager {
             return;
         }
 
-        if (util.addUserToPermGroupByName(user, EconPerm.ROB_PERM_GROUP)) {
+        if (util.addUserToPermGroupByName(user, EconPerm.GROUP.ROB_PERM_GROUP)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫开启成功!"));
         } else {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫开启失败!"));
@@ -493,7 +493,7 @@ public class RobManager {
             return;
         }
 
-        PermGroup permGroup = util.talkPermGroupByName(EconPerm.ROB_PERM_GROUP);
+        PermGroup permGroup = util.talkPermGroupByName(EconPerm.GROUP.ROB_PERM_GROUP);
 
         permGroup.getUsers().remove(user);
         permGroup.save();

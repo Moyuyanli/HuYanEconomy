@@ -403,7 +403,7 @@ public class RedPackManager {
             return;
         }
 
-        if (util.addUserToPermGroupByName(user, EconPerm.RED_PACKET_PERM_GROUP)) {
+        if (util.addUserToPermGroupByName(user, EconPerm.GROUP.RED_PACKET_PERM_GROUP)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的红包开启成功!"));
         } else {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的红包开启失败!"));
@@ -427,7 +427,7 @@ public class RedPackManager {
             return;
         }
 
-        PermGroup permGroup = util.talkPermGroupByName(EconPerm.RED_PACKET_PERM_GROUP);
+        PermGroup permGroup = util.talkPermGroupByName(EconPerm.GROUP.RED_PACKET_PERM_GROUP);
 
         permGroup.getUsers().remove(user);
         permGroup.save();
