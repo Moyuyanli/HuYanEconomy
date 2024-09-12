@@ -36,6 +36,15 @@ public interface PermCode {
      */
     String ROB_PERM_GROUP = "抢劫组";
 
+    /**
+     * 红包权限
+     * */
+    String RED_PACKET_PERM = "red pocket";
+
+    /**
+     * 红包权限组
+     * */
+    String RED_PACKET_PERM_GROUP = "红包组";
 
 
 }

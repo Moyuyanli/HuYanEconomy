@@ -23,6 +23,7 @@ dependencies {
     compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
     compileOnly("cn.chahuyun:HuYanSession:2.3.1")
     compileOnly("cn.chahuyun:HuYanAuthorize:1.2.0")
+    
     //使用库
     implementation("org.projectlombok:lombok:1.18.24")
     annotationProcessor("org.projectlombok:lombok:1.18.24")

@@ -23,7 +23,8 @@ public class PermCodeManager {
         instance.registerPermCode(plugin,
                 new Perm(PermCode.FISH_PERM, "壶言经济的钓鱼权限"),
                 new Perm(PermCode.LOTTERY_PERM, "壶言经济的彩票权限"),
-                new Perm(PermCode.ROB_PERM, "壶言经济的抢劫权限")
+                new Perm(PermCode.ROB_PERM, "壶言经济的抢劫权限"),
+                new Perm(PermCode.RED_PACKET_PERM, "壶言经济的红包权限")
         );
 
         PermUtil util = PermUtil.INSTANCE;
@@ -49,6 +50,14 @@ public class PermCodeManager {
         if (group == null) {
             group = util.talkPermGroupByName(PermCode.LOTTERY_PERM_GROUP);
             Perm perm = util.takePerm(PermCode.LOTTERY_PERM);
+            util.addPermToPermGroupByPermGroup(perm, group);
+        }
+
+        group = util.selectPermGroupOneByName(PermCode.RED_PACKET_PERM_GROUP);
+
+        if (group == null) {
+            group = util.talkPermGroupByName(PermCode.RED_PACKET_PERM_GROUP);
+            Perm perm = util.takePerm(PermCode.RED_PACKET_PERM);
             util.addPermToPermGroupByPermGroup(perm, group);
         }
 
