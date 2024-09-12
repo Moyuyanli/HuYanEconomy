@@ -1,6 +1,5 @@
 package cn.chahuyun.economy;
 
-import cn.chahuyun.authorize.BuildConstants;
 import cn.chahuyun.authorize.PermissionServer;
 import cn.chahuyun.authorize.exception.ExceptionHandle;
 import cn.chahuyun.economy.command.EconomyCommand;

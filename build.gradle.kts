@@ -60,7 +60,7 @@ mavenCentralPublish {
 
 buildConfig {
     className("BuildConstants")
-    packageName("cn.chahuyun.authorize")
+    packageName("cn.chahuyun.economy")
     useKotlinOutput()
     buildConfigField("String", "VERSION", "\"${project.version}\"")
     buildConfigField(
