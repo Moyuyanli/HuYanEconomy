@@ -4,6 +4,9 @@ import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.AuthPerm;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
+import cn.chahuyun.authorize.entity.PermGroup;
+import cn.chahuyun.authorize.utils.PermUtil;
+import cn.chahuyun.authorize.utils.UserUtil;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.entity.redpack.RedPack;
@@ -12,6 +15,7 @@ import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
+import lombok.val;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
@@ -380,5 +384,54 @@ public class RedPackManager {
             subject.sendMessage("查询失败! 原因: " + e.getMessage());
             throw new RuntimeException(e);
         }
+    }
+
+
+    @MessageAuthorize(
+            text = "开启 红包",
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
+    )
+    public void startRob(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = UserUtil.INSTANCE.group(group.getId());
+
+        if (util.checkUserHasPerm(user, EconPerm.RED_PACKET_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的红包已经开启了!"));
+            return;
+        }
+
+        if (util.addUserToPermGroupByName(user, EconPerm.RED_PACKET_PERM_GROUP)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的红包开启成功!"));
+        } else {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的红包开启失败!"));
+        }
+
+    }
+
+    @MessageAuthorize(
+            text = "关闭 红包",
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
+    )
+    public void endRob(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = UserUtil.INSTANCE.group(group.getId());
+
+        if (!util.checkUserHasPerm(user, EconPerm.RED_PACKET_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的红包已经关闭!"));
+            return;
+        }
+
+        PermGroup permGroup = util.talkPermGroupByName(EconPerm.RED_PACKET_PERM_GROUP);
+
+        permGroup.getUsers().remove(user);
+        permGroup.save();
+
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的红包关闭成功!"));
     }
 }
