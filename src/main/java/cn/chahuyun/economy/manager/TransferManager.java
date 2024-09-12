@@ -2,8 +2,8 @@ package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.AuthPerm;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
-import cn.chahuyun.authorize.constant.PermConstant;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.bank.Bank;
 import cn.chahuyun.economy.entity.bank.action.Transfer;
@@ -107,7 +107,7 @@ public class TransferManager {
     @MessageAuthorize(
             text = "greedisgood \\d+",
             messageMatching = MessageMatchingEnum.REGULAR,
-            userPermissions = {PermConstant.OWNER,PermConstant.ADMIN}
+            userPermissions = {AuthPerm.OWNER,AuthPerm.ADMIN}
     )
     public static void Cheat(MessageEvent event) {
         Log.info("作弊指令");

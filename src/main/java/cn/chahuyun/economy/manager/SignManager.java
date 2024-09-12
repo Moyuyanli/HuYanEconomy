@@ -2,8 +2,13 @@ package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.AuthPerm;
+import cn.chahuyun.authorize.entity.PermGroup;
+import cn.chahuyun.authorize.utils.PermUtil;
+import cn.chahuyun.authorize.utils.UserUtil;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.Constant;
+import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserInfo;
@@ -17,9 +22,12 @@ import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
+import lombok.val;
 import net.mamoe.mirai.contact.AvatarSpec;
 import net.mamoe.mirai.contact.Contact;
+import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.User;
+import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
@@ -53,7 +61,7 @@ public class SignManager {
      * @author Moyuyanli
      * @date 2022/11/15 14:53
      */
-    @MessageAuthorize(text = {"签到","打卡","sign"})
+    @MessageAuthorize(text = {"签到", "打卡", "sign"}, blackPermissions = EconPerm.SIGN_BLACK_PERM)
     public static void sign(MessageEvent event) {
         Log.info("签到指令");
 
@@ -65,10 +73,6 @@ public class SignManager {
 
         MessageChainBuilder messages = MessageUtil.quoteReply(message);
 
-        if (userInfo == null) {
-            subject.sendMessage("签到失败!");
-            return;
-        }
         if (!userInfo.sign()) {
             messages.append(new PlainText("你已经签到过了哦!"));
             subject.sendMessage(messages.build());
@@ -141,6 +145,58 @@ public class SignManager {
         sendSignImage(userInfo, subject, messages.build());
     }
 
+
+    @MessageAuthorize(
+            text = "关闭 签到",
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
+    )
+    public void offSign(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = UserUtil.INSTANCE.group(group.getId());
+
+        if (util.checkUserHasPerm(user, EconPerm.SIGN_BLACK_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到已经关闭了!"));
+            return;
+        }
+
+        if (util.addUserToPermGroupByName(user, EconPerm.SIGN_BLACK_GROUP)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫关闭成功!"));
+        } else {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫关闭失败!"));
+        }
+    }
+
+
+    @MessageAuthorize(
+            text = "开启 签到",
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
+    )
+    public void startSign(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = UserUtil.INSTANCE.group(group.getId());
+
+        if (!util.checkUserHasPerm(user, EconPerm.SIGN_BLACK_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到已经开启!"));
+            return;
+        }
+
+        PermGroup permGroup = util.talkPermGroupByName(EconPerm.SIGN_BLACK_GROUP);
+
+        permGroup.getUsers().remove(user);
+        permGroup.save();
+
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到开启成功!"));
+    }
+
+    //============================================================================
+
+
     /**
      * 发送签到图片信息<p>
      * 在基础信息上添加签到信息<p>
@@ -151,7 +207,7 @@ public class SignManager {
      * @author Moyuyanli
      * @date 2022/12/5 16:22
      */
-    public static void sendSignImage(UserInfo userInfo, Contact subject, MessageChain messages) {
+    private static void sendSignImage(UserInfo userInfo, Contact subject, MessageChain messages) {
         BufferedImage userInfoImageBase = UserManager.getUserInfoImageBase(userInfo);
         if (userInfoImageBase == null) {
             return;

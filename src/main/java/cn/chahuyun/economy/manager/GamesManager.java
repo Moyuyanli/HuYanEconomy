@@ -2,12 +2,13 @@ package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
-import cn.chahuyun.authorize.constant.PermConstant;
+import cn.chahuyun.authorize.constant.AuthPerm;
 import cn.chahuyun.authorize.entity.PermGroup;
 import cn.chahuyun.authorize.utils.PermUtil;
+import cn.chahuyun.authorize.utils.UserUtil;
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.constant.FishPondLevelConstant;
-import cn.chahuyun.economy.constant.PermCode;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.Fish;
@@ -110,7 +111,7 @@ public class GamesManager {
      */
     @MessageAuthorize(
             text = {"钓鱼", "抛竿"},
-            groupPermissions = PermCode.FISH_PERM
+            groupPermissions = EconPerm.FISH_PERM
     )
     public static void fishing(GroupMessageEvent event) {
         Log.info("钓鱼指令");
@@ -372,7 +373,7 @@ public class GamesManager {
      */
     @MessageAuthorize(
             text = {"购买鱼竿"},
-            groupPermissions = PermCode.FISH_PERM
+            groupPermissions = EconPerm.FISH_PERM
     )
     public static void buyFishRod(MessageEvent event) {
         Log.info("购买鱼竿指令");
@@ -416,7 +417,7 @@ public class GamesManager {
      */
     @MessageAuthorize(
             text = {"升级鱼竿"},
-            groupPermissions = PermCode.FISH_PERM
+            groupPermissions = EconPerm.FISH_PERM
     )
     public static void upFishRod(MessageEvent event) {
         Log.info("升级鱼竿指令");
@@ -489,8 +490,8 @@ public class GamesManager {
      */
     @MessageAuthorize(
             text = "刷新钓鱼",
-            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN},
-            groupPermissions = PermCode.FISH_PERM
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN},
+            groupPermissions = EconPerm.FISH_PERM
     )
     public static void refresh(MessageEvent event) {
         Log.info("刷新钓鱼指令");
@@ -531,7 +532,7 @@ public class GamesManager {
      */
     @MessageAuthorize(
             text = "鱼竿等级",
-            groupPermissions = PermCode.FISH_PERM
+            groupPermissions = EconPerm.FISH_PERM
     )
     public static void viewFishLevel(MessageEvent event) {
         Log.info("鱼竿等级指令");
@@ -542,23 +543,23 @@ public class GamesManager {
 
     @MessageAuthorize(
             text = "开启 钓鱼",
-            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
     )
     public void startFish(GroupMessageEvent event) {
         Log.info("管理指令");
 
         Group group = event.getGroup();
-        cn.chahuyun.authorize.entity.User user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+        val user = UserUtil.INSTANCE.group(group.getId());
 
         PermUtil util = PermUtil.INSTANCE;
 
 
-        if (util.checkUserHasPerm(user, PermCode.FISH_PERM)) {
+        if (util.checkUserHasPerm(user, EconPerm.FISH_PERM)) {
             group.sendMessage("本群的钓鱼已经开启了!");
             return;
         }
 
-        if (util.addUserToPermGroupByName(user, PermCode.FISH_PERM_GROUP)) {
+        if (util.addUserToPermGroupByName(user, EconPerm.FISH_PERM_GROUP)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群钓鱼开启成功!"));
         } else {
             group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群钓鱼开启失败!"));
@@ -567,23 +568,23 @@ public class GamesManager {
 
     @MessageAuthorize(
             text = "关闭 钓鱼",
-            userPermissions = {PermConstant.OWNER, PermConstant.ADMIN}
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
     )
     public void offFish(GroupMessageEvent event) {
         Log.info("管理指令");
 
         Group group = event.getGroup();
-        cn.chahuyun.authorize.entity.User user = cn.chahuyun.authorize.entity.User.Companion.group(group.getId());
+        val user = UserUtil.INSTANCE.group(group.getId());
 
         PermUtil util = PermUtil.INSTANCE;
 
 
-        if (!util.checkUserHasPerm(user, PermCode.FISH_PERM)) {
+        if (!util.checkUserHasPerm(user, EconPerm.FISH_PERM)) {
             group.sendMessage("本群的钓鱼已经关闭了!");
             return;
         }
 
-        PermGroup permGroup = util.talkPermGroupByName(PermCode.FISH_PERM_GROUP);
+        PermGroup permGroup = util.talkPermGroupByName(EconPerm.FISH_PERM_GROUP);
         permGroup.getUsers().remove(user);
 
         permGroup.save();
