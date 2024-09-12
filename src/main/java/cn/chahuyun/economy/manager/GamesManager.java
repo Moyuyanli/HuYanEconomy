@@ -609,11 +609,12 @@ public class GamesManager {
                 "当前鱼塘信息:%n" +
                         "鱼塘名称:%s%n" +
                         "鱼塘等级:%d%n" +
+                        "鱼塘钓鱼次数:%d%n" +
                         "鱼塘最低鱼竿等级:%d%n" +
                         "鱼塘升级所需金额:%d%n" +
                         "鱼塘金额:%.1f%n" +
                         "鱼塘升级进度:%.1f%%",
-                fishPond.getName(), level, fishPond.getMinLevel(), value.getAmount(), money, (money / value.getAmount())
+                fishPond.getName(), level, fishPond.getNumber(), fishPond.getMinLevel(), value.getAmount(), money, (money / value.getAmount() * 100)
         ));
     }
 
