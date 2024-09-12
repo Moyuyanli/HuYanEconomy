@@ -5,6 +5,7 @@ import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.authorize.constant.PermConstant;
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.constant.PermCode;
 import cn.chahuyun.economy.entity.redpack.RedPack;
 import cn.chahuyun.economy.utils.*;
 import cn.chahuyun.hibernateplus.HibernateFactory;
@@ -38,7 +39,8 @@ public class RedPackManager {
      */
     @MessageAuthorize(
             text = "发红包( \\d+){2}( (sj|随机))?",
-            messageMatching = MessageMatchingEnum.REGULAR
+            messageMatching = MessageMatchingEnum.REGULAR,
+            groupPermissions = PermCode.RED_PACKET_PERM
     )
     public static void create(GroupMessageEvent event) {
         Log.info("发红包指令");
@@ -145,7 +147,8 @@ public class RedPackManager {
      */
     @MessageAuthorize(
             text = "领红包 \\d+|收红包 \\d+",
-            messageMatching = MessageMatchingEnum.REGULAR
+            messageMatching = MessageMatchingEnum.REGULAR,
+            groupPermissions = PermCode.RED_PACKET_PERM
     )
     public static void receive(GroupMessageEvent event) {
         Log.info("收红包指令");
@@ -186,7 +189,9 @@ public class RedPackManager {
      *
      * @param event 群消息事件
      */
-    @MessageAuthorize(text = "红包列表")
+    @MessageAuthorize(
+            text = "红包列表",
+            groupPermissions = PermCode.RED_PACKET_PERM)
     public static void queryRedPackList(GroupMessageEvent event) {
         Log.info("红包查询指令");
 
@@ -251,7 +256,9 @@ public class RedPackManager {
      *
      * @param event 消息事件
      */
-    @MessageAuthorize(text = "抢红包")
+    @MessageAuthorize(
+            text = "抢红包",
+            groupPermissions = PermCode.RED_PACKET_PERM)
     public static void grabNewestRedPack(GroupMessageEvent event) {
         Log.info("抢红包指令");
 
