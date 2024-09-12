@@ -22,7 +22,8 @@ dependencies {
     //依赖
     compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
     compileOnly("cn.chahuyun:HuYanSession:2.3.1")
-    compileOnly("cn.chahuyun:HuYanAuthorize:1.1.6")
+    compileOnly("cn.chahuyun:HuYanAuthorize:1.2.0")
+    
     //使用库
     implementation("org.projectlombok:lombok:1.18.24")
     annotationProcessor("org.projectlombok:lombok:1.18.24")
@@ -30,7 +31,7 @@ dependencies {
     implementation("cn.hutool:hutool-all:5.8.30")
     implementation("org.apache.poi:poi-ooxml:4.1.2")
 
-    implementation("cn.chahuyun:hibernate-plus:1.0.15")
+    implementation("cn.chahuyun:hibernate-plus:1.0.16")
 
 }
 
