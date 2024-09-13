@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.plugin;
 
-import cn.chahuyun.economy.entity.props.PropsBase;
+import cn.chahuyun.economy.props.PropsBase;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;

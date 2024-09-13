@@ -1,7 +1,6 @@
 package cn.chahuyun.economy.entity.props;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import cn.chahuyun.economy.props.PropsBase;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,8 +18,6 @@ import java.util.Date;
  * @author Moyuyanli
  * @date 2022/11/14 9:27
  */
-@Entity(name = "PropsCard")
-@Table
 @Getter
 @Setter
 public class PropsCard extends PropsBase implements Serializable {
@@ -75,6 +72,14 @@ public class PropsCard extends PropsBase implements Serializable {
                 "\n价格:" + this.getCost() + "金币" +
                 "\n状态:" + (status ? "使用中" : "未使用") +
                 "\n描述:" + this.getDescription();
+    }
+
+    /**
+     * 使用该道具
+     */
+    @Override
+    public void use() {
+
     }
 
     public boolean isStatus() {

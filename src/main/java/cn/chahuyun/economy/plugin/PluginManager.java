@@ -6,7 +6,6 @@ import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.manager.PropsManager;
-import cn.chahuyun.economy.manager.PropsManagerImpl;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.version.CheckLatestVersion;
 import cn.hutool.core.io.FileUtil;
@@ -19,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.Collections;
 
 /**
  * 插件管理<p>

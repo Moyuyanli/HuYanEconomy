@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.entity;
 
-import cn.chahuyun.economy.entity.props.PropsBase;
+import cn.chahuyun.economy.props.PropsBase;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,7 +32,7 @@ public class UserBackpack implements Serializable {
     /**
      * 道具id
      */
-    private long propId;
+    private Long propId;
     /**
      * 道具子类映射
      */
@@ -41,7 +41,7 @@ public class UserBackpack implements Serializable {
     public UserBackpack() {
     }
 
-    public UserBackpack(String userId, String propsCode, int propId, Class<? extends PropsBase> className) {
+    public UserBackpack(String userId, String propsCode, long propId, Class<? extends PropsBase> className) {
         this.userId = userId;
         this.propsCode = propsCode;
         this.propId = propId;
