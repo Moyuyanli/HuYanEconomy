@@ -13,6 +13,7 @@ import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.props.PropsCard;
+import cn.chahuyun.economy.manager.api.PropsManagerApi;
 import cn.chahuyun.economy.plugin.ImageManager;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
@@ -100,7 +101,7 @@ public class SignManager {
         双倍金币卡道具
          */
         if (false) {
-            PropsManager propsManager = PluginManager.getPropsManager();
+            PropsManagerApi propsManager = PluginManager.getPropsManager();
 
             List<PropsCard> cardS = propsManager.getPropsByUserFromCode(userInfo, Constant.SIGN_DOUBLE_SINGLE_CARD, PropsCard.class);
 

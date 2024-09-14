@@ -60,4 +60,8 @@ public class PropsManager {
 
         return aClass.equals(props);
     }
+
+    public static Class<? extends PropsBase> shopClass(String code) {
+        return propsClassMap.get(code);
+    }
 }

@@ -44,6 +44,10 @@ public abstract class PropsBase implements Serializable {
      */
     private String description;
     /**
+     * 能否购买
+     */
+    private boolean canBuy;
+    /**
      * 道具价值
      */
     private int cost;
@@ -82,6 +86,14 @@ public abstract class PropsBase implements Serializable {
                 "\n道具数量:" + num +
                 "\n道具描述:" + description;
     }
+
+    /**
+     * 商店显示描述
+     *
+     * @return 商店显示结果
+     */
+    public abstract String toShopInfo();
+
 
     /**
      * 使用该道具

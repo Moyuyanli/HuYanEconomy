@@ -5,12 +5,10 @@ import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.entity.props.PropsCard;
-import cn.chahuyun.economy.manager.PropsManager;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.version.CheckLatestVersion;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.cron.CronUtil;
-import lombok.Getter;
 
 import java.awt.*;
 import java.io.File;
@@ -33,13 +31,7 @@ public class PluginManager {
     public static boolean isHuYanSessionPlugin;
 
     public static boolean isCustomImage;
-    /**
-     * 插件的道具管理
-     * -- GETTER --
-     * 获取道具管理实现
-     */
-    @Getter
-    private static PropsManager propsManager = new PropsManagerImpl();
+
 
     private PluginManager() {
     }
@@ -60,7 +52,6 @@ public class PluginManager {
         //加载道具
         PropsCard propsCard = new PropsCard(Constant.SIGN_DOUBLE_SINGLE_CARD, "签到双倍金币卡", 99, true, "张", "不要999，不要599，只要99金币，你的下一次签到将翻倍！", false, null, null, false, null);
 
-        propsManager.registerProps(propsCard);
         try {
             //壶言会话
             if (EconomyPluginConfig.INSTANCE.getFirstStart()) {
@@ -112,12 +103,4 @@ public class PluginManager {
     }
 
 
-    /**
-     * 设置道具管理的实现
-     *
-     * @param propsManager 道具管理类
-     */
-    public static void setPropsManager(PropsManager propsManager) {
-        PluginManager.propsManager = propsManager;
-    }
 }

@@ -2,10 +2,9 @@ package cn.chahuyun.economy.event;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.config.EconomyConfig;
-import cn.chahuyun.economy.manager.PropsManager;
+import cn.chahuyun.economy.manager.api.PropsManagerApi;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.utils.Log;
-import cn.chahuyun.economy.utils.MessageUtil;
 import kotlin.coroutines.CoroutineContext;
 import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.EventHandler;
@@ -63,7 +62,7 @@ public class MessageEventListener extends SimpleListenerHost {
         }
 
         String code = event.getMessage().serializeToMiraiCode();
-        PropsManager propsManager = PluginManager.getPropsManager();
+        PropsManagerApi propsManager = PluginManager.getPropsManager();
         if (!config.getPrefix().isBlank()) {
             if (!code.startsWith(config.getPrefix())) {
                 return;

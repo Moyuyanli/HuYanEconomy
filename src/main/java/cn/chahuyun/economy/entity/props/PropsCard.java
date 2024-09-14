@@ -1,6 +1,7 @@
 package cn.chahuyun.economy.entity.props;
 
 import cn.chahuyun.economy.props.PropsBase;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,11 +21,23 @@ import java.util.Date;
  */
 @Getter
 @Setter
+@Builder
 public class PropsCard extends PropsBase implements Serializable {
+
+    /**
+     * 双倍签到卡
+     */
+    public final static String SIGN_2 = "sign-2";
+
+    /**
+     * 三倍签到卡
+     */
+    public final static String SIGN_3 = "sign-3";
 
     /**
      * 道具卡状态
      */
+    @Getter
     private boolean status;
     /**
      * 允许操作
@@ -42,29 +55,6 @@ public class PropsCard extends PropsBase implements Serializable {
     public PropsCard() {
     }
 
-    /**
-     * 创建一个道具模板
-     * 具体实现方法请查看卡道具
-     *
-     * @param code        道具code
-     * @param name        道具名称
-     * @param cost        道具价值
-     * @param stack       是否可以叠加物品
-     * @param unit        道具数量单位
-     * @param description 道具描述
-     * @param reuse       是否复用
-     * @param getTime     获取时间
-     * @param expiredTime 过期时间
-     * @param operation   可操作
-     * @param aging       时效
-     */
-    public PropsCard(String code, String name, int cost, boolean stack, String unit, String description, boolean reuse, Date getTime, Date expiredTime, boolean operation, String aging) {
-        super(code, name, cost, stack, unit, description, reuse, getTime, expiredTime);
-        this.status = false;
-        this.operation = operation;
-        this.enabledTime = null;
-        this.aging = aging;
-    }
 
     @Override
     public String toString() {
@@ -75,14 +65,24 @@ public class PropsCard extends PropsBase implements Serializable {
     }
 
     /**
+     * 商店显示描述
+     *
+     * @return 商店显示结果
+     */
+    @Override
+    public String toShopInfo() {
+        return "道具名称: " + this.getName() +
+                "\n道具描述: " + this.getDescription() +
+                "\n道具价值: " + this.getCost() + "金币";
+    }
+
+    /**
      * 使用该道具
      */
     @Override
     public void use() {
-
+        this.status = true;
+        this.enabledTime = new Date();
     }
 
-    public boolean isStatus() {
-        return status;
-    }
 }
