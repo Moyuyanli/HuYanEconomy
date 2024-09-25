@@ -3,8 +3,6 @@ package cn.chahuyun.economy.plugin;
 import cn.chahuyun.config.ConfigData;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.config.EconomyPluginConfig;
-import cn.chahuyun.economy.constant.Constant;
-import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.version.CheckLatestVersion;
 import cn.hutool.core.io.FileUtil;
@@ -48,9 +46,6 @@ public class PluginManager {
 
         //检查插件版本
         CheckLatestVersion.init();
-
-        //加载道具
-        PropsCard propsCard = new PropsCard(Constant.SIGN_DOUBLE_SINGLE_CARD, "签到双倍金币卡", 99, true, "张", "不要999，不要599，只要99金币，你的下一次签到将翻倍！", false, null, null, false, null);
 
         try {
             //壶言会话
