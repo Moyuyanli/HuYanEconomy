@@ -12,6 +12,7 @@ import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.entity.redpack.RedPack;
 import cn.chahuyun.economy.utils.*;
 import cn.chahuyun.hibernateplus.HibernateFactory;
+import cn.hutool.core.date.BetweenFormatter;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -331,8 +332,8 @@ public class RedPackManager {
         subject.sendMessage(MessageUtil.formatMessageChain(message, "恭喜你领取到了一个红包，你领取了 %.1f 枚金币！", perMoney));
 
         if (receivers.size() >= redPack.getNumber()) {
-            long between = DateUtil.between(new Date(), redPack.getCreateTime(), DateUnit.SECOND);
-            subject.sendMessage(MessageUtil.formatMessageChain("%s已被领完！共计花费%d秒!", redPack.getName(), between));
+            String between = DateUtil.formatBetween(new Date(), redPack.getCreateTime(), BetweenFormatter.Level.SECOND);
+            subject.sendMessage(MessageUtil.formatMessageChain("%s已被领完！共计花费%s!", redPack.getName(), between));
             HibernateFactory.delete(redPack);
         }
     }
