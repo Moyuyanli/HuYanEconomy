@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.constant;
 
-import cn.chahuyun.authorize.BuildConstants;
+import cn.chahuyun.economy.BuildConstants;
 import net.mamoe.mirai.utils.MiraiLogger;
 
 /**

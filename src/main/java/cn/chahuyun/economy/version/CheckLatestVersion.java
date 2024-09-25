@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.version;
 
 
-import cn.chahuyun.authorize.BuildConstants;
+import cn.chahuyun.economy.BuildConstants;
 import cn.chahuyun.economy.utils.Log;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
@@ -14,18 +14,24 @@ public class CheckLatestVersion {
      * 检查版本
      */
     public static void init() {
-        String response = HttpUtil.get("https://api.github.com/repos/Moyuyanli/HuYanEconomy/releases/latest");
+        String response;
+        try {
+            response = HttpUtil.get("https://api.github.com/repos/Moyuyanli/HuYanEconomy/releases/latest");
+        } catch (Exception e) {
+            Log.warning("检查最新版本失败!");
+            return;
+        }
         JSONObject json = JSONUtil.parseObj(response);
         String newVersion = json.getStr("tag_name");
         String updateMsg = json.getStr("body");
         if (newVersion == null) {
-            Log.error(" 无法获取最新版本号！");
+            Log.error("无法获取最新版本号！");
             return;
         }
         if (!newVersion.substring(1).equals(BuildConstants.VERSION)) {
-            Log.warning(" 发现最新版本！版本：" + newVersion);
-            Log.warning(" 发现最新版本！版本：" + newVersion);
-            Log.warning(" 发现最新版本！版本：" + newVersion);
+            Log.warning("发现最新版本！版本：" + newVersion);
+            Log.warning("发现最新版本！版本：" + newVersion);
+            Log.warning("发现最新版本！版本：" + newVersion);
             if (updateMsg != null) {
                 updateMsg = updateMsg.replace("#", "")
                         .replace("`", "")
@@ -36,11 +42,11 @@ public class CheckLatestVersion {
 
                 Log.warning(updateMsg);
             } else {
-                Log.error(" 无法获取更新日志！");
+                Log.error("无法获取更新日志！");
             }
             return;
         }
-        Log.info(" 已是最新版本！版本: " + BuildConstants.VERSION);
+        Log.info("已是最新版本！版本: " + BuildConstants.VERSION);
 
     }
 }

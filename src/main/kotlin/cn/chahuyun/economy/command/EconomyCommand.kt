@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.command
 
-import cn.chahuyun.authorize.BuildConstants
+import cn.chahuyun.economy.BuildConstants
 import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.repair.RepairManager
 import net.mamoe.mirai.console.command.CommandSender
