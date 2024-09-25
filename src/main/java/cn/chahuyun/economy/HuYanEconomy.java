@@ -10,11 +10,9 @@ import cn.chahuyun.economy.config.RobMsgConfig;
 import cn.chahuyun.economy.constant.Icon;
 import cn.chahuyun.economy.event.BotOnlineEventListener;
 import cn.chahuyun.economy.event.MessageEventListener;
-import cn.chahuyun.economy.manager.BankManager;
-import cn.chahuyun.economy.manager.GamesManager;
-import cn.chahuyun.economy.manager.LotteryManager;
-import cn.chahuyun.economy.manager.TitleManager;
+import cn.chahuyun.economy.manager.*;
 import cn.chahuyun.economy.plugin.*;
+import cn.chahuyun.economy.sign.SignEvent;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
@@ -106,6 +104,12 @@ public final class HuYanEconomy extends JavaPlugin {
             PermissionServer.INSTANCE.registerMessageEvent(this, "cn.chahuyun.economy.manager", new ExceptionHandle(),EconomyConfig.INSTANCE.getPrefix());
 
             eventEventChannel.registerListenerHost(new MessageEventListener());
+
+            //监听自定义签到事件
+            eventEventChannel.subscribeAlways(SignEvent.class, SignManager::customSign);
+
+
+
             Log.info("事件已监听!");
         }
         EconomyPluginConfig.INSTANCE.setFirstStart(false);

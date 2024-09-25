@@ -7,15 +7,16 @@ import cn.chahuyun.authorize.entity.PermGroup;
 import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.authorize.utils.UserUtil;
 import cn.chahuyun.economy.HuYanEconomy;
-import cn.chahuyun.economy.constant.Constant;
 import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.constant.TitleCode;
+import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.props.PropsCard;
-import cn.chahuyun.economy.manager.api.PropsManagerApi;
 import cn.chahuyun.economy.plugin.ImageManager;
 import cn.chahuyun.economy.plugin.PluginManager;
+import cn.chahuyun.economy.prop.PropsManager;
+import cn.chahuyun.economy.sign.SignEvent;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
@@ -28,8 +29,8 @@ import net.mamoe.mirai.contact.AvatarSpec;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.User;
+import net.mamoe.mirai.event.EventKt;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
-import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
 import net.mamoe.mirai.message.data.PlainText;
@@ -63,7 +64,7 @@ public class SignManager {
      * @date 2022/11/15 14:53
      */
     @MessageAuthorize(text = {"签到", "打卡", "sign"}, blackPermissions = EconPerm.SIGN_BLACK_PERM)
-    public static void sign(MessageEvent event) {
+    public static void sign(GroupMessageEvent event) {
         Log.info("签到指令");
 
         User user = event.getSender();
@@ -97,41 +98,25 @@ public class SignManager {
         } else {
             goldNumber = RandomUtil.randomInt(50, 100);
         }
-        /*
-        双倍金币卡道具
-         */
-        if (false) {
-            PropsManagerApi propsManager = PluginManager.getPropsManager();
 
-            List<PropsCard> cardS = propsManager.getPropsByUserFromCode(userInfo, Constant.SIGN_DOUBLE_SINGLE_CARD, PropsCard.class);
+        SignEvent signEvent = new SignEvent(userInfo, event);
+        signEvent.setGold(goldNumber);
 
-            boolean doubleStatus = false;
-            for (PropsCard card : cardS) {
-                if (card.isStatus()) {
-                    doubleStatus = true;
-                    userInfo = propsManager.deleteProp(userInfo, card);
-                    if (userInfo == null) {
-                        subject.sendMessage("双倍签到金币卡使用失败!签到失败!");
-                        return;
-                    }
-                    break;
-                }
-            }
+        //广播签到事件
+        SignEvent broadcast = EventKt.broadcast(signEvent);
 
-            if (doubleStatus) {
-                goldNumber = goldNumber * 2;
-            }
-        }
-        if (TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.SIGN_15)) {
-            goldNumber = goldNumber * 2;
-        }
+        goldNumber = broadcast.getGold();
+        userInfo = broadcast.getUserInfo();
+
         if (!EconomyUtil.plusMoneyToUser(userInfo.getUser(), goldNumber)) {
             subject.sendMessage("签到失败!");
             //todo 签到失败回滚
             return;
         }
+
         userInfo.setSignEarnings(goldNumber);
         HibernateFactory.merge(userInfo);
+
         double moneyBytUser = EconomyUtil.getMoneyByUser(userInfo.getUser());
         messages.append(new PlainText("签到成功!"));
         messages.append(new PlainText(String.format("金币:%s(+%s)", moneyBytUser, goldNumber)));
@@ -193,6 +178,62 @@ public class SignManager {
         permGroup.save();
 
         group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到开启成功!"));
+    }
+
+    /**
+     * 自定义签到事件
+     *
+     * @param event 签到事件
+     */
+    public static void customSign(SignEvent event) {
+        UserInfo userInfo = event.getUserInfo();
+        
+        if (TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.SIGN_15)) {
+            event.setGold(event.getGold() * 2);
+        }
+
+        List<UserBackpack> backpacks = userInfo.getBackpacks();
+
+        PropsCard card;
+        for (UserBackpack backpack : backpacks) {
+            Long id = backpack.getId();
+            switch (backpack.getPropCode()) {
+                case PropsCard.SIGN_2:
+                    card = PropsManager.deserialization(backpack.getPropId(), PropsCard.class);
+                    if (card.isStatus()) {
+                        event.setGold(event.getGold() * 2);
+                        BackpackManager.delPropToBackpack(userInfo, id);
+                        event.sendQuote(MessageUtil.formatMessageChain("检测到启用的双倍道具卡!本次签到将翻倍奖励!"));
+                    }
+
+                    break;
+                case PropsCard.SIGN_3:
+                    card = PropsManager.deserialization(backpack.getPropId(), PropsCard.class);
+                    if (card.isStatus()) {
+                        event.setGold(event.getGold() * 3);
+                        BackpackManager.delPropToBackpack(userInfo, id);
+                        event.sendQuote(MessageUtil.formatMessageChain("检测到启用的三倍道具卡!本次签到将翻三倍奖励!"));
+                    }
+                    break;
+                case PropsCard.SIGN_IN:
+                    card = PropsManager.deserialization(backpack.getPropId(), PropsCard.class);
+                    if (card.isStatus()) {
+                        int oldSignNumber = userInfo.getOldSignNumber();
+
+                        if (oldSignNumber == 0) {
+                            break;
+                        }
+
+                        userInfo.setSignNumber(userInfo.getSignNumber() + oldSignNumber);
+                        userInfo.setOldSignNumber(0);
+
+                        BackpackManager.delPropToBackpack(userInfo, id);
+                        event.sendQuote(MessageUtil.formatMessageChain("检测到启用的补签卡!已自动补签!"));
+                    }
+            }
+        }
+
+
     }
 
     //============================================================================
