@@ -1,9 +1,10 @@
 package cn.chahuyun.economy.entity.props;
 
-import cn.chahuyun.economy.props.PropsBase;
+import cn.chahuyun.economy.prop.PropBase;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -21,8 +22,8 @@ import java.util.Date;
  */
 @Getter
 @Setter
-@Builder
-public class PropsCard extends PropsBase implements Serializable {
+@SuperBuilder(toBuilder = true)
+public class PropsCard extends PropBase implements Serializable {
 
     /**
      * 双倍签到卡
@@ -35,13 +36,20 @@ public class PropsCard extends PropsBase implements Serializable {
     public final static String SIGN_3 = "sign-3";
 
     /**
+     * 补签卡
+     */
+    public final static String SIGN_IN = "sing-in";
+
+    /**
      * 道具卡状态
      */
     @Getter
-    private boolean status;
+    @Builder.Default
+    private boolean status = false;
     /**
      * 允许操作
      */
+    @Builder.Default
     private boolean operation = false;
     /**
      * 启用时间

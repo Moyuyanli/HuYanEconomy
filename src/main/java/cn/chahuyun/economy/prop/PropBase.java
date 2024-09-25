@@ -1,9 +1,10 @@
-package cn.chahuyun.economy.props;
+package cn.chahuyun.economy.prop;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -17,7 +18,6 @@ import java.util.Date;
  */
 
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 /*
@@ -29,10 +29,15 @@ import java.util.Date;
 //        uniqueConstraints = {@UniqueConstraint(columnNames = "code")})
 //    @Column(columnDefinition = "date default now()")
  */
-public abstract class PropsBase implements Serializable {
+@SuperBuilder(toBuilder = true)
+public abstract class PropBase implements Serializable {
 
     /**
      * 道具种类id
+     */
+    private String kind;
+    /**
+     * 类型code
      */
     private String code;
     /**
@@ -46,15 +51,18 @@ public abstract class PropsBase implements Serializable {
     /**
      * 能否购买
      */
-    private boolean canBuy;
+    @Builder.Default
+    private boolean canBuy = false;
     /**
      * 道具价值
      */
-    private int cost;
+    @Builder.Default
+    private int cost = 0;
     /**
      * 是否可以叠加物品
      */
-    private boolean stack;
+    @Builder.Default
+    private boolean stack = false;
     /**
      * 道具数量单位
      */
@@ -62,7 +70,8 @@ public abstract class PropsBase implements Serializable {
     /**
      * 是否可复用
      */
-    private boolean reuse;
+    @Builder.Default
+    private boolean reuse = false;
     /**
      * 数量
      */
@@ -70,15 +79,24 @@ public abstract class PropsBase implements Serializable {
     /**
      * 获得时间
      */
+    @Builder.Default
     private Date getTime = new Date();
     /**
      * 能否过期
      */
-    private boolean canItExpire;
+    @Builder.Default
+    private boolean canItExpire = false;
     /**
      * 过期时间
      */
     private Date expiredTime;
+
+    public PropBase(String kind, String code, String name) {
+        this.kind = kind;
+        this.code = code;
+        this.name = name;
+    }
+
 
     @Override
     public String toString() {

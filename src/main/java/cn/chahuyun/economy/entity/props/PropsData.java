@@ -6,7 +6,7 @@ import lombok.Setter;
 
 /**
  * 物品数据化
- *
+ * <p>
  * 这是需要存数据的
  *
  * @author Moyuyanli
@@ -22,12 +22,12 @@ public class PropsData {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String kind;
+
     private String code;
 
-    private Boolean stack;
-
-    private Integer num;
-
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String data;
 
 

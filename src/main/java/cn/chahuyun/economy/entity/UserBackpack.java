@@ -27,7 +27,11 @@ public class UserBackpack implements Serializable {
     /**
      * 道具编码
      */
-    private String propsCode;
+    private String propCode;
+    /**
+     * 道具类型
+     */
+    private String propKind;
     /**
      * 道具id
      */
@@ -36,11 +40,10 @@ public class UserBackpack implements Serializable {
     public UserBackpack() {
     }
 
-    public UserBackpack(String userId, String code, long propId) {
+    public UserBackpack(String userId, String propCode, String propKind, Long propId) {
         this.userId = userId;
-        this.propsCode = code;
+        this.propCode = propCode;
+        this.propKind = propKind;
         this.propId = propId;
     }
-
-
 }

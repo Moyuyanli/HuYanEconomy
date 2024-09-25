@@ -79,7 +79,7 @@ public class UserInfo implements Serializable {
     /**
      * 道具背包
      */
-    @OneToMany(targetEntity = UserBackpack.class, mappedBy = "userId", fetch = FetchType.EAGER)
+    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true, targetEntity = UserBackpack.class, mappedBy = "userId", fetch = FetchType.EAGER)
     private List<UserBackpack> backpacks;
 //    /**
 //     * 称号信息
@@ -154,10 +154,10 @@ public class UserInfo implements Serializable {
      * @date 2022/11/28 15:55
      */
     public boolean addPropToBackpack(UserBackpack userBackpack) {
-        this.getBackpacks().add(userBackpack);
         try {
+//            userBackpack = HibernateFactory.merge(userBackpack);
+            this.getBackpacks().add(userBackpack);
             HibernateFactory.merge(this);
-            HibernateFactory.merge(userBackpack);
         } catch (Exception e) {
             Log.error("用户信息:添加道具到背包出错", e);
             return false;
@@ -196,7 +196,6 @@ public class UserInfo implements Serializable {
                 "\n用户qq:" + this.getQq() +
                 "\n连续签到:" + this.getSignNumber() + "天\n";
     }
-
 
 
     /**

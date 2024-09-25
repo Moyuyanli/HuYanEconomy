@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.plugin;
 
-import cn.chahuyun.economy.props.PropsBase;
+import cn.chahuyun.economy.prop.PropBase;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -13,6 +13,7 @@ import java.util.Map;
  * @author Moyuyanli
  * @date 2022/11/15 16:25
  */
+@Deprecated(since = "1.5.1")
 public class PropsType {
 
     /**
@@ -20,7 +21,7 @@ public class PropsType {
      * 通过 [getPropsInfo] 获取道具的信息<p>
      * 后续所有的新道具都应该以此道具模板为准生成<p>
      */
-    private static final Map<String, PropsBase> props = new LinkedHashMap<>();
+    private static final Map<String, PropBase> props = new LinkedHashMap<>();
     /**
      * 道具商店的 [code] 映射<p>
      */
@@ -41,7 +42,7 @@ public class PropsType {
      * @author Moyuyanli
      * @date 2022/11/16 15:05
      */
-    public static PropsBase getPropsInfo(String propCode) {
+    public static PropBase getPropsInfo(String propCode) {
         return props.get(propCode);
     }
 
@@ -50,16 +51,16 @@ public class PropsType {
      * 同时添加道具编号映射<p>
      *
      * @param code      道具code
-     * @param propsBase 道具模板
+     * @param propBase 道具模板
      * @author Moyuyanli
      * @date 2022/11/28 10:39
      */
-    public static void add(String code, PropsBase propsBase) {
-        props.put(code, propsBase);
+    public static void add(String code, PropBase propBase) {
+        props.put(code, propBase);
         map.put(String.valueOf(getProps().size()), code);
     }
 
-    public static Map<String, PropsBase> getProps() {
+    public static Map<String, PropBase> getProps() {
         return props;
     }
 
@@ -93,9 +94,9 @@ public class PropsType {
         if (map.containsKey(no)) {
             return map.get(no);
         }
-        for (PropsBase value : props.values()) {
+        for (PropBase value : props.values()) {
             if (value.getName().equals(no)) {
-                return value.getCode();
+                return value.getKind();
             }
         }
         return null;
