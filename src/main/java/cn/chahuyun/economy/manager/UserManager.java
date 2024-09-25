@@ -1,8 +1,8 @@
 package cn.chahuyun.economy.manager;
 
-import cn.chahuyun.authorize.BuildConstants;
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.economy.BuildConstants;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.entity.TitleInfo;

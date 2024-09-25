@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.plugin;
 
-import cn.chahuyun.authorize.BuildConstants;
+import cn.chahuyun.economy.BuildConstants;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
