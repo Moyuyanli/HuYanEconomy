@@ -80,7 +80,7 @@ public class GamesManager {
                     if (fishPondMoney >= value.getAmount()) {
                         if (EconomyUtil.plusMoneyToPluginBankForId(fishPond.getCode(), fishPond.getDescription(), -30000)) {
                             Bot bot = HuYanEconomy.INSTANCE.bot;
-                            Group group = bot.getGroup(fishPond.getId());
+                            Group group = bot.getGroup(fishPond.getGroup());
                             if (group != null) {
                                 group.sendMessage(String.format(
                                         "鱼塘 %s 已经积攒够了升级的资金！开始升级鱼塘了！%n" +

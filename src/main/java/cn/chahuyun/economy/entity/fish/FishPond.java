@@ -12,6 +12,8 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 鱼塘
@@ -98,6 +100,15 @@ public class FishPond implements Serializable {
         this.minLevel = 0;
         this.rebate = 0.05;
         this.number = 0;
+    }
+
+    public Long getGroup() {
+        Pattern compile = Pattern.compile("g(\\d+)");
+        Matcher matcher = compile.matcher(this.code);
+        if (matcher.find()) {
+            return Long.parseLong(matcher.group());
+        }
+        return 0L;
     }
 
     /**
