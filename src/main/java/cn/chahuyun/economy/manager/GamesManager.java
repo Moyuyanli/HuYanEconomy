@@ -78,7 +78,7 @@ public class GamesManager {
                     FishPondLevelConstant value = FishPondLevelConstant.values()[level];
 
                     if (fishPondMoney >= value.getAmount()) {
-                        if (EconomyUtil.plusMoneyToPluginBankForId(fishPond.getCode(), fishPond.getDescription(), -30000)) {
+                        if (EconomyUtil.plusMoneyToPluginBankForId(fishPond.getCode(), fishPond.getDescription(), -value.getAmount())) {
                             Bot bot = HuYanEconomy.INSTANCE.bot;
                             Group group = bot.getGroup(fishPond.getGroup());
                             if (group != null) {
