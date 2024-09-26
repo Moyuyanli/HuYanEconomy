@@ -9,7 +9,7 @@ public enum UserLocation {
     HOME("家"),
     HOSPITAL("医院"),
     PRISON("监狱"),
-    FISH_POND("鱼塘"),
+    FISHPOND("鱼塘"),
     FACTORY("工厂"),
     OTHER1("其他1"),
     OTHER2("其他2"),
