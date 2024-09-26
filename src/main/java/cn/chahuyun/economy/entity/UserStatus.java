@@ -4,6 +4,10 @@ import cn.chahuyun.economy.constant.UserLocation;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.Date;
 
 /**
  * 用户状态
@@ -13,6 +17,8 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "user_status")
+@Getter
+@Setter
 public class UserStatus {
 
     /**
@@ -25,8 +31,17 @@ public class UserStatus {
     /**
      * 用户所处位置
      */
-    private UserLocation place;
+    private UserLocation place = UserLocation.HOME;
 
+    /**
+     * 复原时间 单位分钟
+     */
+    private Integer recoveryTime = 0;
+
+    /**
+     * 开始时间
+     */
+    private Date startTime;
 
 
 }
