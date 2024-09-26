@@ -81,7 +81,7 @@ public class BackpackManager {
         for (UserBackpack backpack : backpacks) {
             if (backpack.getPropId().equals(propId)) {
                 PropBase prop = PropsManager.getProp(backpack);
-                prop.use();
+                prop.use(userInfo);
                 PropsManager.updateProp(backpack.getPropId(), prop);
                 group.sendMessage(MessageUtil.formatMessageChain(message, "使用成功!"));
                 return;
