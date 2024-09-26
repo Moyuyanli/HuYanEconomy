@@ -89,7 +89,7 @@ public class ShareUtils {
             }
         }
         String content = message.contentToString();
-        Matcher matcher = Pattern.compile("@\\d{5,10}").matcher(content);
+        Matcher matcher = Pattern.compile("@\\d{5,11}").matcher(content);
         if (matcher.find()) {
             return event.getGroup().get(Long.parseLong(matcher.group().substring(1)));
         }
@@ -104,6 +104,15 @@ public class ShareUtils {
      */
     public static double rounding(double value) {
         return Math.round(value * 10.0) / 10.0;
+    }
+
+    /**
+     * 将百分比的Double转换为int(*100)
+     * @param value 值
+     * @return 转换为int的值
+     */
+    public static int percentageToInt(double value) {
+        return (int) Math.round(value * 100);
     }
 
 }
