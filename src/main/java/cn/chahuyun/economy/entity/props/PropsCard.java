@@ -39,7 +39,7 @@ public class PropsCard extends PropBase implements Serializable {
     /**
      * 补签卡
      */
-    public final static String SIGN_IN = "sing-in";
+    public final static String SIGN_IN = "sign-in";
 
     /**
      * 道具卡状态
