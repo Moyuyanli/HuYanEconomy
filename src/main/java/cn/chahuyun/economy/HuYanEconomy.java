@@ -93,6 +93,7 @@ public final class HuYanEconomy extends JavaPlugin {
             TitleManager.init();
             YiYanManager.init();
             GamesManager.init();
+            FactorManager.init();
 
             PluginPropsManager.init();
 
