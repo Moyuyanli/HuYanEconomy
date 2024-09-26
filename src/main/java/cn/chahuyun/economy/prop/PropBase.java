@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.prop;
 
+import cn.chahuyun.economy.entity.UserInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -116,7 +117,7 @@ public abstract class PropBase implements Serializable {
     /**
      * 使用该道具
      */
-    public abstract void use();
+    public abstract void use(UserInfo user);
 }
 
 

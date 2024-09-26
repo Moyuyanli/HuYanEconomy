@@ -1,6 +1,7 @@
 package cn.chahuyun.economy.prop;
 
 import cn.chahuyun.economy.entity.UserBackpack;
+import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.props.PropsData;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.json.JSONUtil;
@@ -151,10 +152,10 @@ public class PropsManager {
      * @param backpack 背包道具
      * @return true 成功
      */
-    public static boolean useAndUpdate(UserBackpack backpack) {
+    public static boolean useAndUpdate(UserBackpack backpack, UserInfo user) {
         try {
             PropBase prop = getProp(backpack);
-            prop.use();
+            prop.use(user);
             updateProp(backpack.getPropId(), prop);
         } catch (Exception e) {
             return false;
