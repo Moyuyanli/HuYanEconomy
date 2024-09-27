@@ -1,0 +1,26 @@
+name: Publish to Maven Central
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      - name: Publish package
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publishMavenJavaPublicationToSonatypeRepository closeAndReleaseSonatypeStagingRepository
+        env:
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGNING_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.SONATYPEUSERNAME }}
+          ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.SONATYPEPASSWORD }}
