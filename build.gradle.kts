@@ -1,4 +1,5 @@
 @file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+
 import net.mamoe.mirai.console.gradle.wrapNameWithPlatform
 
 plugins {
@@ -7,10 +8,12 @@ plugins {
 
     id("net.mamoe.mirai-console") version "2.16.0"
 
-//    id("me.him188.maven-central-publish") version "1.0.0-dev-3"
+    id("org.jetbrains.dokka") version "1.8.10"
     id("com.github.gmazzo.buildconfig") version "3.1.0"
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
-    id("signing")
+
+//    id("me.him188.maven-central-publish") version "1.0.0-dev-3"
+//    id("signing")
 
 }
 
@@ -46,7 +49,7 @@ mirai {
     jvmTarget = JavaVersion.VERSION_11
 }
 
-
+/*
 //mavenCentralPublish {
 //    useCentralS01()
 //
@@ -64,6 +67,8 @@ mirai {
 //    }
 //}
 
+ */
+
 nexusPublishing {
     repositories {
         create("sonatype") { // 对于2021年2月24日之后注册的用户
@@ -77,6 +82,7 @@ nexusPublishing {
 
 
 tasks {
+    //打包mirai插件
     create<net.mamoe.mirai.console.gradle.BuildMiraiPluginV2>("pluginJar") {
         group = "mirai"
         registerMetadataTask(
@@ -89,56 +95,24 @@ tasks {
         )
         archiveExtension.set("mirai2.jar")
     }
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            from(components["java"])
-
-            artifact(tasks["pluginJar"])
-
-            pom {
-                name.set(project.name) // 使用项目名称，或设置为自定义名称
-                description.set("这是一个名为 HuYanEconomy 的 Mirai 插件，提供了经济系统功能。")
-                url.set("https://github.com/Moyuyanli/HuYanEconomy")
-
-                licenses {
-                    license {
-                        name.set("The Apache License, Version 2.0")
-                        url.set("https://github.com/Moyuyanli/HuYanEconomy/blob/master/LICENSE")
-                    }
-                }
-
-                developers {
-                    developer {
-                        id.set("Moyuyanli") // 你的GitHub用户名或其他ID
-                        name.set("Moyuyanli") // 你的真实姓名
-                        email.set("572490972@qq.com") // 你的电子邮件地址
-                    }
-                }
-
-                scm {
-                    connection.set("scm:git:git://github.com/Moyuyanli/HuYanEconomy.git")
-                    developerConnection.set("scm:git:ssh://github.com:Moyuyanli/HuYanEconomy.git")
-                    url.set("https://github.com/Moyuyanli/HuYanEconomy")
-                }
-            }
-        }
+    //打包javadoc
+    register<Jar>("dokkaJavadocJar") {
+        group = "documentation"
+        dependsOn(dokkaJavadoc)
+        from(dokkaJavadoc.flatMap { it.outputDirectory })
+        archiveClassifier.set("javadoc")
     }
 }
 
-
-signing {
-    val signingKey = findProperty("signingKey")?.toString()
-    val signingPassword = findProperty("signingPassword")?.toString()
-    if (signingKey != null && signingPassword != null) {
-        useInMemoryPgpKeys(signingKey, signingPassword)
-        sign(extensions.getByType(PublishingExtension::class).publications.getByName("mavenJava"))
-    } else {
-        logger.warn("子模块 ${project.name} 未找到签名配置")
-    }
+//上传额外内容
+setupMavenCentralPublication {
+    artifact(tasks.kotlinSourcesJar)
+    artifact(tasks["pluginJar"])
+    artifact(tasks["dokkaJavadocJar"])
 }
+
+
+
 
 buildConfig {
     className("BuildConstants")
