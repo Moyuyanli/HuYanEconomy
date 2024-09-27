@@ -4,7 +4,11 @@ import cn.chahuyun.economy.constant.UserLocation;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.UserStatus;
 import cn.chahuyun.hibernateplus.HibernateFactory;
+import cn.hutool.core.date.DateUnit;
+import cn.hutool.core.date.DateUtil;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Date;
 
 /**
  * 用户状态管理
@@ -52,11 +56,11 @@ public class UserStatusManager {
 
     /**
      * 进医院咯~~<br>
-     *  这里的复原时间是医疗费倍率。<br>
-     *  具体计算方法是 2 * 倍率<br>
-     *  todo 在超过3天不付钱，再付医药费就是5*
+     * 这里的复原时间是医疗费倍率。<br>
+     * 具体计算方法是 2 * 倍率<br>
+     * todo 在超过3天不付钱，再付医药费就是5*
      *
-     * @param user 用户
+     * @param user     用户
      * @param recovery 医药费倍率(*分钟)
      */
     public static void moveHospital(UserInfo user, Integer recovery) {
@@ -80,7 +84,8 @@ public class UserStatusManager {
 
     /**
      * 蹲大牢咯~~
-     * @param user 用户
+     *
+     * @param user     用户
      * @param recovery 复原时间(分钟)
      */
     public static void movePrison(UserInfo user, Integer recovery) {
@@ -104,7 +109,8 @@ public class UserStatusManager {
 
     /**
      * 钓鱼去~~
-     * @param user 用户
+     *
+     * @param user     用户
      * @param recovery 复原时间(分钟)
      */
     public static void moveFishpond(UserInfo user, Integer recovery) {
@@ -128,7 +134,8 @@ public class UserStatusManager {
 
     /**
      * 进厂子~~
-     * @param user 用户
+     *
+     * @param user     用户
      * @param recovery 复原时间(分钟)
      */
     public static void moveFactory(UserInfo user, Integer recovery) {
@@ -164,6 +171,18 @@ public class UserStatusManager {
             UserStatus status = new UserStatus();
             status.setId(qq);
             return HibernateFactory.merge(status);
+        }
+
+        //复原时间检测
+        Integer time = one.getRecoveryTime();
+        if (time != 0 && one.getPlace() != UserLocation.HOSPITAL) {
+            Date startTime = one.getStartTime();
+            long between = DateUtil.between(startTime, new Date(), DateUnit.MINUTE, true);
+            if (between > time) {
+                one.setRecoveryTime(0);
+                one.setPlace(UserLocation.HOME);
+                return HibernateFactory.merge(one);
+            }
         }
 
         return one;
