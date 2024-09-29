@@ -16,36 +16,53 @@ import net.mamoe.mirai.message.data.QuoteReply;
  * @author Moyuyanli
  * @date 2024/9/25 16:58
  */
+@Getter
+@Setter
 public class SignEvent extends AbstractEvent {
 
     /**
      * 签到人
      */
     private final UserInfo userInfo;
-
+    /**
+     * 随机参数<br>
+     * 0~500: 50~100<br>
+     * 501~850: 101~200<br>
+     * 851~999: 201~500<br>
+     * 1000: 999
+     */
+    private Integer param;
+    /**
+     * 文字消息
+     */
+    private MessageChain reply;
+    /**
+     * 双倍签到
+     */
+    private boolean sign_2 = false;
+    /**
+     * 三倍签到
+     */
+    private boolean sign_3 = false;
+    /**
+     * 补签
+     */
+    private boolean sign_in = false;
     /**
      * 群
      */
-    @Getter
     private final Group group;
-
     /**
-     * 消息
+     * 签到消息
      */
-    @Getter
     private final MessageChain messages;
-
     /**
      * 消息事件
      */
-    @Getter
     private final GroupMessageEvent event;
-
     /**
      * 签到金额
      */
-    @Getter
-    @Setter
     private Double gold;
 
 
@@ -54,10 +71,6 @@ public class SignEvent extends AbstractEvent {
         this.event = event;
         this.group = event.getGroup();
         this.messages = event.getMessage();
-    }
-
-    public UserInfo getUserInfo() {
-        return userInfo;
     }
 
     /**

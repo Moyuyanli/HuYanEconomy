@@ -30,6 +30,7 @@ import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.EventKt;
+import net.mamoe.mirai.event.EventPriority;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
@@ -81,31 +82,14 @@ public class SignManager {
             return;
         }
 
-        double goldNumber;
-
-        PlainText plainText = null;
-
-        int randomNumber = RandomUtil.randomInt(0, 10);
-        if (randomNumber > 7) {
-            randomNumber = RandomUtil.randomInt(0, 10);
-            if (randomNumber > 8) {
-                goldNumber = RandomUtil.randomInt(200, 501);
-                plainText = new PlainText(String.format("卧槽,你家祖坟裂了,冒出%s金币", goldNumber));
-            } else {
-                goldNumber = RandomUtil.randomInt(100, 200);
-                plainText = new PlainText(String.format("哇偶,你今天运气爆棚,获得%s金币", goldNumber));
-            }
-        } else {
-            goldNumber = RandomUtil.randomInt(50, 100);
-        }
-
         SignEvent signEvent = new SignEvent(userInfo, event);
-        signEvent.setGold(goldNumber);
+        signEvent.setParam(RandomUtil.randomInt(0, 1001));
 
         //广播签到事件
         SignEvent broadcast = EventKt.broadcast(signEvent);
 
-        goldNumber = broadcast.getGold();
+        double goldNumber = broadcast.getGold();
+        MessageChain reply = broadcast.getReply();
         userInfo = broadcast.getUserInfo();
 
         if (!EconomyUtil.plusMoneyToUser(userInfo.getUser(), goldNumber)) {
@@ -118,16 +102,18 @@ public class SignManager {
         HibernateFactory.merge(userInfo);
 
         double moneyBytUser = EconomyUtil.getMoneyByUser(userInfo.getUser());
-        messages.append(new PlainText("签到成功!"));
-        messages.append(new PlainText(String.format("金币:%s(+%s)", moneyBytUser, goldNumber)));
+        messages.append(new PlainText("签到成功!\n"));
+        messages.append(new PlainText(String.format("金币:%s(+%s)\n", moneyBytUser, goldNumber)));
+        if (reply != null) {
+            messages.add(reply);
+        }
         if (userInfo.getOldSignNumber() != 0) {
-            messages.append(String.format("你的连签线断在了%d天,可惜~", userInfo.getOldSignNumber()));
+            messages.append(String.format("\n你的连签线断在了%d天,可惜~", userInfo.getOldSignNumber()));
         }
-        if (plainText != null) {
-            messages.append(plainText);
-        }
+
         TitleManager.checkSignTitle(userInfo, subject);
         TitleManager.checkMonopoly(userInfo, subject);
+
         sendSignImage(userInfo, subject, messages.build());
     }
 
@@ -180,14 +166,46 @@ public class SignManager {
         group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到开启成功!"));
     }
 
+
     /**
-     * 自定义签到事件
+     * 签到金钱获取<br>
+     * 优先级:{@link EventPriority#HIGH}
      *
      * @param event 签到事件
      */
-    public static void customSign(SignEvent event) {
+    public static void randomSignGold(SignEvent event) {
+        double goldNumber;
+
+        MessageChainBuilder builder = new MessageChainBuilder();
+
+        Integer param = event.getParam();
+
+        if (param <= 500) {
+            goldNumber = RandomUtil.randomInt(50, 101);
+        } else if (param <= 850) {
+            goldNumber = RandomUtil.randomInt(100, 201);
+            builder.add(new PlainText(String.format("哇偶,你今天运气爆棚,获得%s金币", goldNumber)));
+        } else if (param <= 999) {
+            goldNumber = RandomUtil.randomInt(200, 501);
+            builder.add(new PlainText(String.format("卧槽,你家祖坟裂了,冒出%s金币", goldNumber)));
+        } else {
+            goldNumber = 999;
+            builder.add(new PlainText("你™直接天降神韵!"));
+        }
+
+        event.setGold(goldNumber);
+        event.setReply(builder.build());
+    }
+
+    /**
+     * 自定义签到事件<br>
+     * 优先级:{@link EventPriority#NORMAL}
+     *
+     * @param event 签到事件
+     */
+    public static void signProp(SignEvent event) {
         UserInfo userInfo = event.getUserInfo();
-        
+
         if (TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.SIGN_15)) {
             event.setGold(event.getGold() * 2);
         }
@@ -200,23 +218,34 @@ public class SignManager {
             switch (backpack.getPropCode()) {
                 case PropsCard.SIGN_2:
                     card = PropsManager.deserialization(backpack.getPropId(), PropsCard.class);
+                    if (event.isSign_2()) {
+                        continue;
+                    }
                     if (card.isStatus()) {
                         event.setGold(event.getGold() * 2);
                         BackpackManager.delPropToBackpack(userInfo, id);
                         event.sendQuote(MessageUtil.formatMessageChain("检测到启用的双倍道具卡!本次签到将翻倍奖励!"));
+                        event.setSign_2(true);
                     }
 
                     break;
                 case PropsCard.SIGN_3:
                     card = PropsManager.deserialization(backpack.getPropId(), PropsCard.class);
+                    if (event.isSign_3()) {
+                        continue;
+                    }
                     if (card.isStatus()) {
                         event.setGold(event.getGold() * 3);
                         BackpackManager.delPropToBackpack(userInfo, id);
                         event.sendQuote(MessageUtil.formatMessageChain("检测到启用的三倍道具卡!本次签到将翻三倍奖励!"));
+                        event.setSign_3(true);
                     }
                     break;
                 case PropsCard.SIGN_IN:
                     card = PropsManager.deserialization(backpack.getPropId(), PropsCard.class);
+                    if (event.isSign_in()) {
+                        continue;
+                    }
                     if (card.isStatus()) {
                         int oldSignNumber = userInfo.getOldSignNumber();
 
@@ -229,6 +258,7 @@ public class SignManager {
 
                         BackpackManager.delPropToBackpack(userInfo, id);
                         event.sendQuote(MessageUtil.formatMessageChain("检测到启用的补签卡!已自动补签!"));
+                        event.setSign_in(true);
                     }
             }
         }

@@ -17,13 +17,12 @@ import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.hutool.cron.CronUtil;
+import kotlin.coroutines.EmptyCoroutineContext;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.console.command.CommandManager;
 import net.mamoe.mirai.console.plugin.jvm.JavaPlugin;
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder;
-import net.mamoe.mirai.event.Event;
-import net.mamoe.mirai.event.EventChannel;
-import net.mamoe.mirai.event.GlobalEventChannel;
+import net.mamoe.mirai.event.*;
 
 public final class HuYanEconomy extends JavaPlugin {
     /**
@@ -107,7 +106,13 @@ public final class HuYanEconomy extends JavaPlugin {
             eventEventChannel.registerListenerHost(new MessageEventListener());
 
             //监听自定义签到事件
-            eventEventChannel.subscribeAlways(SignEvent.class, SignManager::customSign);
+            eventEventChannel.subscribeAlways(SignEvent.class,
+                    EmptyCoroutineContext.INSTANCE,
+                    ConcurrencyKind.CONCURRENT,
+                    EventPriority.HIGH,
+                    SignManager::randomSignGold
+            );
+            eventEventChannel.subscribeAlways(SignEvent.class, SignManager::signProp);
 
 
 
