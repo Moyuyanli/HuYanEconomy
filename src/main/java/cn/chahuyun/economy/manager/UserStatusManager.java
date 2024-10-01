@@ -51,6 +51,7 @@ public class UserStatusManager {
         UserStatus userStatus = getUserStatus(user.getQq());
         userStatus.setPlace(UserLocation.HOME);
         userStatus.setRecoveryTime(0);
+        userStatus.setStartTime(new Date());
         HibernateFactory.merge(userStatus);
     }
 
@@ -79,6 +80,7 @@ public class UserStatusManager {
         UserStatus userStatus = getUserStatus(user.getQq());
         userStatus.setPlace(UserLocation.HOSPITAL);
         userStatus.setRecoveryTime(recovery);
+        userStatus.setStartTime(new Date());
         HibernateFactory.merge(userStatus);
     }
 
@@ -104,6 +106,7 @@ public class UserStatusManager {
         UserStatus userStatus = getUserStatus(user.getQq());
         userStatus.setPlace(UserLocation.PRISON);
         userStatus.setRecoveryTime(recovery);
+        userStatus.setStartTime(new Date());
         HibernateFactory.merge(userStatus);
     }
 
@@ -129,6 +132,7 @@ public class UserStatusManager {
         UserStatus userStatus = getUserStatus(user.getQq());
         userStatus.setPlace(UserLocation.FISHPOND);
         userStatus.setRecoveryTime(recovery);
+        userStatus.setStartTime(new Date());
         HibernateFactory.merge(userStatus);
     }
 
@@ -154,6 +158,7 @@ public class UserStatusManager {
         UserStatus userStatus = getUserStatus(user.getQq());
         userStatus.setPlace(UserLocation.FACTORY);
         userStatus.setRecoveryTime(recovery);
+        userStatus.setStartTime(new Date());
         HibernateFactory.merge(userStatus);
     }
 
