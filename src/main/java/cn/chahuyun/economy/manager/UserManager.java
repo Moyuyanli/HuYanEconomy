@@ -7,23 +7,24 @@ import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.entity.TitleInfo;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.entity.UserStatus;
+import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.entity.yiyan.YiYan;
 import cn.chahuyun.economy.plugin.ImageManager;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.plugin.YiYanManager;
-import cn.chahuyun.economy.utils.EconomyUtil;
-import cn.chahuyun.economy.utils.ImageUtil;
-import cn.chahuyun.economy.utils.Log;
-import cn.chahuyun.economy.utils.MessageUtil;
+import cn.chahuyun.economy.utils.*;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
 import net.mamoe.mirai.contact.*;
+import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.Image;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
+import net.mamoe.mirai.message.data.QuoteReply;
 import org.jetbrains.annotations.NotNull;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 
@@ -216,6 +217,45 @@ public class UserManager {
         ));
     }
 
+
+    @MessageAuthorize(text = "出院")
+    public void discharge(GroupMessageEvent event) {
+        Member user = event.getSender();
+
+        UserInfo userInfo = getUserInfo(user);
+
+        MessageChainBuilder builder = new MessageChainBuilder();
+        builder.add(new QuoteReply(event.getMessage()));
+
+        Group group = event.getSubject();
+        if (UserStatusManager.checkUserInHospital(userInfo)) {
+            UserStatus userStatus = UserStatusManager.getUserStatus(userInfo);
+
+            double price = userStatus.getRecoveryTime() * 3;
+            double real;
+
+            if (BackpackManager.checkPropInUser(userInfo, PropsCard.HEALTH)) {
+                real = ShareUtils.rounding(price * 0.8);
+                builder.add(MessageUtil.formatMessage(
+                        "你在出院的时候使用的医保卡，医药费打8折。%n" +
+                                "实付/原价医药费:%s/%s",
+                        price, real
+                ));
+            } else {
+                real = price;
+                builder.add(MessageUtil.formatMessage("你出院了！这次只掏了%s的医药费！",real));
+            }
+
+            if (EconomyUtil.minusMoneyToUser(user, real)) {
+                group.sendMessage(builder.build());
+                UserStatusManager.moveHome(userInfo);
+            } else {
+                group.sendMessage("出院失败!");
+            }
+            return;
+        }
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你不在医院，你出什么院？"));
+    }
 
     //===============================================================
 

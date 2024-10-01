@@ -42,6 +42,11 @@ public class PropsCard extends PropBase implements Serializable {
     public final static String SIGN_IN = "sign-in";
 
     /**
+     * 医保卡
+     */
+    public final static String HEALTH = "health";
+
+    /**
      * 道具卡状态
      */
     @Getter
