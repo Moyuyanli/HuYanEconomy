@@ -43,6 +43,18 @@ public class UserStatusManager {
     }
 
     /**
+     * 回家
+     *
+     * @param user 用户
+     */
+    public static void moveHome(UserInfo user) {
+        UserStatus userStatus = getUserStatus(user.getQq());
+        userStatus.setPlace(UserLocation.HOME);
+        userStatus.setRecoveryTime(0);
+        HibernateFactory.merge(userStatus);
+    }
+
+    /**
      * 检查用户是否在医院
      *
      * @param user 用户
@@ -156,6 +168,18 @@ public class UserStatusManager {
 //
 //        return userStatus.getPlace() == UserLocation.HOME;
 //    }
+
+    /**
+     * 获取用户状态
+     *
+     * @param user 用户信息
+     * @return 用户状态
+     */
+    @NotNull
+    public static UserStatus getUserStatus(@NotNull UserInfo user) {
+        return getUserStatus(user.getQq());
+    }
+
 
     /**
      * 获取用户状态
