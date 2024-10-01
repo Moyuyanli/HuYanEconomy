@@ -23,7 +23,7 @@ public class PluginPropsManager {
                 .canBuy(true)
                 .reuse(false)
                 .canItExpire(false)
-                .stack(true);
+                .stack(false);
 
         PropsCard signDouble = stack
                 .code(PropsCard.SIGN_2)
@@ -42,9 +42,18 @@ public class PluginPropsManager {
                 .description("\"花123补签一次你的签到\"")
                 .cost(123).build();
 
+        PropsCard health = stack
+                .code(PropsCard.HEALTH)
+                .name("医保卡")
+                .description("少年，你还在为付不起医药费而发愁吗？？？")
+                .cost(5888)
+                .build();
+
+
         PropsShop.addShop(PropsCard.SIGN_2, signDouble);
         PropsShop.addShop(PropsCard.SIGN_3, signTriple);
         PropsShop.addShop(PropsCard.SIGN_IN, signIn);
+        PropsShop.addShop(PropsCard.HEALTH, health);
 
     }
 
