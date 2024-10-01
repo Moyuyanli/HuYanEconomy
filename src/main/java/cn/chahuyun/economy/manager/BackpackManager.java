@@ -102,6 +102,12 @@ public class BackpackManager {
         userInfo.addPropToBackpack(userBackpack);
     }
 
+    /**
+     * 给这个用户删除这个道具
+     *
+     * @param userInfo 用户
+     * @param id       道具id
+     */
     public static void delPropToBackpack(UserInfo userInfo, Long id) {
         List<UserBackpack> backpacks = userInfo.getBackpacks();
         for (UserBackpack backpack : backpacks) {
@@ -115,13 +121,30 @@ public class BackpackManager {
 
     /**
      * 检查该用户是否拥有这个道具
+     *
      * @param userInfo 用户信息
-     * @param id 道具id
+     * @param id       道具id
      * @return true 拥有
      */
     public static boolean checkPropInUser(UserInfo userInfo, Long id) {
         for (UserBackpack backpack : userInfo.getBackpacks()) {
             if (Objects.equals(backpack.getPropId(), id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查该用户是否拥有这个道具
+     *
+     * @param userInfo 用户信息
+     * @param code     道具code
+     * @return true 拥有
+     */
+    public static boolean checkPropInUser(UserInfo userInfo, String code) {
+        for (UserBackpack backpack : userInfo.getBackpacks()) {
+            if (Objects.equals(backpack.getPropCode(), code)) {
                 return true;
             }
         }
