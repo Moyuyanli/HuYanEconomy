@@ -14,6 +14,7 @@ import net.mamoe.mirai.console.permission.AbstractPermitteeId;
 import net.mamoe.mirai.contact.User;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -79,8 +80,8 @@ public class UserInfo implements Serializable {
     /**
      * 道具背包
      */
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true, targetEntity = UserBackpack.class, mappedBy = "userId", fetch = FetchType.EAGER)
-    private List<UserBackpack> backpacks;
+    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<UserBackpack> backpacks = new ArrayList<>();
 //    /**
 //     * 称号信息
 //     */
