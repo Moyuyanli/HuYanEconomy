@@ -91,6 +91,7 @@ public class RobManager {
             }
         }
 
+
         Member member = ShareUtils.getAtMember(event);
 
         if (member == null) {
@@ -99,6 +100,20 @@ public class RobManager {
         }
 
         UserInfo atUser = UserManager.getUserInfo(member);
+
+
+        if (UserStatusManager.checkUserNotInHome(userInfo)) {
+            UserStatus userStatus = UserStatusManager.getUserStatus(atUser);
+            switch (userStatus.getPlace()) {
+                case HOSPITAL:
+                    group.sendMessage(MessageUtil.formatMessageChain(message, "医院精致抢劫/打人！"));
+                    return;
+                case PRISON:
+                    group.sendMessage(MessageUtil.formatMessageChain(message, "他还在局子里面，抢不到了！"));
+                    return;
+            }
+        }
+
 
         UserFactor userFactor = FactorManager.getUserFactor(userInfo);
         UserFactor atUserFactor = FactorManager.getUserFactor(atUser);
@@ -168,7 +183,6 @@ public class RobManager {
         }
     }
 
-    
 
     @MessageAuthorize(
             text = "开启 抢劫",
