@@ -106,7 +106,7 @@ public class RobManager {
             UserStatus userStatus = UserStatusManager.getUserStatus(atUser);
             switch (userStatus.getPlace()) {
                 case HOSPITAL:
-                    group.sendMessage(MessageUtil.formatMessageChain(message, "医院精致抢劫/打人！"));
+                    group.sendMessage(MessageUtil.formatMessageChain(message, "医院禁止抢劫/打人！"));
                     return;
                 case PRISON:
                     group.sendMessage(MessageUtil.formatMessageChain(message, "他还在局子里面，抢不到了！"));
