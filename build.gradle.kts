@@ -12,13 +12,10 @@ plugins {
     id("com.github.gmazzo.buildconfig") version "3.1.0"
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 
-//    id("me.him188.maven-central-publish") version "1.0.0-dev-3"
-//    id("signing")
-
 }
 
 group = "cn.chahuyun"
-version = "1.6.1"
+version = "1.6.2"
 
 repositories {
     mavenCentral()
@@ -49,25 +46,6 @@ mirai {
     jvmTarget = JavaVersion.VERSION_11
 }
 
-/*
-//mavenCentralPublish {
-//    useCentralS01()
-//
-//    licenseApacheV2()
-//
-//    singleDevGithubProject("moyuyanli", "HuYanEconomy")
-//
-//    // 设置 Publish 临时目录
-//    workingDir = System.getenv("PUBLICATION_TEMP")?.let { file(it).resolve(projectName) }
-//        ?: buildDir.resolve("publishing-tmp")
-//
-//    // 设置额外上传内容
-//    publication {
-//        artifact(tasks["buildPlugin"])
-//    }
-//}
-
- */
 
 nexusPublishing {
     repositories {
@@ -79,7 +57,6 @@ nexusPublishing {
         }
     }
 }
-
 
 tasks {
     //打包mirai插件
