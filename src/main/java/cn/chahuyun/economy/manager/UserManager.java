@@ -130,10 +130,6 @@ public class UserManager {
         } catch (IOException e) {
             Log.error("用户管理:查询个人信息上传图片出错!", e);
         }
-        if (userInfo == null) {
-            subject.sendMessage("获取用户信息出错!");
-            return;
-        }
 
         singleMessages.append(userInfo.getString()).append(String.format("金币:%s", moneyByUser));
 
@@ -257,7 +253,6 @@ public class UserManager {
         group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你不在医院，你出什么院？"));
     }
 
-    //===============================================================
 
     /**
      * 绘制个人信息基础信息<p>
@@ -273,21 +268,20 @@ public class UserManager {
      */
     public static BufferedImage getUserInfoImageBase(UserInfo userInfo) {
         try {
-            BufferedImage bufferedImage = customBottom(userInfo);
-            if (bufferedImage == null) {
-                bufferedImage = builtInBottom(userInfo);
-            }
-            return bufferedImage;
+            return customBottom(userInfo);
         } catch (IOException exception) {
             Log.error("用户管理:个人信息基础信息绘图错误!", exception);
             return null;
         }
     }
 
+    //===============================================================
+
+    @NotNull
     private static BufferedImage customBottom(UserInfo userInfo) throws IOException {
         BufferedImage bottom = ImageManager.getNextBottom();
         if (bottom == null) {
-            return null;
+            throw new IOException("没有自定义底图，请检查底图!");
         }
 
         User user = userInfo.getUser();
@@ -386,138 +380,5 @@ public class UserManager {
         g2d.dispose();
         return bottom;
     }
-
-
-    private static BufferedImage builtInBottom(UserInfo userInfo) throws IOException {
-        HuYanEconomy instance = HuYanEconomy.INSTANCE;
-        User user = userInfo.getUser();
-
-        InputStream asStream = instance.getResourceAsStream("sign" + (index % 4 == 0 ? 4 : index % 4) + ".png");
-        index++;
-        //验证
-        if (asStream == null) {
-            Log.error("用户管理:个人信息图片底图获取错误!");
-            return null;
-        }
-        //转图片处理
-        BufferedImage image = ImageIO.read(asStream);
-
-        //创建画笔
-        Graphics2D pen = ImageUtil.getG2d(image);
-
-        //获取头像链接
-        String avatarUrl = user.getAvatarUrl(AvatarSpec.LARGE);
-
-        BufferedImage avatar = ImageIO.read(new URL(avatarUrl));
-        //圆角处理
-        BufferedImage avatarRounder = ImageUtil.makeRoundedCorner(avatar, 50);
-        //写入头像
-        pen.drawImage(avatarRounder, 24, 25, null);
-
-        String userInfoName = userInfo.getName();
-        int fontSize;
-        //如果是群 根据管理员信息改变颜色
-        if (user instanceof Member) {
-            MemberPermission permission = ((Member) user).getPermission();
-            if (permission == MemberPermission.OWNER) {
-                pen.setColor(Color.YELLOW);
-            } else if (permission == MemberPermission.ADMINISTRATOR) {
-                pen.setColor(Color.GREEN);
-            } else {
-                pen.setColor(Color.WHITE);
-            }
-        }
-        //根据名字长度改变大小
-        if (userInfoName.length() > 6) {
-            fontSize = 40;
-        } else {
-            fontSize = 60;
-        }
-        /*
-         * WHITE(白色)、LIGHT_GRAY（浅灰色）、GRAY（灰色）、DARK_GRAY（深灰色）、
-         * BLACK（黑色）、RED（红色）、PINK（粉红色）、ORANGE（橘黄色）、YELLOW（黄色）、
-         * GREEN（绿色）、MAGENTA（紫红色）、CYAN（青色）、BLUE（蓝色）
-         * 如果上面颜色都不满足你，或者你还想设置下字体透明度，你可以改为如下格式：
-         * pen.setColor(new Color(179, 250, 233, 100));
-         * Font.PLAIN（正常），Font.BOLD（粗体），Font.ITALIC（斜体）
-         */
-        // 设置画笔字体样式为黑体，粗体
-        Font font = new Font("黑体", Font.BOLD, fontSize);
-        pen.setFont(font);
-        pen.drawString(userInfoName, 200, 155);
-
-//            pen.setColor(); todo 称号预留
-
-        pen.setColor(Color.black);
-        fontSize = 24;
-        font = new Font("黑体", Font.PLAIN, fontSize);
-        pen.setFont(font);
-        //id
-        pen.drawString(String.valueOf(userInfo.getQq()), 172, 240);
-
-        String format;
-        if (userInfo.getSignTime() == null) {
-            format = "暂未签到";
-        } else {
-            format = DateUtil.format(userInfo.getSignTime(), "yyyy-MM-dd HH:mm:ss");
-        }
-        //签到时间
-        pen.drawString(format, 172, 320);
-        //连签次数
-        pen.drawString(String.valueOf(userInfo.getSignNumber()), 172, 360);
-        //其他称号
-//            pen.drawString("暂无", 172, 400);
-
-        double money = EconomyUtil.getMoneyByUser(user);
-        double bank = EconomyUtil.getMoneyByBank(user);
-        //写入金币
-        if (String.valueOf(money).length() > 5) {
-            fontSize = 20;
-        }
-        font = new Font("黑体", Font.PLAIN, fontSize);
-        pen.setFont(font);
-        //写入总金币
-        pen.drawString(String.valueOf(money), 600, 410);
-
-        fontSize = 24;
-        font = new Font("黑体", Font.PLAIN, fontSize);
-        pen.setFont(font);
-        //写入今日获得
-        pen.drawString(String.valueOf(userInfo.getSignEarnings()), 810, 410);
-
-        //写入银行
-        if (String.valueOf(bank).length() > 5) {
-            fontSize = 20;
-        }
-        font = new Font("黑体", Font.PLAIN, fontSize);
-        pen.setFont(font);
-        //写入银行金币
-        pen.drawString(String.valueOf(bank), 600, 460);
-
-        fontSize = 24;
-        double bankEarnings = userInfo.getBankEarnings();
-        //写入银行收益
-        if (String.valueOf(bankEarnings).length() > 5) {
-            fontSize = 20;
-        }
-        font = new Font("黑体", Font.PLAIN, fontSize);
-        pen.setFont(font);
-        //写入银行收益金币
-        pen.drawString(String.valueOf(bankEarnings), 810, 460);
-
-        fontSize = 15;
-        pen.setColor(new Color(255, 255, 255, 230));
-        font = new Font("黑体", Font.ITALIC, fontSize);
-        pen.setFont(font);
-
-        pen.drawString("by Mirai & HuYanEconomy(壶言经济) " + BuildConstants.VERSION, 540, 525);
-
-        //关闭窗体，释放部分资源
-        pen.dispose();
-        return image;
-
-
-    }
-
 
 }
