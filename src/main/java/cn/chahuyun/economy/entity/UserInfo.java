@@ -81,12 +81,9 @@ public class UserInfo implements Serializable {
      * 道具背包
      */
     @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "UserInfo_id")
     private List<UserBackpack> backpacks = new ArrayList<>();
-//    /**
-//     * 称号信息
-//     */
-//    @OneToMany(targetEntity = TitleInfo.class, mappedBy = "userId", fetch = FetchType.EAGER)
-//    private List<TitleInfo> titleInfos;
+
 
     @Transient
     private User user;
@@ -166,6 +163,16 @@ public class UserInfo implements Serializable {
         return true;
     }
 
+
+    /**
+     * 从背包删除一个道具
+     *
+     * @param userBackpack 背包道具
+     * @return true 成功
+     */
+    public boolean removePropInBackpack(UserBackpack userBackpack) {
+        return this.getBackpacks().remove(userBackpack);
+    }
 
     public boolean isSign() {
         String now = DateUtil.format(new Date(), "yyyy-MM-dd") + " 04:00:00";

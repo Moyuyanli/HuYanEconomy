@@ -37,8 +37,8 @@ public class UserBackpack implements Serializable {
      */
     private Long propId;
 
-    @ManyToOne
-    private UserInfo userInfo;
+//    @ManyToOne
+//    private UserInfo userInfo;
     public UserBackpack() {
     }
 

@@ -42,6 +42,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -84,6 +85,7 @@ public class SignManager {
 
         SignEvent signEvent = new SignEvent(userInfo, event);
         signEvent.setParam(RandomUtil.randomInt(0, 1001));
+        signEvent.eventReplyAdd(MessageUtil.formatMessageChain(message,"本次签到触发事件:"));
 
         //广播签到事件
         SignEvent broadcast = EventKt.broadcast(signEvent);
@@ -91,6 +93,12 @@ public class SignManager {
         double goldNumber = broadcast.getGold();
         MessageChain reply = broadcast.getReply();
         userInfo = broadcast.getUserInfo();
+
+        MessageChainBuilder eventReply = signEvent.getEventReply();
+        if (eventReply.size() == 2) {
+            eventReply.add(new PlainText("空"));
+        }
+        subject.sendMessage(eventReply.build());
 
         if (!EconomyUtil.plusMoneyToUser(userInfo.getUser(), goldNumber)) {
             subject.sendMessage("签到失败!");
@@ -211,10 +219,11 @@ public class SignManager {
         }
 
         List<UserBackpack> backpacks = userInfo.getBackpacks();
+        ArrayList<UserBackpack> list = new ArrayList<>(backpacks);
 
         PropsCard card;
-        for (UserBackpack backpack : backpacks) {
-            Long id = backpack.getId();
+        for (UserBackpack backpack : list) {
+            Long propId = backpack.getPropId();
             switch (backpack.getPropCode()) {
                 case PropsCard.SIGN_2:
                     card = PropsManager.deserialization(backpack.getPropId(), PropsCard.class);
@@ -223,8 +232,8 @@ public class SignManager {
                     }
                     if (card.isStatus()) {
                         event.setGold(event.getGold() * 2);
-                        BackpackManager.delPropToBackpack(userInfo, id);
-                        event.sendQuote(MessageUtil.formatMessageChain("检测到启用的双倍道具卡!本次签到将翻倍奖励!"));
+                        BackpackManager.delPropToBackpack(userInfo, propId);
+                        event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张双倍签到卡，本次签到奖励翻倍!"));
                         event.setSign_2(true);
                     }
 
@@ -236,8 +245,8 @@ public class SignManager {
                     }
                     if (card.isStatus()) {
                         event.setGold(event.getGold() * 3);
-                        BackpackManager.delPropToBackpack(userInfo, id);
-                        event.sendQuote(MessageUtil.formatMessageChain("检测到启用的三倍道具卡!本次签到将翻三倍奖励!"));
+                        BackpackManager.delPropToBackpack(userInfo, propId);
+                        event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张三倍签到卡，本次签到奖励三翻倍!"));
                         event.setSign_3(true);
                     }
                     break;
@@ -256,8 +265,8 @@ public class SignManager {
                         userInfo.setSignNumber(userInfo.getSignNumber() + oldSignNumber);
                         userInfo.setOldSignNumber(0);
 
-                        BackpackManager.delPropToBackpack(userInfo, id);
-                        event.sendQuote(MessageUtil.formatMessageChain("检测到启用的补签卡!已自动补签!"));
+                        BackpackManager.delPropToBackpack(userInfo, propId);
+                        event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张补签卡，续上断掉的签到天数!"));
                         event.setSign_in(true);
                     }
             }

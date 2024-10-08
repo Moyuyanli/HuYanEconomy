@@ -8,6 +8,8 @@ import net.mamoe.mirai.event.AbstractEvent;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.MessageReceipt;
 import net.mamoe.mirai.message.data.MessageChain;
+import net.mamoe.mirai.message.data.MessageChainBuilder;
+import net.mamoe.mirai.message.data.PlainText;
 import net.mamoe.mirai.message.data.QuoteReply;
 
 /**
@@ -36,6 +38,10 @@ public class SignEvent extends AbstractEvent {
      * 文字消息
      */
     private MessageChain reply;
+    /**
+     * 事件回复消息
+     */
+    private MessageChainBuilder eventReply;
     /**
      * 双倍签到
      */
@@ -72,6 +78,23 @@ public class SignEvent extends AbstractEvent {
         this.group = event.getGroup();
         this.messages = event.getMessage();
     }
+
+    /**
+     * 添加事件消息回复
+     *
+     * @param messages 事件消息
+     */
+    public void eventReplyAdd(MessageChain messages) {
+        if (this.eventReply == null) {
+            this.eventReply = new MessageChainBuilder();
+            this.eventReply.add(messages);
+        } else {
+            this.eventReply.add(new PlainText("\n"));
+            this.eventReply.add(messages);
+        }
+
+    }
+
 
     /**
      * 引用回复
