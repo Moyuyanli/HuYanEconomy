@@ -179,7 +179,7 @@ public class RobManager {
                     "你在抢劫的过程中，被警察发现了。%n" +
                             "被罚款%d金币，且拘留%d分钟", quantity, recovery));
         } else {
-            group.sendMessage(MessageUtil.formatMessageChain(message, "你正在实施抢劫，突然听见警笛，你头也不会的就跑了!"));
+            group.sendMessage(MessageUtil.formatMessageChain(message, "你正在实施抢劫，突然听见警笛，你头也不回的就跑了!"));
         }
     }
 
