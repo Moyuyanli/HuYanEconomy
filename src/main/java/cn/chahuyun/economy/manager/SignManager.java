@@ -85,7 +85,7 @@ public class SignManager {
 
         SignEvent signEvent = new SignEvent(userInfo, event);
         signEvent.setParam(RandomUtil.randomInt(0, 1001));
-        signEvent.eventReplyAdd(MessageUtil.formatMessageChain(message,"本次签到触发事件:"));
+        signEvent.eventReplyAdd(MessageUtil.formatMessageChain(message, "本次签到触发事件:"));
 
         //广播签到事件
         SignEvent broadcast = EventKt.broadcast(signEvent);
@@ -95,10 +95,9 @@ public class SignManager {
         userInfo = broadcast.getUserInfo();
 
         MessageChainBuilder eventReply = signEvent.getEventReply();
-        if (eventReply.size() == 2) {
-            eventReply.add(new PlainText("空"));
+        if (eventReply.size() != 2) {
+            subject.sendMessage(eventReply.build());
         }
-        subject.sendMessage(eventReply.build());
 
         if (!EconomyUtil.plusMoneyToUser(userInfo.getUser(), goldNumber)) {
             subject.sendMessage("签到失败!");
