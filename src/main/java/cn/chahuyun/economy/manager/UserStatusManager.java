@@ -203,6 +203,27 @@ public class UserStatusManager {
         }
     }
 
+    @MessageAuthorize(text = "回家")
+    public void goHome(GroupMessageEvent event) {
+        Group group = event.getGroup();
+        MessageChain message = event.getMessage();
+        Member sender = event.getSender();
+
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+
+        if (checkUserInHome(userInfo)) {
+            group.sendMessage(MessageUtil.formatMessageChain(message, "你已经在家里了！"));
+            return;
+        }
+
+        if (!checkUserInHospital(userInfo) || !checkUserInPrison(userInfo)) {
+            moveHome(userInfo);
+            group.sendMessage(MessageUtil.formatMessageChain(message, "你回家躺着去."));
+        } else {
+            group.sendMessage(MessageUtil.formatMessageChain(message, "你现在还不能回家！"));
+        }
+    }
+
 //    public static boolean checkUserInHome(UserInfo user) {
 //        UserStatus userStatus = getUserStatus(user.getQq());
 //
