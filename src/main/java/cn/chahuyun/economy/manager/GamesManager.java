@@ -119,8 +119,10 @@ public class GamesManager {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
         Group subject = event.getSubject();
+
         //获取玩家钓鱼信息
         FishInfo fishInfo = userInfo.getFishInfo();
+
         //能否钓鱼
         if (fishInfo == null || !fishInfo.isFishRod()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getNoneRodMsg()));
@@ -131,8 +133,22 @@ public class GamesManager {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getFishingNowMsg()));
             return;
         }
+
+        if (UserStatusManager.checkUserInHospital(userInfo)) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你还在医院躺着咧，怎么钓鱼?"));
+            return;
+        }
+
+        if (UserStatusManager.checkUserInPrison(userInfo)) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "在监狱就不要想钓鱼的事了..."));
+            return;
+        }
+
+        UserStatusManager.moveFishpond(userInfo, 0);
+
         //钓鱼佬称号buff
         boolean isFishing = TitleManager.checkTitleIsExist(userInfo, TitleCode.FISHING);
+
         //钓鱼冷却
         if (playerCooling.containsKey(userInfo.getQq())) {
             Date date = playerCooling.get(userInfo.getQq());
@@ -152,26 +168,24 @@ public class GamesManager {
         } else {
             playerCooling.put(userInfo.getQq(), new Date());
         }
-        //是否已经在钓鱼
-        if (fishInfo.isStatus()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getFishingNowMsg()));
-            return;
-        }
+
         //获取鱼塘
         FishPond fishPond = fishInfo.getFishPond(subject);
         if (fishPond == null) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "默认鱼塘不存在!"));
             return;
         }
+
         //获取鱼塘限制鱼竿最低等级
         int minLevel = fishPond.getMinLevel();
         if (fishInfo.getRodLevel() < minLevel) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), msgConfig.getRodLevelNotEnough()));
             return;
         }
+
         //开始钓鱼
-        String start = String.format("%s开始钓鱼\n鱼塘:%s\n等级:%s\n最低鱼竿等级:%s\n%s", userInfo.getName(), fishPond.getName(), fishPond.getPondLevel(), fishPond.getMinLevel(), fishPond.getDescription());
-        subject.sendMessage(start);
+        subject.sendMessage(MessageUtil.formatMessage("%s开始钓鱼\n鱼塘:%s\n等级:%s\n最低鱼竿等级:%s\n%s",
+                userInfo.getName(), fishPond.getName(), fishPond.getPondLevel(), fishPond.getMinLevel(), fishPond.getDescription()));
         Log.info(String.format("%s开始钓鱼", userInfo.getName()));
 
         //初始钓鱼信息
@@ -196,7 +210,6 @@ public class GamesManager {
         //开始拉扯
         boolean rankStatus = true;
         int pull = 0;
-        int put = 0;
         while (rankStatus) {
             //获取下一条消息
             MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject);
@@ -207,16 +220,7 @@ public class GamesManager {
             }
             MessageChain nextMessage = newMessage.getMessage();
             String nextMessageCode = nextMessage.serializeToMiraiCode();
-            /*
-            if (!config.getPrefix().isBlank()) {
-                if (!nextMessageCode.startsWith(config.getPrefix())) {
-                    continue;
-                }
-                nextMessageCode = nextMessageCode.substring(1);
-            } else {
-                nextMessageCode = nextMessageCode.trim();
-            }
-             */
+
             int randomDifficultyInt = RandomUtil.randomInt(0, 4);
             int randomLevelInt = RandomUtil.randomInt(0, 4);
 
@@ -284,11 +288,7 @@ public class GamesManager {
         }
         //空军
         if (theRod) {
-            if (RandomUtil.randomInt(0, 101) >= 50) {
-                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), errorMessages[RandomUtil.randomInt(0, 5)]));
-                fishInfo.switchStatus();
-                return;
-            }
+            if (failedFishing(userInfo, user, subject, fishInfo, errorMessages)) return;
         }
 
         /*
@@ -312,9 +312,7 @@ public class GamesManager {
         boolean winning = false;
         while (true) {
             if (rank == 0) {
-                subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), " 切线了我去！"));
-                fishInfo.switchStatus();
-                return;
+                if (failedFishing(userInfo, user, subject, fishInfo, errorMessages)) return;
             }
             //roll难度
             int difficulty = RandomUtil.randomInt(difficultyMin, difficultyMax);
@@ -363,6 +361,7 @@ public class GamesManager {
         HibernateFactory.merge(fishRanking);
         TitleManager.checkFishTitle(userInfo, subject);
     }
+
 
     /**
      * 购买鱼竿
@@ -617,5 +616,25 @@ public class GamesManager {
                 fishPond.getName(), level, fishPond.getNumber(), fishPond.getMinLevel(), value.getAmount(), money, (money / value.getAmount() * 100)
         ));
     }
+
+
+    //===================================================================================
+
+
+    private static boolean failedFishing(UserInfo userInfo, User user, Group subject, FishInfo fishInfo, String[] errorMessages) {
+        int randomed = RandomUtil.randomInt(0, 101);
+        if (randomed <= 50) {
+            subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), errorMessages[RandomUtil.randomInt(0, 5)]));
+            fishInfo.switchStatus();
+            return true;
+        } else if (randomed <= 90) {
+            subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你钓起来一具尸体，附近的钓鱼佬报警了，你真是白口模辩啊！"));
+            UserStatusManager.movePrison(userInfo, 60);
+            fishInfo.switchStatus();
+            return true;
+        }
+        return false;
+    }
+
 
 }

@@ -1,11 +1,18 @@
 package cn.chahuyun.economy.manager;
 
+import cn.chahuyun.authorize.EventComponent;
+import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.economy.constant.UserLocation;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.UserStatus;
+import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
+import net.mamoe.mirai.contact.Group;
+import net.mamoe.mirai.contact.Member;
+import net.mamoe.mirai.event.events.GroupMessageEvent;
+import net.mamoe.mirai.message.data.MessageChain;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
@@ -16,6 +23,7 @@ import java.util.Date;
  * @author Moyuyanli
  * @date 2024/9/26 9:48
  */
+@EventComponent
 public class UserStatusManager {
 
     /**
@@ -162,6 +170,38 @@ public class UserStatusManager {
         HibernateFactory.merge(userStatus);
     }
 
+
+    @MessageAuthorize(text = {"我的状态","我的位置"})
+    public void myStatus(GroupMessageEvent event) {
+        Member sender = event.getSender();
+        MessageChain message = event.getMessage();
+        Group group = event.getGroup();
+
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+
+        UserStatus userStatus = getUserStatus(userInfo);
+
+        UserLocation place = userStatus.getPlace();
+        switch (place) {
+            case HOME:
+                group.sendMessage(MessageUtil.formatMessageChain(message, "你现在正在家里躺着哩~"));
+                return;
+            case PRISON:
+                Integer time = userStatus.getRecoveryTime();
+                long between = DateUtil.between(userStatus.getStartTime(), new Date(), DateUnit.MINUTE);
+                group.sendMessage(MessageUtil.formatMessageChain(message, "你还在监狱，剩余拘禁时间:%s分钟", time - between));
+                return;
+            case HOSPITAL:
+                group.sendMessage(MessageUtil.formatMessageChain(message, "你现在正在医院躺着，wifi速度还行."));
+                return;
+            case FACTORY:
+                group.sendMessage(MessageUtil.formatMessageChain(message, "你现在正在工厂，这里很吵闹!"));
+                return;
+            case FISHPOND:
+                group.sendMessage(MessageUtil.formatMessageChain(message, "嘘，别把我的鱼吓跑了!"));
+                return;
+        }
+    }
 
 //    public static boolean checkUserInHome(UserInfo user) {
 //        UserStatus userStatus = getUserStatus(user.getQq());

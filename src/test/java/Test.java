@@ -1,6 +1,9 @@
 import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.entity.title.CustomTitle;
 import cn.chahuyun.economy.utils.ImageUtil;
+import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUnit;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 
@@ -12,6 +15,7 @@ import java.awt.font.TextLayout;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.Date;
 
 /**
  * @author Moyuyanli
@@ -20,9 +24,17 @@ import java.io.File;
 public class Test {
 
     public static void main(String[] args) throws Exception {
-        titleTest();
+        timeTest();
     }
 
+    public static void timeTest() {
+        Date date = new Date();
+
+        DateTime dateTime = DateUtil.offsetMinute(date, 10);
+
+        System.out.println("time->"+DateUtil.between(date,dateTime.toJdkDate(), DateUnit.MINUTE));
+
+    }
 
     public static void titleTest() {
         CustomTitle titleTemplateSimple = new CustomTitle(
