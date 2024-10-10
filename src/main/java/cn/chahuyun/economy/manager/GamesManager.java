@@ -287,8 +287,8 @@ public class GamesManager {
             pull++;
         }
         //空军
-        if (theRod) {
-            if (failedFishing(userInfo, user, subject, fishInfo, errorMessages)) return;
+        if (theRod && failedFishing(userInfo, user, subject, fishInfo, errorMessages)) {
+            return;
         }
 
         /*
