@@ -16,6 +16,7 @@ import cn.chahuyun.economy.sign.SignEvent;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
+import cn.chahuyun.economy.utils.ShareUtils;
 import cn.hutool.cron.CronUtil;
 import kotlin.coroutines.EmptyCoroutineContext;
 import net.mamoe.mirai.Bot;
@@ -77,47 +78,42 @@ public final class HuYanEconomy extends JavaPlugin {
         PermCodeManager.init(this);
         //初始化插件数据库
         HibernateUtil.init(this);
+        //初始化消息等待线程池
+        ShareUtils.init();
+
+        //功能加载
+        EconomyUtil.init();
+        LotteryManager.init();
+        FishManager.init();
+        BankManager.init();
+        TitleManager.init();
+        YiYanManager.init();
+        GamesManager.init();
+        FactorManager.init();
+
+        PluginPropsManager.init();
+
+        //注册自定义称号
+        TitleTemplateManager.loadingCustomTitle();
+
+        //注册消息
+        PermissionServer.INSTANCE.registerMessageEvent(this, "cn.chahuyun.economy.manager", new ExceptionHandle(), EconomyConfig.INSTANCE.getPrefix());
 
 
         EventChannel<Event> eventEventChannel = GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE);
 
-        long configBot = config.getBot();
-        if (configBot == 123456) {
-            Log.warning("插件管理机器人还没有配置，请尽快配置!");
-        } else {
-            EconomyUtil.init();
-            LotteryManager.init();
-            FishManager.init();
-            BankManager.init();
-            TitleManager.init();
-            YiYanManager.init();
-            GamesManager.init();
-            FactorManager.init();
+        //监听自定义签到事件
+        eventEventChannel.subscribeAlways(SignEvent.class,
+                EmptyCoroutineContext.INSTANCE,
+                ConcurrencyKind.CONCURRENT,
+                EventPriority.HIGH,
+                SignManager::randomSignGold
+        );
 
-            PluginPropsManager.init();
+        eventEventChannel.subscribeAlways(SignEvent.class, SignManager::signProp);
 
-            //注册自定义称号
-            TitleTemplateManager.loadingCustomTitle();
+        Log.info("事件已监听!");
 
-            eventEventChannel.registerListenerHost(new BotOnlineEventListener());
-
-            PermissionServer.INSTANCE.registerMessageEvent(this, "cn.chahuyun.economy.manager", new ExceptionHandle(),EconomyConfig.INSTANCE.getPrefix());
-
-            eventEventChannel.registerListenerHost(new MessageEventListener());
-
-            //监听自定义签到事件
-            eventEventChannel.subscribeAlways(SignEvent.class,
-                    EmptyCoroutineContext.INSTANCE,
-                    ConcurrencyKind.CONCURRENT,
-                    EventPriority.HIGH,
-                    SignManager::randomSignGold
-            );
-            eventEventChannel.subscribeAlways(SignEvent.class, SignManager::signProp);
-
-
-
-            Log.info("事件已监听!");
-        }
         EconomyPluginConfig.INSTANCE.setFirstStart(false);
         Log.info(String.format("HuYanEconomy已加载！当前版本 %s !", getDescription().getVersion()));
     }
@@ -129,6 +125,7 @@ public final class HuYanEconomy extends JavaPlugin {
     public void onDisable() {
         CronUtil.stop();
         YiYanManager.shutdown();
+        ShareUtils.shutdown();
         Log.info("插件已卸载!");
     }
 }

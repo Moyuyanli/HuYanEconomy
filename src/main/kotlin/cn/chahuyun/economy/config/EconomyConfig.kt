@@ -34,7 +34,7 @@ object EconomyConfig : AutoSavePluginConfig("Config") {
     @ValueDescription("mysql 密码")
     var mysqlPassword: String by value("123456")
 
-    @ValueDescription("插件单一管理botQQ\n")
-    val bot: Long by value()
+    @ValueDescription("用户下一条消息等待线程数(可能影响同时钓鱼的玩家数量)")
+    val nextMessageExecutorsNumber: Int by value(10)
 
 }

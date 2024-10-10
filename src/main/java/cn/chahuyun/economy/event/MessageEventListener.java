@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
  * @Date 2022/7/9 18:11
  */
 //@MessageComponent
+@Deprecated(since = "1.6.3")
 public class MessageEventListener extends SimpleListenerHost {
 
 
