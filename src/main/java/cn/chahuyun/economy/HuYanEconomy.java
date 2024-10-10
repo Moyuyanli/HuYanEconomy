@@ -128,6 +128,7 @@ public final class HuYanEconomy extends JavaPlugin {
     @Override
     public void onDisable() {
         CronUtil.stop();
+        YiYanManager.shutdown();
         Log.info("插件已卸载!");
     }
 }
