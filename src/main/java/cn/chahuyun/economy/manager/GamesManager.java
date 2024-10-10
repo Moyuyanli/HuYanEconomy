@@ -359,6 +359,7 @@ public class GamesManager {
         fishInfo.switchStatus();
         FishRanking fishRanking = new FishRanking(userInfo.getQq(), userInfo.getName(), dimensions, money, fishInfo.getRodLevel(), fish, fishPond);
         HibernateFactory.merge(fishRanking);
+        UserStatusManager.moveHome(userInfo);
         TitleManager.checkFishTitle(userInfo, subject);
     }
 
