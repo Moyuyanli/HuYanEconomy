@@ -16,7 +16,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class YiYanManager {
 
     private static final BlockingQueue<YiYan> yiyanQueue = new LinkedBlockingQueue<>(5);
+    /**
+     * 定时线程池
+     */
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    /**
+     * 固定数量线程池
+     */
     private static final ExecutorService executor = Executors.newFixedThreadPool(1);
     private static final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
