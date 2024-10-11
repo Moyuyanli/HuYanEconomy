@@ -629,7 +629,7 @@ public class GamesManager {
             fishInfo.switchStatus();
             return true;
         } else if (randomed <= 90) {
-            subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你钓起来一具尸体，附近的钓鱼佬报警了，你真是白口模辩啊！"));
+            subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你钓起来一具尸体，附近的钓鱼佬报警了，你真是百口模辩啊！"));
             UserStatusManager.movePrison(userInfo, 60);
             fishInfo.switchStatus();
             return true;
