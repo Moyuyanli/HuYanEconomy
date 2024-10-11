@@ -234,7 +234,7 @@ public class UserManager {
                 real = ShareUtils.rounding(price * 0.8);
                 builder.add(MessageUtil.formatMessage(
                         "你在出院的时候使用的医保卡，医药费打8折。%n" +
-                                "实付/原价医药费:%s/%s",
+                                "原价/实付医药费:%s/%s",
                         price, real
                 ));
             } else {
