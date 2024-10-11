@@ -81,7 +81,11 @@ public final class TitleTemplateSimpleImpl extends TitleTemplate {
         this.impactName = impactName;
         this.title = title;
         this.sColor = ImageUtil.colorHex(sColor);
-        this.eColor = ImageUtil.colorHex(eColor);
+        if (eColor == null) {
+            this.eColor = "#000000";
+        } else {
+            this.eColor = ImageUtil.colorHex(eColor);
+        }
     }
 
 
@@ -127,7 +131,11 @@ public final class TitleTemplateSimpleImpl extends TitleTemplate {
         this.impactName = impactName;
         this.title = title;
         this.sColor = ImageUtil.colorHex(sColor);
-        this.eColor = ImageUtil.colorHex(eColor);
+        if (eColor == null) {
+            this.eColor = "#000000";
+        } else {
+            this.eColor = ImageUtil.colorHex(eColor);
+        }
     }
 
     /**
