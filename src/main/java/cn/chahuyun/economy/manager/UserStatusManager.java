@@ -216,7 +216,7 @@ public class UserStatusManager {
             return;
         }
 
-        if (!checkUserInHospital(userInfo) || !checkUserInPrison(userInfo)) {
+        if (checkUserInHospital(userInfo) || checkUserInPrison(userInfo)) {
             moveHome(userInfo);
             group.sendMessage(MessageUtil.formatMessageChain(message, "你回家躺着去."));
         } else {
