@@ -22,9 +22,6 @@ object RepairManager {
         if (!FishPondRepair().repair()) {
             return "鱼塘错误数据修复失败!"
         }
-        if (!RobRepair().repair()) {
-            return "抢劫错误数据修复失败!"
-        }
         return "修复完成"
     }
 
@@ -83,14 +80,3 @@ class FishPondRepair() : Repair {
 
 }
 
-class RobRepair : Repair {
-    /**
-     * 修复
-     */
-    override fun repair(): Boolean {
-        HibernateFactory.selectList(RobInfo::class.java).stream().filter { it: RobInfo -> it.cooling == null }
-            .forEach { `object`: RobInfo? -> HibernateFactory.delete(`object`) }
-        return true
-    }
-
-}
