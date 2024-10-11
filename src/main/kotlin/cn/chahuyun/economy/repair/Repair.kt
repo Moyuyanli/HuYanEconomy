@@ -4,6 +4,7 @@ import cn.chahuyun.economy.entity.fish.FishPond
 import cn.chahuyun.economy.entity.fish.FishRanking
 import cn.chahuyun.economy.entity.rob.RobInfo
 import cn.chahuyun.hibernateplus.HibernateFactory
+import java.sql.Connection
 
 
 interface Repair {
@@ -88,8 +89,31 @@ class RobRepair : Repair {
      * 修复
      */
     override fun repair(): Boolean {
-        HibernateFactory.selectList(RobInfo::class.java).stream().filter { it: RobInfo -> it.nowTime == null }
+        // 定义要删除的列名
+        val columnsToDrop = listOf("isInJail", "cooldown", "lastRobTime", "cooling", "type")
+
+        // 在事务中执行每个 ALTER TABLE 语句
+        HibernateFactory.getSession().fromTransaction { session ->
+            session.doWork { connection: Connection ->
+                for (column in columnsToDrop) {
+                    val sql = "ALTER TABLE RobInfo DROP COLUMN $column;"
+                    try {
+                        with(connection.createStatement()) {
+                            executeUpdate(sql)
+                        }
+                    } catch (e: Exception) {
+                        // 处理异常
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
+
+        // 删除 nowTime 为空的 RobInfo 记录
+        HibernateFactory.selectList(RobInfo::class.java).stream()
+            .filter { it.nowTime == null }
             .forEach { `object`: RobInfo? -> HibernateFactory.delete(`object`) }
+
         return true
     }
 
