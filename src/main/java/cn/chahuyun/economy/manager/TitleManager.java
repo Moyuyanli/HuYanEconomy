@@ -64,7 +64,10 @@ public class TitleManager {
                         "[邓刚]", new Color(0xf02fc2), new Color(0x6094ea)),
                 new TitleTemplateSimpleImpl(TitleCode.BET_MONSTER, TitleCode.BET_MONSTER_EXPIRED, "赌怪",
                         true, true,
-                        "[17张牌能秒我?]", new Color(0xFF0000), new Color(0x730000)));
+                        "[17张牌能秒我?]", new Color(0xFF0000), new Color(0x730000)),
+                new TitleTemplateSimpleImpl(TitleCode.ROB, TitleCode.ROB_EXPIRED, "街区传说",
+                        false, true,
+                        "[师承窃格瓦拉]", new Color(0x2261DC), null));
 
 
         //修改版本迭代带来的错误数据

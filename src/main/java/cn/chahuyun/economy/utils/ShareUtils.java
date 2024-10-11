@@ -3,6 +3,7 @@ package cn.chahuyun.economy.utils;
 
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.config.EconomyConfig;
+import cn.hutool.core.util.RandomUtil;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Member;
 import net.mamoe.mirai.contact.User;
@@ -139,6 +140,21 @@ public class ShareUtils {
      */
     public static int percentageToInt(double value) {
         return (int) Math.round(value * 100);
+    }
+
+    /**
+     * 随机比较
+     * @param probability 成功概率 0~100
+     * @return true 结果
+     */
+    public static boolean randomCompare(int probability) {
+        if (probability < 0 || probability > 100) {
+            throw new IllegalArgumentException("概率只有0~100");
+        }
+
+        int randomed = RandomUtil.randomInt(1, 101);
+
+        return randomed <= probability;
     }
 
     /**

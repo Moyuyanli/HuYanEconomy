@@ -9,14 +9,17 @@ import cn.chahuyun.authorize.entity.PermGroup;
 import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.authorize.utils.UserUtil;
 import cn.chahuyun.economy.constant.EconPerm;
+import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.UserStatus;
+import cn.chahuyun.economy.entity.rob.RobInfo;
 import cn.chahuyun.economy.plugin.FactorManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.economy.utils.ShareUtils;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -26,6 +29,7 @@ import net.mamoe.mirai.contact.Member;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.data.MessageChain;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -57,7 +61,7 @@ public class RobManager {
         MessageChain message = event.getMessage();
 
         Member user = event.getSender();
-        UserInfo userInfo = UserManager.getUserInfo(user);
+        UserInfo thisUser = UserManager.getUserInfo(user);
 
         if (cooling.containsKey(user)) {
             Date date = cooling.get(user);
@@ -70,7 +74,7 @@ public class RobManager {
 
         cooling.put(user, new Date());
 
-        if (UserStatusManager.checkUserNotInHome(userInfo)) {
+        if (UserStatusManager.checkUserNotInHome(thisUser)) {
             UserStatus userStatus = UserStatusManager.getUserStatus(user.getId());
             switch (userStatus.getPlace()) {
                 //医院
@@ -102,7 +106,7 @@ public class RobManager {
         UserInfo atUser = UserManager.getUserInfo(member);
 
 
-        if (UserStatusManager.checkUserNotInHome(userInfo)) {
+        if (UserStatusManager.checkUserNotInHome(thisUser)) {
             UserStatus userStatus = UserStatusManager.getUserStatus(atUser);
             switch (userStatus.getPlace()) {
                 case HOSPITAL:
@@ -114,8 +118,21 @@ public class RobManager {
             }
         }
 
+        RobInfo thisRobInfo = getRobInfo(thisUser);
+        RobInfo atRobInfo = getRobInfo(atUser);
 
-        UserFactor userFactor = FactorManager.getUserFactor(userInfo);
+        if (DateUtil.isSameDay(new Date(), atRobInfo.getNowTime())) {
+            Integer beRobNumber = atRobInfo.getBeRobNumber();
+            if (beRobNumber >= 20) {
+                group.sendMessage(MessageUtil.formatMessageChain(message, "他今天已经被抢了20次了，上帝都觉得他可怜！"));
+                return;
+            }
+        } else {
+            atRobInfo.setNowTime(new Date());
+            atRobInfo.setBeRobNumber(0);
+        }
+
+        UserFactor userFactor = FactorManager.getUserFactor(thisUser);
         UserFactor atUserFactor = FactorManager.getUserFactor(atUser);
 
         //抢劫因子
@@ -125,6 +142,15 @@ public class RobManager {
 
         int force = ShareUtils.percentageToInt(userFactor.getForce());
         int atDoge = ShareUtils.percentageToInt(atUserFactor.getDodge());
+
+        if (TitleManager.checkTitleIsOnEnable(thisUser, TitleCode.ROB)) {
+            force += 10;
+        }
+
+        if (TitleManager.checkTitleIsOnEnable(atUser, TitleCode.ROB)) {
+            atDoge += 10;
+            atUserFactor.setIrritable(atUserFactor.getIrritable() + 0.2);
+        }
 
         //抢劫成功
         if ((robRandom - force) <= (robFactor - atDoge)) {
@@ -150,9 +176,9 @@ public class RobManager {
 
             int resistance = ShareUtils.percentageToInt(atUserFactor.getResistance());
 
-            int resRandom = RandomUtil.randomInt(0, 101);
             double moneyRandom;
-            if (resRandom <= resistance) {
+
+            if (ShareUtils.randomCompare(resistance)) {
                 moneyRandom = ShareUtils.rounding(RandomUtil.randomDouble(0, atMoney / 2));
                 group.sendMessage(MessageUtil.formatMessageChain(message, "对方拼命反抗，但是你还是抢到了对方%.1f的金币跑了...", moneyRandom));
             } else {
@@ -162,6 +188,16 @@ public class RobManager {
 
             EconomyUtil.plusMoneyToUser(user, moneyRandom);
             EconomyUtil.minusMoneyToUser(member, moneyRandom);
+
+            int robSuccess = thisRobInfo.getRobSuccess() + 1;
+            if (robSuccess == 50 && !TitleManager.checkTitleIsExist(thisUser, TitleCode.ROB)) {
+                TitleManager.addTitleInfo(thisUser, TitleCode.ROB);
+                group.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你成功抢劫50次，获得 街区传说 称号！"));
+            }
+            thisRobInfo.setRobSuccess(robSuccess);
+            atRobInfo.setBeRobNumber(atRobInfo.getBeRobNumber() + 1);
+            HibernateFactory.merge(thisRobInfo);
+            HibernateFactory.merge(atRobInfo);
             return;
         }
 
@@ -173,7 +209,7 @@ public class RobManager {
             EconomyUtil.minusMoneyToUser(user, quantity);
 
             int recovery = 20;
-            UserStatusManager.movePrison(userInfo, recovery);
+            UserStatusManager.movePrison(thisUser, recovery);
 
             group.sendMessage(MessageUtil.formatMessageChain(message,
                     "你在抢劫的过程中，被警察发现了。%n" +
@@ -183,6 +219,21 @@ public class RobManager {
         }
     }
 
+
+    /**
+     * 打人
+     *
+     * @param event 消息事件
+     */
+    @MessageAuthorize(
+            text = "打人 ?@?\\d{6,11} ?",
+            messageMatching = MessageMatchingEnum.REGULAR,
+            messageConversion = MessageConversionEnum.CONTENT,
+            groupPermissions = {EconPerm.ROB_PERM}
+    )
+    public void hit(GroupMessageEvent event) {
+        event.getGroup().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "练练再来吧！"));
+    }
 
     @MessageAuthorize(
             text = "开启 抢劫",
@@ -230,6 +281,23 @@ public class RobManager {
         permGroup.save();
 
         group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫关闭成功!"));
+    }
+
+
+    /**
+     * 获取抢劫信息
+     *
+     * @param userInfo 用户信息
+     * @return 抢劫信息
+     */
+    @NotNull
+    public static RobInfo getRobInfo(UserInfo userInfo) {
+        RobInfo one = HibernateFactory.selectOne(RobInfo.class, userInfo.getQq());
+        if (one == null) {
+            one = new RobInfo(userInfo.getQq(), new Date(), 0, 0, 0);
+            return HibernateFactory.merge(one);
+        }
+        return one;
     }
 
 }

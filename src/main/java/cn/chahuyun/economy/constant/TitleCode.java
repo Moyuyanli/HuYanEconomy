@@ -53,5 +53,14 @@ public class TitleCode {
      * 赌怪称号-默认过期时间
      */
     public final static Integer BET_MONSTER_EXPIRED = -1;
+
+    /**
+     * 抢劫称号
+     */
+    public final static String ROB = "rob";
+    /**
+     * 抢劫称号-默认过期时间
+     */
+    public final static Integer ROB_EXPIRED = -1;
 }
 

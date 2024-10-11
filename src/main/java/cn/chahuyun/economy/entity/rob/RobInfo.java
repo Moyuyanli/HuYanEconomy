@@ -1,11 +1,9 @@
 package cn.chahuyun.economy.entity.rob;
 
-import cn.chahuyun.hibernateplus.HibernateFactory;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
-import net.mamoe.mirai.contact.User;
 
 import java.util.Date;
 
@@ -22,29 +20,25 @@ public class RobInfo {
      */
     @Id
     private Long userId;
-    /**
-     * 上次抢劫时间
-     */
-    private Date lastRobTime;
-    /**
-     * 抢劫冷却时间
-     */
-    private Long cooling;
-    /**
-     * 是否在监狱中
-     */
-    private boolean isInJail;
 
     /**
-     * 存在位置<p>
-     * <li>0.正常</li>
-     * <li>1.监狱</li>
-     * <li>2.医院</li>
+     * 今日时间
      */
-    private int type;
+    private Date nowTime;
 
-    public Long getCooling() {
-        return cooling;
-    }
+    /**
+     * 被抢劫次数
+     */
+    private Integer beRobNumber;
+
+    /**
+     * 抢劫成功次数
+     */
+    private Integer robSuccess;
+
+    /**
+     * 打人成功次数
+     */
+    private Integer hitSuccess;
 
 }
