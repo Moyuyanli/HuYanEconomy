@@ -217,10 +217,10 @@ public class UserStatusManager {
         }
 
         if (checkUserInHospital(userInfo) || checkUserInPrison(userInfo)) {
+            group.sendMessage(MessageUtil.formatMessageChain(message, "你现在还不能回家！"));
+        } else {
             moveHome(userInfo);
             group.sendMessage(MessageUtil.formatMessageChain(message, "你回家躺着去."));
-        } else {
-            group.sendMessage(MessageUtil.formatMessageChain(message, "你现在还不能回家！"));
         }
     }
 

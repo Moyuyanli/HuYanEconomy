@@ -41,4 +41,7 @@ public class RobInfo {
      */
     private Integer hitSuccess;
 
+    public Date getNowTime() {
+        return nowTime;
+    }
 }
