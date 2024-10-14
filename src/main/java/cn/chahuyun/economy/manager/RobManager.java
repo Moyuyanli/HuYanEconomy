@@ -105,8 +105,7 @@ public class RobManager {
 
         UserInfo atUser = UserManager.getUserInfo(member);
 
-
-        if (UserStatusManager.checkUserNotInHome(thisUser)) {
+        if (UserStatusManager.checkUserNotInHome(atUser)) {
             UserStatus userStatus = UserStatusManager.getUserStatus(atUser);
             switch (userStatus.getPlace()) {
                 case HOSPITAL:
