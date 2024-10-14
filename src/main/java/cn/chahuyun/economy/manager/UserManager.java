@@ -2,8 +2,6 @@ package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
-import cn.chahuyun.economy.BuildConstants;
-import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.entity.TitleInfo;
 import cn.chahuyun.economy.entity.UserInfo;
@@ -34,7 +32,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;

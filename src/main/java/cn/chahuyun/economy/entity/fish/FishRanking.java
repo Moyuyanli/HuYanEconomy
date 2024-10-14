@@ -1,6 +1,5 @@
 package cn.chahuyun.economy.entity.fish;
 
-import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.BetweenFormatter;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;

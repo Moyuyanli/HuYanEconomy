@@ -8,8 +8,6 @@ import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.config.FishingMsgConfig;
 import cn.chahuyun.economy.config.RobMsgConfig;
 import cn.chahuyun.economy.constant.Icon;
-import cn.chahuyun.economy.event.BotOnlineEventListener;
-import cn.chahuyun.economy.event.MessageEventListener;
 import cn.chahuyun.economy.manager.*;
 import cn.chahuyun.economy.plugin.*;
 import cn.chahuyun.economy.sign.SignEvent;
