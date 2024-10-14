@@ -13,9 +13,7 @@ import cn.chahuyun.economy.utils.MessageUtil;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
-import net.mamoe.mirai.message.data.ForwardMessageBuilder;
-import net.mamoe.mirai.message.data.MessageChain;
-import net.mamoe.mirai.message.data.PlainText;
+import net.mamoe.mirai.message.data.*;
 
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -95,7 +93,7 @@ public class EventPropsManager {
 
 
     @MessageAuthorize(
-            text = "buy \\S+|购买道具 \\S+",
+            text = "buy( \\S+)+|购买道具( \\S+)+",
             messageMatching = MessageMatchingEnum.REGULAR
     )
     public void buyProp(GroupMessageEvent event) {
@@ -106,35 +104,45 @@ public class EventPropsManager {
         MessageChain message = event.getMessage();
         String content = message.contentToString();
 
-        String code = content.split(" ")[1];
+        String[] split = content.split(" ");
 
-        if (!PropsShop.checkPropExist(code)) {
-            group.sendMessage(MessageUtil.formatMessageChain(message, "该道具code不存在!"));
-            return;
+        MessageChainBuilder builder = new MessageChainBuilder();
+        builder.add(new QuoteReply(message));
+        builder.add("本次购买道具:");
+
+
+        for (int i = 1; i < split.length; i++) {
+            String code = split[i];
+
+            if (!PropsShop.checkPropExist(code)) {
+                builder.add(MessageUtil.formatMessage("道具 %s 不存在!",code));
+                continue;
+            }
+
+            PropBase template = PropsShop.getTemplate(code);
+
+            UserInfo userInfo = UserManager.getUserInfo(event.getSender());
+
+            double money = EconomyUtil.getMoneyByUser(userInfo.getUser());
+
+            int cost = template.getCost();
+            if (money < cost) {
+                builder.add(MessageUtil.formatMessage("道具 %s ,余额不足%d,购买失败!",code,cost));
+                continue;
+            }
+
+
+            if (EconomyUtil.minusMoneyToUser(userInfo.getUser(), cost)) {
+                long l = PropsManager.addProp(template);
+
+                BackpackManager.addPropToBackpack(userInfo, code, template.getKind(), l);
+                builder.add(MessageUtil.formatMessage("道具 %s 购买成功!",code));
+            } else {
+                builder.add(MessageUtil.formatMessage("道具 %s 购买失败!",code));
+            }
         }
 
-        PropBase template = PropsShop.getTemplate(code);
-
-        UserInfo userInfo = UserManager.getUserInfo(event.getSender());
-
-        double money = EconomyUtil.getMoneyByUser(userInfo.getUser());
-
-        int cost = template.getCost();
-        if (money < cost) {
-            group.sendMessage(MessageUtil.formatMessageChain(message, "%d都买不起？没钱就不要来瞎逛!", cost));
-            return;
-        }
-
-
-        if (EconomyUtil.minusMoneyToUser(userInfo.getUser(), cost)) {
-            long l = PropsManager.addProp(template);
-
-            BackpackManager.addPropToBackpack(userInfo, code, template.getKind(), l);
-            group.sendMessage(MessageUtil.formatMessageChain(message, "购买成功!"));
-        } else {
-            group.sendMessage(MessageUtil.formatMessageChain(message, "购买失败!"));
-        }
-
+        group.sendMessage(builder.build());
     }
 
 }

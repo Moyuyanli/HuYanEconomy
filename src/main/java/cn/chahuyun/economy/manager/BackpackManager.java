@@ -15,9 +15,7 @@ import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
-import net.mamoe.mirai.message.data.ForwardMessageBuilder;
-import net.mamoe.mirai.message.data.MessageChain;
-import net.mamoe.mirai.message.data.PlainText;
+import net.mamoe.mirai.message.data.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
@@ -66,7 +64,7 @@ public class BackpackManager {
     }
 
     @MessageAuthorize(
-            text = "use \\d+|使用 \\d+",
+            text = "use( \\d+)+|使用( \\d+)+",
             messageMatching = MessageMatchingEnum.REGULAR
     )
     public void useProp(GroupMessageEvent event) {
@@ -75,22 +73,36 @@ public class BackpackManager {
         String content = message.contentToString();
         Group group = event.getSubject();
 
-        long propId = Long.parseLong(content.split(" ")[1]);
+        String[] split = content.split(" ");
 
-        UserInfo userInfo = UserManager.getUserInfo(sender);
+        MessageChainBuilder builder = new MessageChainBuilder();
+        builder.add(new QuoteReply(message));
+        builder.add("本次使用道具:");
 
-        List<UserBackpack> backpacks = userInfo.getBackpacks();
-        for (UserBackpack backpack : backpacks) {
-            if (backpack.getPropId().equals(propId)) {
-                PropBase prop = PropsManager.getProp(backpack);
-                prop.use(userInfo);
-                PropsManager.updateProp(backpack.getPropId(), prop);
-                group.sendMessage(MessageUtil.formatMessageChain(message, "使用成功!"));
-                return;
+        for (int i = 1; i < split.length; i++) {
+            long propId = Long.parseLong(split[i]);
+
+            UserInfo userInfo = UserManager.getUserInfo(sender);
+
+            List<UserBackpack> backpacks = userInfo.getBackpacks();
+
+            boolean success = false;
+            for (UserBackpack backpack : backpacks) {
+                if (backpack.getPropId().equals(propId)) {
+                    PropBase prop = PropsManager.getProp(backpack);
+                    prop.use(userInfo);
+                    PropsManager.updateProp(backpack.getPropId(), prop);
+                    builder.add(MessageUtil.formatMessage("\n%d 使用成功!",propId));
+                    success = true;
+                    break;
+                }
+            }
+            if (!success) {
+                builder.add(MessageUtil.formatMessage("\n%d 你没有这个道具!",propId));
             }
         }
 
-        group.sendMessage(MessageUtil.formatMessageChain(message, "你没有这个道具!"));
+        group.sendMessage(builder.build());
     }
 
     /**
