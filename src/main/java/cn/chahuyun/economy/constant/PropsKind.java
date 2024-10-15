@@ -12,5 +12,9 @@ public class PropsKind {
      * 卡类道具
      */
     public final static String card = "CARD";
+    /**
+     * 功能性物品
+     */
+    public final static String functionProp = "F_PROP";
 
 }
