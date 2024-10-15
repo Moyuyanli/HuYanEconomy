@@ -213,8 +213,11 @@ public class SignManager {
     public static void signProp(SignEvent event) {
         UserInfo userInfo = event.getUserInfo();
 
+        int multiples = 1;
+
         if (TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.SIGN_15)) {
-            event.setGold(event.getGold() * 2);
+            multiples += 1;
+            event.eventReplyAdd(MessageUtil.formatMessageChain("装备签到狂人称号，本次签到奖励翻倍!"));
         }
 
         List<UserBackpack> backpacks = userInfo.getBackpacks();
@@ -230,7 +233,7 @@ public class SignManager {
                         continue;
                     }
                     if (card.isStatus()) {
-                        event.setGold(event.getGold() * 2);
+                        multiples += 1;
                         BackpackManager.delPropToBackpack(userInfo, propId);
                         event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张双倍签到卡，本次签到奖励翻倍!"));
                         event.setSign_2(true);
@@ -243,7 +246,7 @@ public class SignManager {
                         continue;
                     }
                     if (card.isStatus()) {
-                        event.setGold(event.getGold() * 3);
+                        multiples += 2;
                         BackpackManager.delPropToBackpack(userInfo, propId);
                         event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张三倍签到卡，本次签到奖励三翻倍!"));
                         event.setSign_3(true);
@@ -271,6 +274,7 @@ public class SignManager {
             }
         }
 
+        event.setGold(event.getGold() * multiples);
 
     }
 
