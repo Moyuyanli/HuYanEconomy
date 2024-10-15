@@ -223,6 +223,16 @@ public class SignManager {
         List<UserBackpack> backpacks = userInfo.getBackpacks();
         ArrayList<UserBackpack> list = new ArrayList<>(backpacks);
 
+        if (BackpackManager.checkPropInUser(userInfo, PropsCard.MONTHLY)) {
+            UserBackpack prop = userInfo.getProp(PropsCard.MONTHLY);
+            if (PropsManager.getProp(prop, PropsCard.class).isStatus()) {
+                event.setSign_2(true);
+                event.setSign_3(true);
+                multiples += 4;
+                event.eventReplyAdd(MessageUtil.formatMessageChain("已启用签到月卡,本次签到奖励翻5倍!"));
+            }
+        }
+
         PropsCard card;
         for (UserBackpack backpack : list) {
             Long propId = backpack.getPropId();
