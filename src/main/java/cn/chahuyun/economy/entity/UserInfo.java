@@ -205,6 +205,19 @@ public class UserInfo implements Serializable {
                 "\n连续签到:" + this.getSignNumber() + "天\n";
     }
 
+    /**
+     * 获取第一个对应的道具
+     * @param code 道具code
+     * @return 背包道具
+     */
+    public UserBackpack getProp(String code) {
+        for (UserBackpack backpack : backpacks) {
+            if (backpack.getPropCode().equals(code)) {
+                return backpack;
+            }
+        }
+        return null;
+    }
 
     /**
      * 设置user
