@@ -100,6 +100,18 @@ public class PropsManager {
     }
 
     /**
+     * 获取一个道具的基本类型
+     *
+     * @param backpack   背包物品
+     * @param propsClass 道具类型
+     * @return 对应的道具实例
+     */
+    @SuppressWarnings("all")
+    public static <T extends PropBase> T getProp(UserBackpack backpack, Class<T> propsClass) {
+        return (T) deserialization(backpack.getPropId(), propsClass);
+    }
+
+    /**
      * 销毁一个道具
      *
      * @param id 道具id
@@ -121,7 +133,6 @@ public class PropsManager {
         UserBackpack one = HibernateFactory.selectOne(UserBackpack.class, "propId", propsData.getId());
         HibernateFactory.delete(one);
     }
-
 
 
     /**
@@ -189,9 +200,9 @@ public class PropsManager {
         if (prop.isCanItExpire()) {
             Integer expire = prop.getExpire();
             if (expire != null && expire != 0) {
-                prop.setExpiredTime(DateUtil.offsetDay(new Date(),expire));
+                prop.setExpiredTime(DateUtil.offsetDay(new Date(), expire));
             } else {
-                prop.setExpiredTime(DateUtil.offsetDay(new Date(),1));
+                prop.setExpiredTime(DateUtil.offsetDay(new Date(), 1));
             }
         }
 
@@ -240,4 +251,6 @@ public class PropsManager {
 
         return aClass.equals(prop);
     }
+
+
 }
