@@ -10,11 +10,14 @@ import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.authorize.utils.UserUtil;
 import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.constant.TitleCode;
+import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.UserStatus;
+import cn.chahuyun.economy.entity.props.FunctionProps;
 import cn.chahuyun.economy.entity.rob.RobInfo;
 import cn.chahuyun.economy.plugin.FactorManager;
+import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
@@ -134,7 +137,33 @@ public class RobManager {
         UserFactor userFactor = FactorManager.getUserFactor(thisUser);
         UserFactor atUserFactor = FactorManager.getUserFactor(atUser);
 
-        //抢劫因子
+        if (BackpackManager.checkPropInUser(thisUser, FunctionProps.ELECTRIC_BATON)) {
+            UserBackpack prop = thisUser.getProp(FunctionProps.ELECTRIC_BATON);
+
+            if (PropsManager.useAndUpdate(prop, thisUser)) {
+                userFactor.setForce(userFactor.getForce() + 0.3);
+                group.sendMessage(MessageUtil.formatMessageChain(message, "你携带了便携电棒，攻击性变强了!"));
+            } else {
+                group.sendMessage(MessageUtil.formatMessageChain(message, "你的电棒好像有点问题.."));
+            }
+
+        }
+
+        if (BackpackManager.checkPropInUser(atUser, FunctionProps.ELECTRIC_BATON)) {
+            UserBackpack prop = atUser.getProp(FunctionProps.ELECTRIC_BATON);
+
+            if (PropsManager.useAndUpdate(prop, atUser)) {
+                atUserFactor.setDodge(atUserFactor.getDodge() + 0.2);
+                atUserFactor.setIrritable(atUserFactor.getIrritable() + 0.4);
+                group.sendMessage(MessageUtil.formatMessageChain(message, "你携带了便携电棒，攻击性变强了!"));
+            } else {
+                group.sendMessage(MessageUtil.formatMessageChain(message, "你的电棒好像有点问题.."));
+            }
+
+        }
+
+
+        //全局抢劫因子
         int robFactor = ShareUtils.percentageToInt(FactorManager.getGlobalFactor().getRobFactor());
 
         int robRandom = RandomUtil.randomInt(0, 101);
