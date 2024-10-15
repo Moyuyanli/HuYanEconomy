@@ -115,11 +115,12 @@ public class EventPropsManager {
             String code = split[i];
 
             if (!PropsShop.checkPropExist(code)) {
-                builder.add(MessageUtil.formatMessage("道具 %s 不存在!",code));
+                builder.add(MessageUtil.formatMessage("\n道具 %s 不存在!",code));
                 continue;
             }
 
             PropBase template = PropsShop.getTemplate(code);
+            String name = template.getName();
 
             UserInfo userInfo = UserManager.getUserInfo(event.getSender());
 
@@ -127,7 +128,7 @@ public class EventPropsManager {
 
             int cost = template.getCost();
             if (money < cost) {
-                builder.add(MessageUtil.formatMessage("道具 %s ,余额不足%d,购买失败!",code,cost));
+                builder.add(MessageUtil.formatMessage("\n道具 %s ,余额不足%d,购买失败!",name,cost));
                 continue;
             }
 
@@ -136,9 +137,9 @@ public class EventPropsManager {
                 long l = PropsManager.addProp(template);
 
                 BackpackManager.addPropToBackpack(userInfo, code, template.getKind(), l);
-                builder.add(MessageUtil.formatMessage("道具 %s 购买成功!",code));
+                builder.add(MessageUtil.formatMessage("\n道具 %s 购买成功!",name));
             } else {
-                builder.add(MessageUtil.formatMessage("道具 %s 购买失败!",code));
+                builder.add(MessageUtil.formatMessage("\n道具 %s 购买失败!",name));
             }
         }
 
