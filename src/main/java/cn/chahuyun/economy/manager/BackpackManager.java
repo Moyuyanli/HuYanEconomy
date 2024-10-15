@@ -90,14 +90,44 @@ public class BackpackManager {
                     PropBase prop = PropsManager.getProp(backpack);
                     prop.use(userInfo);
                     PropsManager.updateProp(backpack.getPropId(), prop);
-                    builder.add(MessageUtil.formatMessage("\n%d 使用成功!",propId));
+                    builder.add(MessageUtil.formatMessage("\n%d 使用成功!", propId));
                     success = true;
                     break;
                 }
             }
             if (!success) {
-                builder.add(MessageUtil.formatMessage("\n%d 你没有这个道具!",propId));
+                builder.add(MessageUtil.formatMessage("\n%d 你没有这个道具!", propId));
             }
+        }
+
+        group.sendMessage(builder.build());
+    }
+
+
+    @MessageAuthorize(
+            text = "dis( \\d+)+|丢弃( \\d+)+",
+            messageMatching = MessageMatchingEnum.REGULAR
+    )
+    public void discard(GroupMessageEvent event) {
+        Member sender = event.getSender();
+        MessageChain message = event.getMessage();
+        String content = message.contentToString();
+        Group group = event.getSubject();
+
+        String[] split = content.split(" ");
+
+        MessageChainBuilder builder = new MessageChainBuilder();
+        builder.add(new QuoteReply(message));
+        builder.add("本次丢弃道具:");
+
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+
+        for (int i = 1; i < split.length; i++) {
+            long propId = Long.parseLong(split[i]);
+
+            String name = PropsManager.deserialization(propId, PropBase.class).getName();
+            delPropToBackpack(userInfo, propId);
+            builder.add(MessageUtil.formatMessage("\n你丢掉了你的 %s 。", name));
         }
 
         group.sendMessage(builder.build());
