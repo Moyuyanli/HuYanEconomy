@@ -4,8 +4,10 @@ import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.props.PropsData;
 import cn.chahuyun.hibernateplus.HibernateFactory;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONUtil;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -107,6 +109,19 @@ public class PropsManager {
         HibernateFactory.delete(data);
     }
 
+    /**
+     * 销毁一个道具,同时去除背包关联信息
+     *
+     * @param propsData 道具数据
+     */
+    public static void destroyProsInBackpack(PropsData propsData) {
+        PropsData data = HibernateFactory.selectOne(t, propsData.getId());
+        HibernateFactory.delete(data);
+
+        UserBackpack one = HibernateFactory.selectOne(UserBackpack.class, "propId", propsData.getId());
+        HibernateFactory.delete(one);
+    }
+
 
 
     /**
@@ -170,6 +185,16 @@ public class PropsManager {
      * @return propData
      */
     public static <T extends PropBase> PropsData serialization(T prop) {
+
+        if (prop.isCanItExpire()) {
+            Integer expire = prop.getExpire();
+            if (expire != null && expire != 0) {
+                prop.setExpiredTime(DateUtil.offsetDay(new Date(),expire));
+            } else {
+                prop.setExpiredTime(DateUtil.offsetDay(new Date(),1));
+            }
+        }
+
         PropsData data = new PropsData();
 
         data.setCode(prop.getCode());
@@ -182,6 +207,15 @@ public class PropsManager {
     public static <T extends PropBase> T deserialization(Long id, Class<T> tClass) {
         PropsData one = HibernateFactory.selectOne(t, id);
 
+        if (one == null) {
+            throw new RuntimeException("该道具不存在！");
+        }
+
+        return JSONUtil.toBean(one.getData(), tClass);
+    }
+
+
+    public static <T extends PropBase> T deserialization(PropsData one, Class<T> tClass) {
         if (one == null) {
             throw new RuntimeException("该道具不存在！");
         }
