@@ -82,11 +82,17 @@ public abstract class PropBase implements Serializable {
      */
     @Builder.Default
     private Date getTime = new Date();
+
     /**
      * 能否过期
      */
     @Builder.Default
     private boolean canItExpire = false;
+
+    /**
+     * 过期时间(天)
+     */
+    private Integer expire;
     /**
      * 过期时间
      */

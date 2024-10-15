@@ -42,9 +42,15 @@ public class PropsCard extends PropBase implements Serializable {
     public final static String SIGN_IN = "sign-in";
 
     /**
+     * 签到月卡
+     */
+    public final static String MONTHLY = "sign-monthly";
+
+    /**
      * 医保卡
      */
     public final static String HEALTH = "health";
+
 
     /**
      * 道具卡状态
