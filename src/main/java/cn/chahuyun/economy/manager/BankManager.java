@@ -9,6 +9,7 @@ import cn.chahuyun.economy.entity.bank.BankInfo;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
+import cn.chahuyun.economy.utils.ShareUtils;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.cron.CronUtil;
@@ -229,7 +230,7 @@ class BankInterestTask implements Task {
                 Map<EconomyAccount, Double> accountByBank = EconomyUtil.getAccountByBank();
                 for (Map.Entry<EconomyAccount, Double> entry : accountByBank.entrySet()) {
                     UserInfo userInfo = UserManager.getUserInfo(entry.getKey());
-                    double v = entry.getValue() * (interest / 100.0);
+                    double v = ShareUtils.rounding(entry.getValue()) * (interest / 100.0);
                     v = Double.parseDouble(String.format("%.1f", v));
                     if (EconomyUtil.plusMoneyToBankForAccount(entry.getKey(), v)) {
                         userInfo.setBankEarnings(v);
