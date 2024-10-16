@@ -3,6 +3,7 @@ package cn.chahuyun.economy.entity.props;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.prop.PropBase;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
@@ -14,6 +15,7 @@ import lombok.experimental.SuperBuilder;
  */
 @Getter
 @Setter
+@NoArgsConstructor
 @SuperBuilder(toBuilder = true)
 public class FunctionProps extends PropBase {
 
