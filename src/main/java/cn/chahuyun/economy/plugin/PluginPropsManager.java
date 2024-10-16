@@ -45,13 +45,13 @@ public class PluginPropsManager {
         PropsCard signDouble = stack
                 .code(PropsCard.SIGN_2)
                 .name("签到双倍金币卡")
-                .description("\"不要999，不要888，只要99金币，你的下一次签到将翻倍！\"")
-                .cost(99).build();
+                .description("\"不要999，不要888，只要88金币，你的下一次签到将翻倍！\"")
+                .cost(88).build();
         PropsCard signTriple = stack
                 .code(PropsCard.SIGN_3)
                 .name("签到三倍金币卡")
-                .description("\"不要999，不要888，只要299金币，你的下一次签到将翻三倍！\"")
-                .cost(299).build();
+                .description("\"不要999，不要888，只要188金币，你的下一次签到将翻三倍！\"")
+                .cost(188).build();
 
         PropsCard signIn = stack
                 .code(PropsCard.SIGN_IN)
