@@ -7,6 +7,7 @@ import cn.chahuyun.economy.entity.props.PropsData;
 import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.prop.PropsShop;
+import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.cron.CronUtil;
@@ -25,8 +26,12 @@ public class PluginPropsManager {
 
     public static void init() {
 
-        PropsManager.registerProp(PropsKind.card, PropsCard.class);
-        PropsManager.registerProp(PropsKind.functionProp, FunctionProps.class);
+        if (PropsManager.registerProp(PropsKind.card, PropsCard.class)) {
+            Log.debug("card 注册成功!");
+        }
+        if (PropsManager.registerProp(PropsKind.functionProp, FunctionProps.class)) {
+            Log.debug("functionProp 注册成功!");
+        }
 
 
         PropsCard.PropsCardBuilder<?, ?> stack = PropsCard.builder()
