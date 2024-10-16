@@ -155,11 +155,8 @@ public class RobManager {
             if (PropsManager.useAndUpdate(prop, atUser)) {
                 atUserFactor.setDodge(atUserFactor.getDodge() + 0.2);
                 atUserFactor.setIrritable(atUserFactor.getIrritable() + 0.4);
-                group.sendMessage(MessageUtil.formatMessageChain(message, "你携带了便携电棒，攻击性变强了!"));
-            } else {
-                group.sendMessage(MessageUtil.formatMessageChain(message, "你的电棒好像有点问题.."));
+                group.sendMessage(MessageUtil.formatMessageChain(message, "对方掏出了便携电棒，局势变得紧张了起来!"));
             }
-
         }
 
 
