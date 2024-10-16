@@ -76,7 +76,8 @@ public abstract class PropBase implements Serializable {
     /**
      * 数量
      */
-    private Integer num;
+    @Builder.Default
+    private Integer num = 0;
     /**
      * 获得时间
      */
@@ -92,7 +93,8 @@ public abstract class PropBase implements Serializable {
     /**
      * 过期时间(天)
      */
-    private Integer expire;
+    @Builder.Default
+    private Integer expire = -1;
     /**
      * 过期时间
      */
