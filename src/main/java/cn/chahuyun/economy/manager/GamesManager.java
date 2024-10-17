@@ -149,25 +149,29 @@ public class GamesManager {
         //钓鱼佬称号buff
         boolean isFishing = TitleManager.checkTitleIsExist(userInfo, TitleCode.FISHING);
 
-        //钓鱼冷却
-        if (playerCooling.containsKey(userInfo.getQq())) {
-            Date date = playerCooling.get(userInfo.getQq());
-            long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
-            int expired = 10;
-            if (isFishing) {
-                expired = 3;
+
+        synchronized (playerCooling) {
+            //钓鱼冷却
+            if (playerCooling.containsKey(userInfo.getQq())) {
+                Date date = playerCooling.get(userInfo.getQq());
+                long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
+                int expired = 10;
+                if (isFishing) {
+                    expired = 3;
+                } else {
+                    expired = ((expired * 60) - (fishInfo.getRodLevel() * 3)) / 60;
+                }
+                if (between < expired) {
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你还差%s分钟来抛第二杆!", expired - between));
+                    return;
+                } else {
+                    playerCooling.remove(userInfo.getQq());
+                }
             } else {
-                expired = ((expired * 60) - (fishInfo.getRodLevel() * 3)) / 60;
+                playerCooling.put(userInfo.getQq(), new Date());
             }
-            if (between < expired) {
-                subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你还差%s分钟来抛第二杆!", expired - between));
-                return;
-            } else {
-                playerCooling.remove(userInfo.getQq());
-            }
-        } else {
-            playerCooling.put(userInfo.getQq(), new Date());
         }
+
 
         //获取鱼塘
         FishPond fishPond = fishInfo.getFishPond(subject);
