@@ -5,6 +5,7 @@ import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.props.PropsData;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.json.JSONConfig;
 import cn.hutool.json.JSONUtil;
 
 import java.util.Date;
@@ -221,8 +222,8 @@ public class PropsManager {
         if (one == null) {
             throw new RuntimeException("该道具不存在！");
         }
-
-        return JSONUtil.toBean(one.getData(), tClass);
+        JSONConfig jsonConfig = JSONConfig.create().setIgnoreError(true);
+        return JSONUtil.toBean(one.getData(), jsonConfig, tClass);
     }
 
 

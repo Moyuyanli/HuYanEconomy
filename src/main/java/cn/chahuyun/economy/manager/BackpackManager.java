@@ -9,6 +9,7 @@ import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
@@ -125,9 +126,22 @@ public class BackpackManager {
         for (int i = 1; i < split.length; i++) {
             long propId = Long.parseLong(split[i]);
 
-            String name = PropsManager.deserialization(propId, PropBase.class).getName();
-            delPropToBackpack(userInfo, propId);
-            builder.add(MessageUtil.formatMessage("\n你丢掉了你的 %s 。", name));
+            List<UserBackpack> backpacks = userInfo.getBackpacks();
+            boolean match = false;
+            for (UserBackpack backpack : backpacks) {
+                if (backpack.getPropId().equals(propId)) {
+                    PropBase prop = PropsManager.getProp(backpack);
+                    String name = prop.getName();
+                    delPropToBackpack(userInfo, propId);
+                    builder.add(MessageUtil.formatMessage("\n你丢掉了你的 %s 。", name));
+                    match = true;
+                    break;
+                }
+            }
+
+            if (!match) {
+                builder.add(MessageUtil.formatMessage("\n没找到 %d 的道具。", propId));
+            }
         }
 
         group.sendMessage(builder.build());
@@ -161,6 +175,7 @@ public class BackpackManager {
                 break; // 找到后可以跳出循环
             }
         }
+        HibernateFactory.merge(userInfo);
     }
 
     /**
