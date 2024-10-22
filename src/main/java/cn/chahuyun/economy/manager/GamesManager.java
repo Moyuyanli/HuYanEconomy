@@ -30,6 +30,7 @@ import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.User;
+import net.mamoe.mirai.event.ConcurrencyKind;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.*;
@@ -111,7 +112,8 @@ public class GamesManager {
      */
     @MessageAuthorize(
             text = {"钓鱼", "抛竿"},
-            groupPermissions = EconPerm.FISH_PERM
+            groupPermissions = EconPerm.FISH_PERM,
+            concurrency = ConcurrencyKind.LOCKED
     )
     public static void fishing(GroupMessageEvent event) {
         Log.info("钓鱼指令");
