@@ -97,7 +97,13 @@ public class PropsManager {
      * @return 对应的道具实例
      */
     public static PropBase getProp(UserBackpack backpack) {
-        return deserialization(backpack.getPropId(), propsClassMap.get(backpack.getPropKind()));
+        PropBase base = null;
+        try {
+            base = deserialization(backpack.getPropId(), propsClassMap.get(backpack.getPropKind()));
+        } catch (Exception e) {
+            HibernateFactory.delete(backpack);
+        }
+        return base;
     }
 
     /**

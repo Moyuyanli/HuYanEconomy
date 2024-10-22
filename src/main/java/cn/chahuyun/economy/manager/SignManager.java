@@ -223,9 +223,10 @@ public class SignManager {
         List<UserBackpack> backpacks = userInfo.getBackpacks();
         ArrayList<UserBackpack> list = new ArrayList<>(backpacks);
 
+        Class<PropsCard> cardClass = PropsCard.class;
         if (BackpackManager.checkPropInUser(userInfo, PropsCard.MONTHLY)) {
             UserBackpack prop = userInfo.getProp(PropsCard.MONTHLY);
-            if (PropsManager.getProp(prop, PropsCard.class).isStatus()) {
+            if (PropsManager.getProp(prop, cardClass).isStatus()) {
                 event.setSign_2(true);
                 event.setSign_3(true);
                 multiples += 4;
@@ -238,7 +239,12 @@ public class SignManager {
             Long propId = backpack.getPropId();
             switch (backpack.getPropCode()) {
                 case PropsCard.SIGN_2:
-                    card = PropsManager.deserialization(backpack.getPropId(), PropsCard.class);
+                    try {
+                        card = PropsManager.deserialization(propId, cardClass);
+                    } catch (Exception e) {
+                        BackpackManager.delPropToBackpack(userInfo,propId);
+                        continue;
+                    }
                     if (event.isSign_2()) {
                         continue;
                     }
@@ -251,7 +257,12 @@ public class SignManager {
 
                     break;
                 case PropsCard.SIGN_3:
-                    card = PropsManager.deserialization(backpack.getPropId(), PropsCard.class);
+                    try {
+                        card = PropsManager.deserialization(propId, cardClass);
+                    } catch (Exception e) {
+                        BackpackManager.delPropToBackpack(userInfo,propId);
+                        continue;
+                    }
                     if (event.isSign_3()) {
                         continue;
                     }
@@ -263,7 +274,12 @@ public class SignManager {
                     }
                     break;
                 case PropsCard.SIGN_IN:
-                    card = PropsManager.deserialization(backpack.getPropId(), PropsCard.class);
+                    try {
+                        card = PropsManager.deserialization(propId, cardClass);
+                    } catch (Exception e) {
+                        BackpackManager.delPropToBackpack(userInfo,propId);
+                        continue;
+                    }
                     if (event.isSign_in()) {
                         continue;
                     }
