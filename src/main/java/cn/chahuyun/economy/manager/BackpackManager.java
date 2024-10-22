@@ -56,6 +56,9 @@ public class BackpackManager {
 
         for (UserBackpack backpack : backpacks) {
             PropBase prop = PropsManager.getProp(backpack);
+            if (prop == null) {
+                continue;
+            }
             iNodes.add(bot, new PlainText(String.format("物品id:%d%n%s", backpack.getPropId(), prop.toString())));
         }
 
