@@ -170,6 +170,7 @@ public class BackpackManager {
         while (iterator.hasNext()) {
             UserBackpack backpack = iterator.next();
             if (backpack.getPropId().equals(id)) {
+                HibernateFactory.delete(backpack);
                 iterator.remove(); // 使用 Iterator 的 remove 方法
                 PropsManager.destroyPros(id);
                 break; // 找到后可以跳出循环
