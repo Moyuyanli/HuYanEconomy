@@ -30,7 +30,6 @@ import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.User;
-import net.mamoe.mirai.event.ConcurrencyKind;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.*;
@@ -38,7 +37,12 @@ import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.query.criteria.JpaRoot;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -57,7 +61,8 @@ public class GamesManager {
     /**
      * 玩家钓鱼冷却
      */
-    private static final Map<Long, Date> playerCooling = new HashMap<>();
+    private final ConcurrentHashMap<Long, Date> playerCooling = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, AtomicBoolean> isProcessing = new ConcurrentHashMap<>();
 
 
     public static void init() {
@@ -112,10 +117,9 @@ public class GamesManager {
      */
     @MessageAuthorize(
             text = {"钓鱼", "抛竿"},
-            groupPermissions = EconPerm.FISH_PERM,
-            concurrency = ConcurrencyKind.LOCKED
+            groupPermissions = EconPerm.FISH_PERM
     )
-    public static void fishing(GroupMessageEvent event) {
+    public void fishing(GroupMessageEvent event) {
         Log.info("钓鱼指令");
 
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
@@ -151,29 +155,9 @@ public class GamesManager {
         //钓鱼佬称号buff
         boolean isFishing = TitleManager.checkTitleIsExist(userInfo, TitleCode.FISHING);
 
-
-        synchronized (playerCooling) {
-            //钓鱼冷却
-            if (playerCooling.containsKey(userInfo.getQq())) {
-                Date date = playerCooling.get(userInfo.getQq());
-                long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
-                int expired = 10;
-                if (isFishing) {
-                    expired = 3;
-                } else {
-                    expired = ((expired * 60) - (fishInfo.getRodLevel() * 3)) / 60;
-                }
-                if (between < expired) {
-                    subject.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你还差%s分钟来抛第二杆!", expired - between));
-                    return;
-                } else {
-                    playerCooling.remove(userInfo.getQq());
-                }
-            } else {
-                playerCooling.put(userInfo.getQq(), new Date());
-            }
+        if (checkAndProcessFishing(userInfo.getQq(), isFishing, fishInfo, subject, event.getMessage())) {
+            return;
         }
-
 
         //获取鱼塘
         FishPond fishPond = fishInfo.getFishPond(subject);
@@ -520,7 +504,6 @@ public class GamesManager {
             }
             return true;
         });
-        playerCooling.clear();
         if (status) {
             event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "钓鱼状态刷新成功!"));
         } else {
@@ -627,6 +610,54 @@ public class GamesManager {
 
     //===================================================================================
 
+
+    /**
+     * 检查是否在钓鱼冷却
+     * @param qq qq
+     * @param isFishing 是否装备钓鱼称号
+     * @param fishInfo 钓鱼信息
+     * @param subject 载体
+     * @param chain 消息
+     * @return true  还在冷却
+     */
+
+    private boolean checkAndProcessFishing(long qq, boolean isFishing, FishInfo fishInfo, Contact subject, MessageChain   chain) {
+        // 检查是否已经在处理中
+        if (isProcessing.putIfAbsent(qq, new AtomicBoolean(true)) != null) {
+            // 已经有其他线程在处理该QQ号
+            subject.sendMessage(MessageUtil.formatMessageChain(chain, "请稍后再试!"));
+            return isFishing;
+        }
+
+        try {
+            // 钓鱼冷却
+            if (playerCooling.containsKey(qq)) {
+                Date date = playerCooling.get(qq);
+                long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
+                int expired = 10; // 默认冷却时间
+                if (isFishing) {
+                    expired = 3; // 如果是钓鱼，则冷却时间为3分钟
+                } else {
+                    expired = ((expired * 60) - (fishInfo.getRodLevel() * 3)) / 60;
+                }
+                if (between < expired) {
+                    // 冷却未过期
+                    subject.sendMessage(MessageUtil.formatMessageChain(chain, "你还差%s分钟来抛第二杆!", expired - between));
+                    return true;
+                } else {
+                    // 冷却已过期，移除冷却信息
+                    playerCooling.remove(qq);
+                }
+            }
+
+            // 更新冷却时间
+            playerCooling.put(qq, new Date());
+            return false;
+        } finally {
+            // 处理完成后，清理标记
+            isProcessing.remove(qq);
+        }
+    }
 
     private static boolean failedFishing(UserInfo userInfo, User user, Group subject, FishInfo fishInfo, String[] errorMessages) {
         int randomed = RandomUtil.randomInt(0, 101);
