@@ -1,8 +1,10 @@
 package cn.chahuyun.economy.repair
 
+import cn.chahuyun.economy.entity.UserBackpack
 import cn.chahuyun.economy.entity.fish.FishPond
 import cn.chahuyun.economy.entity.fish.FishRanking
 import cn.chahuyun.economy.entity.rob.RobInfo
+import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.hibernateplus.HibernateFactory
 import java.sql.Connection
 
@@ -26,6 +28,10 @@ object RepairManager {
         if (!RobRepair().repair()) {
             return "抢劫错误数据修复失败!"
         }
+        if (!PropRepair().repair()) {
+            return "道具错误数据修复失败!"
+        }
+
         return "修复完成"
     }
 
@@ -114,6 +120,26 @@ class RobRepair : Repair {
             .filter { it.nowTime == null }
             .forEach { `object`: RobInfo? -> HibernateFactory.delete(`object`) }
 
+        return true
+    }
+
+}
+
+
+class PropRepair : Repair {
+    /**
+     * 修复
+     */
+    override fun repair(): Boolean {
+        val list = HibernateFactory.selectList(UserBackpack::class.java)
+
+        for (userBackpack in list) {
+            try {
+                PropsManager.getProp(userBackpack)
+            } catch (e: Exception) {
+                HibernateFactory.delete(userBackpack)
+            }
+        }
         return true
     }
 
