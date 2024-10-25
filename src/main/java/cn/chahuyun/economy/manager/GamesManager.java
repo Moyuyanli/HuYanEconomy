@@ -370,9 +370,6 @@ public class GamesManager {
 
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user;
-        if (userInfo == null) {
-            return;
-        }
         user = userInfo.getUser();
         FishInfo fishInfo = userInfo.getFishInfo();
 
