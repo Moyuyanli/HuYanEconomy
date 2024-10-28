@@ -22,13 +22,11 @@ import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import lombok.val;
-import net.mamoe.mirai.contact.AvatarSpec;
-import net.mamoe.mirai.contact.Contact;
-import net.mamoe.mirai.contact.Group;
-import net.mamoe.mirai.contact.User;
+import net.mamoe.mirai.contact.*;
 import net.mamoe.mirai.event.EventKt;
 import net.mamoe.mirai.event.EventPriority;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
@@ -301,8 +299,26 @@ public class SignManager {
         }
 
         event.setGold(event.getGold() * multiples);
-
     }
+
+
+    @MessageAuthorize(text = "刷新签到",
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN})
+    public void refreshSign(GroupMessageEvent event) {
+        Group group = event.getGroup();
+        Member sender = event.getSender();
+
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+
+        DateTime dateTime = DateUtil.offsetDay(userInfo.getSignTime(), -1);
+
+        userInfo.setSignTime(dateTime);
+
+        HibernateFactory.merge(userInfo);
+
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "签到刷新成功!"));
+    }
+
 
     //============================================================================
 
