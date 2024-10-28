@@ -182,15 +182,17 @@ public class RobManager {
 
             double atMoney = EconomyUtil.getMoneyByUser(member);
 
+            double thatLowMoney = 50;
+
             //对方没钱
-            if (atMoney < 1) {
+            if (atMoney < thatLowMoney) {
                 int hit = RandomUtil.randomInt(0, 101);
 
                 int irritable = ShareUtils.percentageToInt(userFactor.getIrritable());
 
                 //打他一顿
                 if (hit <= irritable) {
-                    group.sendMessage(MessageUtil.formatMessageChain(message, "你把他全身搜了个遍，连1块钱都拿不出来，你气不过，打了他一顿，把他打进医院了。"));
+                    group.sendMessage(MessageUtil.formatMessageChain(message, "你把他全身搜了个遍，连%.0f块钱都拿不出来，你气不过，打了他一顿，把他打进医院了。", thatLowMoney));
 
                     UserStatusManager.moveHospital(atUser, RandomUtil.randomInt(50, 501));
                 } else {
