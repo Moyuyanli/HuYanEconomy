@@ -9,7 +9,6 @@ import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
-import cn.chahuyun.hibernateplus.HibernateFactory;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
@@ -17,7 +16,6 @@ import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.data.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -169,17 +167,18 @@ public class BackpackManager {
      */
     public static void delPropToBackpack(UserInfo userInfo, Long id) {
         List<UserBackpack> backpacks = userInfo.getBackpacks();
-        Iterator<UserBackpack> iterator = backpacks.iterator();
-        while (iterator.hasNext()) {
-            UserBackpack backpack = iterator.next();
+
+        UserBackpack find = null;
+        for (UserBackpack backpack : backpacks) {
             if (backpack.getPropId().equals(id)) {
-                HibernateFactory.delete(backpack);
-                iterator.remove(); // 使用 Iterator 的 remove 方法
-                PropsManager.destroyPros(id);
-                break; // 找到后可以跳出循环
+                find = backpack;
+                break;
             }
         }
-        HibernateFactory.merge(userInfo);
+
+        userInfo.removePropInBackpack(find);
+
+        PropsManager.destroyPros(id);
     }
 
     /**

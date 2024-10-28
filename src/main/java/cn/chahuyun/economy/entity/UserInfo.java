@@ -80,9 +80,9 @@ public class UserInfo implements Serializable {
     /**
      * 道具背包
      */
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.ALL,orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "UserInfo_id")
-    private List<UserBackpack> backpacks = new ArrayList<>();
+        private List<UserBackpack> backpacks = new ArrayList<>();
 
 
     @Transient
@@ -132,7 +132,6 @@ public class UserInfo implements Serializable {
             return false;
         } else if (between <= 1440) {
             this.setSignNumber(this.getSignNumber() + 1);
-            this.setOldSignNumber(0);
         } else {
             this.setOldSignNumber(this.getSignNumber());
             this.setSignNumber(1);
