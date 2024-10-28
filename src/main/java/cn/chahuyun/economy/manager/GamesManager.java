@@ -178,6 +178,9 @@ public class GamesManager {
                 userInfo.getName(), fishPond.getName(), fishPond.getPondLevel(), fishPond.getMinLevel(), fishPond.getDescription()));
         Log.info(String.format("%s开始钓鱼", userInfo.getName()));
 
+        fishInfo.setStatus(true);
+        HibernateFactory.merge(fishInfo);
+
         //初始钓鱼信息
         boolean theRod = false;
         int difficultyMin = 0;

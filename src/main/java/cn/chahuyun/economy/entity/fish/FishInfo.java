@@ -209,13 +209,15 @@ public class FishInfo implements Serializable {
      *
      * @return true 在钓鱼
      */
-    public synchronized boolean isStatus() {
-        if (status) {
-            return true;
-        } else {
-            status = true;
-            HibernateFactory.merge(this);
-            return false;
+    public boolean isStatus() {
+        synchronized (this) {
+            if (status) {
+                return true;
+            } else {
+                status = true;
+                HibernateFactory.merge(this);
+                return false;
+            }
         }
     }
 
