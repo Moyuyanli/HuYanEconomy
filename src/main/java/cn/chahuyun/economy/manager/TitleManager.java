@@ -67,7 +67,10 @@ public class TitleManager {
                         "[17张牌能秒我?]", new Color(0xFF0000), new Color(0x730000)),
                 new TitleTemplateSimpleImpl(TitleCode.ROB, TitleCode.ROB_EXPIRED, "街区传说",
                         false, true,
-                        "[师承窃格瓦拉]", new Color(0x2261DC), null));
+                        "[师承窃格瓦拉]", new Color(0x2261DC), null),
+                new TitleTemplateSimpleImpl(TitleCode.SIGN_90,TitleCode.SIGN_90_EXPIRED,"签到大王",
+                        true,true,
+                        "[无敌超级签到大王•神]",new Color(0x622774),new Color(0xc53364)));
 
 
         //修改版本迭代带来的错误数据
@@ -412,6 +415,15 @@ public class TitleManager {
             MessageChainBuilder builder = new MessageChainBuilder();
             builder.append(new At(userInfo.getQq()));
             builder.append("恭喜!你已经连续签到 15 天,获得15天称号 签到狂人 !");
+            subject.sendMessage(builder.build());
+        } else if (signNumber >= 90) {
+            if (checkTitleIsExist(userInfo, TitleCode.SIGN_90)) {
+                return;
+            }
+            addTitleInfo(userInfo, TitleCode.SIGN_90);
+            MessageChainBuilder builder = new MessageChainBuilder();
+            builder.append(new At(userInfo.getQq()));
+            builder.append("恭喜!你已经连续签到 90 天,获得 365 天称号 签到大王 !");
             subject.sendMessage(builder.build());
         }
     }

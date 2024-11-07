@@ -216,6 +216,9 @@ public class SignManager {
         if (TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.SIGN_15)) {
             multiples += 1;
             event.eventReplyAdd(MessageUtil.formatMessageChain("装备签到狂人称号，本次签到奖励翻倍!"));
+        } else if (TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.SIGN_90)) {
+            multiples += 4;
+            event.eventReplyAdd(MessageUtil.formatMessageChain("装备签到大王称号，本次签到奖励翻5倍!"));
         }
 
         List<UserBackpack> backpacks = userInfo.getBackpacks();
@@ -240,7 +243,7 @@ public class SignManager {
                     try {
                         card = PropsManager.deserialization(propId, cardClass);
                     } catch (Exception e) {
-                        BackpackManager.delPropToBackpack(userInfo,propId);
+                        BackpackManager.delPropToBackpack(userInfo, propId);
                         continue;
                     }
                     if (event.isSign_2()) {
@@ -258,7 +261,7 @@ public class SignManager {
                     try {
                         card = PropsManager.deserialization(propId, cardClass);
                     } catch (Exception e) {
-                        BackpackManager.delPropToBackpack(userInfo,propId);
+                        BackpackManager.delPropToBackpack(userInfo, propId);
                         continue;
                     }
                     if (event.isSign_3()) {
@@ -275,7 +278,7 @@ public class SignManager {
                     try {
                         card = PropsManager.deserialization(propId, cardClass);
                     } catch (Exception e) {
-                        BackpackManager.delPropToBackpack(userInfo,propId);
+                        BackpackManager.delPropToBackpack(userInfo, propId);
                         continue;
                     }
                     if (event.isSign_in()) {

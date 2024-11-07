@@ -14,6 +14,14 @@ public class TitleCode {
      * 签到15天称号-默认过期时间
      */
     public final static Integer SIGN_15_EXPIRED = 15;
+    /**
+     * 签到90天称号
+     */
+    public final static String SIGN_90 = "sign-90";
+    /**
+     * 签到90天称号-默认过期时间
+     */
+    public final static Integer SIGN_90_EXPIRED = 365;
 
 
     /**

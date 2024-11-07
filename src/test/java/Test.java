@@ -24,7 +24,7 @@ import java.util.Date;
 public class Test {
 
     public static void main(String[] args) throws Exception {
-        timeTest();
+        imageTest();
     }
 
     public static void timeTest() {
@@ -41,7 +41,7 @@ public class Test {
                 "template", -1,
                 "模板", 0.0,
                 false, false, "[模板]",
-                "#00000", "#ffffff");
+                "#8e44ad", "#2ed573");
         JSONObject entries = JSONUtil.parseObj(titleTemplateSimple);
         System.out.printf("json-> %s",entries.toStringPretty());
     }
@@ -50,21 +50,21 @@ public class Test {
     public static void imageTest() throws Exception {
 
 //        int i = RandomUtil.randomInt(1, 9);
-        BufferedImage background = ImageIO.read(new File("D:\\ideaProjects\\github\\HuYanEconomy\\HuYanEconomy\\src\\test\\java\\bottom" + 3 + ".png"));
+        BufferedImage background = ImageIO.read(new File("D:\\ideaProjects\\github\\HuYanEconomy\\src\\test\\java\\bottom3.png"));
         int height = background.getHeight();
         System.out.println("height->" + height);
         int width = background.getWidth();
         System.out.printf("width -> %s %n", width);
 
 
-        BufferedImage bottom = ImageIO.read(new File("D:\\ideaProjects\\github\\HuYanEconomy\\HuYanEconomy\\src\\test\\java\\bottom.png"));
+        BufferedImage bottom = ImageIO.read(new File("D:\\ideaProjects\\github\\HuYanEconomy\\src\\test\\java\\bottom.png"));
 
         height = bottom.getHeight();
         width = bottom.getWidth();
         System.out.printf("height -> %s %n", height);
         System.out.printf("width -> %s %n", width);
 
-        File fontFile = new File("D:\\ideaProjects\\github\\HuYanEconomy\\HuYanEconomy\\src\\test\\java\\Maple UI.ttf");
+        File fontFile = new File("D:\\ideaProjects\\github\\HuYanEconomy\\src\\test\\java\\Maple UI.ttf");
         Font customFont = Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(24f);
 
         System.out.printf("font %s %n", customFont.getName());
@@ -116,15 +116,17 @@ public class Test {
         g2d.setFont(customFont.deriveFont(20f));
         g2d.setColor(ImageUtil.hexColor("f44336"));
         g2d.drawString("572490972", ImageDrawXY.ID.getX(), ImageDrawXY.ID.getY());
+        Color sColor = new Color(0x622774);
+        Color eColor = new Color(0xc53364);
         drawStringGradient("[是放空!]",ImageDrawXY.TITLE.getX(), ImageDrawXY.TITLE.getY(),
-                ImageUtil.hexColor("f50057"),
-                ImageUtil.hexColor("e1f5c4"),
+                sColor,
+                eColor,
                 g2d
         );
         g2d.setFont(customFont.deriveFont(Font.BOLD,60f));
         drawStringGradient("放空",230,200,
-                ImageUtil.hexColor("fce38a"),
-                ImageUtil.hexColor("f38181 "),
+                sColor,
+                eColor,
                 g2d);
 
         g2d.setFont(customFont);
