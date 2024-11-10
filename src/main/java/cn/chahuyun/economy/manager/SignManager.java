@@ -113,7 +113,7 @@ public class SignManager {
             messages.add(reply);
         }
         if (userInfo.getOldSignNumber() != 0) {
-            messages.append(String.format("\n你的连签线断在了%d天,可惜~", userInfo.getOldSignNumber()));
+            messages.append(String.format("你的连签线断在了%d天,可惜~", userInfo.getOldSignNumber()));
         }
 
         TitleManager.checkSignTitle(userInfo, subject);

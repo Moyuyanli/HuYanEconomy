@@ -75,6 +75,9 @@ public class ImageUtil {
 
         // 将文本按行分割
         for (String line : text.split("\n")) {
+            if (line.isBlank()) {
+                continue;
+            }
 
             // 创建TextLayout
             TextLayout layout = new TextLayout(line, font, frc);
