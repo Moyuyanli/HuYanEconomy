@@ -14,7 +14,10 @@ import net.mamoe.mirai.message.data.At;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.SingleMessage;
 
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,7 +31,6 @@ import java.util.regex.Pattern;
 public class ShareUtils {
 
     private static ExecutorService executorService;
-    private static final ConcurrentHashMap<Future<MessageEvent>, Boolean> futureMap = new ConcurrentHashMap<>();
 
     private ShareUtils() {
     }
@@ -50,38 +52,30 @@ public class ShareUtils {
      * @date 2022/8/20 12:37
      */
     public static MessageEvent getNextMessageEventFromUser(User user, Contact subject) {
-        CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<MessageEvent> result = new AtomicReference<>();
-        GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE)
-                .filterIsInstance(MessageEvent.class)
-                .filter(filter -> filter.getSubject().getId() == subject.getId() && filter.getSender().getId() == user.getId())
-                .subscribeOnce(MessageEvent.class, event -> {
-                    result.set(event);
-                    latch.countDown();
-                });
+        CountDownLatch latch = new CountDownLatch(1);
 
-        Future<MessageEvent> future = executorService.submit(() -> {
-            try {
-                if (latch.await(10, TimeUnit.MINUTES)) {
-                    return result.get();
-                } else {
-                    Log.debug("获取用户下一条消息超时");
-                    return null;
-                }
-            } catch (InterruptedException e) {
-                Log.debug("获取用户下一条消息被中断");
-                return null;
-            }
+        executorService.submit(() -> {
+            GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE)
+                    .filterIsInstance(MessageEvent.class)
+                    .filter(filter -> filter.getSubject().getId() == subject.getId() && filter.getSender().getId() == user.getId())
+                    .subscribeOnce(MessageEvent.class, event -> {
+                        result.set(event);
+                        latch.countDown();
+                    });
         });
 
-        futureMap.put(future, true); // 记录这个future
-
         try {
-            return future.get(10, TimeUnit.MINUTES); // 等待最多10分钟
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            throw new RuntimeException(e);
-        } finally {
-            futureMap.remove(future); // 无论成功还是失败，移除future
+            if (latch.await(10, TimeUnit.MINUTES)) {
+                return result.get();
+            } else {
+                Log.debug("获取用户下一条消息超时");
+                return null;
+            }
+        } catch (InterruptedException e) {
+            Log.debug("获取用户下一条消息被中断");
+            Thread.currentThread().interrupt(); // 恢复中断状态
+            return null;
         }
     }
 
@@ -161,16 +155,10 @@ public class ShareUtils {
      * 优雅地关闭所有线程并取消所有任务
      */
     public static void shutdown() {
-        // 取消所有记录的future
-        for (Future<MessageEvent> future : futureMap.keySet()) {
-            future.cancel(true);
-        }
-        futureMap.clear();
-
         // 关闭executorService
         executorService.shutdownNow();
         try {
-            if (!executorService.awaitTermination(1, TimeUnit.SECONDS)) {
+            if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
                 executorService.shutdownNow();
             }
         } catch (InterruptedException e) {
