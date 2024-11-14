@@ -17,4 +17,9 @@ public class PropsKind {
      */
     public final static String functionProp = "F_PROP";
 
+    /**
+     * 鱼饵
+     */
+    public final static String fishBait = "FISH_BAIT";
+
 }

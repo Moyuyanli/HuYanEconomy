@@ -1,6 +1,7 @@
 package cn.chahuyun.economy.plugin;
 
 import cn.chahuyun.economy.constant.PropsKind;
+import cn.chahuyun.economy.entity.fish.FishBait;
 import cn.chahuyun.economy.entity.props.FunctionProps;
 import cn.chahuyun.economy.entity.props.PropsCard;
 import cn.chahuyun.economy.entity.props.PropsData;
@@ -31,6 +32,9 @@ public class PluginPropsManager {
         }
         if (PropsManager.registerProp(PropsKind.functionProp, FunctionProps.class)) {
             Log.debug("functionProp 注册成功!");
+        }
+        if (PropsManager.registerProp(PropsKind.fishBait, FishBait.class)) {
+            Log.debug("fishBait 注册成功!");
         }
 
 
@@ -75,7 +79,7 @@ public class PluginPropsManager {
                 .expire(30)
                 .stack(false);
 
-        PropsCard monthly = stack
+        PropsCard monthly = expireStack
                 .code(PropsCard.MONTHLY)
                 .name("签到月卡")
                 .description("持续一个月的5倍经济，无法与签到卡同时生效!")
@@ -88,7 +92,7 @@ public class PluginPropsManager {
         PropsShop.addShop(PropsCard.SIGN_IN, signIn);
         PropsShop.addShop(PropsCard.HEALTH, health);
 
-        PropsShop.addShop(PropsCard.MONTHLY,monthly);
+        PropsShop.addShop(PropsCard.MONTHLY, monthly);
 
 
         FunctionProps baton = FunctionProps.builder()
@@ -104,7 +108,57 @@ public class PluginPropsManager {
                 .cost(1888)
                 .electricity(100).build();
 
-        PropsShop.addShop(FunctionProps.ELECTRIC_BATON,baton);
+        PropsShop.addShop(FunctionProps.ELECTRIC_BATON, baton);
+
+
+        FishBait.FishBaitBuilder<?, ?> fishBait = FishBait.builder()
+                .kind(PropsKind.fishBait)
+                .unit("包")
+                .canBuy(true)
+                .reuse(true);
+
+        FishBait bait_1 = fishBait.code(FishBait.BAIT_1)
+                .num(25)
+                .level(1)
+                .quality(0.08f)
+                .name("基础鱼饵")
+                .cost(66)
+                .description("最基础的鱼饵，量大管饱(鱼管饱)").build();
+        FishBait bait_2 = fishBait.code(FishBait.BAIT_2)
+                .num(20)
+                .level(2)
+                .quality(0.15f)
+                .name("中级鱼饵")
+                .cost(269)
+                .description("中级鱼饵，闻着就有一股香味。").build();
+        FishBait bait_3 = fishBait.code(FishBait.BAIT_3)
+                .num(15)
+                .level(3)
+                .quality(0.25f)
+                .name("高级鱼饵")
+                .cost(588)
+                .description("除了贵，全是优点").build();
+        FishBait bait_l_1 = fishBait.code(FishBait.BAIT_L_1)
+                .num(18)
+                .level(4)
+                .quality(0.05f)
+                .name("特化型(香味)鱼饵")
+                .cost(450)
+                .description("袋子都封不住他的气味，看来传播性很好！").build();
+        FishBait bait_q_1 = fishBait.code(FishBait.BAIT_Q_1)
+                .num(18)
+                .level(2)
+                .quality(0.30f)
+                .name("特化型(口味)鱼饵")
+                .cost(350)
+                .description("我家鱼吃了都说好吃！").build();
+
+
+        PropsShop.addShop(FishBait.BAIT_1, bait_1);
+        PropsShop.addShop(FishBait.BAIT_2, bait_2);
+        PropsShop.addShop(FishBait.BAIT_3, bait_3);
+        PropsShop.addShop(FishBait.BAIT_L_1, bait_l_1);
+        PropsShop.addShop(FishBait.BAIT_Q_1, bait_q_1);
 
 
         CronUtil.schedule("0 0 4 * * ?", new PropExpireCheckTask());
