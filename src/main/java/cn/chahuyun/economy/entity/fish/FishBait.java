@@ -74,7 +74,7 @@ public class FishBait extends PropBase {
         return "鱼饵名称:" + this.getName() + "\n" +
                 "鱼饵等级:" + this.getLevel() + "\n" +
                 "鱼饵品质:" + this.getQuality() + "\n" +
-                "鱼饵使用次数:" + this.getNum() + "\n" +
+                "剩余使用次数:" + this.getNum() + "\n" +
                 "描述:" + this.getDescription();
     }
 
