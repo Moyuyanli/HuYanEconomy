@@ -169,6 +169,7 @@ public class UserInfo implements Serializable {
      * @param userBackpack 背包道具
      * @return true 成功
      */
+    @SuppressWarnings("UnusedReturnValue")
     public boolean removePropInBackpack(UserBackpack userBackpack) {
         return this.getBackpacks().remove(userBackpack);
     }

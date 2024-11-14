@@ -9,17 +9,20 @@ import cn.chahuyun.authorize.utils.UserUtil;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.constant.FishPondLevelConstant;
+import cn.chahuyun.economy.constant.PropsKind;
 import cn.chahuyun.economy.constant.TitleCode;
+import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
-import cn.chahuyun.economy.entity.fish.Fish;
-import cn.chahuyun.economy.entity.fish.FishInfo;
-import cn.chahuyun.economy.entity.fish.FishPond;
-import cn.chahuyun.economy.entity.fish.FishRanking;
+import cn.chahuyun.economy.entity.fish.*;
+import cn.chahuyun.economy.fish.FishRollEvent;
+import cn.chahuyun.economy.fish.FishStartEvent;
+import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.economy.utils.ShareUtils;
 import cn.chahuyun.hibernateplus.HibernateFactory;
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -29,7 +32,9 @@ import lombok.val;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
+import net.mamoe.mirai.contact.Member;
 import net.mamoe.mirai.contact.User;
+import net.mamoe.mirai.event.EventKt;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.*;
@@ -41,6 +46,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
@@ -108,6 +114,242 @@ public class GamesManager {
         CronUtil.schedule("0 0 12 * * ?", task);
     }
 
+
+    @MessageAuthorize(text = "新钓鱼", groupPermissions = EconPerm.FISH_PERM)
+    @SuppressWarnings("DuplicatedCode")
+    public void newFishing(GroupMessageEvent event) {
+        Log.info("钓鱼指令");
+        Group subject = event.getSubject();
+        Member sender = event.getSender();
+        MessageChain message = event.getMessage();
+
+
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+        FishInfo fishInfo = userInfo.getFishInfo();
+
+
+        boolean fishTitle = TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.FISHING);
+
+        if (checkAndProcessFishing(userInfo, fishTitle, fishInfo, subject, message)) {
+            return;
+        }
+
+        if (UserStatusManager.checkUserNotInHome(userInfo) && !UserStatusManager.checkUserInFishpond(userInfo)) {
+            if (UserStatusManager.checkUserInHospital(userInfo)) {
+                subject.sendMessage(MessageUtil.formatMessageChain(message, "你还在医院躺着咧，怎么钓鱼?"));
+            } else if (UserStatusManager.checkUserInPrison(userInfo)) {
+                subject.sendMessage(MessageUtil.formatMessageChain(message, "在监狱就不要想钓鱼的事了..."));
+            }
+            playerCooling.remove(userInfo.getQq());
+            return;
+        }
+
+        UserStatusManager.moveFishpond(userInfo, 0);
+
+        FishPond fishPond = fishInfo.getFishPond(subject);
+
+        if (fishInfo.getLevel() > fishPond.getPondLevel()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(message, "你的鱼竿等级太低了，升级升级鱼竿再来吧！"));
+            playerCooling.remove(userInfo.getQq());
+            return;
+        }
+
+        if (fishInfo.isStatus()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(message, "你已经在钓鱼了!"));
+            playerCooling.remove(userInfo.getQq());
+            return;
+        }
+
+        FishStartEvent fishStartEvent = new FishStartEvent(userInfo, fishInfo);
+        EventKt.broadcast(fishStartEvent);
+
+        FishBait fishBait = fishStartEvent.getFishBait();
+        Integer maxGrade = fishStartEvent.getMaxGrade();
+        Integer maxDifficulty = fishStartEvent.getMaxDifficulty();
+        Integer minDifficulty = fishStartEvent.getMinDifficulty();
+
+        if (fishBait == null) {
+            subject.sendMessage(MessageUtil.formatMessageChain(message, "你没有鱼饵怎么钓？"));
+            fishInfo.switchStatus();
+            playerCooling.remove(userInfo.getQq());
+            return;
+        }
+
+        subject.sendMessage(MessageUtil.formatMessage("%s开始钓鱼\n鱼饵:%s\n鱼塘:%s\n等级:%s\n最低鱼竿等级:%s\n%s",
+                userInfo.getName(), fishBait.getName(), fishPond.getName(), fishPond.getPondLevel(), fishPond.getMinLevel(), fishPond.getDescription()));
+        Log.info(String.format("%s开始钓鱼", userInfo.getName()));
+
+
+        int offset = RandomUtil.randomInt(3, 11);
+        int randomed = RandomUtil.randomInt(0, 101);
+        float evolution;
+        if (randomed >= 70) {
+            evolution = RandomUtil.randomFloat(0.5f, 0.8f);
+        } else {
+            evolution = RandomUtil.randomFloat(0, 0.5f);
+        }
+
+        int pull;
+        int prompt;
+
+
+        if (fishTitle) {
+//            pull = RandomUtil.randomInt(10, 101);
+            pull = RandomUtil.randomInt(10, 60);
+        } else {
+//            pull = RandomUtil.randomInt(30, 151);
+            pull = RandomUtil.randomInt(10, 60);
+        }
+
+        Date planTime = DateUtil.offsetSecond(new Date(), pull);
+        prompt = pull - offset;
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                Thread.sleep(prompt * 1000L);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            subject.sendMessage(MessageUtil.formatMessageChain(userInfo.getQq(), "浮漂动了!"));
+        });
+
+
+        Date resultTime;
+        while (true) {
+            MessageEvent nextMessage = ShareUtils.getNextMessageEventFromUser(sender, subject);
+            if (nextMessage == null) {
+                fishInfo.switchStatus();
+                subject.sendMessage(MessageUtil.formatMessageChain(userInfo.getQq(), "你的鱼跑了!!!"));
+                return;
+            }
+            String content = nextMessage.getMessage().contentToString();
+            if (Pattern.matches("[拉起!！]", content)) {
+                resultTime = new Date();
+                break;
+            }
+        }
+
+        long between = DateUtil.between(planTime, resultTime, DateUnit.MS, true);
+
+        boolean surprise = false;
+        if (between <= 500) {
+            maxDifficulty = maxDifficulty * 2;
+            surprise = true;
+        } else if (between <= 1000) {
+            maxDifficulty = maxDifficulty * 2;
+        } else if (between <= 3000) {
+            maxGrade = maxGrade / 2;
+        } else {
+            failedFishing(userInfo, sender, subject, fishInfo);
+            return;
+        }
+
+        Float time = between / 1000f;
+
+        int minGrade = Math.round(evolution * fishBait.getLevel());
+
+        FishRollEvent fishRoll = new FishRollEvent(userInfo, fishInfo, fishPond, fishBait, time, evolution, maxGrade, minGrade, maxDifficulty, minDifficulty, surprise);
+        EventKt.broadcast(fishRoll);
+
+        Fish fish = fishRoll.getFish();
+
+        int dimensions = fish.getSurprise(surprise, evolution);
+        int money = fish.getPrice() * dimensions;
+        double v = money * (1 - fishPond.getRebate());
+        if (EconomyUtil.plusMoneyToUser(sender, v) && EconomyUtil.plusMoneyToPluginBankForId(fishPond.getCode(), fishPond.getDescription(), money * fishPond.getRebate())) {
+            fishPond.addNumber();
+            String format = String.format("\n起竿咯！\n%s\n等级:%s\n单价:%s\n尺寸:%d\n总金额:%d\n%s", fish.getName(), fish.getLevel(), fish.getPrice(), dimensions, money, fish.getDescription());
+            MessageChainBuilder messages = new MessageChainBuilder();
+            messages.append(new At(userInfo.getQq())).append(new PlainText(format));
+            subject.sendMessage(messages.build());
+        } else {
+            subject.sendMessage("钓鱼失败!");
+            playerCooling.remove(userInfo.getQq());
+        }
+        fishInfo.switchStatus();
+        FishRanking fishRanking = new FishRanking(userInfo.getQq(), userInfo.getName(), dimensions, money, fishInfo.getRodLevel(), fish, fishPond);
+        HibernateFactory.merge(fishRanking);
+        UserStatusManager.moveHome(userInfo);
+        TitleManager.checkFishTitle(userInfo, subject);
+    }
+
+
+    public static void fishStart(FishStartEvent event) {
+        UserInfo userInfo = event.getUserInfo();
+
+        List<UserBackpack> backpacks = userInfo.getBackpacks();
+        for (UserBackpack backpack : backpacks) {
+            if (backpack.getPropKind().equals(PropsKind.fishBait)) {
+                FishBait bait = PropsManager.getProp(backpack, FishBait.class);
+                if (bait.getNum() > 1) {
+                    PropsManager.useAndUpdate(backpack, userInfo);
+                    event.setFishBait(bait);
+                } else if (bait.getNum() == 1) {
+                    FishBait copy = BeanUtil.copyProperties(bait, FishBait.class);
+                    event.setFishBait(copy);
+                    BackpackManager.delPropToBackpack(userInfo, backpack.getPropId());
+                } else {
+                    FishBait fishBait = new FishBait();
+                    fishBait.setLevel(1);
+                    fishBait.setQuality(0.01f);
+                    fishBait.setName("空钩");
+                    event.setFishBait(fishBait);
+                    BackpackManager.delPropToBackpack(userInfo, backpack.getPropId());
+                }
+            }
+        }
+
+        event.setMaxDifficulty(event.getMaxDifficulty());
+        event.setMinDifficulty(event.getMinDifficulty());
+        event.setMaxGrade(event.getMaxGrade());
+    }
+
+    public static void fishRoll(FishRollEvent event) {
+        Integer minDifficulty = event.getMinDifficulty();
+        Integer maxDifficulty = event.getMaxDifficulty();
+        Integer minGrade = event.getMinGrade();
+        Integer maxGrade = event.getMaxGrade();
+
+        FishPond fishPond = event.getFishPond();
+
+        //roll等级
+        int rank = RandomUtil.randomInt(minGrade, maxGrade + 1);
+        Log.debug("钓鱼管理:roll等级min" + minGrade);
+        Log.debug("钓鱼管理:roll等级max" + maxGrade);
+        Log.debug("钓鱼管理:roll等级" + rank);
+
+        Fish fish;
+
+        while (true) {
+            //roll难度
+            int difficulty = RandomUtil.randomInt(minDifficulty, maxDifficulty + 1);
+            Log.debug("钓鱼管理:等级:" + rank + "-roll难度min" + minDifficulty);
+            Log.debug("钓鱼管理:等级:" + rank + "-roll难度max" + maxDifficulty);
+            Log.debug("钓鱼管理:等级:" + rank + "-roll难度" + difficulty);
+
+            //在所有鱼中拿到对应的鱼等级
+            List<Fish> levelFishList = fishPond.getFishList(rank);
+            //过滤掉难度不够的鱼
+            List<Fish> collect;
+            collect = levelFishList.stream()
+                    .filter(it -> it.getDifficulty() <= difficulty)
+                    .sorted(Comparator.comparing(Fish::getDescription))
+                    .collect(Collectors.toList());
+            //如果没有了
+            int size = collect.size();
+            if (size == 0) {
+                //降级重新roll难度处理
+                rank--;
+                continue;
+            }
+            //roll鱼
+            fish = collect.get(RandomUtil.randomInt(0, Math.min(6, size)));
+            break;
+        }
+
+        event.setFish(fish);
+    }
+
     /**
      * 开始钓鱼游戏
      *
@@ -155,7 +397,7 @@ public class GamesManager {
         //钓鱼佬称号buff
         boolean isFishing = TitleManager.checkTitleIsExist(userInfo, TitleCode.FISHING);
 
-        if (checkAndProcessFishing(userInfo.getQq(), isFishing, fishInfo, subject, event.getMessage())) {
+        if (checkAndProcessFishing(userInfo, isFishing, fishInfo, subject, event.getMessage())) {
             return;
         }
 
@@ -191,7 +433,6 @@ public class GamesManager {
         String[] successMessages = {"这不轻轻松松嘛~", "这鱼还没发力！", "慢慢的、慢慢的..."};
         String[] failureMessages = {"挂底了吗？", "怎么这么有劲？难道是大鱼？", "卧槽！卧槽！卧槽！"};
         String[] otherMessages = {"钓鱼就是这么简单", "一条小鱼也敢班门弄斧！", "收！收！收！~~"};
-        String[] errorMessages = {"风吹的...", "眼花了...", "走神了...", "呀！切线了...", "钓鱼佬绝不空军！"};
 
         //随机睡眠
         try {
@@ -280,7 +521,7 @@ public class GamesManager {
             pull++;
         }
         //空军
-        if (theRod && failedFishing(userInfo, user, subject, fishInfo, errorMessages)) {
+        if (theRod && failedFishing(userInfo, user, subject, fishInfo)) {
             return;
         }
 
@@ -305,7 +546,7 @@ public class GamesManager {
         boolean winning = false;
         while (true) {
             if (rank == 0) {
-                if (failedFishing(userInfo, user, subject, fishInfo, errorMessages)) return;
+                if (failedFishing(userInfo, user, subject, fishInfo)) return;
             }
             //roll难度
             int difficulty = RandomUtil.randomInt(difficultyMin, difficultyMax);
@@ -483,7 +724,7 @@ public class GamesManager {
             userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN},
             groupPermissions = EconPerm.FISH_PERM
     )
-    public static void refresh(MessageEvent event) {
+    public void refresh(MessageEvent event) {
         Log.info("刷新钓鱼指令");
 
         Boolean status = HibernateFactory.getSession().fromTransaction(session -> {
@@ -504,6 +745,9 @@ public class GamesManager {
             }
             return true;
         });
+
+        playerCooling.clear();
+
         if (status) {
             event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "钓鱼状态刷新成功!"));
         } else {
@@ -613,20 +857,22 @@ public class GamesManager {
 
     /**
      * 检查是否在钓鱼冷却
-     * @param qq qq
+     *
+     * @param userInfo  用户信息
      * @param isFishing 是否装备钓鱼称号
-     * @param fishInfo 钓鱼信息
-     * @param subject 载体
-     * @param chain 消息
+     * @param fishInfo  钓鱼信息
+     * @param subject   载体
+     * @param chain     消息
      * @return true  还在冷却
      */
 
-    private boolean checkAndProcessFishing(long qq, boolean isFishing, FishInfo fishInfo, Contact subject, MessageChain   chain) {
+    private boolean checkAndProcessFishing(UserInfo userInfo, boolean isFishing, FishInfo fishInfo, Contact subject, MessageChain chain) {
+        long qq = userInfo.getQq();
         // 检查是否已经在处理中
         if (isProcessing.putIfAbsent(qq, new AtomicBoolean(true)) != null) {
             // 已经有其他线程在处理该QQ号
             subject.sendMessage(MessageUtil.formatMessageChain(chain, "请稍后再试!"));
-            return isFishing;
+            return true;
         }
 
         try {
@@ -636,7 +882,7 @@ public class GamesManager {
                 long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
                 int expired = 10; // 默认冷却时间
                 if (isFishing) {
-                    expired = 3; // 如果是钓鱼，则冷却时间为3分钟
+                    expired = 5; // 如果是钓鱼，则冷却时间为5分钟
                 } else {
                     expired = ((expired * 60) - (fishInfo.getRodLevel() * 3)) / 60;
                 }
@@ -644,9 +890,6 @@ public class GamesManager {
                     // 冷却未过期
                     subject.sendMessage(MessageUtil.formatMessageChain(chain, "你还差%s分钟来抛第二杆!", expired - between));
                     return true;
-                } else {
-                    // 冷却已过期，移除冷却信息
-                    playerCooling.remove(qq);
                 }
             }
 
@@ -659,7 +902,10 @@ public class GamesManager {
         }
     }
 
-    private static boolean failedFishing(UserInfo userInfo, User user, Group subject, FishInfo fishInfo, String[] errorMessages) {
+    private static boolean failedFishing(UserInfo userInfo, User user, Group subject, FishInfo fishInfo) {
+        String[] errorMessages = {"风吹的...", "眼花了...", "走神了...", "呀！切线了...", "钓鱼佬绝不空军！"};
+
+
         int randomed = RandomUtil.randomInt(0, 101);
         if (randomed <= 50) {
             subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), errorMessages[RandomUtil.randomInt(0, 5)]));
