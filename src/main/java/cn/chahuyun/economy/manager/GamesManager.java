@@ -180,7 +180,7 @@ public class GamesManager {
         Log.info(String.format("%s开始钓鱼", userInfo.getName()));
 
 
-        int offset = RandomUtil.randomInt(3, 11);
+        int offset = RandomUtil.randomInt(2, 8);
         int randomed = RandomUtil.randomInt(0, 101);
         float evolution;
         if (randomed >= 70) {
@@ -210,7 +210,9 @@ public class GamesManager {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            subject.sendMessage(MessageUtil.formatMessageChain(userInfo.getQq(), "浮漂动了!"));
+            if (fishInfo.getStatus()) {
+                subject.sendMessage(MessageUtil.formatMessageChain(userInfo.getQq(), "浮漂动了!"));
+            }
         });
 
 
@@ -235,9 +237,9 @@ public class GamesManager {
         if (between <= 500) {
             maxDifficulty = maxDifficulty * 2;
             surprise = true;
-        } else if (between <= 1000) {
+        } else if (between <= 2000) {
             maxDifficulty = maxDifficulty * 2;
-        } else if (between <= 3000) {
+        } else if (between <= 5000) {
             maxGrade = maxGrade / 2;
         } else {
             failedFishing(userInfo, sender, subject, fishInfo);
@@ -299,9 +301,12 @@ public class GamesManager {
             }
         }
 
-        event.setMaxDifficulty(event.getMaxDifficulty());
-        event.setMinDifficulty(event.getMinDifficulty());
-        event.setMaxGrade(event.getMaxGrade());
+        if (event.getFishBait() != null) {
+            event.setMaxDifficulty(event.calculateMaxDifficulty());
+            event.setMinDifficulty(event.calculateMinDifficulty());
+            event.setMaxGrade(event.calculateMaxGrade());
+        }
+
     }
 
     public static void fishRoll(FishRollEvent event) {
@@ -343,7 +348,7 @@ public class GamesManager {
                 continue;
             }
             //roll鱼
-            fish = collect.get(RandomUtil.randomInt(0, Math.min(6, size)));
+            fish = collect.get(RandomUtil.randomInt(0, Math.min(4, size)));
             break;
         }
 
