@@ -2,10 +2,15 @@ package cn.chahuyun.economy.manager;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
+import cn.chahuyun.authorize.constant.AuthPerm;
+import cn.chahuyun.authorize.constant.MessageConversionEnum;
+import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.constant.UserLocation;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.UserStatus;
+import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
+import cn.chahuyun.economy.utils.ShareUtils;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
@@ -171,7 +176,7 @@ public class UserStatusManager {
     }
 
 
-    @MessageAuthorize(text = {"我的状态","我的位置"})
+    @MessageAuthorize(text = {"我的状态", "我的位置"})
     public void myStatus(GroupMessageEvent event) {
         Member sender = event.getSender();
         MessageChain message = event.getMessage();
@@ -223,6 +228,29 @@ public class UserStatusManager {
             group.sendMessage(MessageUtil.formatMessageChain(message, "你回家躺着去."));
         }
     }
+
+    @MessageAuthorize(text = "回家 ?@\\d+",
+            messageMatching = MessageMatchingEnum.REGULAR,
+            messageConversion = MessageConversionEnum.CONTENT,
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
+    )
+    public void gotoHome(GroupMessageEvent event) {
+        Group group = event.getGroup();
+        MessageChain message = event.getMessage();
+
+        Member member = ShareUtils.getAtMember(event);
+
+        UserInfo userInfo;
+        if (member == null) {
+            Log.warning("该用户不存在!");
+            return;
+        }
+        userInfo = UserManager.getUserInfo(member);
+
+        moveHome(userInfo);
+        group.sendMessage(MessageUtil.formatMessageChain(message, "你让ta回家躺着去."));
+    }
+
 
 //    public static boolean checkUserInHome(UserInfo user) {
 //        UserStatus userStatus = getUserStatus(user.getQq());
