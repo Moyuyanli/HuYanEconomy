@@ -8,6 +8,8 @@ import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.config.FishingMsgConfig;
 import cn.chahuyun.economy.config.RobMsgConfig;
 import cn.chahuyun.economy.constant.Icon;
+import cn.chahuyun.economy.fish.FishRollEvent;
+import cn.chahuyun.economy.fish.FishStartEvent;
 import cn.chahuyun.economy.manager.*;
 import cn.chahuyun.economy.plugin.*;
 import cn.chahuyun.economy.sign.SignEvent;
@@ -109,6 +111,8 @@ public final class HuYanEconomy extends JavaPlugin {
         );
 
         eventEventChannel.subscribeAlways(SignEvent.class, SignManager::signProp);
+        eventEventChannel.subscribeAlways(FishStartEvent.class, GamesManager::fishStart);
+        eventEventChannel.subscribeAlways(FishRollEvent.class, GamesManager::fishRoll);
 
         Log.info("事件已监听!");
 
