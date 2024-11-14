@@ -52,7 +52,7 @@ public class FishStartEvent extends AbstractEvent {
      * 计算最大等级
      * @return 最大等级
      */
-    protected Integer calculateMaxGrade() {
+    public Integer calculateMaxGrade() {
         return fishInfo.getLevel();
     }
 
@@ -60,7 +60,7 @@ public class FishStartEvent extends AbstractEvent {
      * 计算最大难度
      * @return 最大难度
      */
-    protected Integer calculateMaxDifficulty() {
+    public Integer calculateMaxDifficulty() {
         return fishInfo.getRodLevel() * fishBait.getLevel();
     }
 
@@ -68,7 +68,7 @@ public class FishStartEvent extends AbstractEvent {
      * 计算基本难度
      * @return 基本难度
      */
-    protected Integer calculateBaseDifficulty() {
+    public Integer calculateMinDifficulty() {
         return Math.round(fishInfo.getRodLevel() * fishBait.getQuality());
     }
 }
