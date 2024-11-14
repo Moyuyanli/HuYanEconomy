@@ -81,4 +81,19 @@ public class Fish implements Serializable {
         }
     }
 
+    /**
+     * 惊喜尺寸
+     * @param surprise 是否惊喜
+     * @param evolution 进化因子
+     * @return 鱼的尺寸
+     */
+    public int getSurprise(boolean surprise, float evolution) {
+        int dimensions = getDimensions(false);
+        if (surprise) {
+            return Math.round(dimensions * (1 + evolution));
+        } else {
+            return dimensions;
+        }
+    }
+
 }
