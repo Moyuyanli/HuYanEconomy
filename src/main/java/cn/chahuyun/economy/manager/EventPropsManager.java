@@ -10,9 +10,12 @@ import cn.chahuyun.economy.prop.PropsShop;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
+import cn.chahuyun.economy.utils.ShareUtils;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Group;
+import net.mamoe.mirai.contact.Member;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
+import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.*;
 
 import java.util.Map;
@@ -42,6 +45,7 @@ public class EventPropsManager {
 
     public void viewShop(GroupMessageEvent event, int page) {
         Bot bot = event.getBot();
+        Member sender = event.getSender();
         Group group = event.getSubject();
 
         // 获取所有商店信息
@@ -89,6 +93,29 @@ public class EventPropsManager {
 
         // 发送消息
         group.sendMessage(nodes.build());
+
+        while (true) {
+            MessageEvent nextMessage = ShareUtils.getNextMessageEventFromUser(sender, group);
+            if (nextMessage instanceof GroupMessageEvent) {
+                String content = nextMessage.getMessage().contentToString();
+                if (content.equals("下一页")) {
+                    if (++page <= totalPages) {
+                        viewShop((GroupMessageEvent) nextMessage, page);
+                    } else {
+                        group.sendMessage(MessageUtil.formatMessageChain(nextMessage.getMessage(), "没有下一页了"));
+                    }
+                } else if (content.equals("上一页")) {
+                    if (--page > 0) {
+                        viewShop((GroupMessageEvent) nextMessage, page);
+                    } else {
+                        group.sendMessage(MessageUtil.formatMessageChain(nextMessage.getMessage(), "没有上一页了"));
+                    }
+                } else {
+                    return;
+                }
+            }
+        }
+
     }
 
 
@@ -115,7 +142,7 @@ public class EventPropsManager {
             String code = split[i];
 
             if (!PropsShop.checkPropExist(code)) {
-                builder.add(MessageUtil.formatMessage("\n道具 %s 不存在!",code));
+                builder.add(MessageUtil.formatMessage("\n道具 %s 不存在!", code));
                 continue;
             }
 
@@ -128,7 +155,7 @@ public class EventPropsManager {
 
             int cost = template.getCost();
             if (money < cost) {
-                builder.add(MessageUtil.formatMessage("\n道具 %s ,余额不足%d,购买失败!",name,cost));
+                builder.add(MessageUtil.formatMessage("\n道具 %s ,余额不足%d,购买失败!", name, cost));
                 continue;
             }
 
@@ -137,9 +164,9 @@ public class EventPropsManager {
                 long l = PropsManager.addProp(template);
 
                 BackpackManager.addPropToBackpack(userInfo, code, template.getKind(), l);
-                builder.add(MessageUtil.formatMessage("\n道具 %s 购买成功!",name));
+                builder.add(MessageUtil.formatMessage("\n道具 %s 购买成功!", name));
             } else {
-                builder.add(MessageUtil.formatMessage("\n道具 %s 购买失败!",name));
+                builder.add(MessageUtil.formatMessage("\n道具 %s 购买失败!", name));
             }
         }
 
