@@ -24,6 +24,7 @@ import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.economy.utils.ShareUtils;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -123,6 +124,8 @@ public class GamesManager {
         Member sender = event.getSender();
         MessageChain message = event.getMessage();
 
+        DateTime messageDate = DateUtil.date(event.getTime() * 1000L);
+
 
         UserInfo userInfo = UserManager.getUserInfo(sender);
         FishInfo fishInfo = userInfo.getFishInfo();
@@ -160,6 +163,7 @@ public class GamesManager {
             return;
         }
 
+
         FishStartEvent fishStartEvent = new FishStartEvent(userInfo, fishInfo);
         EventKt.broadcast(fishStartEvent);
 
@@ -194,21 +198,19 @@ public class GamesManager {
 
 
         if (fishTitle) {
-//            pull = RandomUtil.randomInt(10, 101);
-            pull = RandomUtil.randomInt(10, 60);
+            pull = RandomUtil.randomInt(10, 101);
         } else {
-//            pull = RandomUtil.randomInt(30, 151);
-            pull = RandomUtil.randomInt(10, 60);
+            pull = RandomUtil.randomInt(30, 151);
         }
 
-        Date planTime = DateUtil.offsetSecond(new Date(), pull);
+        Date planTime = DateUtil.offsetSecond(messageDate, pull);
         prompt = pull - offset;
 
         CompletableFuture.runAsync(() -> {
             try {
                 Thread.sleep(prompt * 1000L);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                Log.warning("钓鱼管理:延迟提醒错误!" + e.getMessage());
             }
             if (fishInfo.getStatus()) {
                 subject.sendMessage(MessageUtil.formatMessageChain(userInfo.getQq(), "浮漂动了!"));
