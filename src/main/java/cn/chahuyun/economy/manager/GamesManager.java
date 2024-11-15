@@ -7,6 +7,7 @@ import cn.chahuyun.authorize.entity.PermGroup;
 import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.authorize.utils.UserUtil;
 import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.constant.FishPondLevelConstant;
 import cn.chahuyun.economy.constant.PropsKind;
@@ -115,7 +116,6 @@ public class GamesManager {
     }
 
 
-    @MessageAuthorize(text = "新钓鱼", groupPermissions = EconPerm.FISH_PERM)
     @SuppressWarnings("DuplicatedCode")
     public void newFishing(GroupMessageEvent event) {
         Log.info("钓鱼指令");
@@ -367,6 +367,16 @@ public class GamesManager {
             groupPermissions = EconPerm.FISH_PERM
     )
     public void fishing(GroupMessageEvent event) {
+        String fishType = EconomyConfig.INSTANCE.getFishType();
+        if (fishType.equals("new")) {
+            this.newFishing(event);
+        } else {
+            this.oldFishing(event);
+        }
+    }
+
+
+    public void oldFishing(GroupMessageEvent event) {
         Log.info("钓鱼指令");
 
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());

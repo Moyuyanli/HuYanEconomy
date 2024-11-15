@@ -24,16 +24,19 @@ import java.util.Date;
 public class Test {
 
     public static void main(String[] args) throws Exception {
-        imageTest();
+//        imageTest();
+        timeTest();
     }
 
     public static void timeTest() {
         Date date = new Date();
 
-        DateTime dateTime = DateUtil.offsetMinute(date, 10);
+//        DateTime dateTime = DateUtil.offsetMinute(date, 10);
+        DateTime dateTime = DateUtil.offsetMillisecond(date, 350);
 
-        System.out.println("time->"+DateUtil.between(date,dateTime.toJdkDate(), DateUnit.MINUTE));
+        System.out.println("time->"+DateUtil.between(date,dateTime.toJdkDate(), DateUnit.MS,true));
 
+        //result time->350
     }
 
     public static void titleTest() {

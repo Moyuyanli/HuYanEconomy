@@ -20,7 +20,7 @@ object EconomyConfig : AutoSavePluginConfig("Config") {
     var prefix: String by value("")
 
     @ValueDescription("每日签到刷新时间(0-23)\n")
-    var reSignTime : Int by value(4)
+    var reSignTime: Int by value(4)
 
     @ValueDescription("数据库类型(H2,MYSQL,SQLITE)")
     var dataType: DriveType by value(DriveType.H2)
@@ -36,5 +36,8 @@ object EconomyConfig : AutoSavePluginConfig("Config") {
 
     @ValueDescription("用户下一条消息等待线程数(可能影响同时钓鱼的玩家数量)")
     val nextMessageExecutorsNumber: Int by value(10)
+
+    @ValueDescription("钓鱼模式(new,old)")
+    val fishType: String by value("new")
 
 }
