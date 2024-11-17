@@ -931,13 +931,13 @@ public class GamesManager {
 
 
         int randomed = RandomUtil.randomInt(0, 101);
-        if (randomed <= 50) {
-            subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), errorMessages[RandomUtil.randomInt(0, 5)]));
-            fishInfo.switchStatus();
-            return true;
-        } else if (randomed <= 90) {
+        if (randomed >= 90) {
             subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你钓起来一具尸体，附近的钓鱼佬报警了，你真是百口模辩啊！"));
             UserStatusManager.movePrison(userInfo, 60);
+            fishInfo.switchStatus();
+            return true;
+        } else if (randomed >= 50) {
+            subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), errorMessages[RandomUtil.randomInt(0, 5)]));
             fishInfo.switchStatus();
             return true;
         }
