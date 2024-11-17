@@ -6,7 +6,6 @@ import cn.chahuyun.authorize.constant.AuthPerm;
 import cn.chahuyun.authorize.entity.PermGroup;
 import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.authorize.utils.UserUtil;
-import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.constant.FishPondLevelConstant;
@@ -93,7 +92,7 @@ public class GamesManager {
 
                     if (fishPondMoney >= value.getAmount()) {
                         if (EconomyUtil.plusMoneyToPluginBankForId(fishPond.getCode(), fishPond.getDescription(), -value.getAmount())) {
-                            Bot bot = HuYanEconomy.INSTANCE.bot;
+                            Bot bot = Bot.getInstances().get(0);
                             Group group = bot.getGroup(fishPond.getGroup());
                             if (group != null) {
                                 group.sendMessage(String.format(
@@ -184,7 +183,7 @@ public class GamesManager {
         Log.info(String.format("%s开始钓鱼", userInfo.getName()));
 
 
-        int offset = RandomUtil.randomInt(2, 8);
+        int offset = RandomUtil.randomInt(2, 6);
         int randomed = RandomUtil.randomInt(0, 101);
         float evolution;
         if (randomed >= 70) {
@@ -241,7 +240,7 @@ public class GamesManager {
             surprise = true;
         } else if (between <= 2000) {
             maxDifficulty = maxDifficulty * 2;
-        } else if (between <= 5000) {
+        } else if (between <= 6000) {
             maxGrade = maxGrade / 2;
         } else {
             failedFishing(userInfo, sender, subject, fishInfo);
@@ -256,6 +255,12 @@ public class GamesManager {
         EventKt.broadcast(fishRoll);
 
         Fish fish = fishRoll.getFish();
+
+        if (fish == null) {
+            subject.sendMessage(MessageUtil.formatMessageChain(message, "卧槽，脱线了！"));
+            fishInfo.switchStatus();
+            return;
+        }
 
         int dimensions = fish.getSurprise(surprise, evolution);
         int money = fish.getPrice() * dimensions;
@@ -281,9 +286,11 @@ public class GamesManager {
     public static void fishStart(FishStartEvent event) {
         UserInfo userInfo = event.getUserInfo();
 
+
+        FishBait eventFishBait = event.getFishBait();
         List<UserBackpack> backpacks = userInfo.getBackpacks();
         for (UserBackpack backpack : backpacks) {
-            if (backpack.getPropKind().equals(PropsKind.fishBait)) {
+            if (backpack.getPropKind().equals(PropsKind.fishBait) && eventFishBait == null) {
                 FishBait bait = PropsManager.getProp(backpack, FishBait.class);
                 if (bait.getNum() > 1) {
                     PropsManager.useAndUpdate(backpack, userInfo);
@@ -303,7 +310,7 @@ public class GamesManager {
             }
         }
 
-        if (event.getFishBait() != null) {
+        if (eventFishBait != null) {
             event.setMaxDifficulty(event.calculateMaxDifficulty());
             event.setMinDifficulty(event.calculateMinDifficulty());
             event.setMaxGrade(event.calculateMaxGrade());
@@ -312,10 +319,10 @@ public class GamesManager {
     }
 
     public static void fishRoll(FishRollEvent event) {
-        Integer minDifficulty = event.getMinDifficulty();
-        Integer maxDifficulty = event.getMaxDifficulty();
-        Integer minGrade = event.getMinGrade();
-        Integer maxGrade = event.getMaxGrade();
+        int minDifficulty = event.getMinDifficulty();
+        int maxDifficulty = event.getMaxDifficulty();
+        int minGrade = Math.min(1, event.getMinGrade());
+        int maxGrade = event.getMaxGrade();
 
         FishPond fishPond = event.getFishPond();
 
