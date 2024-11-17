@@ -310,7 +310,7 @@ public class GamesManager {
             }
         }
 
-        if (eventFishBait != null) {
+        if (event.getFishBait() != null) {
             event.setMaxDifficulty(event.calculateMaxDifficulty());
             event.setMinDifficulty(event.calculateMinDifficulty());
             event.setMaxGrade(event.calculateMaxGrade());
