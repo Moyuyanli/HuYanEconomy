@@ -42,10 +42,7 @@ import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.query.criteria.JpaRoot;
 
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -285,6 +282,7 @@ public class GamesManager {
     public static void fishStart(FishStartEvent event) {
         UserInfo userInfo = event.getUserInfo();
 
+        ArrayList<Long> longs = new ArrayList<>();
 
         FishBait eventFishBait = event.getFishBait();
         List<UserBackpack> backpacks = userInfo.getBackpacks();
@@ -296,7 +294,7 @@ public class GamesManager {
                     event.setFishBait(bait);
                 } else if (bait.getNum() == 1) {
                     event.setFishBait(PropsManager.copyProp(bait));
-                    BackpackManager.delPropToBackpack(userInfo, backpack.getPropId());
+                    longs.add(backpack.getPropId());
                 } else {
                     FishBait fishBait = new FishBait();
                     fishBait.setLevel(1);
@@ -306,6 +304,10 @@ public class GamesManager {
                     BackpackManager.delPropToBackpack(userInfo, backpack.getPropId());
                 }
             }
+        }
+
+        if (!longs.isEmpty()) {
+            longs.forEach(it -> BackpackManager.delPropToBackpack(userInfo, it));
         }
 
         if (event.getFishBait() != null) {
