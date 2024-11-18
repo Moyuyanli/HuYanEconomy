@@ -103,7 +103,7 @@ public class FishPond implements Serializable {
     }
 
     public Long getGroup() {
-        Pattern compile = Pattern.compile("g(\\d+)");
+        Pattern compile = Pattern.compile("g-(\\d+)");
         Matcher matcher = compile.matcher(this.code);
         if (matcher.find()) {
             return Long.parseLong(matcher.group());
