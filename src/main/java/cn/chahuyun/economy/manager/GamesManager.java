@@ -146,7 +146,7 @@ public class GamesManager {
 
         FishPond fishPond = fishInfo.getFishPond(subject);
 
-        if (fishInfo.getLevel() < fishPond.getPondLevel()) {
+        if (fishInfo.getRodLevel() < fishPond.getPondLevel()) {
             subject.sendMessage(MessageUtil.formatMessageChain(message, "你的鱼竿等级太低了，升级升级鱼竿再来吧！"));
             playerCooling.remove(userInfo.getQq());
             return;
