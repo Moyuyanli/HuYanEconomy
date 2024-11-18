@@ -22,7 +22,6 @@ import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.economy.utils.ShareUtils;
 import cn.chahuyun.hibernateplus.HibernateFactory;
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
@@ -296,8 +295,7 @@ public class GamesManager {
                     PropsManager.useAndUpdate(backpack, userInfo);
                     event.setFishBait(bait);
                 } else if (bait.getNum() == 1) {
-                    FishBait copy = BeanUtil.copyProperties(bait, FishBait.class);
-                    event.setFishBait(copy);
+                    event.setFishBait(bait);
                     BackpackManager.delPropToBackpack(userInfo, backpack.getPropId());
                 } else {
                     FishBait fishBait = new FishBait();
@@ -931,7 +929,7 @@ public class GamesManager {
 
 
         int randomed = RandomUtil.randomInt(0, 101);
-        if (randomed >= 90) {
+        if (randomed >= 95) {
             subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你钓起来一具尸体，附近的钓鱼佬报警了，你真是百口模辩啊！"));
             UserStatusManager.movePrison(userInfo, 60);
             fishInfo.switchStatus();
