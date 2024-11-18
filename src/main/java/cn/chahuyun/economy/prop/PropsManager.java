@@ -242,6 +242,13 @@ public class PropsManager {
     }
 
 
+    @SuppressWarnings("unchecked")
+    public static <T extends PropBase> T copyProp(T baseProp) {
+        PropsData data = serialization(baseProp);
+
+       return deserialization(data, (Class<T>) baseProp.getClass());
+    }
+
     //==========================================================
 
 
