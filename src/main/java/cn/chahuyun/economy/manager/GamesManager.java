@@ -295,7 +295,7 @@ public class GamesManager {
                     PropsManager.useAndUpdate(backpack, userInfo);
                     event.setFishBait(bait);
                 } else if (bait.getNum() == 1) {
-                    event.setFishBait(bait);
+                    event.setFishBait(PropsManager.copyProp(bait));
                     BackpackManager.delPropToBackpack(userInfo, backpack.getPropId());
                 } else {
                     FishBait fishBait = new FishBait();
