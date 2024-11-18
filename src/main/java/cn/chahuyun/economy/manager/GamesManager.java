@@ -284,24 +284,25 @@ public class GamesManager {
 
         ArrayList<Long> longs = new ArrayList<>();
 
-        FishBait eventFishBait = event.getFishBait();
         List<UserBackpack> backpacks = userInfo.getBackpacks();
         for (UserBackpack backpack : backpacks) {
-            if (backpack.getPropKind().equals(PropsKind.fishBait) && eventFishBait == null) {
-                FishBait bait = PropsManager.getProp(backpack, FishBait.class);
-                if (bait.getNum() > 1) {
-                    PropsManager.useAndUpdate(backpack, userInfo);
-                    event.setFishBait(bait);
-                } else if (bait.getNum() == 1) {
-                    event.setFishBait(PropsManager.copyProp(bait));
-                    longs.add(backpack.getPropId());
-                } else {
-                    FishBait fishBait = new FishBait();
-                    fishBait.setLevel(1);
-                    fishBait.setQuality(0.01f);
-                    fishBait.setName("空钩");
-                    event.setFishBait(fishBait);
-                    BackpackManager.delPropToBackpack(userInfo, backpack.getPropId());
+            if (event.getFishBait() == null) {
+                if (backpack.getPropKind().equals(PropsKind.fishBait)) {
+                    FishBait bait = PropsManager.getProp(backpack, FishBait.class);
+                    if (bait.getNum() > 1) {
+                        PropsManager.useAndUpdate(backpack, userInfo);
+                        event.setFishBait(bait);
+                    } else if (bait.getNum() == 1) {
+                        longs.add(backpack.getPropId());
+                        event.setFishBait(PropsManager.copyProp(bait));
+                    } else {
+                        FishBait fishBait = new FishBait();
+                        fishBait.setLevel(1);
+                        fishBait.setQuality(0.01f);
+                        fishBait.setName("空钩");
+                        event.setFishBait(fishBait);
+                        BackpackManager.delPropToBackpack(userInfo, backpack.getPropId());
+                    }
                 }
             }
         }
