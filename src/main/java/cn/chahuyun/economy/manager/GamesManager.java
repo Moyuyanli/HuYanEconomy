@@ -288,7 +288,17 @@ public class GamesManager {
         for (UserBackpack backpack : backpacks) {
             if (event.getFishBait() == null) {
                 if (backpack.getPropKind().equals(PropsKind.fishBait)) {
-                    FishBait bait = PropsManager.getProp(backpack, FishBait.class);
+                    FishBait bait;
+                    try {
+                        bait = PropsManager.getProp(backpack, FishBait.class);
+                    } catch (Exception e) {
+                        if (e.getMessage().equals("该道具不存在！")) {
+                            longs.add(backpack.getPropId());
+                            continue;
+                        } else {
+                            throw e;
+                        }
+                    }
                     if (bait.getNum() > 1) {
                         PropsManager.useAndUpdate(backpack, userInfo);
                         event.setFishBait(bait);
@@ -320,7 +330,7 @@ public class GamesManager {
     }
 
     public static void fishRoll(FishRollEvent event) {
-        int minDifficulty = event.getMinDifficulty();
+        int minDifficulty = Math.min(1, event.getMinDifficulty());
         int maxDifficulty = event.getMaxDifficulty();
         int minGrade = Math.min(1, event.getMinGrade());
         int maxGrade = event.getMaxGrade();
