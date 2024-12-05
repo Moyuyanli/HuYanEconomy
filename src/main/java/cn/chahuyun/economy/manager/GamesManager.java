@@ -714,7 +714,8 @@ public class GamesManager {
      * @date 2022/12/14 15:27
      */
     @MessageAuthorize(
-            text = {"钓鱼榜", "钓鱼排行"}
+            text = {"钓鱼榜", "钓鱼排行"},
+            groupPermissions = EconPerm.FISH_PERM
     )
     public static void fishTop(MessageEvent event) {
         Log.info("钓鱼榜指令");
@@ -862,7 +863,8 @@ public class GamesManager {
 
 
     @MessageAuthorize(
-            text = "鱼塘等级"
+            text = "鱼塘等级",
+            groupPermissions = EconPerm.FISH_PERM
     )
     public void viewFishPond(GroupMessageEvent event) {
         Group group = event.getGroup();
