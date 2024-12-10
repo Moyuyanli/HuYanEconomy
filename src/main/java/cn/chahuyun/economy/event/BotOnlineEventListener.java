@@ -1,5 +1,7 @@
 package cn.chahuyun.economy.event;
 
+import cn.chahuyun.economy.HuYanEconomy;
+import cn.chahuyun.economy.utils.Log;
 import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;
 import net.mamoe.mirai.event.events.BotOnlineEvent;
@@ -11,15 +13,12 @@ import org.jetbrains.annotations.NotNull;
  * @author Moyuyanli
  * @date 2022/11/15 11:00
  */
-@Deprecated(since = "1.6.3")
+
 public class BotOnlineEventListener extends SimpleListenerHost {
 
     @EventHandler()
     public void onMessage(@NotNull BotOnlineEvent event) {
-//        Bot bot = event.getBot();
-//        if (bot.getId() == HuYanEconomy.config.getBot()) {
-//            HuYanEconomy.INSTANCE.bot = bot;
-//            Log.info("插件管理机器人已上线");
-//        }
+        HuYanEconomy.INSTANCE.bot = event.getBot();
+        Log.info("bot 已上线!");
     }
 }
