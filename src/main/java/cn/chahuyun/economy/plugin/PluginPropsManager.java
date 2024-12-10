@@ -108,7 +108,20 @@ public class PluginPropsManager {
                 .cost(1888)
                 .electricity(100).build();
 
+        FunctionProps redEyes = FunctionProps.builder()
+                .kind(PropsKind.functionProp)
+                .unit("瓶")
+                .canBuy(true)
+                .reuse(false)
+                .canItExpire(false)
+                .stack(false)
+                .code(FunctionProps.RED_EYES)
+                .name("红牛")
+                .description("喝完就有劲了!")
+                .cost(888).build();
+
         PropsShop.addShop(FunctionProps.ELECTRIC_BATON, baton);
+        PropsShop.addShop(FunctionProps.RED_EYES, redEyes);
 
 
         FishBait.FishBaitBuilder<?, ?> fishBait = FishBait.builder()

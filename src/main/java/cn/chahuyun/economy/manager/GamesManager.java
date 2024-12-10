@@ -14,6 +14,7 @@ import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.*;
+import cn.chahuyun.economy.entity.props.FunctionProps;
 import cn.chahuyun.economy.fish.FishRollEvent;
 import cn.chahuyun.economy.fish.FishStartEvent;
 import cn.chahuyun.economy.prop.PropsManager;
@@ -919,10 +920,23 @@ public class GamesManager {
                 long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
                 int expired = 10; // 默认冷却时间
                 if (isFishing) {
-                    expired = 5; // 如果是钓鱼，则冷却时间为5分钟
+                    expired = 5; // 如果装备称号，则冷却时间为5分钟
                 } else {
                     expired = ((expired * 60) - (fishInfo.getRodLevel() * 3)) / 60;
                 }
+
+                UserBackpack prop = userInfo.getProp(FunctionProps.RED_EYES);
+                FunctionProps redEyes = prop.getProp(FunctionProps.class);
+
+                if (redEyes.getEnableTime() != null) {
+                    Date enableTime = redEyes.getEnableTime();
+                    if (DateUtil.between(new Date(), enableTime, DateUnit.MINUTE, true) > 30) {
+                        userInfo.removePropInBackpack(prop);
+                    } else {
+                        expired -= 5;
+                    }
+                }
+
                 if (between < expired) {
                     // 冷却未过期
                     subject.sendMessage(MessageUtil.formatMessageChain(chain, "你还差%s分钟来抛第二杆!", expired - between));
