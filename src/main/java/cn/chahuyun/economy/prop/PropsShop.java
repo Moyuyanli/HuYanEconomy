@@ -1,6 +1,7 @@
 package cn.chahuyun.economy.prop;
 
 import cn.chahuyun.economy.utils.Log;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -57,6 +58,22 @@ public class PropsShop {
     }
 
     /**
+     * 根据道具编码获取道具模板
+     *
+     * @param name 道具名称
+     * @return 道具实例
+     */
+    @NotNull
+    public static PropBase getTemplateByName(String name) {
+        for (PropBase value : shop.values()) {
+            if (value.getName().equals(name)) {
+                return value;
+            }
+        }
+        throw new RuntimeException("该道具不存在!");
+    }
+
+    /**
      * 获取道具
      *
      * @param code   道具商店编码
@@ -80,5 +97,20 @@ public class PropsShop {
      */
     public static boolean checkPropExist(String code) {
         return shop.containsKey(code);
+    }
+
+    /**
+     * 检查这个道具code添加没有
+     *
+     * @param name 道具名称
+     * @return true 已经添加
+     */
+    public static boolean checkPropNameExist(String name) {
+        for (PropBase value : shop.values()) {
+            if (value.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
