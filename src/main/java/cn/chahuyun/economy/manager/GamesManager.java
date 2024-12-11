@@ -926,14 +926,16 @@ public class GamesManager {
                 }
 
                 UserBackpack prop = userInfo.getProp(FunctionProps.RED_EYES);
-                FunctionProps redEyes = prop.getProp(FunctionProps.class);
+                if (prop != null) {
+                    FunctionProps redEyes = prop.getProp(FunctionProps.class);
 
-                if (redEyes.getEnableTime() != null) {
-                    Date enableTime = redEyes.getEnableTime();
-                    if (DateUtil.between(new Date(), enableTime, DateUnit.MINUTE, true) > 10) {
-                        userInfo.removePropInBackpack(prop);
-                    } else {
-                        expired -= (int) (expired * 0.8);
+                    if (redEyes.getEnableTime() != null) {
+                        Date enableTime = redEyes.getEnableTime();
+                        if (DateUtil.between(new Date(), enableTime, DateUnit.MINUTE, true) > 10) {
+                            userInfo.removePropInBackpack(prop);
+                        } else {
+                            expired -= (int) (expired * 0.8);
+                        }
                     }
                 }
 
