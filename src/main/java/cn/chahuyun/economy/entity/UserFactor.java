@@ -1,5 +1,8 @@
 package cn.chahuyun.economy.entity;
 
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -46,5 +49,72 @@ public class UserFactor {
      * md,跟你爆了！
      */
     private Double resistance = 0.3;
+
+    /**
+     * json存储格式
+     */
+    private String buff = "[]";
+
+    public String getBuffJson(String buff) {
+        return findBuff(buff);
+    }
+
+    public UserFactor setBuffJson(String buff, String value) {
+        Integer index = findBuffIndex(buff);
+
+        JSONObject json;
+
+        if (index == null) {
+            json = JSONUtil.createObj();
+        } else {
+            json = findBuffJson(buff);
+        }
+
+        json.set("name", buff);
+        json.set("value", value);
+
+        JSONArray array = JSONUtil.parseArray(this.buff);
+
+        if (index == null) {
+            array.add(json);
+        } else {
+            array.add(index, json);
+        }
+
+        this.buff = array.put(json).toString();
+        return this;
+    }
+
+    public String findBuff(String buff) {
+        JSONArray array = JSONUtil.parseArray(this.buff);
+        for (JSONObject next : array.jsonIter()) {
+            if (next.get("name").equals(buff)) {
+                return next.getStr("value");
+            }
+        }
+        return null;
+    }
+
+    public JSONObject findBuffJson(String buff) {
+        JSONArray array = JSONUtil.parseArray(this.buff);
+        for (JSONObject next : array.jsonIter()) {
+            if (next.get("name").equals(buff)) {
+                return next;
+            }
+        }
+        return null;
+    }
+
+    public Integer findBuffIndex(String buff) {
+        JSONArray array = JSONUtil.parseArray(this.buff);
+        int index = 0;
+        for (JSONObject next : array.jsonIter()) {
+            index++;
+            if (next.get("name").equals(buff)) {
+                return index;
+            }
+        }
+        return null;
+    }
 
 }

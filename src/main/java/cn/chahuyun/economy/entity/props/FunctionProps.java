@@ -1,7 +1,11 @@
 package cn.chahuyun.economy.entity.props;
 
+import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.exception.RemoveProp;
+import cn.chahuyun.economy.plugin.FactorManager;
 import cn.chahuyun.economy.prop.PropBase;
+import cn.hutool.core.date.DateUtil;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -77,9 +81,12 @@ public class FunctionProps extends PropBase {
     public void use(UserInfo user) {
         switch (this.getCode()) {
             case RED_EYES:
-                if (enableTime == null) {
-                    enableTime = new Date();
-                } else {
+                UserFactor factor = FactorManager.getUserFactor(user);
+                String buff = factor.findBuff(RED_EYES);
+                if (buff == null) {
+                    factor.setBuffJson(RED_EYES, DateUtil.now());
+                    throw new RemoveProp();
+                } else if (enableTime == null) {
                     throw new RuntimeException("你已经使用了!");
                 }
                 break;
