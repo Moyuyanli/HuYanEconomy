@@ -930,10 +930,10 @@ public class GamesManager {
 
                 if (redEyes.getEnableTime() != null) {
                     Date enableTime = redEyes.getEnableTime();
-                    if (DateUtil.between(new Date(), enableTime, DateUnit.MINUTE, true) > 30) {
+                    if (DateUtil.between(new Date(), enableTime, DateUnit.MINUTE, true) > 10) {
                         userInfo.removePropInBackpack(prop);
                     } else {
-                        expired -= 5;
+                        expired -= (int) (expired * 0.8);
                     }
                 }
 
