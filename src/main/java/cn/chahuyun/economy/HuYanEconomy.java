@@ -21,15 +21,21 @@ import cn.hutool.cron.CronUtil;
 import kotlin.coroutines.EmptyCoroutineContext;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.console.command.CommandManager;
+import net.mamoe.mirai.console.extension.PluginComponentStorage;
 import net.mamoe.mirai.console.plugin.jvm.JavaPlugin;
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder;
 import net.mamoe.mirai.event.*;
+import org.jetbrains.annotations.NotNull;
 
 public final class HuYanEconomy extends JavaPlugin {
     /**
      * 唯一实例
      */
     public static final HuYanEconomy INSTANCE = new HuYanEconomy();
+    /**
+     * 插件运行状态
+     */
+    public static boolean PLUGIN_STATUS = false;
     /**
      * 配置
      */
@@ -57,6 +63,12 @@ public final class HuYanEconomy extends JavaPlugin {
                 .dependsOn("cn.chahuyun.HuYanAuthorize", ">= 1.2.0", false)
                 .dependsOn("cn.chahuyun.HuYanSession", true)
                 .build());
+    }
+
+    @Override
+    public void onLoad(@NotNull PluginComponentStorage $this$onLoad) {
+        super.onLoad($this$onLoad);
+        PLUGIN_STATUS = true;
     }
 
     @Override
@@ -125,6 +137,8 @@ public final class HuYanEconomy extends JavaPlugin {
      */
     @Override
     public void onDisable() {
+        PLUGIN_STATUS = false;
+
         CronUtil.stop();
         YiYanManager.shutdown();
         ShareUtils.shutdown();

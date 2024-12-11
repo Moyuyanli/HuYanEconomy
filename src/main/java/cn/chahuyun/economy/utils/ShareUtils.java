@@ -14,10 +14,8 @@ import net.mamoe.mirai.message.data.At;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.SingleMessage;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +28,7 @@ import java.util.regex.Pattern;
  */
 public class ShareUtils {
 
+    private static final Set<CountDownLatch> latchCache = new CopyOnWriteArraySet<>();
     private static ExecutorService executorService;
 
     private ShareUtils() {
@@ -55,7 +54,12 @@ public class ShareUtils {
         AtomicReference<MessageEvent> result = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
 
-        executorService.submit(() -> {
+        // 将 latch 添加到缓存中
+        synchronized (latchCache) { // 使用类锁保证线程安全
+            latchCache.add(latch);
+        }
+
+        CompletableFuture.runAsync(() -> {
             GlobalEventChannel.INSTANCE.parentScope(HuYanEconomy.INSTANCE)
                     .filterIsInstance(MessageEvent.class)
                     .filter(filter -> filter.getSubject().getId() == subject.getId() && filter.getSender().getId() == user.getId())
@@ -63,7 +67,7 @@ public class ShareUtils {
                         result.set(event);
                         latch.countDown();
                     });
-        });
+        },executorService);
 
         try {
             if (latch.await(10, TimeUnit.MINUTES)) {
@@ -76,6 +80,11 @@ public class ShareUtils {
             Log.debug("获取用户下一条消息被中断");
             Thread.currentThread().interrupt(); // 恢复中断状态
             return null;
+        } finally {
+            // 确保在任务完成后移除 latch
+            synchronized (latchCache) {
+                latchCache.remove(latch);
+            }
         }
     }
 
@@ -155,15 +164,23 @@ public class ShareUtils {
      * 优雅地关闭所有线程并取消所有任务
      */
     public static void shutdown() {
-        // 关闭executorService
-        executorService.shutdownNow();
-        try {
-            if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
-                executorService.shutdownNow();
-            }
-        } catch (InterruptedException e) {
+        // 首先通知所有等待的 latch
+        for (CountDownLatch latch : latchCache) {
+            latch.countDown();
+        }
+        latchCache.clear(); // 清空缓存，防止内存泄漏
+
+        // 如果有 executorService，关闭它
+        if (executorService != null && !executorService.isShutdown()) {
             executorService.shutdownNow();
-            Thread.currentThread().interrupt();
+            try {
+                if (!executorService.awaitTermination(3, TimeUnit.SECONDS)) {
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }
