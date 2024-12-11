@@ -142,7 +142,7 @@ public class EventPropsManager {
         for (int i = 1; i < split.length; i++) {
             String code = split[i];
 
-            boolean match = !PropsShop.checkPropExist(code) || !PropsShop.checkPropNameExist(code);
+            boolean match = !PropsShop.checkPropExist(code) && !PropsShop.checkPropNameExist(code);
 
             if (match) {
                 builder.add(MessageUtil.formatMessage("\n道具 %s 不存在!", code));
