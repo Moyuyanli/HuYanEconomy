@@ -92,7 +92,7 @@ public class FunctionProps extends PropBase {
                 } else {
                     DateTime parse = DateUtil.parse(buff);
                     long between = DateUtil.between(new Date(), parse, DateUnit.MINUTE);
-                    if (between > 0) {
+                    if (between > 10) {
                         factor.setBuffValue(RED_EYES, DateUtil.now());
                         FactorManager.merge(factor);
                         throw new Operation("续上一瓶红牛!", true);
