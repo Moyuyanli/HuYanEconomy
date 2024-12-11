@@ -6,6 +6,7 @@ import cn.chahuyun.authorize.constant.AuthPerm;
 import cn.chahuyun.authorize.entity.PermGroup;
 import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.authorize.utils.UserUtil;
+import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.constant.FishPondLevelConstant;
@@ -204,17 +205,21 @@ public class GamesManager {
         Date planTime = DateUtil.offsetSecond(messageDate, pull);
         prompt = pull - offset;
 
-        CompletableFuture.runAsync(() -> {
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
             try {
                 Thread.sleep(prompt * 1000L);
             } catch (InterruptedException e) {
                 Log.warning("钓鱼管理:延迟提醒错误!" + e.getMessage());
             }
-            if (fishInfo.getStatus()) {
+            if (fishInfo.getStatus() && HuYanEconomy.PLUGIN_STATUS) {
                 subject.sendMessage(MessageUtil.formatMessageChain(userInfo.getQq(), "浮漂动了!"));
             }
         });
 
+        future.exceptionally(e -> {
+            Log.error(e.getMessage(), e);
+            return null;
+        });
 
         Date resultTime;
         while (true) {
@@ -242,8 +247,9 @@ public class GamesManager {
         } else if (between <= 6000) {
             maxGrade = maxGrade / 2;
         } else {
-            failedFishing(userInfo, sender, subject, fishInfo);
-            return;
+            if (failedFishing(userInfo, sender, subject, fishInfo)) {
+                return;
+            }
         }
 
         Float time = between / 1000f;
@@ -928,14 +934,15 @@ public class GamesManager {
                 }
 
                 UserFactor factor = FactorManager.getUserFactor(userInfo);
-                String buff = factor.findBuff(FunctionProps.RED_EYES);
+                String buff = factor.getBuffValue(FunctionProps.RED_EYES);
 
                 if (buff != null) {
                     DateTime parse = DateUtil.parse(buff);
-                    if (DateUtil.between(new Date(), parse, DateUnit.MINUTE, true) <= 10) {
+                    if (DateUtil.between(new Date(), parse, DateUnit.MINUTE) <= 10) {
                         expired -= (int) (expired * 0.8);
                     } else {
-                        factor.setBuffJson(FunctionProps.RED_EYES, null);
+                        factor.setBuffValue(FunctionProps.RED_EYES, null);
+                        FactorManager.merge(factor);
                     }
                 }
 
@@ -960,12 +967,12 @@ public class GamesManager {
 
 
         int randomed = RandomUtil.randomInt(0, 101);
-        if (randomed >= 95) {
+        if (randomed >= 96) {
             subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你钓起来一具尸体，附近的钓鱼佬报警了，你真是百口模辩啊！"));
             UserStatusManager.movePrison(userInfo, 60);
             fishInfo.switchStatus();
             return true;
-        } else if (randomed >= 50) {
+        } else if (randomed >= 30) {
             subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), errorMessages[RandomUtil.randomInt(0, 5)]));
             fishInfo.switchStatus();
             return true;
