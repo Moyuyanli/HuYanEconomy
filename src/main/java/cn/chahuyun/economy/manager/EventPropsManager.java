@@ -138,15 +138,22 @@ public class EventPropsManager {
         builder.add("本次购买道具:");
 
 
+
         for (int i = 1; i < split.length; i++) {
             String code = split[i];
 
-            if (!PropsShop.checkPropExist(code)) {
+            boolean match = !PropsShop.checkPropExist(code) || !PropsShop.checkPropNameExist(code);
+
+            if (match) {
                 builder.add(MessageUtil.formatMessage("\n道具 %s 不存在!", code));
                 continue;
             }
 
+
             PropBase template = PropsShop.getTemplate(code);
+            if (template == null) {
+                template = PropsShop.getTemplateByName(code);
+            }
             String name = template.getName();
 
             UserInfo userInfo = UserManager.getUserInfo(event.getSender());
@@ -169,6 +176,8 @@ public class EventPropsManager {
                 builder.add(MessageUtil.formatMessage("\n道具 %s 购买失败!", name));
             }
         }
+
+
 
         group.sendMessage(builder.build());
     }
