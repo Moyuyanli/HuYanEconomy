@@ -12,11 +12,13 @@ import cn.chahuyun.economy.constant.FishPondLevelConstant;
 import cn.chahuyun.economy.constant.PropsKind;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserBackpack;
+import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.*;
 import cn.chahuyun.economy.entity.props.FunctionProps;
 import cn.chahuyun.economy.fish.FishRollEvent;
 import cn.chahuyun.economy.fish.FishStartEvent;
+import cn.chahuyun.economy.plugin.FactorManager;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
@@ -925,17 +927,15 @@ public class GamesManager {
                     expired = ((expired * 60) - (fishInfo.getRodLevel() * 3)) / 60;
                 }
 
-                UserBackpack prop = userInfo.getProp(FunctionProps.RED_EYES);
-                if (prop != null) {
-                    FunctionProps redEyes = prop.getProp(FunctionProps.class);
+                UserFactor factor = FactorManager.getUserFactor(userInfo);
+                String buff = factor.findBuff(FunctionProps.RED_EYES);
 
-                    if (redEyes.getEnableTime() != null) {
-                        Date enableTime = redEyes.getEnableTime();
-                        if (DateUtil.between(new Date(), enableTime, DateUnit.MINUTE, true) > 10) {
-                            userInfo.removePropInBackpack(prop);
-                        } else {
-                            expired -= (int) (expired * 0.8);
-                        }
+                if (buff != null) {
+                    DateTime parse = DateUtil.parse(buff);
+                    if (DateUtil.between(new Date(), parse, DateUnit.MINUTE, true) <= 10) {
+                        expired -= (int) (expired * 0.8);
+                    } else {
+                        factor.setBuffJson(FunctionProps.RED_EYES, null);
                     }
                 }
 
