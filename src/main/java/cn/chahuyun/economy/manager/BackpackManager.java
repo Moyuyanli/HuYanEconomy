@@ -5,7 +5,7 @@ import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
-import cn.chahuyun.economy.exception.RemoveProp;
+import cn.chahuyun.economy.exception.Operation;
 import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.Log;
@@ -94,12 +94,15 @@ public class BackpackManager {
                 UserBackpack backpack = iterator.next();
                 if (backpack.getPropId().equals(propId)) {
                     PropBase prop = PropsManager.getProp(backpack);
+                    String messageProp = "使用成功";
                     boolean remove = false;
                     try {
                         prop.use(userInfo);
                     } catch (Exception e) {
-                        if (e instanceof RemoveProp) {
-                            remove = true;
+                        if (e instanceof Operation) {
+                            Operation operation = (Operation) e;
+                            remove = operation.isRemove();
+                            messageProp = operation.getMessage();
                         } else {
                             throw e;
                         }
@@ -109,7 +112,7 @@ public class BackpackManager {
                     } else {
                         PropsManager.updateProp(backpack.getPropId(), prop);
                     }
-                    builder.add(MessageUtil.formatMessage("\n%d 使用成功!", propId));
+                    builder.add(MessageUtil.formatMessage("\n%d %s!", propId, messageProp));
                     success = true;
                     break;
                 }

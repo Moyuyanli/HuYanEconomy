@@ -2,9 +2,11 @@ package cn.chahuyun.economy.entity.props;
 
 import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.entity.UserInfo;
-import cn.chahuyun.economy.exception.RemoveProp;
+import cn.chahuyun.economy.exception.Operation;
 import cn.chahuyun.economy.plugin.FactorManager;
 import cn.chahuyun.economy.prop.PropBase;
+import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -82,14 +84,22 @@ public class FunctionProps extends PropBase {
         switch (this.getCode()) {
             case RED_EYES:
                 UserFactor factor = FactorManager.getUserFactor(user);
-                String buff = factor.findBuff(RED_EYES);
+                String buff = factor.getBuffValue(RED_EYES);
                 if (buff == null) {
-                    factor.setBuffJson(RED_EYES, DateUtil.now());
-                    throw new RemoveProp();
-                } else if (enableTime == null) {
-                    throw new RuntimeException("你已经使用了!");
+                    factor.setBuffValue(RED_EYES, DateUtil.now());
+                    FactorManager.merge(factor);
+                    throw new Operation("你猛猛炫了一瓶红牛!", true);
+                } else {
+                    DateTime parse = DateUtil.parse(buff);
+                    long between = DateUtil.between(new Date(), parse, DateUnit.MINUTE);
+                    if (between > 0) {
+                        factor.setBuffValue(RED_EYES, DateUtil.now());
+                        FactorManager.merge(factor);
+                        throw new Operation("续上一瓶红牛!", true);
+                    } else {
+                        throw new Operation("红牛喝多了可对肾不好!");
+                    }
                 }
-                break;
             case ELECTRIC_BATON:
                 if (electricity >= 5) {
                     electricity -= 5;

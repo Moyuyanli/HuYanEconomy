@@ -55,66 +55,54 @@ public class UserFactor {
      */
     private String buff = "[]";
 
-    public String getBuffJson(String buff) {
-        return findBuff(buff);
-    }
 
-    public UserFactor setBuffJson(String buff, String value) {
-        Integer index = findBuffIndex(buff);
-
-        JSONObject json;
-
-        if (index == null) {
-            json = JSONUtil.createObj();
-        } else {
-            json = findBuffJson(buff);
-        }
-
-        json.set("name", buff);
-        json.set("value", value);
-
+    /**
+     * 设置或更新指定名称的buff的值
+     *
+     * @param buffName buff名称
+     * @param value    buff的值
+     * @return 当前对象实例，支持链式调用
+     */
+    public UserFactor setBuffValue(String buffName, String value) {
         JSONArray array = JSONUtil.parseArray(this.buff);
+        boolean found = false;
 
-        if (index == null) {
-            array.add(json);
-        } else {
-            array.add(index, json);
+        // 尝试找到并更新现有的buff
+        for (int i = 0; i < array.size(); i++) {
+            JSONObject obj = array.getJSONObject(i);
+            if (buffName.equals(obj.getStr("name"))) {
+                obj.set("value", value);
+                found = true;
+                break;
+            }
         }
 
-        this.buff = array.put(json).toString();
+        // 如果没有找到，则添加新的buff
+        if (!found) {
+            JSONObject newBuff = JSONUtil.createObj()
+                    .set("name", buffName)
+                    .set("value", value);
+            array.add(newBuff);
+        }
+
+        this.buff = array.toString();
         return this;
     }
 
-    public String findBuff(String buff) {
+    /**
+     * 获取指定名称的buff的值
+     *
+     * @param buffName buff名称
+     * @return buff的值, 如果不存在则返回null
+     */
+    public String getBuffValue(String buffName) {
         JSONArray array = JSONUtil.parseArray(this.buff);
-        for (JSONObject next : array.jsonIter()) {
-            if (next.get("name").equals(buff)) {
-                return next.getStr("value");
+        for (JSONObject obj : array.jsonIter()) {
+            if (buffName.equals(obj.getStr("name"))) {
+                return obj.getStr("value");
             }
         }
-        return null;
-    }
-
-    public JSONObject findBuffJson(String buff) {
-        JSONArray array = JSONUtil.parseArray(this.buff);
-        for (JSONObject next : array.jsonIter()) {
-            if (next.get("name").equals(buff)) {
-                return next;
-            }
-        }
-        return null;
-    }
-
-    public Integer findBuffIndex(String buff) {
-        JSONArray array = JSONUtil.parseArray(this.buff);
-        int index = 0;
-        for (JSONObject next : array.jsonIter()) {
-            index++;
-            if (next.get("name").equals(buff)) {
-                return index;
-            }
-        }
-        return null;
+        return null; // 或者可以返回一个默认值
     }
 
 }
