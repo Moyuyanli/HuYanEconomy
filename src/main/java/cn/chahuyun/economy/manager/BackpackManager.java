@@ -5,6 +5,7 @@ import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.exception.RemoveProp;
 import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.Log;
@@ -16,6 +17,7 @@ import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.data.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -63,6 +65,7 @@ public class BackpackManager {
         group.sendMessage(iNodes.build());
     }
 
+    @SuppressWarnings("ForLoopReplaceableByForEach")
     @MessageAuthorize(
             text = "use( \\d+)+|使用( \\d+)+",
             messageMatching = MessageMatchingEnum.REGULAR
@@ -87,11 +90,25 @@ public class BackpackManager {
             List<UserBackpack> backpacks = userInfo.getBackpacks();
 
             boolean success = false;
-            for (UserBackpack backpack : backpacks) {
+            for (Iterator<UserBackpack> iterator = backpacks.iterator(); iterator.hasNext(); ) {
+                UserBackpack backpack = iterator.next();
                 if (backpack.getPropId().equals(propId)) {
                     PropBase prop = PropsManager.getProp(backpack);
-                    prop.use(userInfo);
-                    PropsManager.updateProp(backpack.getPropId(), prop);
+                    boolean remove = false;
+                    try {
+                        prop.use(userInfo);
+                    } catch (Exception e) {
+                        if (e instanceof RemoveProp) {
+                            remove = true;
+                        } else {
+                            throw e;
+                        }
+                    }
+                    if (remove) {
+                        delPropToBackpack(userInfo, backpack);
+                    } else {
+                        PropsManager.updateProp(backpack.getPropId(), prop);
+                    }
                     builder.add(MessageUtil.formatMessage("\n%d 使用成功!", propId));
                     success = true;
                     break;
@@ -179,6 +196,17 @@ public class BackpackManager {
         userInfo.removePropInBackpack(find);
 
         PropsManager.destroyPros(id);
+    }
+
+    /**
+     * 给这个用户删除这个道具
+     *
+     * @param userInfo 用户
+     * @param userBackpack       道具
+     */
+    public static void delPropToBackpack(UserInfo userInfo, UserBackpack userBackpack) {
+        userInfo.removePropInBackpack(userBackpack);
+        PropsManager.destroyPros(userBackpack.getPropId());
     }
 
     /**
