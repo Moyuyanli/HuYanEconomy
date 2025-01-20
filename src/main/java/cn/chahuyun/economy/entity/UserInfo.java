@@ -80,9 +80,9 @@ public class UserInfo implements Serializable {
     /**
      * 道具背包
      */
-    @OneToMany(cascade = CascadeType.ALL,orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "UserInfo_id")
-        private List<UserBackpack> backpacks = new ArrayList<>();
+    private List<UserBackpack> backpacks = new ArrayList<>();
 
 
     @Transient

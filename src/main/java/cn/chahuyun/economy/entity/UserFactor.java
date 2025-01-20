@@ -1,5 +1,8 @@
 package cn.chahuyun.economy.entity;
 
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -46,5 +49,60 @@ public class UserFactor {
      * md,跟你爆了！
      */
     private Double resistance = 0.3;
+
+    /**
+     * json存储格式
+     */
+    private String buff = "[]";
+
+
+    /**
+     * 设置或更新指定名称的buff的值
+     *
+     * @param buffName buff名称
+     * @param value    buff的值
+     * @return 当前对象实例，支持链式调用
+     */
+    public UserFactor setBuffValue(String buffName, String value) {
+        JSONArray array = JSONUtil.parseArray(this.buff);
+        boolean found = false;
+
+        // 尝试找到并更新现有的buff
+        for (int i = 0; i < array.size(); i++) {
+            JSONObject obj = array.getJSONObject(i);
+            if (buffName.equals(obj.getStr("name"))) {
+                obj.set("value", value);
+                found = true;
+                break;
+            }
+        }
+
+        // 如果没有找到，则添加新的buff
+        if (!found) {
+            JSONObject newBuff = JSONUtil.createObj()
+                    .set("name", buffName)
+                    .set("value", value);
+            array.add(newBuff);
+        }
+
+        this.buff = array.toString();
+        return this;
+    }
+
+    /**
+     * 获取指定名称的buff的值
+     *
+     * @param buffName buff名称
+     * @return buff的值, 如果不存在则返回null
+     */
+    public String getBuffValue(String buffName) {
+        JSONArray array = JSONUtil.parseArray(this.buff);
+        for (JSONObject obj : array.jsonIter()) {
+            if (buffName.equals(obj.getStr("name"))) {
+                return obj.getStr("value");
+            }
+        }
+        return null; // 或者可以返回一个默认值
+    }
 
 }

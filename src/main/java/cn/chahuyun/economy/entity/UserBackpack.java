@@ -1,5 +1,7 @@
 package cn.chahuyun.economy.entity;
 
+import cn.chahuyun.economy.prop.PropBase;
+import cn.chahuyun.economy.prop.PropsManager;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,7 +39,7 @@ public class UserBackpack implements Serializable {
      */
     private Long propId;
 
-//    @ManyToOne
+    //    @ManyToOne
 //    private UserInfo userInfo;
     public UserBackpack() {
     }
@@ -48,4 +50,14 @@ public class UserBackpack implements Serializable {
         this.propKind = propKind;
         this.propId = propId;
     }
+
+    /**
+     * 获取改背包道具
+     * @param tClass 类型
+     * @return 道具
+     */
+    public <T extends PropBase> T getProp(Class<T> tClass) {
+        return PropsManager.getProp(this, tClass);
+    }
+
 }

@@ -6,23 +6,26 @@ import cn.chahuyun.authorize.constant.AuthPerm;
 import cn.chahuyun.authorize.entity.PermGroup;
 import cn.chahuyun.authorize.utils.PermUtil;
 import cn.chahuyun.authorize.utils.UserUtil;
+import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.constant.FishPondLevelConstant;
 import cn.chahuyun.economy.constant.PropsKind;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserBackpack;
+import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.*;
+import cn.chahuyun.economy.entity.props.FunctionProps;
 import cn.chahuyun.economy.fish.FishRollEvent;
 import cn.chahuyun.economy.fish.FishStartEvent;
+import cn.chahuyun.economy.plugin.FactorManager;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.economy.utils.ShareUtils;
 import cn.chahuyun.hibernateplus.HibernateFactory;
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
@@ -43,10 +46,7 @@ import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 import org.hibernate.query.criteria.JpaCriteriaQuery;
 import org.hibernate.query.criteria.JpaRoot;
 
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -150,7 +150,7 @@ public class GamesManager {
 
         FishPond fishPond = fishInfo.getFishPond(subject);
 
-        if (fishInfo.getLevel() > fishPond.getPondLevel()) {
+        if (fishInfo.getRodLevel() < fishPond.getMinLevel()) {
             subject.sendMessage(MessageUtil.formatMessageChain(message, "你的鱼竿等级太低了，升级升级鱼竿再来吧！"));
             playerCooling.remove(userInfo.getQq());
             return;
@@ -205,17 +205,21 @@ public class GamesManager {
         Date planTime = DateUtil.offsetSecond(messageDate, pull);
         prompt = pull - offset;
 
-        CompletableFuture.runAsync(() -> {
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
             try {
                 Thread.sleep(prompt * 1000L);
             } catch (InterruptedException e) {
                 Log.warning("钓鱼管理:延迟提醒错误!" + e.getMessage());
             }
-            if (fishInfo.getStatus()) {
+            if (fishInfo.getStatus() && HuYanEconomy.PLUGIN_STATUS) {
                 subject.sendMessage(MessageUtil.formatMessageChain(userInfo.getQq(), "浮漂动了!"));
             }
         });
 
+        future.exceptionally(e -> {
+            Log.error(e.getMessage(), e);
+            return null;
+        });
 
         Date resultTime;
         while (true) {
@@ -243,8 +247,9 @@ public class GamesManager {
         } else if (between <= 6000) {
             maxGrade = maxGrade / 2;
         } else {
-            failedFishing(userInfo, sender, subject, fishInfo);
-            return;
+            if (failedFishing(userInfo, sender, subject, fishInfo)) {
+                return;
+            }
         }
 
         Float time = between / 1000f;
@@ -286,28 +291,43 @@ public class GamesManager {
     public static void fishStart(FishStartEvent event) {
         UserInfo userInfo = event.getUserInfo();
 
+        ArrayList<Long> longs = new ArrayList<>();
 
-        FishBait eventFishBait = event.getFishBait();
         List<UserBackpack> backpacks = userInfo.getBackpacks();
         for (UserBackpack backpack : backpacks) {
-            if (backpack.getPropKind().equals(PropsKind.fishBait) && eventFishBait == null) {
-                FishBait bait = PropsManager.getProp(backpack, FishBait.class);
-                if (bait.getNum() > 1) {
-                    PropsManager.useAndUpdate(backpack, userInfo);
-                    event.setFishBait(bait);
-                } else if (bait.getNum() == 1) {
-                    FishBait copy = BeanUtil.copyProperties(bait, FishBait.class);
-                    event.setFishBait(copy);
-                    BackpackManager.delPropToBackpack(userInfo, backpack.getPropId());
-                } else {
-                    FishBait fishBait = new FishBait();
-                    fishBait.setLevel(1);
-                    fishBait.setQuality(0.01f);
-                    fishBait.setName("空钩");
-                    event.setFishBait(fishBait);
-                    BackpackManager.delPropToBackpack(userInfo, backpack.getPropId());
+            if (event.getFishBait() == null) {
+                if (backpack.getPropKind().equals(PropsKind.fishBait)) {
+                    FishBait bait;
+                    try {
+                        bait = PropsManager.getProp(backpack, FishBait.class);
+                    } catch (Exception e) {
+                        if (e.getMessage().equals("该道具不存在！")) {
+                            longs.add(backpack.getPropId());
+                            continue;
+                        } else {
+                            throw e;
+                        }
+                    }
+                    if (bait.getNum() > 1) {
+                        PropsManager.useAndUpdate(backpack, userInfo);
+                        event.setFishBait(bait);
+                    } else if (bait.getNum() == 1) {
+                        longs.add(backpack.getPropId());
+                        event.setFishBait(PropsManager.copyProp(bait));
+                    } else {
+                        FishBait fishBait = new FishBait();
+                        fishBait.setLevel(1);
+                        fishBait.setQuality(0.01f);
+                        fishBait.setName("空钩");
+                        event.setFishBait(fishBait);
+                        BackpackManager.delPropToBackpack(userInfo, backpack.getPropId());
+                    }
                 }
             }
+        }
+
+        if (!longs.isEmpty()) {
+            longs.forEach(it -> BackpackManager.delPropToBackpack(userInfo, it));
         }
 
         if (event.getFishBait() != null) {
@@ -319,7 +339,7 @@ public class GamesManager {
     }
 
     public static void fishRoll(FishRollEvent event) {
-        int minDifficulty = event.getMinDifficulty();
+        int minDifficulty = Math.min(1, event.getMinDifficulty());
         int maxDifficulty = event.getMaxDifficulty();
         int minGrade = Math.min(1, event.getMinGrade());
         int maxGrade = event.getMaxGrade();
@@ -703,7 +723,8 @@ public class GamesManager {
      * @date 2022/12/14 15:27
      */
     @MessageAuthorize(
-            text = {"钓鱼榜", "钓鱼排行"}
+            text = {"钓鱼榜", "钓鱼排行"},
+            groupPermissions = EconPerm.FISH_PERM
     )
     public static void fishTop(MessageEvent event) {
         Log.info("钓鱼榜指令");
@@ -851,7 +872,8 @@ public class GamesManager {
 
 
     @MessageAuthorize(
-            text = "鱼塘等级"
+            text = "鱼塘等级",
+            groupPermissions = EconPerm.FISH_PERM
     )
     public void viewFishPond(GroupMessageEvent event) {
         Group group = event.getGroup();
@@ -906,10 +928,24 @@ public class GamesManager {
                 long between = DateUtil.between(date, new Date(), DateUnit.MINUTE, true);
                 int expired = 10; // 默认冷却时间
                 if (isFishing) {
-                    expired = 5; // 如果是钓鱼，则冷却时间为5分钟
+                    expired = 5; // 如果装备称号，则冷却时间为5分钟
                 } else {
                     expired = ((expired * 60) - (fishInfo.getRodLevel() * 3)) / 60;
                 }
+
+                UserFactor factor = FactorManager.getUserFactor(userInfo);
+                String buff = factor.getBuffValue(FunctionProps.RED_EYES);
+
+                if (buff != null) {
+                    DateTime parse = DateUtil.parse(buff);
+                    if (DateUtil.between(new Date(), parse, DateUnit.MINUTE) <= 10) {
+                        expired -= (int) (expired * 0.8);
+                    } else {
+                        factor.setBuffValue(FunctionProps.RED_EYES, null);
+                        FactorManager.merge(factor);
+                    }
+                }
+
                 if (between < expired) {
                     // 冷却未过期
                     subject.sendMessage(MessageUtil.formatMessageChain(chain, "你还差%s分钟来抛第二杆!", expired - between));
@@ -931,12 +967,12 @@ public class GamesManager {
 
 
         int randomed = RandomUtil.randomInt(0, 101);
-        if (randomed >= 90) {
+        if (randomed >= 96) {
             subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你钓起来一具尸体，附近的钓鱼佬报警了，你真是百口模辩啊！"));
             UserStatusManager.movePrison(userInfo, 60);
             fishInfo.switchStatus();
             return true;
-        } else if (randomed >= 50) {
+        } else if (randomed >= 30) {
             subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), errorMessages[RandomUtil.randomInt(0, 5)]));
             fishInfo.switchStatus();
             return true;
