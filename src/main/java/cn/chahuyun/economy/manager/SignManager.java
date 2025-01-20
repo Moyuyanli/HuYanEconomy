@@ -140,9 +140,9 @@ public class SignManager {
         }
 
         if (util.addUserToPermGroupByName(user, EconPerm.GROUP.SIGN_BLACK_GROUP)) {
-            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫关闭成功!"));
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到关闭成功!"));
         } else {
-            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫关闭失败!"));
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到关闭失败!"));
         }
     }
 
