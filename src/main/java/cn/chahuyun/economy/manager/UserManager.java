@@ -278,7 +278,7 @@ public class UserManager {
     private static BufferedImage customBottom(UserInfo userInfo) throws IOException {
         BufferedImage bottom = ImageManager.getNextBottom();
         if (bottom == null) {
-            throw new IOException("没有自定义底图，请检查底图!");
+            throw new IOException("没有自定义底图，请检查data/bottom文件夹底图!");
         }
 
         User user = userInfo.getUser();
