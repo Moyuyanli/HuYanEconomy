@@ -166,11 +166,10 @@ public class EventPropsManager {
                 continue;
             }
 
-
             if (EconomyUtil.minusMoneyToUser(userInfo.getUser(), cost)) {
                 long l = PropsManager.addProp(template);
 
-                BackpackManager.addPropToBackpack(userInfo, code, template.getKind(), l);
+                BackpackManager.addPropToBackpack(userInfo, template.getCode(), template.getKind(), l);
                 builder.add(MessageUtil.formatMessage("\n道具 %s 购买成功!", name));
             } else {
                 builder.add(MessageUtil.formatMessage("\n道具 %s 购买失败!", name));
