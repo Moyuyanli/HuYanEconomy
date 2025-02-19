@@ -132,6 +132,9 @@ public class UserInfo implements Serializable {
             return false;
         } else if (between <= 1440) {
             this.setSignNumber(this.getSignNumber() + 1);
+            if (this.getSignNumber() == 2) {
+                this.setOldSignNumber(0);
+            }
         } else {
             this.setOldSignNumber(this.getSignNumber());
             this.setSignNumber(1);
