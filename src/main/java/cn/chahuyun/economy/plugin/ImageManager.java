@@ -56,7 +56,7 @@ public class ImageManager {
         File[] files = bottom.listFiles();
         if (files != null) {
             int totalFiles = files.length;
-            int step = totalFiles / 5; // 每个阶段应该处理的文件数量
+            int step = totalFiles / 5 == 0 ? 1 : totalFiles / 5; // 每个阶段应该处理的文件数量
             int currentStep = 0;       // 当前处理到哪个阶段
 
             // 输出初始进度
