@@ -2,6 +2,7 @@ package cn.chahuyun.economy.entity.props;
 
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.prop.PropBase;
+import cn.hutool.core.date.DateUtil;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -78,10 +79,19 @@ public class PropsCard extends PropBase implements Serializable {
 
     @Override
     public String toString() {
-        return "卡名称:" + this.getName() +
-                "\n价格:" + this.getCost() + "金币" +
-                "\n状态:" + (status ? "使用中" : "未使用") +
-                "\n描述:" + this.getDescription();
+        switch (this.getCode()) {
+            case MONTHLY:
+                return "道具名称:" + this.getName() +
+                        "\n价格:" + this.getCost() + "金币" +
+                        "\n状态:" + (status ? "使用中" : "未使用") +
+                        "\n过期时间:" + DateUtil.format(this.getExpiredTime(), "yyyy-MM-dd") +
+                        "\n描述:" + this.getDescription();
+            default:
+                return "卡名称:" + this.getName() +
+                        "\n价格:" + this.getCost() + "金币" +
+                        "\n状态:" + (status ? "使用中" : "未使用") +
+                        "\n描述:" + this.getDescription();
+        }
     }
 
     /**

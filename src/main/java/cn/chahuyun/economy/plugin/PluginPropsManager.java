@@ -60,7 +60,8 @@ public class PluginPropsManager {
         PropsCard signIn = stack
                 .code(PropsCard.SIGN_IN)
                 .name("补签卡")
-                .description("\"花123补签一次你的签到\"")
+                .description("\"花123购买一张补签卡，将会在你的下次签到自动生效\"")
+                .status(true)
                 .cost(123).build();
 
         PropsCard health = stack
