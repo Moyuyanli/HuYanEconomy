@@ -1,6 +1,5 @@
 package cn.chahuyun.economy.entity.props;
 
-import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.prop.PropBase;
 
 /**
@@ -23,10 +22,10 @@ public class Equipment extends PropBase {
     /**
      * 使用该道具
      *
-     * @param user
+     * @param info 使用信息
      */
     @Override
-    public void use(UserInfo user) {
+    public void use(UseEvent info) {
 
     }
 }

@@ -1,6 +1,5 @@
 package cn.chahuyun.economy.entity.props;
 
-import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.prop.PropBase;
 import cn.hutool.core.date.DateUtil;
 import lombok.Builder;
@@ -110,7 +109,7 @@ public class PropsCard extends PropBase implements Serializable {
      * 使用该道具
      */
     @Override
-    public void use(UserInfo user) {
+    public void use(UseEvent info) {
         this.status = true;
         this.enabledTime = new Date();
     }

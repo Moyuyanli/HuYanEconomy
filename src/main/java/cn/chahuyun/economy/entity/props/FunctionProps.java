@@ -1,7 +1,6 @@
 package cn.chahuyun.economy.entity.props;
 
 import cn.chahuyun.economy.entity.UserFactor;
-import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.exception.Operation;
 import cn.chahuyun.economy.plugin.FactorManager;
 import cn.chahuyun.economy.prop.PropBase;
@@ -36,6 +35,11 @@ public class FunctionProps extends PropBase {
      * 红牛
      */
     public final static String RED_EYES = "red-eyes";
+
+    /**
+     * 1分钟禁言卡
+     */
+    public final static String MUTE_1 = "mute-1";
 
     /**
      * 生效时间
@@ -77,13 +81,13 @@ public class FunctionProps extends PropBase {
     /**
      * 使用该道具
      *
-     * @param user
+     * @param info 使用信息
      */
     @Override
-    public void use(UserInfo user) {
+    public void use(UseEvent info) {
         switch (this.getCode()) {
             case RED_EYES:
-                UserFactor factor = FactorManager.getUserFactor(user);
+                UserFactor factor = FactorManager.getUserFactor(info.getUserInfo());
                 String buff = factor.getBuffValue(RED_EYES);
                 if (buff == null) {
                     factor.setBuffValue(RED_EYES, DateUtil.now());
@@ -107,6 +111,8 @@ public class FunctionProps extends PropBase {
                     throw new RuntimeException("电棒没电了!");
                 }
                 break;
+            default:
+                throw new Operation("该道具无法直接使用!");
         }
     }
 }
