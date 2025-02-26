@@ -40,4 +40,7 @@ object EconomyConfig : AutoSavePluginConfig("Config") {
     @ValueDescription("钓鱼模式(new,old)")
     val fishType: String by value("new")
 
+    @ValueDescription("无法使用禁言卡的群")
+    val unableToUseMuteGroup : MutableList<Long> by value(mutableListOf())
+
 }

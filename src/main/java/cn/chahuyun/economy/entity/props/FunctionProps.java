@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.entity.props;
 
+import cn.chahuyun.economy.config.EconomyConfig;
 import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.exception.Operation;
 import cn.chahuyun.economy.plugin.FactorManager;
@@ -117,6 +118,9 @@ public class FunctionProps extends PropBase {
                 break;
             case MUTE_1:
                 Contact subject = info.getSubject();
+                if (EconomyConfig.INSTANCE.getUnableToUseMuteGroup().contains(subject.getId())) {
+                    throw new Operation("该群禁言功能被禁用!");
+                }
                 subject.sendMessage("请输入你想要禁言的人");
                 GroupMessageEvent messageEvent = (GroupMessageEvent) ShareUtils.getNextMessageEventFromUser(info.getSender(), subject);
                 if (messageEvent != null) {
