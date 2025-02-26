@@ -5,6 +5,7 @@ import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.entity.props.UseEvent;
 import cn.chahuyun.economy.exception.Operation;
 import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
@@ -76,6 +77,10 @@ public class BackpackManager {
         String content = message.contentToString();
         Group group = event.getSubject();
 
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+        UseEvent useEvent = new UseEvent(sender, group, userInfo);
+
+
         String[] split = content.split(" ");
 
         MessageChainBuilder builder = new MessageChainBuilder();
@@ -85,7 +90,6 @@ public class BackpackManager {
         for (int i = 1; i < split.length; i++) {
             long propId = Long.parseLong(split[i]);
 
-            UserInfo userInfo = UserManager.getUserInfo(sender);
 
             List<UserBackpack> backpacks = userInfo.getBackpacks();
 
@@ -97,7 +101,7 @@ public class BackpackManager {
                     String messageProp = "使用成功";
                     boolean remove = false;
                     try {
-                        prop.use(userInfo);
+                        prop.use(useEvent);
                     } catch (Exception e) {
                         if (e instanceof Operation) {
                             Operation operation = (Operation) e;

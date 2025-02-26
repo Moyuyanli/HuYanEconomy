@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.entity.fish;
 
-import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.entity.props.UseEvent;
 import cn.chahuyun.economy.prop.PropBase;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -69,6 +69,16 @@ public class FishBait extends PropBase {
                 "描述:" + this.getDescription();
     }
 
+    /**
+     * 使用该道具
+     *
+     * @param info
+     */
+    @Override
+    public void use(UseEvent info) {
+        num--;
+    }
+
     @Override
     public String toString() {
         return "鱼饵名称:" + this.getName() + "\n" +
@@ -76,15 +86,5 @@ public class FishBait extends PropBase {
                 "鱼饵品质:" + this.getQuality() + "\n" +
                 "剩余使用次数:" + this.getNum() + "\n" +
                 "描述:" + this.getDescription();
-    }
-
-    /**
-     * 使用该道具
-     *
-     * @param user
-     */
-    @Override
-    public void use(UserInfo user) {
-        num--;
     }
 }

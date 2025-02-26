@@ -17,6 +17,7 @@ import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.*;
 import cn.chahuyun.economy.entity.props.FunctionProps;
+import cn.chahuyun.economy.entity.props.UseEvent;
 import cn.chahuyun.economy.fish.FishRollEvent;
 import cn.chahuyun.economy.fish.FishStartEvent;
 import cn.chahuyun.economy.plugin.FactorManager;
@@ -309,7 +310,7 @@ public class GamesManager {
                         }
                     }
                     if (bait.getNum() > 1) {
-                        PropsManager.useAndUpdate(backpack, userInfo);
+                        PropsManager.useAndUpdate(backpack, new UseEvent(null,null,userInfo));
                         event.setFishBait(bait);
                     } else if (bait.getNum() == 1) {
                         longs.add(backpack.getPropId());

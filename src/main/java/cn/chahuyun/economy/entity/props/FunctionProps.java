@@ -4,6 +4,7 @@ import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.exception.Operation;
 import cn.chahuyun.economy.plugin.FactorManager;
 import cn.chahuyun.economy.prop.PropBase;
+import cn.chahuyun.economy.utils.ShareUtils;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
@@ -11,6 +12,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import net.mamoe.mirai.contact.Contact;
+import net.mamoe.mirai.contact.Member;
+import net.mamoe.mirai.event.events.GroupMessageEvent;
 
 import java.util.Date;
 
@@ -111,6 +115,18 @@ public class FunctionProps extends PropBase {
                     throw new RuntimeException("电棒没电了!");
                 }
                 break;
+            case MUTE_1:
+                Contact subject = info.getSubject();
+                subject.sendMessage("请输入你想要禁言的人");
+                GroupMessageEvent messageEvent = (GroupMessageEvent) ShareUtils.getNextMessageEventFromUser(info.getSender(), subject);
+                if (messageEvent != null) {
+                    Member member = ShareUtils.getAtMember(messageEvent);
+                    if (member != null) {
+                        member.mute(60);
+                        throw new Operation("1分钟禁言成功！", true);
+                    }
+                }
+                throw new Operation("使用失败!");
             default:
                 throw new Operation("该道具无法直接使用!");
         }
