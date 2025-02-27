@@ -14,7 +14,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import net.mamoe.mirai.contact.Contact;
+import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
+import net.mamoe.mirai.contact.MemberPermission;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 
 import java.util.Date;
@@ -47,6 +49,11 @@ public class FunctionProps extends PropBase {
     public final static String MUTE_1 = "mute-1";
 
     /**
+     * 30分钟禁言卡
+     */
+    public final static String MUTE_30 = "mute-30";
+
+    /**
      * 生效时间
      */
     private Date enableTime;
@@ -55,6 +62,11 @@ public class FunctionProps extends PropBase {
      * 电量(剩余使用次数)
      */
     private Integer electricity;
+
+    /**
+     * 禁言时间(分钟)
+     */
+    private Integer muteTime;
 
     /**
      * 商店显示描述
@@ -117,18 +129,26 @@ public class FunctionProps extends PropBase {
                 }
                 break;
             case MUTE_1:
+            case MUTE_30:
                 Contact subject = info.getSubject();
-                if (EconomyConfig.INSTANCE.getUnableToUseMuteGroup().contains(subject.getId())) {
-                    throw new Operation("该群禁言功能被禁用!");
-                }
-                subject.sendMessage("请输入你想要禁言的人");
-                GroupMessageEvent messageEvent = (GroupMessageEvent) ShareUtils.getNextMessageEventFromUser(info.getSender(), subject);
-                if (messageEvent != null) {
-                    Member member = ShareUtils.getAtMember(messageEvent);
-                    if (member != null) {
-                        member.mute(60);
-                        throw new Operation("1分钟禁言成功！", true);
+                if (subject instanceof Group) {
+                    Group group = (Group) subject;
+                    if (group.getBotPermission() != MemberPermission.MEMBER) {
+                        if (EconomyConfig.INSTANCE.getUnableToUseMuteGroup().contains(subject.getId())) {
+                            throw new Operation("该群禁言功能被禁用!");
+                        }
+
+                        subject.sendMessage("请输入你想要禁言的人");
+                        GroupMessageEvent messageEvent = (GroupMessageEvent) ShareUtils.getNextMessageEventFromUser(info.getSender(), subject);
+                        if (messageEvent != null) {
+                            Member member = ShareUtils.getAtMember(messageEvent);
+                            if (member != null) {
+                                member.mute(muteTime * 60);
+                                throw new Operation("禁言卡使用成功！", true);
+                            }
+                        }
                     }
+
                 }
                 throw new Operation("使用失败!");
             default:

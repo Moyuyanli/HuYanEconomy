@@ -120,21 +120,32 @@ public class PluginPropsManager {
                 .description("喝完就有劲了!")
                 .cost(888).build();
 
-        FunctionProps mute1 = FunctionProps.builder()
+        FunctionProps.FunctionPropsBuilder<?, ?> muteCard = FunctionProps.builder()
                 .kind(PropsKind.functionProp)
                 .unit("张")
                 .canBuy(true)
                 .reuse(false)
                 .canItExpire(false)
-                .stack(false)
+                .stack(false);
+
+        FunctionProps mute1 = muteCard
                 .code(FunctionProps.MUTE_1)
+                .muteTime(1)
                 .name("1分钟禁言卡")
                 .description("你怎么不说话了？")
                 .cost(3600).build();
 
+        FunctionProps mute30 = muteCard
+                .code(FunctionProps.MUTE_1)
+                .muteTime(30)
+                .name("30分钟禁言卡")
+                .description("对人宝具:强制退网半小时！")
+                .cost(90000).build();
+
         PropsShop.addShop(FunctionProps.ELECTRIC_BATON, baton);
         PropsShop.addShop(FunctionProps.RED_EYES, redEyes);
         PropsShop.addShop(FunctionProps.MUTE_1, mute1);
+        PropsShop.addShop(FunctionProps.MUTE_30, mute30);
 
 
         FishBait.FishBaitBuilder<?, ?> fishBait = FishBait.builder()
