@@ -87,11 +87,11 @@ public class BankInfo {
     public static Integer randomInterest() {
         int i = RandomUtil.randomInt(1, 101);
         if (i <= 70) {
-            return RandomUtil.randomInt(1, 4);
+            return RandomUtil.randomInt(1, 3);
         } else if (i <= 99) {
-            return RandomUtil.randomInt(4, 8);
+            return RandomUtil.randomInt(3, 6);
         } else {
-            return RandomUtil.randomInt(-3, 0);
+            return RandomUtil.randomInt(-3, 1);
         }
     }
 
