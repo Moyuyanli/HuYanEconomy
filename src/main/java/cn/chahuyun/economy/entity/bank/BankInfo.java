@@ -98,7 +98,7 @@ public class BankInfo {
         // 当随机数大于等于99时，表示有较高的利率，生成3到5之间的随机整数作为利率值
         if (i >= 99) {
             return RandomUtil.randomInt(3, 6);
-        } else if (i >= 70) {
+        } else if (i >= 35) {
             // 当随机数大于等于70时，表示有一般利率，生成1到3之间的随机整数作为利率值
             return RandomUtil.randomInt(1, 3);
         } else {
