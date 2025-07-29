@@ -26,6 +26,7 @@ import net.mamoe.mirai.message.data.QuoteReply;
 import org.jetbrains.annotations.NotNull;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 
+import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -98,6 +99,34 @@ public class UserManager {
         }
     }
 
+
+    /**
+     * 获取用户信息<p>
+     * 可能为空
+     *
+     * @param userId 用户id
+     * @return cn.chahuyun.entity.UserInfo
+     * @author Moyuyanli
+     * @date 2022/11/14 17:08
+     */
+    @Nullable
+    public static UserInfo getUserInfo(Long userId) {
+        return HibernateFactory.selectOne(UserInfo.class, "qq", userId);
+    }
+
+    /**
+     * 获取用户信息<p>
+     * 可能为空
+     *
+     * @param uuid 用户uuid
+     * @return cn.chahuyun.entity.UserInfo
+     * @author Moyuyanli
+     * @date 2022/11/14 17:08
+     */
+    @Nullable
+    public static UserInfo getUserInfo(String uuid) {
+        return HibernateFactory.selectOne(UserInfo.class, "funding", uuid);
+    }
 
     /**
      * 查询个人信息<p>
@@ -236,7 +265,7 @@ public class UserManager {
                 ));
             } else {
                 real = price;
-                builder.add(MessageUtil.formatMessage("你出院了！这次只掏了%s的医药费！",real));
+                builder.add(MessageUtil.formatMessage("你出院了！这次只掏了%s的医药费！", real));
             }
 
             if (EconomyUtil.minusMoneyToUser(user, real)) {

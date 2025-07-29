@@ -78,6 +78,11 @@ public class UserInfo implements Serializable {
     private double bankEarnings;
 
     /**
+     * 绑定key
+     */
+    private String funding;
+
+    /**
      * 道具背包
      */
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
