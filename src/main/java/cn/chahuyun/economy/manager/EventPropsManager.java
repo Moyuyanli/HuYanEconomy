@@ -10,12 +10,10 @@ import cn.chahuyun.economy.prop.PropsShop;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
-import cn.chahuyun.economy.utils.ShareUtils;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
-import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.*;
 
 import java.util.Map;
@@ -95,18 +93,18 @@ public class EventPropsManager {
         group.sendMessage(nodes.build());
 
         while (true) {
-            MessageEvent nextMessage = ShareUtils.getNextMessageEventFromUser(sender, group);
-            if (nextMessage instanceof GroupMessageEvent) {
+            GroupMessageEvent nextMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync( group.getId(),sender.getId(),180);
+            if (nextMessage != null) {
                 String content = nextMessage.getMessage().contentToString();
                 if (content.equals("下一页")) {
                     if (++page <= totalPages) {
-                        viewShop((GroupMessageEvent) nextMessage, page);
+                        viewShop(nextMessage, page);
                     } else {
                         group.sendMessage(MessageUtil.formatMessageChain(nextMessage.getMessage(), "没有下一页了"));
                     }
                 } else if (content.equals("上一页")) {
                     if (--page > 0) {
-                        viewShop((GroupMessageEvent) nextMessage, page);
+                        viewShop(nextMessage, page);
                     } else {
                         group.sendMessage(MessageUtil.formatMessageChain(nextMessage.getMessage(), "没有上一页了"));
                     }

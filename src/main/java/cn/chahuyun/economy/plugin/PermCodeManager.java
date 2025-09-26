@@ -25,7 +25,8 @@ public class PermCodeManager {
                 new Perm(EconPerm.LOTTERY_PERM, "壶言经济的彩票权限"),
                 new Perm(EconPerm.ROB_PERM, "壶言经济的抢劫权限"),
                 new Perm(EconPerm.RED_PACKET_PERM, "壶言经济的红包权限"),
-                new Perm(EconPerm.SIGN_BLACK_PERM, "壶言经济的签到黑名单权限")
+                new Perm(EconPerm.SIGN_BLACK_PERM, "壶言经济的签到黑名单权限"),
+                new Perm(EconPerm.RAFFLE_PERM,"壶言经济的抽奖权限")
         );
 
         PermUtil util = PermUtil.INSTANCE;
@@ -67,6 +68,14 @@ public class PermCodeManager {
         if (group == null) {
             group = util.talkPermGroupByName(EconPerm.GROUP.SIGN_BLACK_GROUP);
             Perm perm = util.takePerm(EconPerm.SIGN_BLACK_PERM);
+            util.addPermToPermGroupByPermGroup(perm, group);
+        }
+
+        group = util.selectPermGroupOneByName(EconPerm.GROUP.RAFFLE_PERM_GROUP);
+
+        if (group == null) {
+            group = util.talkPermGroupByName(EconPerm.GROUP.RAFFLE_PERM_GROUP);
+            Perm perm = util.takePerm(EconPerm.RAFFLE_PERM);
             util.addPermToPermGroupByPermGroup(perm, group);
         }
 

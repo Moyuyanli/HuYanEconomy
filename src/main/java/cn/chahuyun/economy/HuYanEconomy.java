@@ -16,7 +16,7 @@ import cn.chahuyun.economy.sign.SignEvent;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.HibernateUtil;
 import cn.chahuyun.economy.utils.Log;
-import cn.chahuyun.economy.utils.ShareUtils;
+import cn.chahuyun.economy.utils.MessageUtil;
 import cn.hutool.cron.CronUtil;
 import kotlin.coroutines.EmptyCoroutineContext;
 import net.mamoe.mirai.Bot;
@@ -60,7 +60,7 @@ public final class HuYanEconomy extends JavaPlugin {
                 .author("Moyuyanli")
                 //忽略依赖版本 true 可选依赖 false 必须依赖
                 .dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", ">=1.0.6", false)
-                .dependsOn("cn.chahuyun.HuYanAuthorize", ">= 1.2.0", false)
+                .dependsOn("cn.chahuyun.HuYanAuthorize", ">= 1.2.6", false)
                 .dependsOn("cn.chahuyun.HuYanSession", true)
                 .build());
     }
@@ -85,13 +85,12 @@ public final class HuYanEconomy extends JavaPlugin {
         msgConfig = FishingMsgConfig.INSTANCE;
         robConfig = RobMsgConfig.INSTANCE;
         //插件功能初始化
+        MessageUtil.init(this);
         PluginManager.init();
         //插件权限code注册
         PermCodeManager.init(this);
         //初始化插件数据库
         HibernateUtil.init(this);
-        //初始化消息等待线程池
-        ShareUtils.init();
 
         //功能加载
         EconomyUtil.init();
@@ -141,7 +140,6 @@ public final class HuYanEconomy extends JavaPlugin {
 
         CronUtil.stop();
         YiYanManager.shutdown();
-        ShareUtils.shutdown();
         Log.info("插件已卸载!");
     }
 }

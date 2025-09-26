@@ -31,6 +31,10 @@ public class EconPerm {
      */
     public final static String SIGN_BLACK_PERM = "sign-black";
 
+    /**
+     * 抽奖权限
+     */
+    public final static String RAFFLE_PERM = "raffle";
 
     public static class GROUP {
         /**
@@ -57,5 +61,10 @@ public class EconPerm {
          * 签到黑名单权限组
          */
         public final static String SIGN_BLACK_GROUP = "签到黑名单";
+
+        /**
+         * 抽奖权限组
+         */
+        public final static String RAFFLE_PERM_GROUP = "抽奖组";
     }
 }

@@ -1,6 +1,12 @@
 package cn.chahuyun.economy.utils;
 
+import cn.chahuyun.authorize.utils.MessageUtilTemplate;
+import net.mamoe.mirai.console.plugin.jvm.JvmPlugin;
+import net.mamoe.mirai.event.EventChannel;
+import net.mamoe.mirai.event.GlobalEventChannel;
+import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.*;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 消息工具类<p>
@@ -9,7 +15,23 @@ import net.mamoe.mirai.message.data.*;
  * @author Moyuyanli
  * @date 2022/12/21 11:23
  */
-public class MessageUtil {
+public class MessageUtil extends MessageUtilTemplate implements cn.chahuyun.authorize.utils.MessageUtil {
+
+    private static EventChannel<MessageEvent> channel;
+
+    public static MessageUtil INSTANCE;
+
+    public static void init(JvmPlugin plugin) {
+        channel = GlobalEventChannel.INSTANCE.parentScope(plugin).filterIsInstance(MessageEvent.class);
+        INSTANCE = new MessageUtil();
+    }
+
+
+    @NotNull
+    @Override
+    public EventChannel<MessageEvent> getChannel() {
+        return channel;
+    }
 
     private MessageUtil() {
     }

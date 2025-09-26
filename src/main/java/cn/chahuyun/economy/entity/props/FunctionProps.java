@@ -5,6 +5,7 @@ import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.exception.Operation;
 import cn.chahuyun.economy.plugin.FactorManager;
 import cn.chahuyun.economy.prop.PropBase;
+import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.economy.utils.ShareUtils;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
@@ -139,7 +140,7 @@ public class FunctionProps extends PropBase {
                         }
 
                         subject.sendMessage("请输入你想要禁言的人");
-                        GroupMessageEvent messageEvent = (GroupMessageEvent) ShareUtils.getNextMessageEventFromUser(info.getSender(), subject);
+                        GroupMessageEvent messageEvent = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.getId(),info.getSender().getId(),180);
                         if (messageEvent != null) {
                             Member member = ShareUtils.getAtMember(messageEvent);
                             if (member != null) {

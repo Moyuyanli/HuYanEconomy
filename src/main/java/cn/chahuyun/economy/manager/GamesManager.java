@@ -25,7 +25,6 @@ import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
-import cn.chahuyun.economy.utils.ShareUtils;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;
@@ -224,7 +223,7 @@ public class GamesManager {
 
         Date resultTime;
         while (true) {
-            MessageEvent nextMessage = ShareUtils.getNextMessageEventFromUser(sender, subject);
+            MessageEvent nextMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.getId(), sender.getId(), 180);
             if (nextMessage == null) {
                 fishInfo.switchStatus();
                 subject.sendMessage(MessageUtil.formatMessageChain(userInfo.getQq(), "你的鱼跑了!!!"));
@@ -310,7 +309,7 @@ public class GamesManager {
                         }
                     }
                     if (bait.getNum() > 1) {
-                        PropsManager.useAndUpdate(backpack, new UseEvent(null,null,userInfo));
+                        PropsManager.useAndUpdate(backpack, new UseEvent(null, null, userInfo));
                         event.setFishBait(bait);
                     } else if (bait.getNum() == 1) {
                         longs.add(backpack.getPropId());
@@ -491,7 +490,7 @@ public class GamesManager {
         int pull = 0;
         while (rankStatus) {
             //获取下一条消息
-            MessageEvent newMessage = ShareUtils.getNextMessageEventFromUser(user, subject);
+            MessageEvent newMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.getId(), user.getId(), 180);
             if (newMessage == null) {
                 subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你的鱼跑了！！"));
                 fishInfo.switchStatus();

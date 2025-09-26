@@ -3,6 +3,7 @@ package cn.chahuyun.economy.prop;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.props.PropsData;
 import cn.chahuyun.economy.entity.props.UseEvent;
+import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.json.JSONConfig;
@@ -238,7 +239,15 @@ public class PropsManager {
             throw new RuntimeException("该道具不存在！");
         }
 
-        return JSONUtil.toBean(one.getData(), tClass);
+
+        T bean;
+        try {
+            bean = JSONUtil.toBean(one.getData(), tClass);
+        } catch (Exception e) {
+            Log.warning("ont -> :" + one.getData());
+            throw new RuntimeException(e);
+        }
+        return bean;
     }
 
 
@@ -246,7 +255,7 @@ public class PropsManager {
     public static <T extends PropBase> T copyProp(T baseProp) {
         PropsData data = serialization(baseProp);
 
-       return deserialization(data, (Class<T>) baseProp.getClass());
+        return deserialization(data, (Class<T>) baseProp.getClass());
     }
 
     //==========================================================
