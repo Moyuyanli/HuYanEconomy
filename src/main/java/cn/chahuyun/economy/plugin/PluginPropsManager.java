@@ -217,14 +217,36 @@ class PropExpireCheckTask implements Task {
         List<PropsData> collect = HibernateFactory.selectList(PropsData.class);
 
         for (PropsData data : collect) {
-            PropBase base = PropsManager.deserialization(data, PropBase.class);
-            if (!base.isCanItExpire()) {
-                continue;
-            }
-            if (new Date().after(base.getExpiredTime())) {
-                PropsManager.destroyProsInBackpack(data);
+            try {
+                //获取 kind
+                String kind = data.getKind();
+                if (kind == null || kind.isBlank()) {
+                    Log.warning("道具数据缺少 kind 字段，跳过: id=" + data.getId());
+                    continue;
+                }
+
+                // 从注册表中获取对应的具体类
+                Class<? extends PropBase> propClass = PropsManager.shopClass(kind);
+                if (propClass == null) {
+                    Log.warning("未知的道具类型 kind=" + kind + "，未注册，跳过 id=" + data.getId());
+                    continue;
+                }
+                //  使用具体子类进行反序列化
+                PropBase prop = PropsManager.deserialization(data, propClass);
+                //  判断是否过期
+                if (!prop.isCanItExpire()) {
+                    continue;
+                }
+
+                if (new Date().after(prop.getExpiredTime())) {
+                    Log.info("道具已过期，正在销毁: kind=" + kind + ", code=" + prop.getCode() + ", id=" + data.getId());
+                    PropsManager.destroyProsInBackpack(data);
+                }
+
+            } catch (Exception e) {
+                Log.warning("检查道具过期时发生异常，道具 id=" + data.getId() + ", kind=" + data.getKind());
+                Log.error(e);
             }
         }
-
     }
 }

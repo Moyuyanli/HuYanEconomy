@@ -244,7 +244,7 @@ public class PropsManager {
         try {
             bean = JSONUtil.toBean(one.getData(), tClass);
         } catch (Exception e) {
-            Log.warning("ont -> :" + one.getData());
+            Log.warning("one -> :" + one.getData());
             throw new RuntimeException(e);
         }
         return bean;
