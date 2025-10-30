@@ -63,6 +63,13 @@ public class PluginPropsManager {
                 .cost(5888)
                 .build();
 
+        var rename = stack
+                .code(PropsCard.NAME_CHANGE)
+                .name("改名卡")
+                .description("刷新你现在的信息!")
+                .cost(2333)
+                .build();
+
         stack.stack(true);
 
         PropsCard signIn = stack
@@ -96,6 +103,8 @@ public class PluginPropsManager {
 
         PropsShop.addShop(PropsCard.MONTHLY, monthly);
 
+        PropsShop.addShop(PropsCard.NAME_CHANGE, rename);
+
 
         FunctionProps baton = FunctionProps.builder()
                 .kind(PropsKind.functionProp)
@@ -116,7 +125,7 @@ public class PluginPropsManager {
                 .canBuy(true)
                 .reuse(false)
                 .canItExpire(false)
-                .stack(false)
+                .stack(true)
                 .code(FunctionProps.RED_EYES)
                 .name("红牛")
                 .description("喝完就有劲了!")
