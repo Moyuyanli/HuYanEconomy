@@ -101,7 +101,7 @@ public class BankInfo {
         final int MEDIUM_INTEREST_THRESHOLD = 35; // >=35 → 64% 概率，<35 → 34%
 
         if (roll >= HIGH_INTEREST_THRESHOLD) {
-            return RandomUtil.randomInt(10, 30); // [10, 29]
+            return RandomUtil.randomInt(10, 21); // [10, 20]
         } else if (roll >= MEDIUM_INTEREST_THRESHOLD) {
             return RandomUtil.randomInt(1, 10);   // [1, 9]
         } else {
