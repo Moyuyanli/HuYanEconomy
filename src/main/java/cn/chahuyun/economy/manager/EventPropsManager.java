@@ -3,6 +3,7 @@ package cn.chahuyun.economy.manager;
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
+import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
@@ -93,7 +94,7 @@ public class EventPropsManager {
         group.sendMessage(nodes.build());
 
         while (true) {
-            GroupMessageEvent nextMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync( group.getId(),sender.getId(),180);
+            GroupMessageEvent nextMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(group.getId(), sender.getId(), 180);
             if (nextMessage != null) {
                 String content = nextMessage.getMessage().contentToString();
                 if (content.equals("下一页")) {
@@ -136,9 +137,14 @@ public class EventPropsManager {
         builder.add("本次购买道具:");
 
 
-
         for (int i = 1; i < split.length; i++) {
             String code = split[i];
+            int number = 1;
+            if (code.matches("^\\S+\\*\\d+$")) {
+                String[] strings = code.split("\\*");
+                code = strings[0];
+                number = Integer.parseInt(strings[1]);
+            }
 
             boolean match = !PropsShop.checkPropExist(code) && !PropsShop.checkPropNameExist(code);
 
@@ -159,21 +165,38 @@ public class EventPropsManager {
             double money = EconomyUtil.getMoneyByUser(userInfo.getUser());
 
             int cost = template.getCost();
-            if (money < cost) {
-                builder.add(MessageUtil.formatMessage("\n道具 %s ,余额不足%d,购买失败!", name, cost));
+            int finalCost = cost * number;
+            if (money < finalCost) {
+                builder.add(MessageUtil.formatMessage("\n道具 %s ,余额不足%d,购买失败!", name, finalCost));
                 continue;
             }
 
-            if (EconomyUtil.minusMoneyToUser(userInfo.getUser(), cost)) {
-                long l = PropsManager.addProp(template);
+            if (EconomyUtil.minusMoneyToUser(userInfo.getUser(), finalCost)) {
+                if (template.isStack()) {
+                    if (BackpackManager.checkPropInUser(userInfo, template.getCode())) {
+                        UserBackpack backpack = userInfo.getProp(template.getCode());
+                        PropBase prop = PropsManager.getProp(backpack);
+                        prop.setNum(prop.getNum() + number);
+                        PropsManager.updateProp(backpack.getPropId(), prop);
+                    } else {
+                        long l = PropsManager.addProp(template);
+                        PropBase prop = PropsManager.getProp(template.getKind(), l);
+                        prop.setNum(number);
+                        PropsManager.updateProp(l, prop);
+                        BackpackManager.addPropToBackpack(userInfo, template.getCode(), template.getKind(), l);
+                    }
+                } else {
+                    long l = PropsManager.addProp(template);
+                    for (int j = 0; j < number; j++) {
+                        BackpackManager.addPropToBackpack(userInfo, template.getCode(), template.getKind(), l);
+                    }
+                }
 
-                BackpackManager.addPropToBackpack(userInfo, template.getCode(), template.getKind(), l);
-                builder.add(MessageUtil.formatMessage("\n道具 %s 购买成功!", name));
+                builder.add(MessageUtil.formatMessage("\n道具 %s 购买 %d %s 成功!", name, number, template.getUnit()));
             } else {
                 builder.add(MessageUtil.formatMessage("\n道具 %s 购买失败!", name));
             }
         }
-
 
 
         group.sendMessage(builder.build());

@@ -11,6 +11,7 @@ import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
+import lombok.val;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
@@ -51,8 +52,43 @@ public class BackpackManager {
             return;
         }
 
-        ForwardMessageBuilder iNodes = new ForwardMessageBuilder(group);
+        var index = 1;
+        var pageSize = 30;
+        var totalSize = backpacks.size();
+        var maxIndex = (int) Math.ceil((double) totalSize / pageSize);
 
+        int fromIndex = 0;
+        int toIndex = Math.min(index * pageSize, totalSize);
+        var currentBackpacks = backpacks.subList(fromIndex, toIndex);
+        showBackpack(bot, currentBackpacks, group, index, maxIndex);
+
+        while (true) {
+            GroupMessageEvent nextMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(group.getId(), sender.getId(), 30);
+            if (nextMessage == null || !nextMessage.getMessage().contentToString().matches("[上下]一页")) {
+                return;
+            }
+            val string = nextMessage.getMessage().contentToString();
+            boolean shouldUpdate = false;
+
+            if (string.equals("上一页") && index > 1) {
+                index--;
+                shouldUpdate = true;
+            } else if (string.equals("下一页") && index < maxIndex) {
+                index++;
+                shouldUpdate = true;
+            }
+
+            if (shouldUpdate) {
+                fromIndex = (index - 1) * pageSize;
+                toIndex = Math.min(index * pageSize, totalSize);
+                currentBackpacks = backpacks.subList(fromIndex, toIndex);
+                showBackpack(bot, currentBackpacks, group, index, maxIndex);
+            }
+        }
+    }
+
+    private static void showBackpack(Bot bot, List<UserBackpack> backpacks, Group group, int currentPage, int maxPage) {
+        ForwardMessageBuilder iNodes = new ForwardMessageBuilder(group);
         iNodes.add(bot, new PlainText("以下是你的背包↓:"));
 
         for (UserBackpack backpack : backpacks) {
@@ -60,9 +96,9 @@ public class BackpackManager {
             if (prop == null) {
                 continue;
             }
-            iNodes.add(bot, new PlainText(String.format("物品id:%d%n%s", backpack.getPropId(), prop.toString())));
+            iNodes.add(bot, new PlainText(String.format("物品id:%d%n%s", backpack.getPropId(), prop)));
         }
-
+        iNodes.add(bot, MessageUtil.formatMessage("--- 当前页数: %d / 最大页数: %d ---", currentPage, maxPage));
         group.sendMessage(iNodes.build());
     }
 
@@ -208,8 +244,8 @@ public class BackpackManager {
     /**
      * 给这个用户删除这个道具
      *
-     * @param userInfo 用户
-     * @param userBackpack       道具
+     * @param userInfo     用户
+     * @param userBackpack 道具
      */
     public static void delPropToBackpack(UserInfo userInfo, UserBackpack userBackpack) {
         userInfo.removePropInBackpack(userBackpack);
