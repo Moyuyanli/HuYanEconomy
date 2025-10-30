@@ -56,19 +56,21 @@ public class PluginPropsManager {
                 .description("\"不要999，不要888，只要188金币，你的下一次签到将翻三倍！\"")
                 .cost(188).build();
 
-        PropsCard signIn = stack
-                .code(PropsCard.SIGN_IN)
-                .name("补签卡")
-                .description("\"花123购买一张补签卡，将会在你的下次签到自动生效\"")
-                .status(true)
-                .cost(123).build();
-
         PropsCard health = stack
                 .code(PropsCard.HEALTH)
                 .name("医保卡")
                 .description("少年，你还在为付不起医药费而发愁吗？？？")
                 .cost(5888)
                 .build();
+
+        stack.stack(true);
+
+        PropsCard signIn = stack
+                .code(PropsCard.SIGN_IN)
+                .name("补签卡")
+                .description("\"花123购买一张补签卡，将会在你的下次签到自动生效\"")
+                .status(true)
+                .cost(123).build();
 
         PropsCard.PropsCardBuilder<?, ?> expireStack = PropsCard.builder()
                 .kind(PropsKind.card)
