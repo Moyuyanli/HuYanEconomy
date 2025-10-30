@@ -1,11 +1,16 @@
 package cn.chahuyun.economy.entity.props;
 
+import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.exception.Operation;
+import cn.chahuyun.economy.manager.UserManager;
 import cn.chahuyun.economy.prop.PropBase;
+import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import net.mamoe.mirai.contact.User;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -50,6 +55,11 @@ public class PropsCard extends PropBase implements Serializable {
      * 医保卡
      */
     public final static String HEALTH = "health";
+
+    /**
+     * 改名卡
+     */
+    public final static String NAME_CHANGE = "rename";
 
 
     /**
@@ -109,7 +119,15 @@ public class PropsCard extends PropBase implements Serializable {
      * 使用该道具
      */
     @Override
-    public void use(UseEvent info) {
+    public void use(UseEvent event) {
+        if (getCode().equals(NAME_CHANGE)) {
+            User sender = event.getSender();
+            UserInfo userInfo = UserManager.getUserInfo(sender);
+            userInfo.setName(sender.getNick());
+            HibernateFactory.merge(userInfo);
+            throw new Operation("改名卡使用成功!", true);
+        }
+
         this.status = true;
         this.enabledTime = new Date();
     }

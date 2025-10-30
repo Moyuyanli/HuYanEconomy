@@ -114,7 +114,7 @@ public class FunctionProps extends PropBase {
                 } else {
                     DateTime parse = DateUtil.parse(buff);
                     long between = DateUtil.between(new Date(), parse, DateUnit.MINUTE);
-                    if (between > 10) {
+                    if (between > 20) {
                         factor.setBuffValue(RED_EYES, DateUtil.now());
                         FactorManager.merge(factor);
                         throw new Operation("续上一瓶红牛!", true);
@@ -132,8 +132,7 @@ public class FunctionProps extends PropBase {
             case MUTE_1:
             case MUTE_30:
                 Contact subject = info.getSubject();
-                if (subject instanceof Group) {
-                    Group group = (Group) subject;
+                if (subject instanceof Group group) {
                     if (group.getBotPermission() != MemberPermission.MEMBER) {
                         if (EconomyConfig.INSTANCE.getUnableToUseMuteGroup().contains(subject.getId())) {
                             throw new Operation("该群禁言功能被禁用!");
