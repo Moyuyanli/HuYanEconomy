@@ -93,17 +93,19 @@ public class BankInfo {
      * @return 随机生成的利率值，正数表示较高利率，负数或零表示较低利率
      */
     public static Integer randomInterest() {
-        // 生成1到100之间的随机整数，用于决定利率值的范围
-        int i = RandomUtil.randomInt(1, 101);
-        // 当随机数大于等于99时，表示有较高的利率，生成3到5之间的随机整数作为利率值
-        if (i >= 99) {
-            return RandomUtil.randomInt(3, 6);
-        } else if (i >= 35) {
-            // 当随机数大于等于70时，表示有一般利率，生成1到3之间的随机整数作为利率值
-            return RandomUtil.randomInt(1, 3);
+        // 随机基数 [1, 100]
+        int roll = RandomUtil.randomInt(1, 101);
+
+        // 定义概率阈值（提高可读性和可维护性）
+        final int HIGH_INTEREST_THRESHOLD = 99; // >=99 → 2% 概率
+        final int MEDIUM_INTEREST_THRESHOLD = 35; // >=35 → 64% 概率，<35 → 34%
+
+        if (roll >= HIGH_INTEREST_THRESHOLD) {
+            return RandomUtil.randomInt(10, 30); // [10, 29]
+        } else if (roll >= MEDIUM_INTEREST_THRESHOLD) {
+            return RandomUtil.randomInt(1, 10);   // [1, 9]
         } else {
-            // 当随机数小于70时，表示利率较低，生成-3到1之间的随机整数作为利率值
-            return RandomUtil.randomInt(-3, 1);
+            return RandomUtil.randomInt(-10, 1); // [-10, 0]
         }
     }
 
