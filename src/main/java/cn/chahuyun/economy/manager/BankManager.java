@@ -150,7 +150,7 @@ public class BankManager {
         Log.info("银行指令");
 
         BankInfo bankInfo = HibernateFactory.selectOne(BankInfo.class, 1);
-        event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本周银行利率是%s%%", bankInfo.getInterest()));
+        event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本周银行利率是%.1f%%", bankInfo.getInterest() / 10.0));
     }
 
     /**
@@ -230,7 +230,7 @@ class BankInterestTask implements Task {
                 Map<EconomyAccount, Double> accountByBank = EconomyUtil.getAccountByBank();
                 for (Map.Entry<EconomyAccount, Double> entry : accountByBank.entrySet()) {
                     UserInfo userInfo = UserManager.getUserInfo(entry.getKey());
-                    double v = ShareUtils.rounding(entry.getValue()) * (interest / 100.0);
+                    double v = ShareUtils.rounding(entry.getValue()) * (interest / 1000.0);
                     v = Double.parseDouble(String.format("%.1f", v));
                     if (EconomyUtil.plusMoneyToBankForAccount(entry.getKey(), v)) {
                         userInfo.setBankEarnings(v);
