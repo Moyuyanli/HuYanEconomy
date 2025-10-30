@@ -8,6 +8,7 @@ import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.config.FishingMsgConfig;
 import cn.chahuyun.economy.config.RobMsgConfig;
 import cn.chahuyun.economy.constant.Icon;
+import cn.chahuyun.economy.data.PrizesData;
 import cn.chahuyun.economy.fish.FishRollEvent;
 import cn.chahuyun.economy.fish.FishStartEvent;
 import cn.chahuyun.economy.manager.*;
@@ -79,6 +80,7 @@ public final class HuYanEconomy extends JavaPlugin {
         reloadPluginConfig(EconomyPluginConfig.INSTANCE);
         reloadPluginConfig(FishingMsgConfig.INSTANCE);
         reloadPluginConfig(RobMsgConfig.INSTANCE);
+        reloadPluginData(PrizesData.INSTANCE);
         //注册指令
         CommandManager.INSTANCE.registerCommand(new EconomyCommand(), false);
         config = EconomyConfig.INSTANCE;
