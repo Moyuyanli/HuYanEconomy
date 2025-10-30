@@ -148,7 +148,12 @@ public class BackpackManager {
                         }
                     }
                     if (remove) {
-                        delPropToBackpack(userInfo, backpack);
+                        if (prop.isStack() && prop.getNum() > 1) {
+                            prop.setNum(prop.getNum() - 1);
+                            PropsManager.updateProp(propId, prop);
+                        } else {
+                            delPropToBackpack(userInfo, backpack);
+                        }
                     } else {
                         PropsManager.updateProp(backpack.getPropId(), prop);
                     }

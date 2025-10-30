@@ -341,7 +341,7 @@ public class GamesManager {
     public static void fishRoll(FishRollEvent event) {
         int minDifficulty = Math.min(1, event.getMinDifficulty());
         int maxDifficulty = event.getMaxDifficulty();
-        int minGrade = Math.min(1, event.getMinGrade());
+        int minGrade = Math.min(Math.max(1, event.getFishInfo().getLevel() - 7), event.getMinGrade());
         int maxGrade = event.getMaxGrade();
 
         FishPond fishPond = event.getFishPond();
@@ -962,17 +962,18 @@ public class GamesManager {
         }
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     private static boolean failedFishing(UserInfo userInfo, User user, Group subject, FishInfo fishInfo) {
         String[] errorMessages = {"风吹的...", "眼花了...", "走神了...", "呀！切线了...", "钓鱼佬绝不空军！"};
 
 
-        int randomed = RandomUtil.randomInt(0, 101);
-        if (randomed >= 96) {
+        int randomed = RandomUtil.randomInt(0, 10001);
+        if (randomed >= 9998) {
             subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你钓起来一具尸体，附近的钓鱼佬报警了，你真是百口模辩啊！"));
             UserStatusManager.movePrison(userInfo, 60);
             fishInfo.switchStatus();
             return true;
-        } else if (randomed >= 30) {
+        } else if (randomed >= 600) {
             subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), errorMessages[RandomUtil.randomInt(0, 5)]));
             fishInfo.switchStatus();
             return true;
