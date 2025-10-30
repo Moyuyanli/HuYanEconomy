@@ -83,17 +83,19 @@ public class FunctionProps extends PropBase {
 
     @Override
     public String toString() {
-        switch (super.getCode()) {
-            case ELECTRIC_BATON:
-                return "道具名称:" + this.getName() +
-                        "\n价格:" + this.getCost() + "金币" +
-                        "\n剩余电量:" + this.getElectricity() + "%" +
-                        "\n描述:" + this.getDescription();
-            default:
-                return "道具名称:" + this.getName() +
-                        "\n价格:" + this.getCost() + "金币" +
-                        "\n描述:" + this.getDescription();
-        }
+        return switch (super.getCode()) {
+            case ELECTRIC_BATON -> "道具名称:" + this.getName() +
+                    "\n价格:" + this.getCost() + "金币" +
+                    "\n剩余电量:" + this.getElectricity() + "%" +
+                    "\n描述:" + this.getDescription();
+            case RED_EYES -> "道具名称:" + this.getName() +
+                    "\n剩余数量: " + (this.getNum() <= 0 ? 1 : this.getNum()) + " " + this.getUnit() +
+                    "\n价格:" + this.getCost() + "金币" +
+                    "\n描述:" + this.getDescription();
+            default -> "道具名称:" + this.getName() +
+                    "\n价格:" + this.getCost() + "金币" +
+                    "\n描述:" + this.getDescription();
+        };
     }
 
     /**
@@ -139,7 +141,7 @@ public class FunctionProps extends PropBase {
                         }
 
                         subject.sendMessage("请输入你想要禁言的人");
-                        GroupMessageEvent messageEvent = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.getId(),info.getSender().getId(),180);
+                        GroupMessageEvent messageEvent = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.getId(), info.getSender().getId(), 180);
                         if (messageEvent != null) {
                             Member member = ShareUtils.getAtMember(messageEvent);
                             if (member != null) {

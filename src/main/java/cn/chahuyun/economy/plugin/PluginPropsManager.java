@@ -70,9 +70,15 @@ public class PluginPropsManager {
                 .cost(2333)
                 .build();
 
-        stack.stack(true);
 
-        PropsCard signIn = stack
+        PropsCard signIn = PropsCard.builder()
+                .kind(PropsKind.card)
+                .unit("张")
+                .canBuy(true)
+                .reuse(false)
+                .canItExpire(false)
+                .num(1)
+                .stack(true)
                 .code(PropsCard.SIGN_IN)
                 .name("补签卡")
                 .description("\"花123购买一张补签卡，将会在你的下次签到自动生效\"")
@@ -126,6 +132,7 @@ public class PluginPropsManager {
                 .reuse(false)
                 .canItExpire(false)
                 .stack(true)
+                .num(1)
                 .code(FunctionProps.RED_EYES)
                 .name("红牛")
                 .description("喝完就有劲了!")
