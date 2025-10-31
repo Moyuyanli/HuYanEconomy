@@ -3,6 +3,7 @@ package cn.chahuyun.economy.prop;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.props.PropsData;
 import cn.chahuyun.economy.entity.props.UseEvent;
+import cn.chahuyun.economy.exception.Operation;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import cn.hutool.core.date.DateUtil;
@@ -142,6 +143,19 @@ public class PropsManager {
         HibernateFactory.delete(one);
     }
 
+    /**
+     * 销毁一个道具,同时去除背包关联信息
+     *
+     * @param propId 道具id
+     */
+    public static void destroyProsInBackpack(Long propId) {
+        PropsData data = HibernateFactory.selectOne(t, propId);
+        HibernateFactory.delete(data);
+
+        UserBackpack one = HibernateFactory.selectOne(UserBackpack.class, "propId", propId);
+        HibernateFactory.delete(one);
+    }
+
 
     /**
      * 更新一个道具
@@ -191,6 +205,10 @@ public class PropsManager {
             PropBase prop = getProp(backpack);
             prop.use(event);
             updateProp(backpack.getPropId(), prop);
+        } catch (Operation e) {
+            if (e.isRemove()) {
+                destroyProsInBackpack(backpack.getPropId());
+            }
         } catch (Exception e) {
             return false;
         }

@@ -40,8 +40,8 @@ dependencies {
     implementation("org.projectlombok:lombok:1.18.24")
     annotationProcessor("org.projectlombok:lombok:1.18.24")
 
-    implementation("cn.hutool:hutool-all:5.8.30")
-    implementation("org.apache.poi:poi-ooxml:4.1.2")
+    implementation("cn.hutool:hutool-all:5.8.40")
+    implementation("org.apache.poi:poi-ooxml:5.4.0")
 
     implementation("cn.chahuyun:hibernate-plus:1.0.17")
 }

@@ -5,6 +5,7 @@ import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.entity.fish.FishBait;
 import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.prop.PropsShop;
@@ -174,6 +175,11 @@ public class EventPropsManager {
             if (EconomyUtil.minusMoneyToUser(userInfo.getUser(), finalCost)) {
                 if (template.isStack()) {
                     if (BackpackManager.checkPropInUser(userInfo, template.getCode())) {
+
+                        if (FishBait.fishbaitTimer.containsKey(code)) {
+                            number *= FishBait.fishbaitTimer.get(code);
+                        }
+
                         UserBackpack backpack = userInfo.getProp(template.getCode());
                         PropBase prop = PropsManager.getProp(backpack);
                         prop.setNum(prop.getNum() + number);
@@ -186,8 +192,8 @@ public class EventPropsManager {
                         BackpackManager.addPropToBackpack(userInfo, template.getCode(), template.getKind(), l);
                     }
                 } else {
-                    long l = PropsManager.addProp(template);
                     for (int j = 0; j < number; j++) {
+                        long l = PropsManager.addProp(template);
                         BackpackManager.addPropToBackpack(userInfo, template.getCode(), template.getKind(), l);
                     }
                 }

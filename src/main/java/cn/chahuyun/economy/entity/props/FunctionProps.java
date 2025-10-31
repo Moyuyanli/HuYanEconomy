@@ -22,6 +22,8 @@ import net.mamoe.mirai.event.events.GroupMessageEvent;
 
 import java.util.Date;
 
+import static cn.chahuyun.economy.constant.PropConstant.RED_EYES_CD;
+
 /**
  * 功能性道具
  *
@@ -116,7 +118,7 @@ public class FunctionProps extends PropBase {
                 } else {
                     DateTime parse = DateUtil.parse(buff);
                     long between = DateUtil.between(new Date(), parse, DateUnit.MINUTE);
-                    if (between > 20) {
+                    if (between > RED_EYES_CD) {
                         factor.setBuffValue(RED_EYES, DateUtil.now());
                         FactorManager.merge(factor);
                         throw new Operation("续上一瓶红牛!", true);

@@ -54,6 +54,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static cn.chahuyun.economy.HuYanEconomy.msgConfig;
+import static cn.chahuyun.economy.constant.PropConstant.RED_EYES_DURATION;
 
 /**
  * 游戏管理<p>
@@ -938,7 +939,7 @@ public class GamesManager {
 
                 if (buff != null) {
                     DateTime parse = DateUtil.parse(buff);
-                    if (DateUtil.between(new Date(), parse, DateUnit.MINUTE) <= 10) {
+                    if (DateUtil.between(new Date(), parse, DateUnit.MINUTE) <= RED_EYES_DURATION) {
                         expired -= (int) (expired * 0.8);
                     } else {
                         factor.setBuffValue(FunctionProps.RED_EYES, null);
@@ -973,7 +974,7 @@ public class GamesManager {
             UserStatusManager.movePrison(userInfo, 60);
             fishInfo.switchStatus();
             return true;
-        } else if (randomed >= 600) {
+        } else if (randomed >= 6000) {
             subject.sendMessage(MessageUtil.formatMessageChain(user.getId(), errorMessages[RandomUtil.randomInt(0, 5)]));
             fishInfo.switchStatus();
             return true;

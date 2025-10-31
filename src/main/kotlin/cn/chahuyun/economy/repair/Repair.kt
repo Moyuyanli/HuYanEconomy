@@ -133,7 +133,17 @@ class PropRepair : Repair {
     override fun repair(): Boolean {
         val list = HibernateFactory.selectList(UserBackpack::class.java)
 
+        val map = mutableMapOf<Pair<Long, String>, UserBackpack>()
+
         for (userBackpack in list) {
+            val key = userBackpack.propId to userBackpack.userId
+
+            if (map.containsKey(key)) {
+                HibernateFactory.delete(userBackpack)
+            } else {
+                map[key] = userBackpack
+            }
+
             try {
                 PropsManager.getProp(userBackpack)
             } catch (e: Exception) {
