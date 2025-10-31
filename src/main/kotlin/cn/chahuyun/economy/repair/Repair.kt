@@ -108,8 +108,7 @@ class RobRepair : Repair {
                             executeUpdate(sql)
                         }
                     } catch (e: Exception) {
-                        // 处理异常
-                        e.printStackTrace()
+                        println(e.message)
                     }
                 }
             }
@@ -140,6 +139,7 @@ class PropRepair : Repair {
 
             if (map.containsKey(key)) {
                 HibernateFactory.delete(userBackpack)
+                continue
             } else {
                 map[key] = userBackpack
             }

@@ -92,7 +92,7 @@ public class FishBait extends PropBase {
     @Override
     public void use(UseEvent info) {
         Integer num = getNum() - 1;
-        if (num >= 0) {
+        if (num <= 0) {
             throw new Operation("", true);
         }
         setNum(num - 1);

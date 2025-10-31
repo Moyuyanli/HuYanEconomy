@@ -187,6 +187,11 @@ public class EventPropsManager {
                     } else {
                         long l = PropsManager.addProp(template);
                         PropBase prop = PropsManager.getProp(template.getKind(), l);
+
+                        if (FishBait.fishbaitTimer.containsKey(code)) {
+                            number *= FishBait.fishbaitTimer.get(code);
+                        }
+
                         prop.setNum(number);
                         PropsManager.updateProp(l, prop);
                         BackpackManager.addPropToBackpack(userInfo, template.getCode(), template.getKind(), l);
