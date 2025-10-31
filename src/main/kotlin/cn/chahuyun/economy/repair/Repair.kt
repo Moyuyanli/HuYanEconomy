@@ -152,7 +152,12 @@ class PropRepair : Repair {
                     stacks + prop
                 }
             } catch (e: Exception) {
-                HibernateFactory.delete(userBackpack)
+                try {
+                    HibernateFactory.delete(userBackpack)
+                } catch (e: Exception) {
+                    println(e.message)
+                    continue
+                }
             }
         }
 

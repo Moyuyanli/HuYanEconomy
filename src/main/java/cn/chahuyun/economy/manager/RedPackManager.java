@@ -319,6 +319,7 @@ public class RedPackManager {
             redPack.setTakenMoneys(redPack.getTakenMoneys() + perMoney);
         } else {
             perMoney = Double.parseDouble(df.format(money / number));
+            redPack.setTakenMoneys(redPack.getTakenMoneys() + perMoney);
         }
         if (!EconomyUtil.plusMoneyToUser(sender, perMoney)) {
             subject.sendMessage(MessageUtil.formatMessageChain(message, "红包领取失败!"));
