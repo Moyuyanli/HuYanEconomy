@@ -134,6 +134,8 @@ class PropRepair : Repair {
 
         val map = mutableMapOf<Pair<Long, String>, UserBackpack>()
 
+        //todo 收集整理可堆叠物品
+
         for (userBackpack in list) {
             val key = userBackpack.propId to userBackpack.userId
 

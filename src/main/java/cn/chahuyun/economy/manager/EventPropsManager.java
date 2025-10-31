@@ -160,6 +160,7 @@ public class EventPropsManager {
                 template = PropsShop.getTemplateByName(code);
             }
             String name = template.getName();
+            code = template.getCode();
 
             UserInfo userInfo = UserManager.getUserInfo(event.getSender());
 
