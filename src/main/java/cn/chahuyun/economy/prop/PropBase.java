@@ -18,6 +18,7 @@ import java.util.Date;
  * @date 2022/11/14 8:52
  */
 
+@SuppressWarnings({"LombokGetterMayBeUsed", "LombokSetterMayBeUsed"})
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -106,6 +107,17 @@ public abstract class PropBase implements Serializable {
         this.name = name;
     }
 
+    public boolean isStack() {
+        return stack;
+    }
+
+    public Integer getNum() {
+        return num;
+    }
+
+    public void setNum(Integer num) {
+        this.num = num;
+    }
 
     @Override
     public String toString() {

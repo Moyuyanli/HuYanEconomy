@@ -3,7 +3,6 @@ package cn.chahuyun.economy.entity;
 import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
 import jakarta.persistence.*;
-import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
@@ -14,9 +13,9 @@ import java.io.Serializable;
  * @author Moyuyanli
  * @date 2022/11/15 9:02
  */
+@SuppressWarnings("LombokGetterMayBeUsed")
 @Entity(name = "UserBackpack")
 @Table
-@Getter
 @Setter
 public class UserBackpack implements Serializable {
     @Id
@@ -39,12 +38,24 @@ public class UserBackpack implements Serializable {
      */
     private Long propId;
 
-    public Long getPropId() {
-        return propId;
+    public Long getId() {
+        return id;
     }
 
     public String getUserId() {
         return userId;
+    }
+
+    public String getPropCode() {
+        return propCode;
+    }
+
+    public String getPropKind() {
+        return propKind;
+    }
+
+    public Long getPropId() {
+        return propId;
     }
 
     //    @ManyToOne

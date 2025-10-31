@@ -4,6 +4,7 @@ import cn.chahuyun.economy.entity.UserBackpack
 import cn.chahuyun.economy.entity.fish.FishPond
 import cn.chahuyun.economy.entity.fish.FishRanking
 import cn.chahuyun.economy.entity.rob.RobInfo
+import cn.chahuyun.economy.prop.PropBase
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.hibernateplus.HibernateFactory
 import java.sql.Connection
@@ -133,8 +134,7 @@ class PropRepair : Repair {
         val list = HibernateFactory.selectList(UserBackpack::class.java)
 
         val map = mutableMapOf<Pair<Long, String>, UserBackpack>()
-
-        //todo 收集整理可堆叠物品
+        val stacks = mutableListOf<UserBackpack>()
 
         for (userBackpack in list) {
             val key = userBackpack.propId to userBackpack.userId
@@ -147,11 +147,32 @@ class PropRepair : Repair {
             }
 
             try {
-                PropsManager.getProp(userBackpack)
+                val prop = PropsManager.getProp(userBackpack)
+                if (prop.isStack) {
+                    stacks + prop
+                }
             } catch (e: Exception) {
                 HibernateFactory.delete(userBackpack)
             }
         }
+
+        val stackMap = mutableMapOf<Pair<String, String>, PropBase>()
+
+        for (backpack in stacks) {
+            val key = backpack.userId to backpack.propCode
+            val prop = PropsManager.getProp(backpack)
+            if (stackMap.containsKey(key)) {
+                val num = if (prop.num <= 0) 1 else prop.num
+                val base = stackMap[key]
+                base!!.num += num
+                PropsManager.destroyProsInBackpack(backpack.propId)
+                PropsManager.updateProp(backpack.propId, base)
+                continue
+            } else {
+                stackMap[key] = prop
+            }
+        }
+
         return true
     }
 
