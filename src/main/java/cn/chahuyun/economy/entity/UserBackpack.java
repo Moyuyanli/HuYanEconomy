@@ -39,6 +39,14 @@ public class UserBackpack implements Serializable {
      */
     private Long propId;
 
+    public Long getPropId() {
+        return propId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
     //    @ManyToOne
 //    private UserInfo userInfo;
     public UserBackpack() {
