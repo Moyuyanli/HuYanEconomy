@@ -106,7 +106,7 @@ public class GamesManager {
                             }
                             fishPond.setPondLevel(level + 2);
                             fishPond.setMinLevel(value.getMinFishLevel());
-                            fishPond.save();
+                            HibernateFactory.merge(fishPond);
                         }
                     }
                 }
