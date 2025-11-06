@@ -13,6 +13,7 @@ import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.props.PropsCard;
+import cn.chahuyun.economy.entity.props.UseEvent;
 import cn.chahuyun.economy.plugin.ImageManager;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.prop.PropsManager;
@@ -285,7 +286,6 @@ public class SignManager {
                         continue;
                     }
                     //自动使用补签卡
-//                    if (card.isStatus()) {
                     int oldSignNumber = userInfo.getOldSignNumber();
 
                     if (oldSignNumber == 0) {
@@ -295,10 +295,10 @@ public class SignManager {
                     userInfo.setSignNumber(userInfo.getSignNumber() + oldSignNumber);
                     userInfo.setOldSignNumber(0);
 
-                    BackpackManager.delPropToBackpack(userInfo, propId);
+                    UseEvent useEvent = new UseEvent(userInfo.getUser(), event.getGroup(), userInfo);
+                    PropsManager.useAndUpdate(backpack, useEvent);
                     event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张补签卡，续上断掉的签到天数!"));
                     event.setSign_in(true);
-//                    }
             }
         }
 

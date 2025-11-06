@@ -1,9 +1,12 @@
 package cn.chahuyun.economy.constant;
 
+import lombok.Getter;
+
 /**
  * @author Moyuyanli
  * @Date 2024/9/7 18:50
  */
+@Getter
 public enum FishPondLevelConstant {
 
     LV_2(5000, 0),
@@ -13,8 +16,8 @@ public enum FishPondLevelConstant {
     LV_6(25000, 0),
     LV_7(30000, 0),
     LV_8(50000, 10),
-    LV_9(70000, 0),
-    LV_10(10000, 0);
+    LV_9(70000, 20),
+    LV_10(10000, 30);
 
     /**
      * 升级金额
@@ -31,11 +34,4 @@ public enum FishPondLevelConstant {
         this.minFishLevel = minFishLevel;
     }
 
-    public int getAmount() {
-        return amount;
-    }
-
-    public int getMinFishLevel() {
-        return minFishLevel;
-    }
 }
