@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.entity.bank.action;
+package cn.chahuyun.economy.model.bank.action;
 
 import cn.chahuyun.economy.utils.EconomyUtil;
 import net.mamoe.mirai.contact.User;
@@ -30,3 +30,4 @@ public class Transfer extends BankAction {
         EconomyUtil.turnUserToUser(getUser(), toUser, money);
     }
 }
+

@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.entity.bank;
+package cn.chahuyun.economy.model.bank;
 
-import cn.chahuyun.economy.entity.bank.action.BankAction;
+import cn.chahuyun.economy.model.bank.action.BankAction;
 import lombok.Getter;
 import lombok.Setter;
 import net.mamoe.mirai.contact.User;
@@ -17,3 +17,4 @@ public class AbstractBank {
     private BankAction bankAction;
 
 }
+

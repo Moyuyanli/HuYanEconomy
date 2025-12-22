@@ -1,22 +1,20 @@
-package cn.chahuyun.economy.entity.title;
+package cn.chahuyun.economy.model.title;
 
 import cn.chahuyun.economy.entity.TitleInfo;
 import cn.chahuyun.economy.entity.UserInfo;
 
 /**
- * @author Moyuyanli
- * @Date 2024/8/11 11:30
+ * 称号 API 接口
  */
-@FunctionalInterface
 public interface TitleApi {
 
     /**
-     * 根据称号模板创建一个称号
+     * 创建称号信息
      *
      * @param userInfo 用户信息
-     * @return 模版创建的称号
+     * @return 称号信息
      */
     TitleInfo createTitleInfo(UserInfo userInfo);
 
-
 }
+

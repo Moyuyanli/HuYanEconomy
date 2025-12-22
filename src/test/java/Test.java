@@ -1,5 +1,5 @@
 import cn.chahuyun.economy.constant.ImageDrawXY;
-import cn.chahuyun.economy.entity.title.CustomTitle;
+import cn.chahuyun.economy.model.title.CustomTitle;
 import cn.chahuyun.economy.utils.ImageUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUnit;

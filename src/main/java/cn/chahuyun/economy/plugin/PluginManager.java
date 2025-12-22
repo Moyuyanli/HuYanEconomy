@@ -23,11 +23,6 @@ import java.nio.file.Path;
  */
 public class PluginManager {
 
-    /**
-     * 是否加载壶言会话插件
-     */
-    public static boolean isHuYanSessionPlugin;
-
     public static boolean isCustomImage;
 
 
@@ -46,18 +41,6 @@ public class PluginManager {
 
         //检查插件版本
         CheckLatestVersion.init();
-
-        try {
-            //壶言会话
-            if (EconomyPluginConfig.INSTANCE.getFirstStart()) {
-                HuYanEconomy.config.setOwner(ConfigData.INSTANCE.getOwner());
-                Log.info("检测到壶言会话,已同步主人!");
-            }
-            isHuYanSessionPlugin = true;
-        } catch (NoClassDefFoundError e) {
-            isHuYanSessionPlugin = false;
-        }
-
 
         HuYanEconomy instance = HuYanEconomy.INSTANCE;
         Path path = instance.getDataFolderPath();

@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.fish;
 
 import cn.chahuyun.economy.entity.UserInfo;
-import cn.chahuyun.economy.entity.fish.FishBait;
+import cn.chahuyun.economy.model.fish.FishBait;
 import cn.chahuyun.economy.entity.fish.FishInfo;
 import lombok.Getter;
 import lombok.Setter;

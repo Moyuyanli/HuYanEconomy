@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.entity.props;
+package cn.chahuyun.economy.model.props;
 
 import cn.chahuyun.economy.entity.UserInfo;
 import lombok.Getter;
@@ -9,10 +9,7 @@ import net.mamoe.mirai.contact.User;
 import java.util.Date;
 
 /**
- *
- *
- * @author Moyuyanli
- * @date 2025-2-20 10:16
+ * 道具使用事件
  */
 @Getter
 @Setter
@@ -41,3 +38,4 @@ public class UseEvent {
         this.userInfo = userInfo;
     }
 }
+

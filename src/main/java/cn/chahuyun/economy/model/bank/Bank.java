@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.entity.bank;
+package cn.chahuyun.economy.model.bank;
 
-import cn.chahuyun.economy.entity.bank.action.BankAction;
+import cn.chahuyun.economy.model.bank.action.BankAction;
 
 /**
  * @author Erzbir
@@ -18,3 +18,4 @@ public class Bank extends AbstractBank {
     }
 
 }
+

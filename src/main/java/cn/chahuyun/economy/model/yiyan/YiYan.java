@@ -1,12 +1,11 @@
-package cn.chahuyun.economy.entity.yiyan;
+package cn.chahuyun.economy.model.yiyan;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @author Moyuyanli
- * @date 2024/8/13 9:39
+ * 一言模型
  */
 @Data
 @AllArgsConstructor
@@ -19,3 +18,4 @@ public class YiYan {
     private String from;
 
 }
+

@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.plugin;
 
-import cn.chahuyun.economy.entity.yiyan.YiYan;
+import cn.chahuyun.economy.model.yiyan.YiYan;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
 

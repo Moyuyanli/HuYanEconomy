@@ -1,12 +1,11 @@
-package cn.chahuyun.economy.entity.title;
+package cn.chahuyun.economy.model.title;
 
 import cn.chahuyun.economy.entity.TitleInfo;
 import cn.chahuyun.economy.entity.UserInfo;
 import lombok.Getter;
 
 /**
- * @author Moyuyanli
- * @Date 2024/8/11 11:33
+ * 称号模板
  */
 @Getter
 public abstract class TitleTemplate implements TitleApi {
@@ -53,3 +52,4 @@ public abstract class TitleTemplate implements TitleApi {
                 .build();
     }
 }
+

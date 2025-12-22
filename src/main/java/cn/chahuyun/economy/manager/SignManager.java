@@ -12,7 +12,7 @@ import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
-import cn.chahuyun.economy.entity.props.PropsCard;
+import cn.chahuyun.economy.model.props.PropsCard;
 import cn.chahuyun.economy.plugin.ImageManager;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.prop.PropsManager;

@@ -14,8 +14,8 @@ import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.UserStatus;
-import cn.chahuyun.economy.entity.props.FunctionProps;
-import cn.chahuyun.economy.entity.props.UseEvent;
+import cn.chahuyun.economy.model.props.FunctionProps;
+import cn.chahuyun.economy.model.props.UseEvent;
 import cn.chahuyun.economy.entity.rob.RobInfo;
 import cn.chahuyun.economy.plugin.FactorManager;
 import cn.chahuyun.economy.prop.PropsManager;
@@ -141,7 +141,7 @@ public class RobManager {
         if (BackpackManager.checkPropInUser(thisUser, FunctionProps.ELECTRIC_BATON)) {
             UserBackpack prop = thisUser.getProp(FunctionProps.ELECTRIC_BATON);
 
-            if (PropsManager.useAndUpdate(prop, new UseEvent(user, group, thisUser))) {
+            if (PropsManager.INSTANCE.useProp(prop, new UseEvent(user, group, thisUser)).getSuccess()) {
                 userFactor.setForce(userFactor.getForce() + 0.3);
                 group.sendMessage(MessageUtil.formatMessageChain(message, "你携带了便携电棒，攻击性变强了!"));
             } else {
@@ -153,7 +153,7 @@ public class RobManager {
         if (BackpackManager.checkPropInUser(atUser, FunctionProps.ELECTRIC_BATON)) {
             UserBackpack prop = atUser.getProp(FunctionProps.ELECTRIC_BATON);
 
-            if (PropsManager.useAndUpdate(prop, new UseEvent(user, group, atUser))) {
+            if (PropsManager.INSTANCE.useProp(prop, new UseEvent(user, group, atUser)).getSuccess()) {
                 atUserFactor.setDodge(atUserFactor.getDodge() + 0.2);
                 atUserFactor.setIrritable(atUserFactor.getIrritable() + 0.4);
                 group.sendMessage(MessageUtil.formatMessageChain(message, "对方掏出了便携电棒，局势变得紧张了起来!"));

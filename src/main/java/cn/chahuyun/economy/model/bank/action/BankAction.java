@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.entity.bank.action;
+package cn.chahuyun.economy.model.bank.action;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -16,3 +16,4 @@ public abstract class BankAction {
 
     public abstract void execute() throws Exception;
 }
+

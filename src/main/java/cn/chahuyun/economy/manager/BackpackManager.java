@@ -5,7 +5,7 @@ import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
-import cn.chahuyun.economy.entity.props.UseEvent;
+import cn.chahuyun.economy.model.props.UseEvent;
 import cn.chahuyun.economy.exception.Operation;
 import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
@@ -126,38 +126,15 @@ public class BackpackManager {
         for (int i = 1; i < split.length; i++) {
             long propId = Long.parseLong(split[i]);
 
-
             List<UserBackpack> backpacks = userInfo.getBackpacks();
 
             boolean success = false;
             for (Iterator<UserBackpack> iterator = backpacks.iterator(); iterator.hasNext(); ) {
                 UserBackpack backpack = iterator.next();
                 if (backpack.getPropId().equals(propId)) {
-                    PropBase prop = PropsManager.getProp(backpack);
-                    String messageProp = "使用成功";
-                    boolean remove = false;
-                    try {
-                        prop.use(useEvent);
-                    } catch (Exception e) {
-                        if (e instanceof Operation) {
-                            Operation operation = (Operation) e;
-                            remove = operation.isRemove();
-                            messageProp = operation.getMessage();
-                        } else {
-                            throw e;
-                        }
-                    }
-                    if (remove) {
-                        if (prop.isStack() && prop.getNum() > 1) {
-                            prop.setNum(prop.getNum() - 1);
-                            PropsManager.updateProp(propId, prop);
-                        } else {
-                            delPropToBackpack(userInfo, backpack);
-                        }
-                    } else {
-                        PropsManager.updateProp(backpack.getPropId(), prop);
-                    }
-                    builder.add(MessageUtil.formatMessage("\n%d %s!", propId, messageProp));
+                    cn.chahuyun.economy.prop.UseResult result = PropsManager.INSTANCE.useProp(backpack, useEvent);
+                    
+                    builder.add(MessageUtil.formatMessage("\n%d %s!", propId, result.getMessage()));
                     success = true;
                     break;
                 }

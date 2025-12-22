@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.entity.title;
+package cn.chahuyun.economy.model.title;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -6,6 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+/**
+ * 自定义称号模型
+ */
 @Getter
 @Setter
 @Accessors(chain = true)
@@ -43,3 +46,4 @@ public class CustomTitle {
     }
 
 }
+

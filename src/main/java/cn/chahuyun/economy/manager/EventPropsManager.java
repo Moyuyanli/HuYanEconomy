@@ -5,7 +5,7 @@ import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
-import cn.chahuyun.economy.entity.fish.FishBait;
+import cn.chahuyun.economy.model.fish.FishBait;
 import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.prop.PropsShop;
@@ -174,7 +174,7 @@ public class EventPropsManager {
             }
 
             if (EconomyUtil.minusMoneyToUser(userInfo.getUser(), finalCost)) {
-                if (template.isStack()) {
+                if (template instanceof cn.chahuyun.economy.prop.Stackable) {
                     if (BackpackManager.checkPropInUser(userInfo, template.getCode())) {
 
                         if (FishBait.fishbaitTimer.containsKey(code)) {
@@ -183,8 +183,11 @@ public class EventPropsManager {
 
                         UserBackpack backpack = userInfo.getProp(template.getCode());
                         PropBase prop = PropsManager.getProp(backpack);
-                        prop.setNum(prop.getNum() + number);
-                        PropsManager.updateProp(backpack.getPropId(), prop);
+                        if (prop instanceof cn.chahuyun.economy.prop.Stackable) {
+                            cn.chahuyun.economy.prop.Stackable stackable = (cn.chahuyun.economy.prop.Stackable) prop;
+                            stackable.setNum(stackable.getNum() + number);
+                            PropsManager.updateProp(backpack.getPropId(), prop);
+                        }
                     } else {
                         long l = PropsManager.addProp(template);
                         PropBase prop = PropsManager.getProp(template.getKind(), l);
@@ -193,8 +196,11 @@ public class EventPropsManager {
                             number *= FishBait.fishbaitTimer.get(code);
                         }
 
-                        prop.setNum(number);
-                        PropsManager.updateProp(l, prop);
+                        if (prop instanceof cn.chahuyun.economy.prop.Stackable) {
+                            cn.chahuyun.economy.prop.Stackable stackable = (cn.chahuyun.economy.prop.Stackable) prop;
+                            stackable.setNum(number);
+                            PropsManager.updateProp(l, prop);
+                        }
                         BackpackManager.addPropToBackpack(userInfo, template.getCode(), template.getKind(), l);
                     }
                 } else {
@@ -204,7 +210,8 @@ public class EventPropsManager {
                     }
                 }
 
-                builder.add(MessageUtil.formatMessage("\n道具 %s 购买 %d %s 成功!", name, number, template.getUnit()));
+                String unit = (template instanceof cn.chahuyun.economy.prop.Stackable) ? ((cn.chahuyun.economy.prop.Stackable) template).getUnit() : "个";
+                builder.add(MessageUtil.formatMessage("\n道具 %s 购买 %d %s 成功!", name, number, unit));
             } else {
                 builder.add(MessageUtil.formatMessage("\n道具 %s 购买失败!", name));
             }
