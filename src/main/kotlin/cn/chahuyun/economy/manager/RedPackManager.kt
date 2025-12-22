@@ -334,14 +334,13 @@ class RedPackManager {
         }
 
         // 领取措施
-        val perMoney: Double
-
-        if (isRandomPack) {
-            perMoney = redPack.randomPack
-            redPack.takenMoneys = redPack.takenMoneys + perMoney
+        val perMoney: Double = if (isRandomPack) {
+            redPack.randomPack
         } else {
-            perMoney = ShareUtils.rounding(money / number)
+            ShareUtils.rounding(money / number)
         }
+
+        redPack.takenMoneys = redPack.takenMoneys + perMoney
 
         if (!EconomyUtil.plusMoneyToUser(sender, perMoney)) {
             subject.sendMessage(MessageUtil.formatMessageChain(message, "红包领取失败!"))

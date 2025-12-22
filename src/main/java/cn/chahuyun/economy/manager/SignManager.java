@@ -245,7 +245,8 @@ public class SignManager {
                     userInfo.setSignNumber(userInfo.getSignNumber() + oldSignNumber);
                     userInfo.setOldSignNumber(0);
 
-                    BackpackManager.delPropToBackpack(userInfo, propId);
+                    UseEvent useEvent = new UseEvent(userInfo.getUser(), event.getGroup(), userInfo);
+                    PropsManager.useProp(backpack, useEvent);
                     event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张补签卡，续上断掉的签到天数!"));
                     event.setSign_in(true);
 //                    }
