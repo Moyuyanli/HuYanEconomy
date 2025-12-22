@@ -12,7 +12,7 @@ data class UseResult(
     val success: Boolean,
     val message: String,
     val shouldRemove: Boolean = false,
-    val shouldUpdate: Boolean = true
+    val shouldUpdate: Boolean = true,
 ) {
     companion object {
         fun success(message: String, shouldRemove: Boolean = false) = UseResult(true, message, shouldRemove)
@@ -30,7 +30,7 @@ interface BaseProp : Serializable {
     var description: String
     var cost: Int
     var canBuy: Boolean
-    
+
     /**
      * 商店展示信息
      */
@@ -78,21 +78,22 @@ interface Usable {
 abstract class AbstractProp(
     override val kind: String,
     override val code: String,
-    override var name: String
+    override var name: String,
 ) : BaseProp {
     override var description: String = ""
     override var cost: Int = 0
     override var canBuy: Boolean = false
 
     override fun toShopInfo(): String = "道具名称: $name\n道具描述: $description\n道具价值: $cost 金币"
-    
-    override fun toString(): String = "道具名称: $name\n道具数量: ${if (this is Stackable) this.num else 1}\n道具描述: $description"
+
+    override fun toString(): String =
+        "道具名称: $name\n道具数量: ${if (this is Stackable) this.num else 1}\n道具描述: $description"
 }
 
 /**
  * 消耗品基类：可堆叠、可使用
  */
-abstract class ConsumableProp(kind: String, code: String, name: String) : 
+abstract class ConsumableProp(kind: String, code: String, name: String) :
     AbstractProp(kind, code, name), Stackable, Usable {
     override var num: Int = 1
     override var unit: String = "个"
@@ -101,13 +102,13 @@ abstract class ConsumableProp(kind: String, code: String, name: String) :
 /**
  * 状态卡片基类：不可堆叠、有时效、可使用（激活）
  */
-abstract class CardProp(kind: String, code: String, name: String) : 
+abstract class CardProp(kind: String, code: String, name: String) :
     AbstractProp(kind, code, name), Expirable, Usable {
     override var getTime: Date = Date()
     override var expireDays: Int = -1
     override var expiredTime: Date? = null
     override var canItExpire: Boolean = true
-    
+
     var status: Boolean = false
     var enabledTime: Date? = null
 }

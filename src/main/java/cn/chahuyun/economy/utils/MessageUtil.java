@@ -17,23 +17,15 @@ import org.jetbrains.annotations.NotNull;
  */
 public class MessageUtil extends MessageUtilTemplate implements cn.chahuyun.authorize.utils.MessageUtil {
 
+    public static MessageUtil INSTANCE;
     private static EventChannel<MessageEvent> channel;
 
-    public static MessageUtil INSTANCE;
+    private MessageUtil() {
+    }
 
     public static void init(JvmPlugin plugin) {
         channel = GlobalEventChannel.INSTANCE.parentScope(plugin).filterIsInstance(MessageEvent.class);
         INSTANCE = new MessageUtil();
-    }
-
-
-    @NotNull
-    @Override
-    public EventChannel<MessageEvent> getChannel() {
-        return channel;
-    }
-
-    private MessageUtil() {
     }
 
     /**
@@ -90,7 +82,6 @@ public class MessageUtil extends MessageUtilTemplate implements cn.chahuyun.auth
         return new MessageChainBuilder().append(new At(at)).append(String.format(format, params)).build();
     }
 
-
     /**
      * 带引用的消息构造器<p>
      *
@@ -142,6 +133,12 @@ public class MessageUtil extends MessageUtilTemplate implements cn.chahuyun.auth
      */
     public static MessageChainBuilder formatMessageBuild(long at, String format, Object... params) {
         return new MessageChainBuilder().append(new At(at)).append(String.format(format, params));
+    }
+
+    @NotNull
+    @Override
+    public EventChannel<MessageEvent> getChannel() {
+        return channel;
     }
 
 

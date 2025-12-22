@@ -1,8 +1,8 @@
 package cn.chahuyun.economy.fish;
 
 import cn.chahuyun.economy.entity.UserInfo;
-import cn.chahuyun.economy.model.fish.FishBait;
 import cn.chahuyun.economy.entity.fish.FishInfo;
+import cn.chahuyun.economy.model.fish.FishBait;
 import lombok.Getter;
 import lombok.Setter;
 import net.mamoe.mirai.event.AbstractEvent;
@@ -50,6 +50,7 @@ public class FishStartEvent extends AbstractEvent {
 
     /**
      * 计算最大等级
+     *
      * @return 最大等级
      */
     public Integer calculateMaxGrade() {
@@ -58,6 +59,7 @@ public class FishStartEvent extends AbstractEvent {
 
     /**
      * 计算最大难度
+     *
      * @return 最大难度
      */
     public Integer calculateMaxDifficulty() {
@@ -66,6 +68,7 @@ public class FishStartEvent extends AbstractEvent {
 
     /**
      * 计算基本难度
+     *
      * @return 基本难度
      */
     public Integer calculateMinDifficulty() {

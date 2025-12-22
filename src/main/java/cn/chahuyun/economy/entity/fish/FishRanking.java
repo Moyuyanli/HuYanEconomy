@@ -79,7 +79,6 @@ public class FishRanking implements Serializable {
     }
 
 
-
     /**
      * 显示排行榜信息
      *

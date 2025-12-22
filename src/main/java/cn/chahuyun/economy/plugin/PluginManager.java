@@ -1,8 +1,6 @@
 package cn.chahuyun.economy.plugin;
 
-import cn.chahuyun.config.ConfigData;
 import cn.chahuyun.economy.HuYanEconomy;
-import cn.chahuyun.economy.config.EconomyPluginConfig;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.version.CheckLatestVersion;
 import cn.hutool.core.io.FileUtil;

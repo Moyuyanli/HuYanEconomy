@@ -3,7 +3,7 @@ package cn.chahuyun.economy.exception;
 /**
  * 抽奖异常
  */
-public class RaffleException extends RuntimeException{
+public class RaffleException extends RuntimeException {
 
     /**
      * Constructs a new runtime exception with {@code null} as its

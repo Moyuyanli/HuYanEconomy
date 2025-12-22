@@ -20,7 +20,6 @@ import java.util.regex.Pattern;
 public class ShareUtils {
 
 
-
     private ShareUtils() {
     }
 
@@ -83,6 +82,7 @@ public class ShareUtils {
 
     /**
      * 随机比较
+     *
      * @param probability 成功概率 0~100
      * @return true 结果
      */

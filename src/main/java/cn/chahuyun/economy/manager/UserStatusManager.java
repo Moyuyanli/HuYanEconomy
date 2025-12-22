@@ -175,6 +175,47 @@ public class UserStatusManager {
         HibernateFactory.merge(userStatus);
     }
 
+    /**
+     * 获取用户状态
+     *
+     * @param user 用户信息
+     * @return 用户状态
+     */
+    @NotNull
+    public static UserStatus getUserStatus(@NotNull UserInfo user) {
+        return getUserStatus(user.getQq());
+    }
+
+    /**
+     * 获取用户状态
+     *
+     * @param qq 用户qq
+     * @return 用户状态
+     */
+    @NotNull
+    public static UserStatus getUserStatus(@NotNull Long qq) {
+        UserStatus one = HibernateFactory.selectOne(UserStatus.class, qq);
+
+        if (one == null) {
+            UserStatus status = new UserStatus();
+            status.setId(qq);
+            return HibernateFactory.merge(status);
+        }
+
+        //复原时间检测
+        Integer time = one.getRecoveryTime();
+        if (time != 0 && one.getPlace() != UserLocation.HOSPITAL) {
+            Date startTime = one.getStartTime();
+            long between = DateUtil.between(startTime, new Date(), DateUnit.MINUTE, true);
+            if (between > time) {
+                one.setRecoveryTime(0);
+                one.setPlace(UserLocation.HOME);
+                return HibernateFactory.merge(one);
+            }
+        }
+
+        return one;
+    }
 
     @MessageAuthorize(text = {"我的状态", "我的位置"})
     public void myStatus(GroupMessageEvent event) {
@@ -207,6 +248,18 @@ public class UserStatusManager {
                 return;
         }
     }
+
+
+//    public static boolean checkUserInHome(UserInfo user) {
+//        UserStatus userStatus = getUserStatus(user.getQq());
+//
+//        return userStatus.getPlace() == UserLocation.HOME;
+//    }
+//    public static boolean checkUserInHome(User user) {
+//        UserStatus userStatus = getUserStatus(user.getId());
+//
+//        return userStatus.getPlace() == UserLocation.HOME;
+//    }
 
     @MessageAuthorize(text = "回家")
     public void goHome(GroupMessageEvent event) {
@@ -249,61 +302,6 @@ public class UserStatusManager {
 
         moveHome(userInfo);
         group.sendMessage(MessageUtil.formatMessageChain(message, "你让ta回家躺着去."));
-    }
-
-
-//    public static boolean checkUserInHome(UserInfo user) {
-//        UserStatus userStatus = getUserStatus(user.getQq());
-//
-//        return userStatus.getPlace() == UserLocation.HOME;
-//    }
-//    public static boolean checkUserInHome(User user) {
-//        UserStatus userStatus = getUserStatus(user.getId());
-//
-//        return userStatus.getPlace() == UserLocation.HOME;
-//    }
-
-    /**
-     * 获取用户状态
-     *
-     * @param user 用户信息
-     * @return 用户状态
-     */
-    @NotNull
-    public static UserStatus getUserStatus(@NotNull UserInfo user) {
-        return getUserStatus(user.getQq());
-    }
-
-
-    /**
-     * 获取用户状态
-     *
-     * @param qq 用户qq
-     * @return 用户状态
-     */
-    @NotNull
-    public static UserStatus getUserStatus(@NotNull Long qq) {
-        UserStatus one = HibernateFactory.selectOne(UserStatus.class, qq);
-
-        if (one == null) {
-            UserStatus status = new UserStatus();
-            status.setId(qq);
-            return HibernateFactory.merge(status);
-        }
-
-        //复原时间检测
-        Integer time = one.getRecoveryTime();
-        if (time != 0 && one.getPlace() != UserLocation.HOSPITAL) {
-            Date startTime = one.getStartTime();
-            long between = DateUtil.between(startTime, new Date(), DateUnit.MINUTE, true);
-            if (between > time) {
-                one.setRecoveryTime(0);
-                one.setPlace(UserLocation.HOME);
-                return HibernateFactory.merge(one);
-            }
-        }
-
-        return one;
     }
 
 }

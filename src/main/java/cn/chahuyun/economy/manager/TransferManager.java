@@ -107,7 +107,7 @@ public class TransferManager {
     @MessageAuthorize(
             text = "greedisgood \\d+",
             messageMatching = MessageMatchingEnum.REGULAR,
-            userPermissions = {AuthPerm.OWNER,AuthPerm.ADMIN}
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
     )
     public static void Cheat(MessageEvent event) {
         Log.info("作弊指令");

@@ -3,7 +3,6 @@ package cn.chahuyun.economy.prop
 import cn.chahuyun.economy.entity.UserBackpack
 import cn.chahuyun.economy.entity.props.PropsData
 import cn.chahuyun.economy.model.props.UseEvent
-import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUtil
 import cn.hutool.json.JSONConfig
@@ -68,11 +67,11 @@ object PropsManager {
     @JvmStatic
     fun useProp(backpack: UserBackpack, event: UseEvent): UseResult {
         val prop = getProp(backpack) ?: return UseResult.fail("道具不存在")
-        
+
         if (prop !is Usable) return UseResult.fail("该道具不可直接使用")
 
         val result = prop.use(event)
-        
+
         if (result.success) {
             if (result.shouldRemove) {
                 destroyProsInBackpack(backpack.propId)
@@ -89,7 +88,7 @@ object PropsManager {
                 }
             }
         }
-        
+
         return result
     }
 
@@ -142,9 +141,9 @@ object PropsManager {
 
     @JvmStatic
     fun <T : BaseProp> deserialization(id: Long, clazz: Class<T>): T {
-        val propsData = HibernateFactory.selectOne(PropsData::class.java, id) 
+        val propsData = HibernateFactory.selectOne(PropsData::class.java, id)
             ?: throw RuntimeException("该道具数据不存在")
-        
+
         val jsonConfig = JSONConfig.create().setIgnoreError(true)
         return JSONUtil.toBean(propsData.data, jsonConfig, clazz)
     }

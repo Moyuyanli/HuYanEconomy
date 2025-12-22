@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.model.props
 
-import cn.chahuyun.economy.prop.*
 import cn.chahuyun.economy.manager.UserManager
+import cn.chahuyun.economy.prop.*
 import cn.chahuyun.hibernateplus.HibernateFactory
 import java.util.*
 
@@ -11,7 +11,7 @@ import java.util.*
 class PropsCard(
     kind: String = "card",
     code: String = "",
-    name: String = ""
+    name: String = "",
 ) : AbstractProp(kind, code, name), Expirable, Usable, Stackable {
 
     companion object {
@@ -27,10 +27,10 @@ class PropsCard(
     override var expireDays: Int = -1
     override var expiredTime: Date? = null
     override var canItExpire: Boolean = true
-    
+
     override var num: Int = 1
     override var unit: String = "张"
-    
+
     @get:JvmName("isStatus")
     var status: Boolean = false
     var enabledTime: Date? = null
@@ -44,6 +44,7 @@ class PropsCard(
                 HibernateFactory.merge(userInfo)
                 UseResult.success("改名卡使用成功!", shouldRemove = true)
             }
+
             else -> {
                 this.status = true
                 this.enabledTime = Date()

@@ -2,9 +2,9 @@ package cn.chahuyun.economy.fish;
 
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.fish.Fish;
-import cn.chahuyun.economy.model.fish.FishBait;
 import cn.chahuyun.economy.entity.fish.FishInfo;
 import cn.chahuyun.economy.entity.fish.FishPond;
+import cn.chahuyun.economy.model.fish.FishBait;
 import lombok.Getter;
 import lombok.Setter;
 import net.mamoe.mirai.event.AbstractEvent;

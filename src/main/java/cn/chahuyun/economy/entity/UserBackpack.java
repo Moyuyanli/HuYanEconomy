@@ -39,14 +39,6 @@ public class UserBackpack implements Serializable {
      */
     private Long propId;
 
-    public Long getPropId() {
-        return propId;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
     //    @ManyToOne
 //    private UserInfo userInfo;
     public UserBackpack() {
@@ -59,8 +51,17 @@ public class UserBackpack implements Serializable {
         this.propId = propId;
     }
 
+    public Long getPropId() {
+        return propId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
     /**
      * 获取改背包道具
+     *
      * @param tClass 类型
      * @return 道具
      */

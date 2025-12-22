@@ -10,7 +10,7 @@ import cn.chahuyun.economy.prop.UseResult
 class FishBait(
     kind: String = "fishBait",
     code: String = "",
-    name: String = ""
+    name: String = "",
 ) : ConsumableProp(kind, code, name) {
 
     companion object {
@@ -19,7 +19,7 @@ class FishBait(
         const val BAIT_3 = "bait-3"
         const val BAIT_L_1 = "bait-l-1"
         const val BAIT_Q_1 = "bait-q-1"
-        
+
         val fishbaitTimer = mapOf(
             BAIT_1 to 25,
             BAIT_2 to 20,

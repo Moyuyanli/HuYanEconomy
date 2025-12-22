@@ -10,7 +10,7 @@ import cn.chahuyun.economy.prop.UseResult
 class Equipment(
     kind: String = "equipment",
     code: String = "",
-    name: String = ""
+    name: String = "",
 ) : AbstractProp(kind, code, name), Usable {
 
     override fun use(event: UseEvent): UseResult {

@@ -1,10 +1,10 @@
 package cn.chahuyun.economy.plugin
 
 import cn.chahuyun.economy.constant.PropsKind
+import cn.chahuyun.economy.entity.props.PropsData
 import cn.chahuyun.economy.model.fish.FishBait
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.PropsCard
-import cn.chahuyun.economy.entity.props.PropsData
 import cn.chahuyun.economy.prop.Expirable
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.prop.PropsShop
@@ -166,7 +166,7 @@ class PropExpireCheckTask : Task {
                 val kind = data.kind ?: continue
                 val propClass = PropsManager.shopClass(kind) ?: continue
                 val prop = PropsManager.deserialization(data, propClass)
-                
+
                 if (prop is Expirable && prop.isExpired()) {
                     Log.info("道具已过期，正在销毁: kind=$kind, code=${prop.code}, id=${data.id}")
                     PropsManager.destroyProsInBackpack(data.id)

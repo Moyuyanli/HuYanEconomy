@@ -222,64 +222,6 @@ public class UserManager {
         Contact.sendImage(subject, new ByteArrayInputStream(stream.toByteArray()));
     }
 
-
-    @MessageAuthorize(text = {"money", "经济信息", "我的资金"})
-    public void moneyInfo(MessageEvent event) {
-        Contact subject = event.getSubject();
-        MessageChain message = event.getMessage();
-        User user = event.getSender();
-
-        double money = EconomyUtil.getMoneyByUser(user);
-        double bank = EconomyUtil.getMoneyByBank(user);
-
-        subject.sendMessage(MessageUtil.formatMessageChain(message, "你的经济状况:%n" +
-                        "钱包余额:%.1f%n" +
-                        "银行存款:%.1f",
-                money, bank
-        ));
-    }
-
-
-    @MessageAuthorize(text = "出院")
-    public void discharge(GroupMessageEvent event) {
-        Member user = event.getSender();
-
-        UserInfo userInfo = getUserInfo(user);
-
-        MessageChainBuilder builder = new MessageChainBuilder();
-        builder.add(new QuoteReply(event.getMessage()));
-
-        Group group = event.getSubject();
-        if (UserStatusManager.checkUserInHospital(userInfo)) {
-            UserStatus userStatus = UserStatusManager.getUserStatus(userInfo);
-
-            double price = userStatus.getRecoveryTime() * 3;
-            double real;
-
-            if (BackpackManager.checkPropInUser(userInfo, PropsCard.HEALTH)) {
-                real = ShareUtils.rounding(price * 0.8);
-                builder.add(MessageUtil.formatMessage(
-                        "你在出院的时候使用的医保卡，医药费打8折。%n" +
-                                "原价/实付医药费:%s/%s",
-                        price, real
-                ));
-            } else {
-                real = price;
-                builder.add(MessageUtil.formatMessage("你出院了！这次只掏了%s的医药费！", real));
-            }
-
-            if (EconomyUtil.minusMoneyToUser(user, real)) {
-                group.sendMessage(builder.build());
-                UserStatusManager.moveHome(userInfo);
-            } else {
-                group.sendMessage("出院失败!");
-            }
-            return;
-        }
-        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你不在医院，你出什么院？"));
-    }
-
-
     /**
      * 绘制个人信息基础信息<p>
      * 包含:<p>
@@ -300,8 +242,6 @@ public class UserManager {
             return null;
         }
     }
-
-    //===============================================================
 
     @NotNull
     private static BufferedImage customBottom(UserInfo userInfo) throws IOException {
@@ -405,6 +345,63 @@ public class UserManager {
 
         g2d.dispose();
         return bottom;
+    }
+
+    @MessageAuthorize(text = {"money", "经济信息", "我的资金"})
+    public void moneyInfo(MessageEvent event) {
+        Contact subject = event.getSubject();
+        MessageChain message = event.getMessage();
+        User user = event.getSender();
+
+        double money = EconomyUtil.getMoneyByUser(user);
+        double bank = EconomyUtil.getMoneyByBank(user);
+
+        subject.sendMessage(MessageUtil.formatMessageChain(message, "你的经济状况:%n" +
+                        "钱包余额:%.1f%n" +
+                        "银行存款:%.1f",
+                money, bank
+        ));
+    }
+
+    //===============================================================
+
+    @MessageAuthorize(text = "出院")
+    public void discharge(GroupMessageEvent event) {
+        Member user = event.getSender();
+
+        UserInfo userInfo = getUserInfo(user);
+
+        MessageChainBuilder builder = new MessageChainBuilder();
+        builder.add(new QuoteReply(event.getMessage()));
+
+        Group group = event.getSubject();
+        if (UserStatusManager.checkUserInHospital(userInfo)) {
+            UserStatus userStatus = UserStatusManager.getUserStatus(userInfo);
+
+            double price = userStatus.getRecoveryTime() * 3;
+            double real;
+
+            if (BackpackManager.checkPropInUser(userInfo, PropsCard.HEALTH)) {
+                real = ShareUtils.rounding(price * 0.8);
+                builder.add(MessageUtil.formatMessage(
+                        "你在出院的时候使用的医保卡，医药费打8折。%n" +
+                                "原价/实付医药费:%s/%s",
+                        price, real
+                ));
+            } else {
+                real = price;
+                builder.add(MessageUtil.formatMessage("你出院了！这次只掏了%s的医药费！", real));
+            }
+
+            if (EconomyUtil.minusMoneyToUser(user, real)) {
+                group.sendMessage(builder.build());
+                UserStatusManager.moveHome(userInfo);
+            } else {
+                group.sendMessage("出院失败!");
+            }
+            return;
+        }
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你不在医院，你出什么院？"));
     }
 
 }

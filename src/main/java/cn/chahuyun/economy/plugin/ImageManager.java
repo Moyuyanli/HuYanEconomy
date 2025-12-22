@@ -25,9 +25,8 @@ import java.util.Objects;
  */
 public class ImageManager {
 
-    private static int next = 1;
     private static final List<BufferedImage> bufferedImages = new ArrayList<>(8);
-
+    private static int next = 1;
     @Getter
     private static Font customFont;
 

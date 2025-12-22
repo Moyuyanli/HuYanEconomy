@@ -1,14 +1,14 @@
 package cn.chahuyun.economy.model.props
 
+import cn.chahuyun.economy.config.EconomyConfig
+import cn.chahuyun.economy.constant.PropConstant
+import cn.chahuyun.economy.plugin.FactorManager
 import cn.chahuyun.economy.prop.AbstractProp
 import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.economy.prop.Usable
 import cn.chahuyun.economy.prop.UseResult
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.chahuyun.economy.utils.ShareUtils
-import cn.chahuyun.economy.config.EconomyConfig
-import cn.chahuyun.economy.constant.PropConstant
-import cn.chahuyun.economy.plugin.FactorManager
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import net.mamoe.mirai.contact.Group
@@ -21,7 +21,7 @@ import java.util.*
 class FunctionProps(
     kind: String = "function",
     code: String = "",
-    name: String = ""
+    name: String = "",
 ) : AbstractProp(kind, code, name), Usable, Stackable {
 
     companion object {
@@ -59,6 +59,7 @@ class FunctionProps(
                     }
                 }
             }
+
             ELECTRIC_BATON -> {
                 if (electricity >= 5) {
                     electricity -= 5
@@ -67,6 +68,7 @@ class FunctionProps(
                     UseResult.fail("电棒没电了!")
                 }
             }
+
             MUTE_1, MUTE_30 -> {
                 val subject = event.subject
                 if (subject is Group) {
@@ -76,7 +78,8 @@ class FunctionProps(
                         }
 
                         subject.sendMessage("请输入你想要禁言的人")
-                        val messageEvent = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.id, event.sender.id, 180)
+                        val messageEvent =
+                            MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.id, event.sender.id, 180)
                         if (messageEvent != null) {
                             val member = ShareUtils.getAtMember(messageEvent)
                             if (member != null) {
@@ -88,6 +91,7 @@ class FunctionProps(
                 }
                 UseResult.fail("使用失败!")
             }
+
             else -> UseResult.fail("该道具无法直接使用!")
         }
     }

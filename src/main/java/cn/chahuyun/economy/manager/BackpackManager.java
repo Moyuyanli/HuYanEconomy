@@ -6,7 +6,6 @@ import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.model.props.UseEvent;
-import cn.chahuyun.economy.exception.Operation;
 import cn.chahuyun.economy.prop.PropBase;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.Log;
@@ -33,60 +32,6 @@ import java.util.Objects;
 public class BackpackManager {
 
 
-    @MessageAuthorize(
-            text = {"我的背包", "backpack"}
-    )
-    public void viewBackpack(GroupMessageEvent event) {
-        Log.info("背包指令");
-
-        Member sender = event.getSender();
-        Bot bot = event.getBot();
-        Group group = event.getSubject();
-
-        UserInfo userInfo = UserManager.getUserInfo(sender);
-
-        List<UserBackpack> backpacks = userInfo.getBackpacks();
-
-        if (backpacks.isEmpty()) {
-            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的背包为空!"));
-            return;
-        }
-
-        var index = 1;
-        var pageSize = 30;
-        var totalSize = backpacks.size();
-        var maxIndex = (int) Math.ceil((double) totalSize / pageSize);
-
-        int fromIndex = 0;
-        int toIndex = Math.min(index * pageSize, totalSize);
-        var currentBackpacks = backpacks.subList(fromIndex, toIndex);
-        showBackpack(bot, currentBackpacks, group, index, maxIndex);
-
-        while (true) {
-            GroupMessageEvent nextMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(group.getId(), sender.getId(), 30);
-            if (nextMessage == null || !nextMessage.getMessage().contentToString().matches("[上下]一页")) {
-                return;
-            }
-            val string = nextMessage.getMessage().contentToString();
-            boolean shouldUpdate = false;
-
-            if (string.equals("上一页") && index > 1) {
-                index--;
-                shouldUpdate = true;
-            } else if (string.equals("下一页") && index < maxIndex) {
-                index++;
-                shouldUpdate = true;
-            }
-
-            if (shouldUpdate) {
-                fromIndex = (index - 1) * pageSize;
-                toIndex = Math.min(index * pageSize, totalSize);
-                currentBackpacks = backpacks.subList(fromIndex, toIndex);
-                showBackpack(bot, currentBackpacks, group, index, maxIndex);
-            }
-        }
-    }
-
     private static void showBackpack(Bot bot, List<UserBackpack> backpacks, Group group, int currentPage, int maxPage) {
         ForwardMessageBuilder iNodes = new ForwardMessageBuilder(group);
         iNodes.add(bot, new PlainText("以下是你的背包↓:"));
@@ -100,94 +45,6 @@ public class BackpackManager {
         }
         iNodes.add(bot, MessageUtil.formatMessage("--- 当前页数: %d / 最大页数: %d ---", currentPage, maxPage));
         group.sendMessage(iNodes.build());
-    }
-
-    @SuppressWarnings("ForLoopReplaceableByForEach")
-    @MessageAuthorize(
-            text = "use( \\d+)+|使用( \\d+)+",
-            messageMatching = MessageMatchingEnum.REGULAR
-    )
-    public void useProp(GroupMessageEvent event) {
-        Member sender = event.getSender();
-        MessageChain message = event.getMessage();
-        String content = message.contentToString();
-        Group group = event.getSubject();
-
-        UserInfo userInfo = UserManager.getUserInfo(sender);
-        UseEvent useEvent = new UseEvent(sender, group, userInfo);
-
-
-        String[] split = content.split(" ");
-
-        MessageChainBuilder builder = new MessageChainBuilder();
-        builder.add(new QuoteReply(message));
-        builder.add("本次使用道具:");
-
-        for (int i = 1; i < split.length; i++) {
-            long propId = Long.parseLong(split[i]);
-
-            List<UserBackpack> backpacks = userInfo.getBackpacks();
-
-            boolean success = false;
-            for (Iterator<UserBackpack> iterator = backpacks.iterator(); iterator.hasNext(); ) {
-                UserBackpack backpack = iterator.next();
-                if (backpack.getPropId().equals(propId)) {
-                    cn.chahuyun.economy.prop.UseResult result = PropsManager.INSTANCE.useProp(backpack, useEvent);
-                    
-                    builder.add(MessageUtil.formatMessage("\n%d %s!", propId, result.getMessage()));
-                    success = true;
-                    break;
-                }
-            }
-            if (!success) {
-                builder.add(MessageUtil.formatMessage("\n%d 你没有这个道具!", propId));
-            }
-        }
-
-        group.sendMessage(builder.build());
-    }
-
-
-    @MessageAuthorize(
-            text = "dis( \\d+)+|丢弃( \\d+)+",
-            messageMatching = MessageMatchingEnum.REGULAR
-    )
-    public void discard(GroupMessageEvent event) {
-        Member sender = event.getSender();
-        MessageChain message = event.getMessage();
-        String content = message.contentToString();
-        Group group = event.getSubject();
-
-        String[] split = content.split(" ");
-
-        MessageChainBuilder builder = new MessageChainBuilder();
-        builder.add(new QuoteReply(message));
-        builder.add("本次丢弃道具:");
-
-        UserInfo userInfo = UserManager.getUserInfo(sender);
-
-        for (int i = 1; i < split.length; i++) {
-            long propId = Long.parseLong(split[i]);
-
-            List<UserBackpack> backpacks = userInfo.getBackpacks();
-            boolean match = false;
-            for (UserBackpack backpack : backpacks) {
-                if (backpack.getPropId().equals(propId)) {
-                    PropBase prop = PropsManager.getProp(backpack);
-                    String name = prop.getName();
-                    delPropToBackpack(userInfo, propId);
-                    builder.add(MessageUtil.formatMessage("\n你丢掉了你的 %s 。", name));
-                    match = true;
-                    break;
-                }
-            }
-
-            if (!match) {
-                builder.add(MessageUtil.formatMessage("\n没找到 %d 的道具。", propId));
-            }
-        }
-
-        group.sendMessage(builder.build());
     }
 
     /**
@@ -264,6 +121,147 @@ public class BackpackManager {
             }
         }
         return false;
+    }
+
+    @MessageAuthorize(
+            text = {"我的背包", "backpack"}
+    )
+    public void viewBackpack(GroupMessageEvent event) {
+        Log.info("背包指令");
+
+        Member sender = event.getSender();
+        Bot bot = event.getBot();
+        Group group = event.getSubject();
+
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+
+        List<UserBackpack> backpacks = userInfo.getBackpacks();
+
+        if (backpacks.isEmpty()) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "你的背包为空!"));
+            return;
+        }
+
+        var index = 1;
+        var pageSize = 30;
+        var totalSize = backpacks.size();
+        var maxIndex = (int) Math.ceil((double) totalSize / pageSize);
+
+        int fromIndex = 0;
+        int toIndex = Math.min(index * pageSize, totalSize);
+        var currentBackpacks = backpacks.subList(fromIndex, toIndex);
+        showBackpack(bot, currentBackpacks, group, index, maxIndex);
+
+        while (true) {
+            GroupMessageEvent nextMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(group.getId(), sender.getId(), 30);
+            if (nextMessage == null || !nextMessage.getMessage().contentToString().matches("[上下]一页")) {
+                return;
+            }
+            val string = nextMessage.getMessage().contentToString();
+            boolean shouldUpdate = false;
+
+            if (string.equals("上一页") && index > 1) {
+                index--;
+                shouldUpdate = true;
+            } else if (string.equals("下一页") && index < maxIndex) {
+                index++;
+                shouldUpdate = true;
+            }
+
+            if (shouldUpdate) {
+                fromIndex = (index - 1) * pageSize;
+                toIndex = Math.min(index * pageSize, totalSize);
+                currentBackpacks = backpacks.subList(fromIndex, toIndex);
+                showBackpack(bot, currentBackpacks, group, index, maxIndex);
+            }
+        }
+    }
+
+    @SuppressWarnings("ForLoopReplaceableByForEach")
+    @MessageAuthorize(
+            text = "use( \\d+)+|使用( \\d+)+",
+            messageMatching = MessageMatchingEnum.REGULAR
+    )
+    public void useProp(GroupMessageEvent event) {
+        Member sender = event.getSender();
+        MessageChain message = event.getMessage();
+        String content = message.contentToString();
+        Group group = event.getSubject();
+
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+        UseEvent useEvent = new UseEvent(sender, group, userInfo);
+
+
+        String[] split = content.split(" ");
+
+        MessageChainBuilder builder = new MessageChainBuilder();
+        builder.add(new QuoteReply(message));
+        builder.add("本次使用道具:");
+
+        for (int i = 1; i < split.length; i++) {
+            long propId = Long.parseLong(split[i]);
+
+            List<UserBackpack> backpacks = userInfo.getBackpacks();
+
+            boolean success = false;
+            for (Iterator<UserBackpack> iterator = backpacks.iterator(); iterator.hasNext(); ) {
+                UserBackpack backpack = iterator.next();
+                if (backpack.getPropId().equals(propId)) {
+                    cn.chahuyun.economy.prop.UseResult result = PropsManager.INSTANCE.useProp(backpack, useEvent);
+
+                    builder.add(MessageUtil.formatMessage("\n%d %s!", propId, result.getMessage()));
+                    success = true;
+                    break;
+                }
+            }
+            if (!success) {
+                builder.add(MessageUtil.formatMessage("\n%d 你没有这个道具!", propId));
+            }
+        }
+
+        group.sendMessage(builder.build());
+    }
+
+    @MessageAuthorize(
+            text = "dis( \\d+)+|丢弃( \\d+)+",
+            messageMatching = MessageMatchingEnum.REGULAR
+    )
+    public void discard(GroupMessageEvent event) {
+        Member sender = event.getSender();
+        MessageChain message = event.getMessage();
+        String content = message.contentToString();
+        Group group = event.getSubject();
+
+        String[] split = content.split(" ");
+
+        MessageChainBuilder builder = new MessageChainBuilder();
+        builder.add(new QuoteReply(message));
+        builder.add("本次丢弃道具:");
+
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+
+        for (int i = 1; i < split.length; i++) {
+            long propId = Long.parseLong(split[i]);
+
+            List<UserBackpack> backpacks = userInfo.getBackpacks();
+            boolean match = false;
+            for (UserBackpack backpack : backpacks) {
+                if (backpack.getPropId().equals(propId)) {
+                    PropBase prop = PropsManager.getProp(backpack);
+                    String name = prop.getName();
+                    delPropToBackpack(userInfo, propId);
+                    builder.add(MessageUtil.formatMessage("\n你丢掉了你的 %s 。", name));
+                    match = true;
+                    break;
+                }
+            }
+
+            if (!match) {
+                builder.add(MessageUtil.formatMessage("\n没找到 %d 的道具。", propId));
+            }
+        }
+
+        group.sendMessage(builder.build());
     }
 
 }

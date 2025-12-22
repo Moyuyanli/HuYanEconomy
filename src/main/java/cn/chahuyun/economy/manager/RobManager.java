@@ -14,9 +14,9 @@ import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.UserStatus;
+import cn.chahuyun.economy.entity.rob.RobInfo;
 import cn.chahuyun.economy.model.props.FunctionProps;
 import cn.chahuyun.economy.model.props.UseEvent;
-import cn.chahuyun.economy.entity.rob.RobInfo;
 import cn.chahuyun.economy.plugin.FactorManager;
 import cn.chahuyun.economy.prop.PropsManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
@@ -51,6 +51,21 @@ public class RobManager {
 
     private final static Map<User, Date> cooling = new HashMap<>();
 
+    /**
+     * 获取抢劫信息
+     *
+     * @param userInfo 用户信息
+     * @return 抢劫信息
+     */
+    @NotNull
+    public static RobInfo getRobInfo(UserInfo userInfo) {
+        RobInfo one = HibernateFactory.selectOne(RobInfo.class, userInfo.getQq());
+        if (one == null) {
+            one = new RobInfo(userInfo.getQq(), new Date(), 0, 0, 0);
+            return HibernateFactory.merge(one);
+        }
+        return one;
+    }
 
     @MessageAuthorize(
             text = "抢劫 ?@?\\d{6,11} ?",
@@ -247,7 +262,6 @@ public class RobManager {
         }
     }
 
-
     /**
      * 打人
      *
@@ -309,23 +323,6 @@ public class RobManager {
         permGroup.save();
 
         group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的抢劫关闭成功!"));
-    }
-
-
-    /**
-     * 获取抢劫信息
-     *
-     * @param userInfo 用户信息
-     * @return 抢劫信息
-     */
-    @NotNull
-    public static RobInfo getRobInfo(UserInfo userInfo) {
-        RobInfo one = HibernateFactory.selectOne(RobInfo.class, userInfo.getQq());
-        if (one == null) {
-            one = new RobInfo(userInfo.getQq(), new Date(), 0, 0, 0);
-            return HibernateFactory.merge(one);
-        }
-        return one;
     }
 
 }

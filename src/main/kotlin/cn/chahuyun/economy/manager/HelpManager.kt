@@ -8,9 +8,10 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
 @EventComponent
 class HelpManager {
 
-    @MessageAuthorize(["help","帮助"])
+    @MessageAuthorize(["help", "帮助"])
     suspend fun help(event: GroupMessageEvent) {
-        event.subject.sendMessage("""
+        event.subject.sendMessage(
+            """
             ══════════ HuYan经济插件帮助 ══════════
             版本：${BuildConstants.VERSION}
             
@@ -44,13 +45,15 @@ class HelpManager {
             帮助       获取帮助
             游戏帮助    获取游戏帮助
             ═══════════════════════════════════
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 
 
-    @MessageAuthorize(["gameHelp","游戏帮助"])
+    @MessageAuthorize(["gameHelp", "游戏帮助"])
     suspend fun gameHelp(event: GroupMessageEvent) {
-        event.subject.sendMessage("""
+        event.subject.sendMessage(
+            """
             ══════════ HuYan经济插件游戏帮助 ══════════
             版本：${BuildConstants.VERSION}
             
@@ -86,7 +89,8 @@ class HelpManager {
             抽奖信息    获取个人抽奖统计
             好运榜      获取好运榜
             ═══════════════════════════════════
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 
 }

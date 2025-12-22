@@ -76,7 +76,6 @@ public class LotteryInfo implements Serializable {
     }
 
 
-
     /**
      * 删除
      */

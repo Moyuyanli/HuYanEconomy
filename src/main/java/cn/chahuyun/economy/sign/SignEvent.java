@@ -27,6 +27,18 @@ public class SignEvent extends AbstractEvent {
      */
     private final UserInfo userInfo;
     /**
+     * 群
+     */
+    private final Group group;
+    /**
+     * 签到消息
+     */
+    private final MessageChain messages;
+    /**
+     * 消息事件
+     */
+    private final GroupMessageEvent event;
+    /**
      * 随机参数<br>
      * 0~500: 50~100<br>
      * 501~850: 101~200<br>
@@ -54,18 +66,6 @@ public class SignEvent extends AbstractEvent {
      * 补签
      */
     private boolean sign_in = false;
-    /**
-     * 群
-     */
-    private final Group group;
-    /**
-     * 签到消息
-     */
-    private final MessageChain messages;
-    /**
-     * 消息事件
-     */
-    private final GroupMessageEvent event;
     /**
      * 签到金额
      */

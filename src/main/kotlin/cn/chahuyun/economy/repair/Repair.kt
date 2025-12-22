@@ -3,14 +3,12 @@ package cn.chahuyun.economy.repair
 import cn.chahuyun.economy.entity.UserBackpack
 import cn.chahuyun.economy.entity.fish.FishPond
 import cn.chahuyun.economy.entity.fish.FishRanking
-import cn.chahuyun.economy.entity.rob.RobInfo
 import cn.chahuyun.economy.entity.props.PropsData
-import cn.chahuyun.economy.prop.BaseProp
+import cn.chahuyun.economy.entity.rob.RobInfo
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.json.JSONUtil
 import java.sql.Connection
-import java.util.*
 
 interface Repair {
     fun repair(): Boolean
@@ -38,8 +36,11 @@ class FishPondRepair : Repair {
             val fishPond = rank.fishPond
             if (fishPondSet.any { it.id == fishPond.id }) continue
             val find = fishPondSet.find { it.code == fishPond.code }
-            HibernateFactory.getSession().fromTransaction {
-                it.createNativeQuery("update FishRanking set `FishPondId` = :fishId where id = :id", FishRanking::class.java)
+            HibernateFactory.getSessionFactory()?.fromTransaction {
+                it.createNativeQuery(
+                    "update FishRanking set `FishPondId` = :fishId where id = :id",
+                    FishRanking::class.java
+                )
                     .setParameter("fishId", find?.id)
                     .setParameter("id", rank.id)
                     .executeUpdate()
@@ -56,12 +57,13 @@ class FishPondRepair : Repair {
 class RobRepair : Repair {
     override fun repair(): Boolean {
         val columnsToDrop = listOf("isInJail", "cooldown", "lastRobTime", "cooling", "type")
-        HibernateFactory.getSession().fromTransaction { session ->
+        HibernateFactory.getSessionFactory()?.fromTransaction { session ->
             session.doWork { connection: Connection ->
                 for (column in columnsToDrop) {
                     try {
                         connection.createStatement().executeUpdate("ALTER TABLE RobInfo DROP COLUMN $column;")
-                    } catch (e: Exception) { /* 忽略不存在的列 */ }
+                    } catch (e: Exception) { /* 忽略不存在的列 */
+                    }
                 }
             }
         }
@@ -94,7 +96,7 @@ class PropRepair : Repair {
                 // --- 2. 尝试映射到新类 ---
                 val kind = propsData.kind ?: jsonObject.getStr("kind") ?: continue
                 val propClass = PropsManager.shopClass(kind) ?: continue
-                
+
                 // 使用修正后的 JSON 反序列化出对象
                 val prop = JSONUtil.toBean(jsonObject, propClass)
 
@@ -102,7 +104,7 @@ class PropRepair : Repair {
                 // 这里调用 PropsManager.serialization 会自动填充 propsData 的列（num, expiredTime, status）
                 val newPropsData = PropsManager.serialization(prop)
                 newPropsData.id = propsData.id
-                
+
                 HibernateFactory.merge(newPropsData)
 
             } catch (e: Exception) {

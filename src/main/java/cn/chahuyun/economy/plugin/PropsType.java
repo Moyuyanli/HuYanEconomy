@@ -50,7 +50,7 @@ public class PropsType {
      * 注册道具模板<p>
      * 同时添加道具编号映射<p>
      *
-     * @param code      道具code
+     * @param code     道具code
      * @param propBase 道具模板
      * @author Moyuyanli
      * @date 2022/11/28 10:39

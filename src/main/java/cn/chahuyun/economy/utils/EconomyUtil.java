@@ -173,7 +173,7 @@ public class EconomyUtil {
      * @return 余额
      */
     public static double getMoneyFromPluginBankForId(String userId, String description) {
-        return getMoneyFromPluginBankForId(userId, description,Constant.CURRENCY_GOLD);
+        return getMoneyFromPluginBankForId(userId, description, Constant.CURRENCY_GOLD);
     }
 
     /**

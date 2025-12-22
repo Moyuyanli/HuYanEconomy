@@ -9,7 +9,4 @@ package cn.chahuyun.economy.manager.api;
 public interface PropsManagerApi {
 
 
-
-
-
 }

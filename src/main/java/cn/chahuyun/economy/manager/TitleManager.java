@@ -68,9 +68,9 @@ public class TitleManager {
                 new TitleTemplateSimpleImpl(TitleCode.ROB, TitleCode.ROB_EXPIRED, "街区传说",
                         false, true,
                         "[师承窃格瓦拉]", new Color(0x2261DC), null),
-                new TitleTemplateSimpleImpl(TitleCode.SIGN_90,TitleCode.SIGN_90_EXPIRED,"签到大王",
-                        true,true,
-                        "[无敌超级签到大王•神]",new Color(0x622774),new Color(0xc53364)));
+                new TitleTemplateSimpleImpl(TitleCode.SIGN_90, TitleCode.SIGN_90_EXPIRED, "签到大王",
+                        true, true,
+                        "[无敌超级签到大王•神]", new Color(0x622774), new Color(0xc53364)));
 
 
         //修改版本迭代带来的错误数据
@@ -168,7 +168,7 @@ public class TitleManager {
      *
      * @param event 消息事件
      */
-    @MessageAuthorize(text = {"我的称号","称号列表","拥有称号"})
+    @MessageAuthorize(text = {"我的称号", "称号列表", "拥有称号"})
     public static void viewTitleInfo(MessageEvent event) {
         Log.info("查询称号指令");
 

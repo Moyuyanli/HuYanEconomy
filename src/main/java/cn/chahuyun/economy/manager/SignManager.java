@@ -122,56 +122,6 @@ public class SignManager {
         sendSignImage(userInfo, subject, messages.build());
     }
 
-
-    @MessageAuthorize(
-            text = "关闭 签到",
-            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
-    )
-    public void offSign(GroupMessageEvent event) {
-        Group group = event.getGroup();
-
-        PermUtil util = PermUtil.INSTANCE;
-
-        val user = UserUtil.INSTANCE.group(group.getId());
-
-        if (util.checkUserHasPerm(user, EconPerm.SIGN_BLACK_PERM)) {
-            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到已经关闭了!"));
-            return;
-        }
-
-        if (util.addUserToPermGroupByName(user, EconPerm.GROUP.SIGN_BLACK_GROUP)) {
-            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到关闭成功!"));
-        } else {
-            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到关闭失败!"));
-        }
-    }
-
-
-    @MessageAuthorize(
-            text = "开启 签到",
-            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
-    )
-    public void startSign(GroupMessageEvent event) {
-        Group group = event.getGroup();
-
-        PermUtil util = PermUtil.INSTANCE;
-
-        val user = UserUtil.INSTANCE.group(group.getId());
-
-        if (!util.checkUserHasPerm(user, EconPerm.SIGN_BLACK_PERM)) {
-            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到已经开启!"));
-            return;
-        }
-
-        PermGroup permGroup = util.talkPermGroupByName(EconPerm.GROUP.SIGN_BLACK_GROUP);
-
-        permGroup.getUsers().remove(user);
-        permGroup.save();
-
-        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到开启成功!"));
-    }
-
-
     /**
      * 签到金钱获取<br>
      * 优先级:{@link EventPriority#HIGH}
@@ -304,28 +254,6 @@ public class SignManager {
 
         event.setGold(event.getGold() * multiples);
     }
-
-
-    @MessageAuthorize(text = "刷新签到",
-            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN})
-    public void refreshSign(GroupMessageEvent event) {
-        Group group = event.getGroup();
-        Member sender = event.getSender();
-
-        UserInfo userInfo = UserManager.getUserInfo(sender);
-
-        DateTime dateTime = DateUtil.offsetDay(userInfo.getSignTime(), -1);
-
-        userInfo.setSignTime(dateTime);
-
-        HibernateFactory.merge(userInfo);
-
-        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "签到刷新成功!"));
-    }
-
-
-    //============================================================================
-
 
     /**
      * 发送签到图片信息<p>
@@ -486,6 +414,73 @@ public class SignManager {
         } catch (IOException e) {
             Log.error("签到管理:签到图片刷新失败", e);
         }
+    }
+
+
+    //============================================================================
+
+    @MessageAuthorize(
+            text = "关闭 签到",
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
+    )
+    public void offSign(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = UserUtil.INSTANCE.group(group.getId());
+
+        if (util.checkUserHasPerm(user, EconPerm.SIGN_BLACK_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到已经关闭了!"));
+            return;
+        }
+
+        if (util.addUserToPermGroupByName(user, EconPerm.GROUP.SIGN_BLACK_GROUP)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到关闭成功!"));
+        } else {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到关闭失败!"));
+        }
+    }
+
+    @MessageAuthorize(
+            text = "开启 签到",
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
+    )
+    public void startSign(GroupMessageEvent event) {
+        Group group = event.getGroup();
+
+        PermUtil util = PermUtil.INSTANCE;
+
+        val user = UserUtil.INSTANCE.group(group.getId());
+
+        if (!util.checkUserHasPerm(user, EconPerm.SIGN_BLACK_PERM)) {
+            group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到已经开启!"));
+            return;
+        }
+
+        PermGroup permGroup = util.talkPermGroupByName(EconPerm.GROUP.SIGN_BLACK_GROUP);
+
+        permGroup.getUsers().remove(user);
+        permGroup.save();
+
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的签到开启成功!"));
+    }
+
+    @MessageAuthorize(text = "刷新签到",
+            userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN})
+    public void refreshSign(GroupMessageEvent event) {
+        Group group = event.getGroup();
+        Member sender = event.getSender();
+
+        UserInfo userInfo = UserManager.getUserInfo(sender);
+
+        DateTime dateTime = DateUtil.offsetDay(userInfo.getSignTime(), -1);
+
+        userInfo.setSignTime(dateTime);
+
+        HibernateFactory.merge(userInfo);
+
+        group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "签到刷新成功!"));
     }
 
 

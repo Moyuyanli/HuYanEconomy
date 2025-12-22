@@ -3,12 +3,13 @@ package cn.chahuyun.economy.entity.props;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.util.Date;
 
 /**
  * 道具数据实体 (优化重构版)
  * 采用“混合存储”模式：核心字段提取为列，扩展数据保留 JSON
- * 
+ *
  * @author Moyuyanli
  */
 @Getter

@@ -236,7 +236,7 @@ class RedPackManager {
         subject: Contact,
         bot: Bot,
         redPacks: List<RedPack>,
-        forwardMessage: ForwardMessageBuilder
+        forwardMessage: ForwardMessageBuilder,
     ) {
         if (subject !is Group) {
             return
@@ -315,7 +315,7 @@ class RedPackManager {
         sender: User,
         subject: Contact,
         redPack: RedPack,
-        message: net.mamoe.mirai.message.data.MessageChain
+        message: net.mamoe.mirai.message.data.MessageChain,
     ) {
         val money = redPack.money
         val number = redPack.number
@@ -352,7 +352,13 @@ class RedPackManager {
         redPack.receiverList = receivers
         HibernateFactory.merge(redPack)
 
-        subject.sendMessage(MessageUtil.formatMessageChain(message, "恭喜你领取到了一个红包，你领取了 %.1f 枚金币！", perMoney))
+        subject.sendMessage(
+            MessageUtil.formatMessageChain(
+                message,
+                "恭喜你领取到了一个红包，你领取了 %.1f 枚金币！",
+                perMoney
+            )
+        )
 
         if (receivers.size >= redPack.number) {
             val between = DateUtil.formatBetween(redPack.createTime, Date(), BetweenFormatter.Level.SECOND)

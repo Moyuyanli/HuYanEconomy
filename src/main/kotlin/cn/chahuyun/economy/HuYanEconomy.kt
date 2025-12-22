@@ -19,15 +19,13 @@ import cn.chahuyun.economy.utils.HibernateUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.hutool.cron.CronUtil
-import kotlin.coroutines.EmptyCoroutineContext
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.console.command.CommandManager
 import net.mamoe.mirai.console.extension.PluginComponentStorage
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
-import net.mamoe.mirai.console.plugin.jvm.reloadPluginData
 import net.mamoe.mirai.event.*
-import org.jetbrains.annotations.NotNull
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * 壶言经济插件主类 (Kotlin Object)
@@ -79,28 +77,28 @@ object HuYanEconomy : KotlinPlugin(
 
     override fun onEnable() {
         Icon.init(logger)
-        
+
         // 加载配置
         EconomyConfig.reload()
         EconomyPluginConfig.reload()
         FishingMsgConfig.reload()
         RobMsgConfig.reload()
         PrizesData.reload()
-        
+
         // 注册指令
         CommandManager.registerCommand(EconomyCommand(), false)
-        
+
         config = EconomyConfig
         msgConfig = FishingMsgConfig
         robConfig = RobMsgConfig
-        
+
         // 插件功能初始化
         MessageUtil.init(this)
         PluginManager.init()
-        
+
         // 插件权限code注册
         PermCodeManager.init(this)
-        
+
         // 初始化插件数据库
         HibernateUtil.init(this)
 

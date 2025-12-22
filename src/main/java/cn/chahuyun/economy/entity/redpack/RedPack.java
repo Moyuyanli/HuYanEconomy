@@ -80,14 +80,6 @@ public class RedPack {
     @Builder.Default
     private List<Double> randomPackList = new ArrayList<>();
 
-    public RedPack setReceiverList(List<Long> receiverList) {
-        this.receiverList = receiverList;
-        this.receivers = receiverList.stream()
-                .map(Object::toString)
-                .collect(Collectors.joining(","));
-        return this;
-    }
-
     public List<Long> getReceiverList() {
         if (StrUtil.isNotBlank(receivers)) {
             for (String s : receivers.split(",")) {
@@ -97,11 +89,9 @@ public class RedPack {
         return receiverList;
     }
 
-
-    public RedPack setRandomPackList(List<Double> randomPackList) {
-        this.randomPackList = randomPackList;
-        this.randomRedPack = randomPackList.stream()
-                .map(it -> Math.round(it * 10.0) / 10.0)
+    public RedPack setReceiverList(List<Long> receiverList) {
+        this.receiverList = receiverList;
+        this.receivers = receiverList.stream()
                 .map(Object::toString)
                 .collect(Collectors.joining(","));
         return this;
@@ -116,6 +106,14 @@ public class RedPack {
         return randomPackList;
     }
 
+    public RedPack setRandomPackList(List<Double> randomPackList) {
+        this.randomPackList = randomPackList;
+        this.randomRedPack = randomPackList.stream()
+                .map(it -> Math.round(it * 10.0) / 10.0)
+                .map(Object::toString)
+                .collect(Collectors.joining(","));
+        return this;
+    }
 
     /**
      * 获取随机红包

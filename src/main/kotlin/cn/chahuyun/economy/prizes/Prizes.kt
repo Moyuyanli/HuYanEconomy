@@ -48,7 +48,7 @@ data class Prize(
      * 奖品库存
      * -1 表示无限库存
      */
-    var stock: Int = -1
+    var stock: Int = -1,
 ) {
     companion object {
         /**
@@ -124,7 +124,7 @@ data class PrizeGroup(
     /**
      * 是否为“up”？
      */
-    val guaranteed: Boolean = false
+    val guaranteed: Boolean = false,
 ) {
     /**
      * 奖品组内奖品
@@ -137,7 +137,7 @@ data class PrizeGroup(
         name: String = "default",
         description: String = "default",
         weight: Int = 100,
-        guaranteed: Boolean = false
+        guaranteed: Boolean = false,
     ) : this(prizes.toList(), name, description, weight, guaranteed)
 
     fun getPrize(): Prize {
@@ -161,7 +161,7 @@ data class PrizeLevel(
     /**
      * 所有组
      */
-    val groups: List<PrizeGroup>
+    val groups: List<PrizeGroup>,
 ) {
 
     constructor(level: Int, weight: Int, vararg groups: PrizeGroup) : this(level, weight, groups.toList())
@@ -235,7 +235,7 @@ data class PrizePool(
     /**
      * 保底奖品
      */
-    val endPrize: PrizeLevel? = null
+    val endPrize: PrizeLevel? = null,
 ) {
     constructor(
         id: String,
@@ -246,7 +246,7 @@ data class PrizePool(
         endTime: Int = 0,
         shareEnd: Boolean = false,
         shareEndTime: Int = 0,
-        endPrize: PrizeLevel? = null
+        endPrize: PrizeLevel? = null,
     ) : this(
         id,
         name,
@@ -270,7 +270,7 @@ data class RaffleResult(
     val groupId: Long,
     val userId: Long,
     val pool: PrizePool,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
 )
 
 /**
@@ -300,7 +300,7 @@ data class RaffleContext(
  */
 private fun <T> List<T>.weightedRandom(
     random: Random = Random,
-    weightSelector: (T) -> Int
+    weightSelector: (T) -> Int,
 ): T {
     if (isEmpty()) throw RaffleException("奖池错误,随机抽奖错误!")
 
