@@ -6,7 +6,6 @@ import java.util.*
 
 /**
  * 道具使用结果
- * 用于替代原有的异常控制流
  */
 data class UseResult(
     val success: Boolean,
@@ -15,13 +14,16 @@ data class UseResult(
     val shouldUpdate: Boolean = true,
 ) {
     companion object {
+        @JvmStatic
         fun success(message: String, shouldRemove: Boolean = false) = UseResult(true, message, shouldRemove)
+        @JvmStatic
         fun fail(message: String) = UseResult(false, message, shouldRemove = false, shouldUpdate = false)
     }
 }
 
 /**
- * 基础道具接口：定义所有道具共有的核心属性
+ * 核心道具接口：开闭原则的基础
+ * 定义所有道具共有的核心属性
  */
 interface BaseProp : Serializable {
     val kind: String
@@ -38,20 +40,21 @@ interface BaseProp : Serializable {
 }
 
 /**
- * 可堆叠能力接口
+ * 功能接口：可堆叠
  */
 interface Stackable {
     var num: Int
     var unit: String
-    val isStack: Boolean get() = true
+    var stack: Boolean
+    val isStack: Boolean get() = stack
 }
 
 /**
- * 时效能力接口
+ * 功能接口：有时效性
  */
 interface Expirable {
     var getTime: Date
-    var expireDays: Int  // 恢复语义化命名
+    var expireDays: Int
     var expiredTime: Date?
     var canItExpire: Boolean
 
@@ -62,18 +65,19 @@ interface Expirable {
 }
 
 /**
- * 可使用能力接口
+ * 功能接口：可使用
  */
 interface Usable {
     /**
      * 使用道具的具体逻辑
-     * @return 使用结果，包含反馈消息及后续处理指令
+     * @return 使用结果
      */
-    fun use(event: UseEvent): UseResult
+    suspend fun use(event: UseEvent): UseResult
 }
 
 /**
- * 通用抽象道具基类：实现了 BaseProp 的基础存储
+ * 通用抽象道具基类：实现了核心属性的默认存储
+ * 具体的道具类通过继承此类并实现相应功能接口来扩展功能
  */
 abstract class AbstractProp(
     override val kind: String,
@@ -86,21 +90,26 @@ abstract class AbstractProp(
 
     override fun toShopInfo(): String = "道具名称: $name\n道具描述: $description\n道具价值: $cost 金币"
 
-    override fun toString(): String =
-        "道具名称: $name\n道具数量: ${if (this is Stackable) this.num else 1}\n道具描述: $description"
+    override fun toString(): String {
+        val countInfo = if (this is Stackable) "\n道具数量: ${this.num}" else ""
+        return "道具名称: $name$countInfo\n道具描述: $description"
+    }
 }
 
 /**
- * 消耗品基类：可堆叠、可使用
+ * 消耗品模板：继承基础属性，并实现堆叠和使用功能
  */
 abstract class ConsumableProp(kind: String, code: String, name: String) :
     AbstractProp(kind, code, name), Stackable, Usable {
     override var num: Int = 1
     override var unit: String = "个"
+    override var stack: Boolean = true
+    
+    override suspend fun use(event: UseEvent): UseResult = UseResult.success("使用了 $name")
 }
 
 /**
- * 状态卡片基类：不可堆叠、有时效、可使用（激活）
+ * 状态/卡片模板：继承基础属性，并实现时效和使用功能
  */
 abstract class CardProp(kind: String, code: String, name: String) :
     AbstractProp(kind, code, name), Expirable, Usable {
@@ -111,5 +120,10 @@ abstract class CardProp(kind: String, code: String, name: String) :
 
     var status: Boolean = false
     var enabledTime: Date? = null
+    
+    override suspend fun use(event: UseEvent): UseResult {
+        status = true
+        enabledTime = Date()
+        return UseResult.success("已激活 $name")
+    }
 }
-

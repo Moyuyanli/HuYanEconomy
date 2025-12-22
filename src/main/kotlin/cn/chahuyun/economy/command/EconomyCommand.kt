@@ -7,7 +7,7 @@ import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CompositeCommand
 
 class EconomyCommand : CompositeCommand(
-    HuYanEconomy.INSTANCE, "hye",
+    HuYanEconomy, "hye",
     description = "HuYanEconomy Command"
 ) {
 

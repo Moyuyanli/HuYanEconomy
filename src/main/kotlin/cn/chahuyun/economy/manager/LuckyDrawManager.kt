@@ -37,7 +37,7 @@ class LuckyDrawManager {
                 UserRaffle(
                     userId
                 )
-            )
+            )!!
         }
 
         // 检查单抽冷却

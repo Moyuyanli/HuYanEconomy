@@ -4,15 +4,12 @@ import cn.chahuyun.economy.utils.Log
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 道具商店 (Kotlin 重构版)
+ * 道具商店
  */
 object PropsShop {
 
     private val shop = ConcurrentHashMap<String, BaseProp>()
 
-    /**
-     * 添加道具到商店
-     */
     @JvmStatic
     fun addShop(code: String, props: BaseProp) {
         if (shop.containsKey(code)) {
@@ -26,31 +23,19 @@ object PropsShop {
         shop[code] = props
     }
 
-    /**
-     * 获取商店中所有道具信息
-     */
     @JvmStatic
     fun getShopInfo(): Map<String, String> {
         return shop.mapValues { it.value.toShopInfo() }
     }
 
-    /**
-     * 根据编码获取模板
-     */
     @JvmStatic
     fun getTemplate(code: String): BaseProp? = shop[code]
 
-    /**
-     * 根据名称获取模板
-     */
     @JvmStatic
-    fun getTemplateByName(name: String): BaseProp {
-        return shop.values.find { it.name == name } ?: throw RuntimeException("该道具不存在!")
+    fun getTemplateByName(name: String): BaseProp? {
+        return shop.values.find { it.name == name }
     }
 
-    /**
-     * 恢复道具（反序列化前的校验）
-     */
     @JvmStatic
     fun <T : BaseProp> restore(code: String, tClass: Class<T>): T {
         val prop = shop[code] ?: throw RuntimeException("未找到对应code的道具: $code")
@@ -60,16 +45,9 @@ object PropsShop {
         return tClass.cast(prop)
     }
 
-    /**
-     * 检查 code 是否存在
-     */
     @JvmStatic
     fun checkPropExist(code: String): Boolean = shop.containsKey(code)
 
-    /**
-     * 检查名称是否存在
-     */
     @JvmStatic
     fun checkPropNameExist(name: String): Boolean = shop.values.any { it.name == name }
 }
-

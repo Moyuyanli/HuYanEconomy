@@ -11,6 +11,7 @@ plugins {
 
     id("org.jetbrains.dokka") version "1.8.10"
     id("com.github.gmazzo.buildconfig") version "3.1.0"
+    kotlin("plugin.lombok") version kotlinVersion
 
 
     signing
@@ -25,9 +26,7 @@ version = "1.8.0"
 
 repositories {
     maven("https://nexus.chahuyun.cn/repository/maven-public/")
-//    mavenCentral()
-//    maven { url "https://maven.aliyun.com/repository/public" }
-//    maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
+    mavenCentral()
 }
 
 dependencies {

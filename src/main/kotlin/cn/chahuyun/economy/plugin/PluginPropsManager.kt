@@ -75,7 +75,7 @@ object PluginPropsManager {
                 cost = 9999
                 canBuy = true
                 canItExpire = true
-                expire = 30
+                expireDays = 30
             }
         )
         cards.forEach { PropsShop.addShop(it.code, it) }
@@ -169,7 +169,7 @@ class PropExpireCheckTask : Task {
 
                 if (prop is Expirable && prop.isExpired()) {
                     Log.info("道具已过期，正在销毁: kind=$kind, code=${prop.code}, id=${data.id}")
-                    PropsManager.destroyProsInBackpack(data.id)
+                    PropsManager.destroyProsInBackpack(data.id!!)
                 }
             } catch (e: Exception) {
                 Log.error("检查道具过期时发生异常，道具 id=${data.id}", e)
