@@ -65,7 +65,7 @@ class FishPondRepair() : Repair {
         //所有钓鱼信息
         val fishRanks = HibernateFactory.selectList(FishRanking::class.java)
         for (rank in fishRanks) {
-            val fishPond = rank.fishPond ?: continue
+            val fishPond = rank.fishPond
 
             var find = fishPondSet.find { it.id == fishPond.id }
             if (find != null) {
@@ -179,16 +179,14 @@ class PropRepair : Repair {
             try {
                 val prop = PropsManager.getProp(backpack) ?: continue
                 if (prop is Stackable && prop.isStack) {
-                    val userId = backpack.userId ?: continue
-                    val propCode = backpack.propCode ?: continue
-                    val key = userId to propCode
+                    val key = backpack.userId to backpack.propCode
                     if (stackMap.containsKey(key)) {
                         val base = stackMap[key]!! as Stackable
                         val currentNum = if (prop.num <= 0) 1 else prop.num
                         base.num += currentNum
                         
                         // 销毁重复的道具数据
-                        PropsManager.destroyProsInBackpack(backpack.propId!!)
+                        PropsManager.destroyProsInBackpack(backpack.propId)
                         // 将这个重复的背包项标记为待删除（或者直接删除）
                         HibernateFactory.delete(backpack)
                         
@@ -197,7 +195,7 @@ class PropRepair : Repair {
                         // 为了简化，我们直接在循环结束后统一更新，或者这里找到主背包
                         val mainBackpack = backpackList.find { it.userId == key.first && it.propCode == key.second && it.id != backpack.id }
                         if (mainBackpack != null) {
-                            PropsManager.updateProp(mainBackpack.propId!!, base as BaseProp)
+                            PropsManager.updateProp(mainBackpack.propId, base as BaseProp)
                         }
                     } else {
                         stackMap[key] = prop

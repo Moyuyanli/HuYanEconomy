@@ -37,7 +37,7 @@ class RedPackManager {
      * @param event 群消息事件
      */
     @MessageAuthorize(
-        text = ["发红包( \\d+){2}( (sj|随机))?"],
+        text = "发红包( \\d+){2}( (sj|随机))?",
         messageMatching = MessageMatchingEnum.REGULAR,
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )
@@ -75,24 +75,24 @@ class RedPackManager {
             return
         }
 
-        val pack = RedPack(
-            name = "${sender.nick}的红包",
-            groupId = group.id,
-            sender = sender.id,
-            money = money,
-            number = number,
-            isRandomPack = random,
-            createTime = Date()
-        )
+        val pack = RedPack.builder()
+            .name("${sender.nick}的红包")
+            .groupId(group.id)
+            .sender(sender.id)
+            .money(money)
+            .number(number)
+            .isRandomPack(random)
+            .createTime(Date())
+            .build()
+
+        // TODO 自定义红包名字
 
         if (random) {
             val doubles = generateRandomPack(money, number)
-            pack.randomPackList = doubles.toMutableList()
+            pack.setRandomPackList(doubles)
         }
 
-        val resultPack = HibernateFactory.getSessionFactory()?.fromTransaction { 
-            it.merge(pack)
-        }
+        val resultPack = HibernateFactory.merge(pack)
         val id = resultPack?.id ?: 0
 
         if (id == 0) {
@@ -104,7 +104,7 @@ class RedPackManager {
             subject.sendMessage(MessageUtil.formatMessageChain(sender.id, "随机红包创建成功!"))
         }
 
-        val prefix = HuYanEconomy.config?.prefix ?: ""
+        val prefix = HuYanEconomy.config.prefix
         subject.sendMessage(
             MessageUtil.formatMessageChain(
                 "%s 发送了一个红包,快来抢红包吧！%n" +
@@ -113,7 +113,7 @@ class RedPackManager {
                         "红包个数%d%n" +
                         "红包发送时间%s%n" +
                         "领取命令 %s领红包 %d",
-                sender.nick, id, money, number, TimeConvertUtil.timeConvert(pack.createTime ?: Date()),
+                sender.nick, id, money, number, TimeConvertUtil.timeConvert(pack.createTime),
                 if (prefix.isBlank()) "" else prefix, id
             )
         )
@@ -128,23 +128,29 @@ class RedPackManager {
         var remainingCount = count
 
         for (i in 0 until count - 1) {
+            // 二倍均值法: 每次随机范围是 (0.1, 剩余人均金额 * 2)
+            // 保证每个红包至少 0.1，且剩余金额足够支付剩下的红包
             val avg = remainingAmount / remainingCount
             val max = avg * 2
 
+            // 随机一个金额，范围 [0.1, max)
             var amount = RandomUtil.randomDouble(0.1, max)
             amount = ShareUtils.rounding(amount)
 
+            // 修正：确保剩余金额足够支付剩下的红包（每个至少0.1）
             val minReserved = (remainingCount - 1) * 0.1
             if (remainingAmount - amount < minReserved) {
                 amount = ShareUtils.rounding(remainingAmount - minReserved)
             }
 
+            // 兜底：不能低于 0.1
             if (amount < 0.1) amount = 0.1
 
             result.add(amount)
             remainingAmount -= amount
             remainingCount--
         }
+        // 最后一个红包拿走剩下的所有
         result.add(ShareUtils.rounding(remainingAmount))
         return result
     }
@@ -155,7 +161,7 @@ class RedPackManager {
      * @param event 群消息事件
      */
     @MessageAuthorize(
-        text = ["领红包 \\d+|收红包 \\d+"],
+        text = "领红包 \\d+|收红包 \\d+",
         messageMatching = MessageMatchingEnum.REGULAR,
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )
@@ -200,7 +206,7 @@ class RedPackManager {
      * @param event 群消息事件
      */
     @MessageAuthorize(
-        text = ["红包列表"],
+        text = "红包列表",
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )
     suspend fun queryRedPackList(event: GroupMessageEvent) {
@@ -210,7 +216,7 @@ class RedPackManager {
         try {
             val group = event.group
             val bot = event.bot
-            val redPacks = HibernateFactory.selectList(RedPack::class.java, "groupId", group.id) ?: emptyList()
+            val redPacks = HibernateFactory.selectList(RedPack::class.java, "groupId", group.id)
 
             val forwardMessage = ForwardMessageBuilder(subject)
 
@@ -258,9 +264,9 @@ class RedPackManager {
                         "\n红包名称: $name" +
                         "\n红包发送者QQ号: $senderId" +
                         "\n红包金币: $money" +
-                        "\n剩余金币: ${String.format("%.1f", (money ?: 0.0) - redPack.takenMoneys)}" +
+                        "\n剩余金币: ${String.format("%.1f", money - redPack.takenMoneys)}" +
                         "\n红包人数: $number" +
-                        "\n红包创建时间: ${TimeConvertUtil.timeConvert(createTime ?: Date())}" +
+                        "\n红包创建时间: ${TimeConvertUtil.timeConvert(createTime)}" +
                         "\n红包领取者: $nickNames"
             )
             forwardMessage.add(bot, message)
@@ -274,7 +280,7 @@ class RedPackManager {
      * @param event 消息事件
      */
     @MessageAuthorize(
-        text = ["抢红包"],
+        text = "抢红包",
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )
     suspend fun grabNewestRedPack(event: GroupMessageEvent) {
@@ -284,14 +290,14 @@ class RedPackManager {
         try {
             val group = event.group
             val sender = event.sender
-            val redPacks = HibernateFactory.selectList(RedPack::class.java, "groupId", group.id) ?: emptyList()
+            val redPacks = HibernateFactory.selectList(RedPack::class.java, "groupId", group.id)
             if (redPacks.isEmpty()) {
                 subject.sendMessage("当前群没有红包哦!")
                 return
             }
-            val sortedPacks = redPacks.sortedByDescending { it.createTime }
+            redPacks.sortByDescending { it.createTime }
 
-            getRedPack(sender, subject, sortedPacks[0], event.message)
+            getRedPack(sender, subject, redPacks[0], event.message)
         } catch (e: Exception) {
             subject.sendMessage("领取失败! 原因: ${e.message}")
             throw RuntimeException(e)
@@ -312,7 +318,7 @@ class RedPackManager {
         message: net.mamoe.mirai.message.data.MessageChain,
     ) {
         val money = redPack.money
-        val number = redPack.number ?: 1
+        val number = redPack.number
         val isRandomPack = redPack.isRandomPack
 
         val receivers = redPack.receiverList
@@ -321,16 +327,17 @@ class RedPackManager {
             return
         }
 
-        if (receivers.size >= number) {
-            subject.sendMessage(MessageUtil.formatMessageChain(message, "你领取了已经领完的红包！"))
+        if (receivers.size >= redPack.number) {
+            subject.sendMessage(MessageUtil.formatMessageChain(message, "红包已被领完！"))
+            HibernateFactory.delete(redPack)
             return
         }
 
         // 领取措施
         val perMoney: Double = if (isRandomPack) {
-            redPack.getRandomPack()
+            redPack.randomPack
         } else {
-            ShareUtils.rounding((money ?: 0.0) / number)
+            ShareUtils.rounding(money / number)
         }
 
         redPack.takenMoneys = redPack.takenMoneys + perMoney
@@ -352,9 +359,9 @@ class RedPackManager {
             )
         )
 
-        if (receivers.size >= number) {
+        if (receivers.size >= redPack.number) {
             val between = DateUtil.formatBetween(redPack.createTime, Date(), BetweenFormatter.Level.SECOND)
-            subject.sendMessage(MessageUtil.formatMessageChain("%s已被领完！共计花费%s!", redPack.name ?: "", between))
+            subject.sendMessage(MessageUtil.formatMessageChain("%s已被领完！共计花费%s!", redPack.name, between))
             HibernateFactory.delete(redPack)
         }
     }
@@ -366,8 +373,8 @@ class RedPackManager {
      * @param redPack 红包
      */
     suspend fun expireRedPack(group: Group, redPack: RedPack) {
-        val ownerId = redPack.sender ?: return
-        val money = redPack.money ?: 0.0
+        val ownerId = redPack.sender
+        val money = redPack.money
 
         val owner = group[ownerId]
         val remainingMoney = money - redPack.takenMoneys
@@ -383,7 +390,7 @@ class RedPackManager {
      * @param event 消息事件
      */
     @MessageAuthorize(
-        text = ["全局红包列表"],
+        text = "全局红包列表",
         userPermissions = [AuthPerm.OWNER]
     )
     suspend fun queryGlobalRedPackList(event: MessageEvent) {
@@ -392,7 +399,7 @@ class RedPackManager {
         val subject = event.subject
         try {
             val bot = event.bot
-            val redPacks = HibernateFactory.selectList(RedPack::class.java) ?: emptyList()
+            val redPacks = HibernateFactory.selectList(RedPack::class.java)
 
             val forwardMessage = ForwardMessageBuilder(subject)
 
@@ -409,13 +416,13 @@ class RedPackManager {
     }
 
     @MessageAuthorize(
-        text = ["开启 红包"],
+        text = "开启 红包",
         userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN]
     )
     suspend fun startRob(event: GroupMessageEvent) {
         val group = event.group
-        val util = PermUtil
-        val user = UserUtil.group(group.id)
+        val util = PermUtil.INSTANCE
+        val user = UserUtil.INSTANCE.group(group.id)
 
         if (util.checkUserHasPerm(user, EconPerm.RED_PACKET_PERM)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的红包已经开启了!"))
@@ -430,13 +437,13 @@ class RedPackManager {
     }
 
     @MessageAuthorize(
-        text = ["关闭 红包"],
+        text = "关闭 红包",
         userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN]
     )
     suspend fun endRob(event: GroupMessageEvent) {
         val group = event.group
-        val util = PermUtil
-        val user = UserUtil.group(group.id)
+        val util = PermUtil.INSTANCE
+        val user = UserUtil.INSTANCE.group(group.id)
 
         if (!util.checkUserHasPerm(user, EconPerm.RED_PACKET_PERM)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的红包已经关闭!"))
@@ -444,9 +451,10 @@ class RedPackManager {
         }
 
         val permGroup = util.talkPermGroupByName(EconPerm.GROUP.RED_PACKET_PERM_GROUP)
-        permGroup?.getUsers()?.remove(user)
-        permGroup?.save()
+        permGroup.users.remove(user)
+        permGroup.save()
 
         group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的红包关闭成功!"))
     }
 }
+

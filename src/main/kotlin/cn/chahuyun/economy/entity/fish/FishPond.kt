@@ -15,10 +15,11 @@ import java.util.regex.Pattern
  */
 @Entity(name = "FishPond")
 @Table
-class FishPond(
+class FishPond : Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    var id: Int = 0,
+    var id: Int = 0
 
     /**
      * 鱼塘code
@@ -26,12 +27,12 @@ class FishPond(
      * 私人鱼塘 [群号]-[玩家qq]
      * 私人全局鱼塘 [玩家qq]
      */
-    var code: String = "",
+    var code: String = ""
 
     /**
      * 鱼塘管理者
      */
-    var admin: Long = 0,
+    var admin: Long = 0
 
     /**
      * 鱼塘类型
@@ -39,59 +40,60 @@ class FishPond(
      * 2-私人鱼塘
      * 3-全局鱼塘
      */
-    var pondType: Int = 0,
+    var pondType: Int = 0
 
     /**
      * 鱼塘名称
      */
-    var name: String? = null,
+    var name: String? = null
 
     /**
      * 鱼塘描述
      */
-    var description: String? = null,
+    var description: String? = null
 
     /**
      * 鱼塘等级
      */
-    var pondLevel: Int = 0,
+    var pondLevel: Int = 0
 
     /**
      * 限制最低进入等级
      */
-    var minLevel: Int = 0,
+    var minLevel: Int = 0
 
     /**
      * 鱼塘钓的鱼出售回扣金额
      * 0.00-0.10
      */
-    var rebate: Double = 0.05,
+    var rebate: Double = 0.05
 
     /**
      * 总钓鱼次数
      */
-    var number: Int = 0,
+    var number: Int = 0
 
     @OneToMany(targetEntity = Fish::class, fetch = FetchType.EAGER)
-    @JoinColumn(name = "pond_id")
+    @JoinColumn(name = "pond_id") // 修复：使用外键列映射，而不是 mappedBy 到不存在的字段
     var fishList: MutableList<Fish>? = null
-) : Serializable {
 
-    constructor(pondType: Int, group: Long, admin: Long, name: String?, description: String?) : this(
-        code = when (pondType) {
+    constructor()
+
+    constructor(pondType: Int, group: Long, admin: Long, name: String?, description: String?) {
+        this.code = when (pondType) {
             1 -> "g-$group"
             2 -> "g-$group-$admin"
             else -> admin.toString()
-        },
-        admin = admin,
-        name = name,
-        description = description,
-        pondLevel = if (pondType == 1) 6 else 1,
-        pondType = pondType,
-        minLevel = 0,
-        rebate = 0.05,
-        number = 0
-    )
+        }
+        this.admin = admin
+        this.name = name
+        this.description = description
+        this.pondLevel = if (pondType == 1) 6 else 1
+        this.pondType = pondType
+        this.minLevel = 0
+        this.rebate = 0.05
+        this.number = 0
+    }
 
     val group: Long
         get() {
@@ -128,7 +130,7 @@ class FishPond(
      * 保存
      */
     fun save(): FishPond {
-        return HibernateFactory.merge(this)!!
+        return HibernateFactory.merge(this)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -141,3 +143,4 @@ class FishPond(
         return code.hashCode()
     }
 }
+

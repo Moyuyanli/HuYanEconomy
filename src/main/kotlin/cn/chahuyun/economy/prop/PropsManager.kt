@@ -18,9 +18,6 @@ object PropsManager {
 
     private val propsClassMap = ConcurrentHashMap<String, Class<out BaseProp>>()
 
-    /**
-     * 注册道具类
-     */
     @JvmStatic
     fun registerProp(kind: String, propClass: Class<out BaseProp>): Boolean {
         if (propsClassMap.containsKey(kind)) return false
@@ -28,77 +25,38 @@ object PropsManager {
         return true
     }
 
-    /**
-     * 检查指定类型的代码是否存在
-     *
-     * @param kind 代码类型标识符
-     * @return 如果指定类型的代码存在则返回true，否则返回false
-     */
     @JvmStatic
     fun checkCodeExist(kind: String): Boolean = propsClassMap.containsKey(kind)
 
-
-    /**
-     * 根据背包信息获取基础道具实例 (兼容 Java/Kotlin)
-     */
     @JvmStatic
     fun getProp(backpack: UserBackpack): BaseProp? {
         return try {
             val clazz = propsClassMap[backpack.propKind] ?: return null
-            deserialization(backpack.propId ?: return null, clazz)
-        } catch (_: Exception) {
+            deserialization(backpack.propId, clazz)
+        } catch (e: Exception) {
             HibernateFactory.delete(backpack)
             null
         }
     }
 
-    /**
-     * 根据背包信息获取指定类型的道具实例 (Java 调用版)
-     * Java 调用: PropsManager.getProp(backpack, FishBait.class)
-     */
     @JvmStatic
-    fun <T : BaseProp> getProp(backpack: UserBackpack, clazz: Class<T>): T? {
-        return try {
-            val propId = backpack.propId ?: return null
-            deserialization(propId, clazz)
-        } catch (_: Exception) {
-            null
-        }
+    @Suppress("UNCHECKED_CAST")
+    fun <T : BaseProp> getProp(backpack: UserBackpack, clazz: Class<T>): T {
+        return deserialization(backpack.propId, clazz)
     }
 
-    /**
-     * 根据背包信息获取指定类型的道具实例 (Kotlin 调用版)
-     * Kotlin 调用: PropsManager.getProp<FishBait>(backpack)
-     */
-    inline fun <reified T : BaseProp> getProp(backpack: UserBackpack): T? {
-        return getProp(backpack, T::class.java)
-    }
-
-    /**
-     * 根据类型和 ID 获取道具实例 (兼容 Java/Kotlin)
-     */
     @JvmStatic
     fun getProp(kind: String, id: Long): BaseProp? {
         val clazz = propsClassMap[kind] ?: return null
-        return try {
-            deserialization(id, clazz)
-        } catch (_: Exception) {
-            null
-        }
+        return deserialization(id, clazz)
     }
 
-    /**
-     * 添加道具到持久化层
-     */
     @JvmStatic
     fun addProp(prop: BaseProp): Long {
         val data = serialization(prop)
-        return HibernateFactory.merge(data)!!.id!!
+        return HibernateFactory.merge(data).id
     }
 
-    /**
-     * 更新持久化层的道具数据
-     */
     @JvmStatic
     fun updateProp(id: Long, prop: BaseProp) {
         val data = serialization(prop)
@@ -106,11 +64,8 @@ object PropsManager {
         HibernateFactory.merge(data)
     }
 
-    /**
-     * 使用道具核心逻辑
-     */
     @JvmStatic
-    suspend fun useProp(backpack: UserBackpack, event: UseEvent): UseResult {
+    fun useProp(backpack: UserBackpack, event: UseEvent): UseResult {
         val prop = getProp(backpack) ?: return UseResult.fail("道具不存在")
 
         if (prop !is Usable) return UseResult.fail("该道具不可直接使用")
@@ -119,17 +74,17 @@ object PropsManager {
 
         if (result.success) {
             if (result.shouldRemove) {
-                destroyProsInBackpack(backpack.propId ?: return result)
+                destroyProsInBackpack(backpack.propId)
             } else if (result.shouldUpdate) {
                 if (prop is Stackable) {
                     if (prop.num > 1) {
                         prop.num--
-                        updateProp(backpack.propId ?: return result, prop)
+                        updateProp(backpack.propId, prop)
                     } else {
-                        destroyProsInBackpack(backpack.propId ?: return result)
+                        destroyProsInBackpack(backpack.propId)
                     }
                 } else {
-                    updateProp(backpack.propId ?: return result, prop)
+                    updateProp(backpack.propId, prop)
                 }
             }
         }
@@ -151,16 +106,17 @@ object PropsManager {
     }
 
     /**
-     * 序列化道具：将内存对象同步到数据库实体
+     * 核心字段同步序列化
      */
     @JvmStatic
     fun serialization(prop: BaseProp): PropsData {
+        // 核心字段提取
         val propsData = PropsData().apply {
             kind = prop.kind
             code = prop.code
         }
 
-        // 时效性处理
+        // 处理时效性字段同步
         if (prop is Expirable && prop.canItExpire) {
             if (prop.expiredTime == null) {
                 val days = if (prop.expireDays > 0) prop.expireDays else 1
@@ -169,13 +125,13 @@ object PropsManager {
             propsData.expiredTime = prop.expiredTime
         }
 
-        // 堆叠处理
+        // 处理堆叠字段同步
         if (prop is Stackable) {
             propsData.num = prop.num
         }
 
-        // 状态处理
-        if (prop is CardProp) {
+        // 处理状态字段同步 (针对卡片等)
+        if (prop is cn.chahuyun.economy.model.props.PropsCard) {
             propsData.status = prop.status
         }
 
@@ -183,9 +139,6 @@ object PropsManager {
         return propsData
     }
 
-    /**
-     * 反序列化道具：从数据库数据恢复为内存对象
-     */
     @JvmStatic
     fun <T : BaseProp> deserialization(id: Long, clazz: Class<T>): T {
         val propsData = HibernateFactory.selectOne(PropsData::class.java, id)
@@ -205,7 +158,7 @@ object PropsManager {
     @Suppress("UNCHECKED_CAST")
     fun <T : BaseProp> copyProp(baseProp: T): T {
         val data = serialization(baseProp)
-        return deserialization(data, baseProp.javaClass)
+        return deserialization(data, baseProp.javaClass as Class<T>)
     }
 
     @JvmStatic

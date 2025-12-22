@@ -24,7 +24,8 @@ import net.mamoe.mirai.console.command.CommandManager
 import net.mamoe.mirai.console.extension.PluginComponentStorage
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
-import net.mamoe.mirai.event.GlobalEventChannel
+import net.mamoe.mirai.event.*
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * 壶言经济插件主类 (Kotlin Object)
@@ -126,7 +127,11 @@ object HuYanEconomy : KotlinPlugin(
         val eventChannel = GlobalEventChannel.parentScope(this)
 
         // 监听自定义签到事件
-        eventChannel.subscribeAlways<SignEvent> {
+        eventChannel.subscribeAlways<SignEvent>(
+            context = EmptyCoroutineContext,
+            concurrencyKind = ConcurrencyKind.CONCURRENT,
+            priority = EventPriority.HIGH
+        ) {
             SignManager.randomSignGold(it)
         }
 
@@ -136,7 +141,7 @@ object HuYanEconomy : KotlinPlugin(
 
         Log.info("事件已监听!")
 
-        EconomyPluginConfig.firstStart = false
+        EconomyPluginConfig.isFirstStart = false
         Log.info("HuYanEconomy已加载！当前版本 ${description.version} !")
     }
 

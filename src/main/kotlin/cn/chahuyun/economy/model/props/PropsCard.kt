@@ -12,7 +12,7 @@ class PropsCard(
     kind: String = "card",
     code: String = "",
     name: String = "",
-) : CardProp(kind, code, name), Stackable {
+) : AbstractProp(kind, code, name), Expirable, Usable, Stackable {
 
     companion object {
         const val SIGN_2 = "sign-2"
@@ -23,14 +23,22 @@ class PropsCard(
         const val NAME_CHANGE = "rename"
     }
 
+    override var getTime: Date = Date()
+    override var expireDays: Int = -1
+    override var expiredTime: Date? = null
+    override var canItExpire: Boolean = true
+
     override var num: Int = 1
     override var unit: String = "张"
-    override var stack: Boolean = true
 
-    override suspend fun use(event: UseEvent): UseResult {
+    @get:JvmName("isStatus")
+    var status: Boolean = false
+    var enabledTime: Date? = null
+
+    override fun use(event: UseEvent): UseResult {
         return when (code) {
             NAME_CHANGE -> {
-                val sender = event.sender
+                val sender = event.sender ?: return UseResult.fail("发送者不存在")
                 val userInfo = UserManager.getUserInfo(sender)
                 userInfo.name = sender.nick
                 HibernateFactory.merge(userInfo)
@@ -38,7 +46,9 @@ class PropsCard(
             }
 
             else -> {
-                super.use(event) // 使用 CardProp 的默认激活逻辑
+                this.status = true
+                this.enabledTime = Date()
+                UseResult.success("道具卡已激活!")
             }
         }
     }
@@ -47,3 +57,4 @@ class PropsCard(
         return "道具名称: $name\n道具描述: $description\n道具价值: $cost 金币"
     }
 }
+

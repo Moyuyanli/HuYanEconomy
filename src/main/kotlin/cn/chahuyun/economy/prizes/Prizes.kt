@@ -385,7 +385,7 @@ object PrizesUtil {
                     throw RaffleException("限量奖没货了!")
                 }
 
-                val raffleResult = RaffleResult(prize, level.level, context.group.id, userRaffle.id!!, rafflePool)
+                val raffleResult = RaffleResult(prize, level.level, context.group.id, userRaffle.id, rafflePool)
                 val raffleBatch = RaffleBatch(RaffleType.SINGLE, listOf(raffleResult))
                 HibernateFactory.merge(raffleBatch)
                 return raffleResult
@@ -397,7 +397,7 @@ object PrizesUtil {
 
         val prize = group.getPrize()
 
-        val raffleResult = RaffleResult(prize, level.level, context.group.id, userRaffle.id!!, rafflePool)
+        val raffleResult = RaffleResult(prize, level.level, context.group.id, userRaffle.id, rafflePool)
         val raffleBatch = RaffleBatch(RaffleType.SINGLE, listOf(raffleResult))
         HibernateFactory.merge(raffleBatch)
         return raffleResult

@@ -13,7 +13,7 @@ class Equipment(
     name: String = "",
 ) : AbstractProp(kind, code, name), Usable {
 
-    override suspend fun use(event: UseEvent): UseResult {
+    override fun use(event: UseEvent): UseResult {
         // 装备逻辑：比如穿上装备，增加属性等
         return UseResult.success("已装备 $name")
     }
