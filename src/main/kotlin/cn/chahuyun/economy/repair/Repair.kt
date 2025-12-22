@@ -3,121 +3,210 @@ package cn.chahuyun.economy.repair
 import cn.chahuyun.economy.entity.UserBackpack
 import cn.chahuyun.economy.entity.fish.FishPond
 import cn.chahuyun.economy.entity.fish.FishRanking
-import cn.chahuyun.economy.entity.props.PropsData
 import cn.chahuyun.economy.entity.rob.RobInfo
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.hibernateplus.HibernateFactory
-import cn.hutool.json.JSONUtil
 import java.sql.Connection
 
+
 interface Repair {
+
+    /**
+     * 修复
+     */
     fun repair(): Boolean
+
+
 }
 
 object RepairManager {
-    @JvmStatic
+
     fun init(): String {
-        if (!FishPondRepair().repair()) return "鱼塘错误数据修复失败!"
-        if (!RobRepair().repair()) return "抢劫错误数据修复失败!"
-        if (!PropRepair().repair()) return "道具系统版本升级失败!"
-        return "数据修复与版本升级完成"
+        if (!FishPondRepair().repair()) {
+            return "鱼塘错误数据修复失败!"
+        }
+        if (!RobRepair().repair()) {
+            return "抢劫错误数据修复失败!"
+        }
+        if (!PropRepair().repair()) {
+            return "道具错误数据修复失败!"
+        }
+
+        return "修复完成"
     }
+
 }
 
-class FishPondRepair : Repair {
+class FishPondRepair() : Repair {
+
+    /**
+     * 修复
+     */
     override fun repair(): Boolean {
+        //唯一鱼塘
         val fishPondSet: MutableSet<FishPond> = mutableSetOf()
+        //现有鱼塘
         val fishPonds = HibernateFactory.selectList(FishPond::class.java)
+
+        //取所有唯一鱼塘
         for (pond in fishPonds) {
-            if (!fishPondSet.contains(pond)) fishPondSet.add(pond)
+            if (!fishPondSet.contains(pond)) {
+                fishPondSet.add(pond)
+            }
         }
+
+        //所有钓鱼信息
         val fishRanks = HibernateFactory.selectList(FishRanking::class.java)
         for (rank in fishRanks) {
             val fishPond = rank.fishPond
-            if (fishPondSet.any { it.id == fishPond.id }) continue
-            val find = fishPondSet.find { it.code == fishPond.code }
-            HibernateFactory.getSessionFactory()?.fromTransaction {
-                it.createNativeQuery(
+
+            var find = fishPondSet.find { it.id == fishPond.id }
+            if (find != null) {
+                continue
+            }
+
+            find = fishPondSet.find { it.code == fishPond.code }
+
+            HibernateFactory.getSession().fromTransaction {
+                val createQuery = it.createNativeQuery(
                     "update FishRanking set `FishPondId` = :fishId where id = :id",
                     FishRanking::class.java
                 )
-                    .setParameter("fishId", find?.id)
+                createQuery.setParameter("fishId", find?.id)
                     .setParameter("id", rank.id)
                     .executeUpdate()
             }
+
         }
+
         for (pond in fishPonds) {
             if (fishPondSet.find { it.id == pond.id } != null) continue
             HibernateFactory.delete(pond)
         }
+
         return true
     }
+
+
 }
 
 class RobRepair : Repair {
+    /**
+     * 修复
+     */
     override fun repair(): Boolean {
+        // 定义要删除的列名
         val columnsToDrop = listOf("isInJail", "cooldown", "lastRobTime", "cooling", "type")
-        HibernateFactory.getSessionFactory()?.fromTransaction { session ->
+
+        // 在事务中执行每个 ALTER TABLE 语句
+        HibernateFactory.getSession().fromTransaction { session ->
             session.doWork { connection: Connection ->
                 for (column in columnsToDrop) {
+                    val sql = "ALTER TABLE RobInfo DROP COLUMN $column;"
                     try {
-                        connection.createStatement().executeUpdate("ALTER TABLE RobInfo DROP COLUMN $column;")
-                    } catch (e: Exception) { /* 忽略不存在的列 */
+                        with(connection.createStatement()) {
+                            executeUpdate(sql)
+                        }
+                    } catch (e: Exception) {
+                        println(e.message)
                     }
                 }
             }
         }
-        HibernateFactory.selectList(RobInfo::class.java).filter { it.nowTime == null }
-            .forEach { HibernateFactory.delete(it) }
+
+        // 删除 nowTime 为空的 RobInfo 记录
+        HibernateFactory.selectList(RobInfo::class.java).stream()
+            .filter { it.nowTime == null }
+            .forEach { `object`: RobInfo? -> HibernateFactory.delete(`object`) }
+
         return true
     }
+
 }
 
-/**
- * 道具系统版本迁移 (v1 -> v2)
- * 将旧版扁平 JSON 升级为结构化存储
- */
+
 class PropRepair : Repair {
+    /**
+     * 修复
+     */
     override fun repair(): Boolean {
-        val propsDataList = HibernateFactory.selectList(PropsData::class.java)
+        val list = HibernateFactory.selectList(UserBackpack::class.java)
 
-        for (propsData in propsDataList) {
-            try {
-                val rawJson = propsData.data ?: continue
-                val jsonObject = JSONUtil.parseObj(rawJson)
+        val map = mutableMapOf<Pair<Long, String>, UserBackpack>()
 
-                // --- 1. 执行字段命名迁移 (旧 -> 新) ---
-                if (jsonObject.containsKey("expire")) {
-                    val expireValue = jsonObject.get("expire")
-                    jsonObject.set("expireDays", expireValue)
-                    jsonObject.remove("expire")
-                }
+        //todo 收集整理可堆叠物品
 
-                // --- 2. 尝试映射到新类 ---
-                val kind = propsData.kind ?: jsonObject.getStr("kind") ?: continue
-                val propClass = PropsManager.shopClass(kind) ?: continue
+        for (userBackpack in list) {
+            val key = userBackpack.propId to userBackpack.userId
 
-                // 使用修正后的 JSON 反序列化出对象
-                val prop = JSONUtil.toBean(jsonObject, propClass)
-
-                // --- 3. 利用 PropsManager 同步核心列数据 ---
-                // 这里调用 PropsManager.serialization 会自动填充 propsData 的列（num, expiredTime, status）
-                val newPropsData = PropsManager.serialization(prop)
-                newPropsData.id = propsData.id
-
-                HibernateFactory.merge(newPropsData)
-
-            } catch (e: Exception) {
-                cn.chahuyun.economy.utils.Log.error("升级道具数据失败: id=${propsData.id}", e)
+            if (map.containsKey(key)) {
+                HibernateFactory.delete(userBackpack)
+                continue
+            } else {
+                map[key] = userBackpack
             }
-        }
 
-        // 4. 清理残留的无效背包条目
-        HibernateFactory.selectList(UserBackpack::class.java).forEach { backpack ->
-            if (PropsManager.getProp(backpack) == null) {
-                HibernateFactory.delete(backpack)
+            try {
+                PropsManager.getProp(userBackpack)
+            } catch (e: Exception) {
+                HibernateFactory.delete(userBackpack)
             }
         }
         return true
     }
+
+    /**
+     * 修复
+     */
+     fun oldRepair(): Boolean {
+        val list = HibernateFactory.selectList(UserBackpack::class.java)
+
+        val map = mutableMapOf<Pair<Long, String>, UserBackpack>()
+        val stacks = mutableListOf<UserBackpack>()
+
+        for (userBackpack in list) {
+            val key = userBackpack.propId to userBackpack.userId
+
+            if (map.containsKey(key)) {
+                HibernateFactory.delete(userBackpack)
+                continue
+            } else {
+                map[key] = userBackpack
+            }
+
+            try {
+                val prop = PropsManager.getProp(userBackpack)
+                if (prop.isStack) {
+                    stacks + prop
+                }
+            } catch (e: Exception) {
+                try {
+                    HibernateFactory.delete(userBackpack)
+                } catch (e: Exception) {
+                    println(e.message)
+                    continue
+                }
+            }
+        }
+
+        val stackMap = mutableMapOf<Pair<String, String>, PropBase>()
+
+        for (backpack in stacks) {
+            val key = backpack.userId to backpack.propCode
+            val prop = PropsManager.getProp(backpack)
+            if (stackMap.containsKey(key)) {
+                val num = if (prop.num <= 0) 1 else prop.num
+                val base = stackMap[key]
+                base!!.num += num
+                PropsManager.destroyProsInBackpack(backpack.propId)
+                PropsManager.updateProp(backpack.propId, base)
+                continue
+            } else {
+                stackMap[key] = prop
+            }
+        }
+
+        return true
+    }
+
 }

@@ -141,10 +141,19 @@ public class EventPropsManager {
         for (int i = 1; i < split.length; i++) {
             String code = split[i];
             int number = 1;
+            Member sender = event.getSender();
             if (code.matches("^\\S+\\*\\d+$")) {
                 String[] strings = code.split("\\*");
                 code = strings[0];
-                number = Integer.parseInt(strings[1]);
+                try {
+                    number = Integer.parseInt(strings[1]);
+                    if (number >= 1000) {
+                        number = 1000;
+                    }
+                } catch (NumberFormatException e) {
+                    group.sendMessage(MessageUtil.formatMessageChain(sender.getId(), "没办法买那么多!"));
+                    return;
+                }
             }
 
             boolean match = !PropsShop.checkPropExist(code) && !PropsShop.checkPropNameExist(code);
@@ -154,7 +163,6 @@ public class EventPropsManager {
                 continue;
             }
 
-
             PropBase template = PropsShop.getTemplate(code);
             if (template == null) {
                 template = PropsShop.getTemplateByName(code);
@@ -162,7 +170,7 @@ public class EventPropsManager {
             String name = template.getName();
             code = template.getCode();
 
-            UserInfo userInfo = UserManager.getUserInfo(event.getSender());
+            UserInfo userInfo = UserManager.getUserInfo(sender);
 
             double money = EconomyUtil.getMoneyByUser(userInfo.getUser());
 
