@@ -360,6 +360,7 @@ object PrizesUtil {
     private fun drawing(context: RaffleContext): RaffleResult {
         val rafflePool = context.pool
         val userRaffle = context.userRaffle
+        val userId = userRaffle.id ?: error("错误,抽奖人id不存在!")
 
         //检查保底
         if (rafflePool.endTime != 0) {
@@ -385,7 +386,7 @@ object PrizesUtil {
                     throw RaffleException("限量奖没货了!")
                 }
 
-                val raffleResult = RaffleResult(prize, level.level, context.group.id, userRaffle.id, rafflePool)
+                val raffleResult = RaffleResult(prize, level.level, context.group.id, userId, rafflePool)
                 val raffleBatch = RaffleBatch(RaffleType.SINGLE, listOf(raffleResult))
                 HibernateFactory.merge(raffleBatch)
                 return raffleResult
@@ -397,7 +398,7 @@ object PrizesUtil {
 
         val prize = group.getPrize()
 
-        val raffleResult = RaffleResult(prize, level.level, context.group.id, userRaffle.id, rafflePool)
+        val raffleResult = RaffleResult(prize, level.level, context.group.id, userId, rafflePool)
         val raffleBatch = RaffleBatch(RaffleType.SINGLE, listOf(raffleResult))
         HibernateFactory.merge(raffleBatch)
         return raffleResult
