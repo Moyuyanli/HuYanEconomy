@@ -1,5 +1,3 @@
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-
 import moe.karla.maven.publishing.MavenPublishingExtension
 
 plugins {
@@ -25,7 +23,7 @@ version = "1.8.0"
 
 repositories {
     maven("https://nexus.chahuyun.cn/repository/maven-public/")
-//    mavenCentral()
+    mavenCentral()
 //    maven { url "https://maven.aliyun.com/repository/public" }
 //    maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
 }
@@ -34,7 +32,7 @@ dependencies {
 
     //依赖
     compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
-    compileOnly("cn.chahuyun:HuYanAuthorize:1.3.0")
+    compileOnly("cn.chahuyun:HuYanAuthorize:1.3.1")
 
     //使用库
     implementation("org.projectlombok:lombok:1.18.24")
@@ -43,12 +41,12 @@ dependencies {
     implementation("cn.hutool:hutool-all:5.8.40")
     implementation("org.apache.poi:poi-ooxml:5.4.0")
 
-    implementation("cn.chahuyun:hibernate-plus:2.0.0")
+    implementation("cn.chahuyun:hibernate-plus:2.0.1")
 }
 
 // hibernate 6 和 HikariCP 5 需要 jdk11
 mirai {
-    jvmTarget = JavaVersion.VERSION_17
+    jvmTarget = JavaVersion.VERSION_11
 }
 
 buildConfig {
