@@ -75,7 +75,7 @@ class FishPondRepair() : Repair {
 
             find = fishPondSet.find { it.code == fishPond.code }
 
-            HibernateFactory.getSessionFactory()?.fromTransaction {
+            HibernateFactory.getSessionFactory().fromTransaction {
                 val createQuery = it.createNativeQuery(
                     "update FishRanking set `FishPondId` = :fishId where id = :id",
                     FishRanking::class.java
@@ -107,7 +107,7 @@ class RobRepair : Repair {
         val columnsToDrop = listOf("isInJail", "cooldown", "lastRobTime", "cooling", "type")
 
         // 在事务中执行每个 ALTER TABLE 语句
-        HibernateFactory.getSessionFactory()?.fromTransaction { session ->
+        HibernateFactory.getSessionFactory().fromTransaction { session ->
             session.doWork { connection: Connection ->
                 for (column in columnsToDrop) {
                     val sql = "ALTER TABLE RobInfo DROP COLUMN $column;"
@@ -115,7 +115,7 @@ class RobRepair : Repair {
                         with(connection.createStatement()) {
                             executeUpdate(sql)
                         }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         // 忽略
                     }
                 }
@@ -204,7 +204,7 @@ class PropRepair : Repair {
                         stackMap[key] = prop
                     }
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 try {
                     HibernateFactory.delete(backpack)
                 } catch (_: Exception) {
@@ -219,10 +219,10 @@ class PropRepair : Repair {
                 if (PropsManager.getProp(backpack) == null) {
                     HibernateFactory.delete(backpack)
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 try {
                     HibernateFactory.delete(backpack)
-                } catch (ex: Exception) { /* 忽略 */ }
+                } catch (_: Exception) { /* 忽略 */ }
             }
         }
         return true
