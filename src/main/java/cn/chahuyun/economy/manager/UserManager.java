@@ -35,6 +35,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Date;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -64,15 +65,22 @@ public class UserManager {
     public static UserInfo getUserInfo(User user) {
         long userId = user.getId();
         UserInfo one = HibernateFactory.selectOne(UserInfo.class, "qq", userId);
+        Group group = null;
+        Member member = null;
+        if (user instanceof Member) {
+            member = ((Member) user);
+            group = member.getGroup();
+        }
         if (one == null) {
             UserInfo info = new UserInfo(userId, 0, user.getNick(), new Date());
-            if (user instanceof Member) {
-                Member member = (Member) user;
-                info.setRegisterGroup(member.getGroup().getId());
-            }
-            return HibernateFactory.merge(info).setUser(user);
+            info.setRegisterGroup(group != null ? group.getId() : 0);
+            info.setUser(user);
+            info.setGroup(group);
+            return Objects.requireNonNull(HibernateFactory.merge(info));
         }
-        return one.setUser(user);
+        one.setUser(user);
+        one.setGroup(group);
+        return one;
     }
 
     /**
@@ -269,7 +277,7 @@ public class UserManager {
         String id = String.valueOf(user.getId());
         TitleInfo title = TitleManager.getDefaultTitle(userInfo);
         g2d.setFont(font.deriveFont(32f));
-        if (title.isGradient()) {
+        if (title.getGradient()) {
             ImageUtil.drawStringGradient(title.getTitle(),
                     ImageDrawXY.TITLE.getX(), ImageDrawXY.TITLE.getY(),
                     title.getStartColor(), title.getEndColor(), g2d);
@@ -286,14 +294,14 @@ public class UserManager {
         boolean gradient = false;
         Color sColor = null;
         Color eColor = null;
-        if (title.isImpactName()) {
+        if (title.getImpactName()) {
             gradient = true;
             sColor = title.getStartColor();
             eColor = title.getEndColor();
         } else {
             if (user instanceof Member) {
-                gradient = true;
                 Member member = (Member) user;
+                gradient = true;
                 if (member.getPermission() == MemberPermission.OWNER) {
                     sColor = new Color(68, 138, 255);
                     eColor = new Color(100, 255, 218);
