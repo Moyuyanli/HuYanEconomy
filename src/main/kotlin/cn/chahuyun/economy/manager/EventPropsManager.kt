@@ -3,19 +3,18 @@ package cn.chahuyun.economy.manager
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
-import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.model.fish.FishBait
-import cn.chahuyun.economy.prop.BaseProp
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.prop.PropsShop
 import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
-import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.event.events.GroupMessageEvent
-import net.mamoe.mirai.message.data.*
-import java.util.regex.Pattern
+import net.mamoe.mirai.message.data.ForwardMessageBuilder
+import net.mamoe.mirai.message.data.MessageChainBuilder
+import net.mamoe.mirai.message.data.PlainText
+import net.mamoe.mirai.message.data.QuoteReply
 import kotlin.math.ceil
 
 /**
@@ -54,7 +53,7 @@ class EventPropsManager {
         val totalPages = ceil(totalItems.toDouble() / pageSize).toInt()
 
         // 检查请求的页数是否有效
-        if (currentPage < 1 || (totalPages > 0 && currentPage > totalPages)) {
+        if (currentPage < 1 || (totalPages in 1..<currentPage)) {
             group.sendMessage("无效的页数: $currentPage")
             return
         }
@@ -83,7 +82,10 @@ class EventPropsManager {
         }
 
         // 添加页脚信息
-        nodes.add(bot, PlainText(String.format("当前页数: %d / 总页数: %d ; 总条数: %d", currentPage, totalPages, totalItems)))
+        nodes.add(
+            bot,
+            PlainText(String.format("当前页数: %d / 总页数: %d ; 总条数: %d", currentPage, totalPages, totalItems))
+        )
 
         // 发送消息
         group.sendMessage(nodes.build())
@@ -137,7 +139,7 @@ class EventPropsManager {
                 code = strings[0]
                 try {
                     number = strings[1].toInt().coerceAtMost(1000)
-                } catch (e: NumberFormatException) {
+                } catch (_: NumberFormatException) {
                     group.sendMessage(MessageUtil.formatMessageChain(sender.id, "没办法买那么多!"))
                     return
                 }
@@ -152,11 +154,9 @@ class EventPropsManager {
             if (template == null) {
                 template = PropsShop.getTemplateByName(code)
             }
-            if (template == null) continue
-
             val name = template.name
             val propCode = template.code
-            val money = EconomyUtil.getMoneyByUser(userInfo.user!!)
+            val money = EconomyUtil.getMoneyByUser(userInfo.user)
             val cost = template.cost
             val finalCost = cost * number
 
@@ -165,19 +165,17 @@ class EventPropsManager {
                 continue
             }
 
-            if (EconomyUtil.minusMoneyToUser(userInfo.user!!, finalCost.toDouble())) {
+            if (EconomyUtil.minusMoneyToUser(userInfo.user, finalCost.toDouble())) {
                 if (template is Stackable) {
                     if (BackpackManager.checkPropInUser(userInfo, propCode)) {
                         val baseNumber = FishBait.fishbaitTimer[propCode] ?: 1
                         val buyNum = number * baseNumber
 
                         val backpack = userInfo.getProp(propCode)
-                        if (backpack != null) {
-                            val prop = PropsManager.getProp(backpack)
-                            if (prop is Stackable) {
-                                (prop as Stackable).num += buyNum
-                                backpack.propId?.let { PropsManager.updateProp(it, prop) }
-                            }
+                        val prop = PropsManager.getProp(backpack)
+                        if (prop is Stackable) {
+                            (prop as Stackable).num += buyNum
+                            backpack.propId?.let { PropsManager.updateProp(it, prop) }
                         }
                     } else {
                         val propId = PropsManager.addProp(template)
@@ -194,8 +192,8 @@ class EventPropsManager {
                     }
                 } else {
                     repeat(number) {
-                        val propId = PropsManager.addProp(template!!)
-                        BackpackManager.addPropToBackpack(userInfo, propCode, template!!.kind, propId)
+                        val propId = PropsManager.addProp(template)
+                        BackpackManager.addPropToBackpack(userInfo, propCode, template.kind, propId)
                     }
                 }
 
