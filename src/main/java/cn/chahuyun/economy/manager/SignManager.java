@@ -13,6 +13,7 @@ import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.model.props.PropsCard;
+import cn.chahuyun.economy.model.props.UseEvent;
 import cn.chahuyun.economy.plugin.ImageManager;
 import cn.chahuyun.economy.plugin.PluginManager;
 import cn.chahuyun.economy.prop.PropsManager;
@@ -177,7 +178,7 @@ public class SignManager {
         Class<PropsCard> cardClass = PropsCard.class;
         if (BackpackManager.checkPropInUser(userInfo, PropsCard.MONTHLY)) {
             UserBackpack prop = userInfo.getProp(PropsCard.MONTHLY);
-            if (PropsManager.getProp(prop, cardClass).isStatus()) {
+            if (PropsManager.getProp(prop, cardClass).getStatus()) {
                 event.setSign_2(true);
                 event.setSign_3(true);
                 multiples += 4;
@@ -188,7 +189,9 @@ public class SignManager {
         PropsCard card;
         for (UserBackpack backpack : list) {
             Long propId = backpack.getPropId();
-            switch (backpack.getPropCode()) {
+            val propCode = backpack.getPropCode();
+            if (propId == null || propCode == null) continue;
+            switch (propCode) {
                 case PropsCard.SIGN_2:
                     try {
                         card = PropsManager.deserialization(propId, cardClass);
@@ -199,7 +202,7 @@ public class SignManager {
                     if (event.isSign_2()) {
                         continue;
                     }
-                    if (card.isStatus()) {
+                    if (card.getStatus()) {
                         multiples += 1;
                         BackpackManager.delPropToBackpack(userInfo, propId);
                         event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张双倍签到卡，本次签到奖励翻倍!"));
@@ -217,7 +220,7 @@ public class SignManager {
                     if (event.isSign_3()) {
                         continue;
                     }
-                    if (card.isStatus()) {
+                    if (card.getStatus()) {
                         multiples += 2;
                         BackpackManager.delPropToBackpack(userInfo, propId);
                         event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张三倍签到卡，本次签到奖励三翻倍!"));
@@ -235,7 +238,7 @@ public class SignManager {
                         continue;
                     }
                     //自动使用补签卡
-//                    if (card.isStatus()) {
+//                    if (card.getStatus()) {
                     int oldSignNumber = userInfo.getOldSignNumber();
 
                     if (oldSignNumber == 0) {
@@ -246,7 +249,7 @@ public class SignManager {
                     userInfo.setOldSignNumber(0);
 
                     UseEvent useEvent = new UseEvent(userInfo.getUser(), event.getGroup(), userInfo);
-                    PropsManager.useProp(backpack, useEvent);
+                    PropsManager.usePropJava(backpack, useEvent);
                     event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张补签卡，续上断掉的签到天数!"));
                     event.setSign_in(true);
 //                    }
