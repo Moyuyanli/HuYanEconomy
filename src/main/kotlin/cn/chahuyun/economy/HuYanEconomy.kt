@@ -22,23 +22,26 @@ import cn.hutool.cron.CronUtil
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.console.command.CommandManager
 import net.mamoe.mirai.console.extension.PluginComponentStorage
-import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder
+import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
-import net.mamoe.mirai.event.*
-import kotlin.coroutines.EmptyCoroutineContext
+import net.mamoe.mirai.event.EventPriority
+import net.mamoe.mirai.event.GlobalEventChannel
+
 
 /**
  * 壶言经济插件主类 (Kotlin Object)
  */
 object HuYanEconomy : KotlinPlugin(
-    JvmPluginDescriptionBuilder("cn.chahuyun.HuYanEconomy", BuildConstants.VERSION)
-        .name("HuYanEconomy")
-        .info("壶言经济")
-        .author("Moyuyanli")
-        // 忽略依赖版本 true 可选依赖 false 必须依赖
-        .dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", ">=1.0.6", false)
-        .dependsOn("cn.chahuyun.HuYanAuthorize", ">=1.3.0", false)
-        .build()
+    JvmPluginDescription(
+        id = "cn.chahuyun.HuYanEconomy",
+        version = BuildConstants.VERSION,
+        name = "HuYanEconomy"
+    ) {
+        author("Moyuyanli")
+        info("壶言经济")
+        dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", ">=1.0.6", false)
+        dependsOn("cn.chahuyun.HuYanAuthorize", ">=1.3.1", false)
+    }
 ) {
 
     /**
