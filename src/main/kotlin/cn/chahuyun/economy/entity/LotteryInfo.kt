@@ -57,6 +57,15 @@ class LotteryInfo(
     var bonus: Double = 0.0
 ) : Serializable {
 
+    constructor(userId: Long, group: Long, money: Double, type: Int, number: String) : this(
+        0,
+        userId,
+        group,
+        money,
+        type,
+        number,
+    )
+
     /**
      * 删除
      */
