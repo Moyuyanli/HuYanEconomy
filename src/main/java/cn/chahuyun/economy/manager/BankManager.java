@@ -221,7 +221,7 @@ class BankInterestTask implements Task {
     @Override
     public void execute() {
         for (BankInfo bankInfo : bankList) {
-            if (bankInfo.isInterestSwitch() && DateUtil.thisDayOfWeek() == 2) {
+            if (bankInfo.getInterestSwitch() && DateUtil.thisDayOfWeek() == 2) {
                 bankInfo.setInterest(BankInfo.randomInterest());
                 HibernateFactory.merge(bankInfo);
             }
