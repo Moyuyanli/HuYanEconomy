@@ -7,6 +7,7 @@ import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUtil
 import cn.hutool.json.JSONConfig
 import cn.hutool.json.JSONUtil
+import kotlinx.coroutines.runBlocking
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -32,8 +33,9 @@ object PropsManager {
     fun getProp(backpack: UserBackpack): BaseProp? {
         return try {
             val clazz = propsClassMap[backpack.propKind] ?: return null
-            deserialization(backpack.propId, clazz)
-        } catch (e: Exception) {
+            val propId = backpack.propId ?: error("错误,背包中道具id为空!")
+            deserialization(propId, clazz)
+        } catch (_: Exception) {
             HibernateFactory.delete(backpack)
             null
         }
@@ -42,7 +44,8 @@ object PropsManager {
     @JvmStatic
     @Suppress("UNCHECKED_CAST")
     fun <T : BaseProp> getProp(backpack: UserBackpack, clazz: Class<T>): T {
-        return deserialization(backpack.propId, clazz)
+        val propId = backpack.propId ?: error("错误,背包中道具id为空!")
+        return deserialization(propId, clazz)
     }
 
     @JvmStatic
@@ -54,7 +57,7 @@ object PropsManager {
     @JvmStatic
     fun addProp(prop: BaseProp): Long {
         val data = serialization(prop)
-        return HibernateFactory.merge(data)!!.id
+        return HibernateFactory.merge(data).id!!
     }
 
     @JvmStatic
@@ -65,7 +68,9 @@ object PropsManager {
     }
 
     @JvmStatic
-    fun useProp(backpack: UserBackpack, event: UseEvent): UseResult {
+    fun usePropJava(backpack: UserBackpack, event: UseEvent) = runBlocking { return@runBlocking useProp(backpack,event) }
+
+    suspend fun useProp(backpack: UserBackpack, event: UseEvent): UseResult {
         val prop = getProp(backpack) ?: return UseResult.fail("道具不存在")
 
         if (prop !is Usable) return UseResult.fail("该道具不可直接使用")
@@ -73,18 +78,19 @@ object PropsManager {
         val result = prop.use(event)
 
         if (result.success) {
+            val propId = backpack.propId ?: error("错误,背包中道具id为空!")
             if (result.shouldRemove) {
-                destroyProsInBackpack(backpack.propId)
+                destroyProsInBackpack(propId)
             } else if (result.shouldUpdate) {
                 if (prop is Stackable) {
                     if (prop.num > 1) {
                         prop.num--
-                        updateProp(backpack.propId, prop)
+                        updateProp(propId, prop)
                     } else {
-                        destroyProsInBackpack(backpack.propId)
+                        destroyProsInBackpack(propId)
                     }
                 } else {
-                    updateProp(backpack.propId, prop)
+                    updateProp(propId, prop)
                 }
             }
         }
@@ -158,7 +164,7 @@ object PropsManager {
     @Suppress("UNCHECKED_CAST")
     fun <T : BaseProp> copyProp(baseProp: T): T {
         val data = serialization(baseProp)
-        return deserialization(data, baseProp.javaClass as Class<T>)
+        return deserialization(data, baseProp.javaClass)
     }
 
     @JvmStatic
