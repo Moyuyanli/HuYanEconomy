@@ -34,7 +34,7 @@ class FishInfo(
     /**
      * 是否购买鱼竿
      */
-    var fishRod: Boolean = false,
+    var isFishRod: Boolean = false,
 
     /**
      * 是否在钓鱼

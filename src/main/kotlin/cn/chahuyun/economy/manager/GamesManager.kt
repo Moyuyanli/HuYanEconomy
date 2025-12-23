@@ -14,6 +14,11 @@ import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.entity.fish.*
 import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
+import cn.chahuyun.economy.manager.BackpackManager
+import cn.chahuyun.economy.manager.TitleManager
+import cn.chahuyun.economy.manager.UserManager
+import cn.chahuyun.economy.manager.UserStatusManager
+import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.plugin.FactorManager
 import cn.chahuyun.economy.prop.PropsManager
@@ -389,7 +394,7 @@ class GamesManager : CoroutineScope {
             withTimeoutOrNull(180 * 1000L) {
                 while (isActive) {
                     val nextMessage = withContext(Dispatchers.IO) {
-                        MessageUtil.nextUserForGroupMessageEventSync(subject.id, sender.id, 180)
+                        MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.id, sender.id, 180)
                     } ?: break
 
                     if (Pattern.matches("[拉起!！]", nextMessage.message.contentToString())) {
@@ -441,7 +446,7 @@ class GamesManager : CoroutineScope {
         }
 
         val dimensions = fish.getSurprise(surprise, evolution)
-        val money = fish.price * dimensions
+        val money = (fish.price * dimensions).toDouble()
         val userMoney = money * (1 - fishPond.rebate)
         val pondMoney = money * fishPond.rebate
 
@@ -474,7 +479,7 @@ class GamesManager : CoroutineScope {
     }
 
     @MessageAuthorize(
-        text = "刷新钓鱼",
+        text = ["刷新钓鱼"],
         userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN],
         groupPermissions = [EconPerm.FISH_PERM]
     )
@@ -500,11 +505,11 @@ class GamesManager : CoroutineScope {
         event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
     }
 
-    @MessageAuthorize(text = "开启 钓鱼", userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
+    @MessageAuthorize(text = ["开启 钓鱼"], userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
     suspend fun startFish(event: GroupMessageEvent) {
         val group = event.group
         val user = UserUtil.group(group.id)
-        val util = PermUtil.INSTANCE
+        val util = PermUtil
 
         if (util.checkUserHasPerm(user, EconPerm.FISH_PERM)) {
             group.sendMessage("本群的钓鱼已经开启了!")
@@ -518,11 +523,11 @@ class GamesManager : CoroutineScope {
         }
     }
 
-    @MessageAuthorize(text = "关闭 钓鱼", userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
+    @MessageAuthorize(text = ["关闭 钓鱼"], userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
     suspend fun offFish(event: GroupMessageEvent) {
         val group = event.group
         val user = UserUtil.group(group.id)
-        val util = PermUtil.INSTANCE
+        val util = PermUtil
 
         if (!util.checkUserHasPerm(user, EconPerm.FISH_PERM)) {
             group.sendMessage("本群的钓鱼已经关闭了!")
@@ -530,13 +535,13 @@ class GamesManager : CoroutineScope {
         }
 
         util.talkPermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP)?.apply {
-            users.remove(user)
+            getUsers().remove(user)
             save()
         }
         group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群钓鱼关闭成功!"))
     }
 
-    @MessageAuthorize(text = "鱼塘等级", groupPermissions = [EconPerm.FISH_PERM])
+    @MessageAuthorize(text = ["鱼塘等级"], groupPermissions = [EconPerm.FISH_PERM])
     suspend fun viewFishPond(event: GroupMessageEvent) {
         val group = event.group
         val userInfo = UserManager.getUserInfo(event.sender)

@@ -53,29 +53,35 @@ class UserFactor(
      * 设置或更新指定名称的buff的值
      *
      * @param buffName buff名称
-     * @param value buff的值
+     * @param value buff的值, 如果为null则删除该buff
      * @return 当前对象实例，支持链式调用
      */
-    fun setBuffValue(buffName: String, value: String): UserFactor {
+    fun setBuffValue(buffName: String, value: String?): UserFactor {
         val array = JSONUtil.parseArray(this.buff)
-        var found = false
+        var foundIndex = -1
 
-        // 尝试找到并更新现有的buff
+        // 尝试找到现有的buff
         for (i in 0 until array.size) {
             val obj = array.getJSONObject(i)
             if (buffName == obj.getStr("name")) {
-                obj.set("value", value)
-                found = true
+                foundIndex = i
                 break
             }
         }
 
-        // 如果没有找到，则添加新的buff
-        if (!found) {
-            val newBuff = JSONUtil.createObj()
-                .set("name", buffName)
-                .set("value", value)
-            array.add(newBuff)
+        if (value == null) {
+            if (foundIndex != -1) {
+                array.remove(foundIndex)
+            }
+        } else {
+            if (foundIndex != -1) {
+                array.getJSONObject(foundIndex).set("value", value)
+            } else {
+                val newBuff = JSONUtil.createObj()
+                    .set("name", buffName)
+                    .set("value", value)
+                array.add(newBuff)
+            }
         }
 
         this.buff = array.toString()

@@ -12,11 +12,11 @@ class UseEvent(
     /**
      * 发送着
      */
-    val sender: User,
+    val sender: User?,
     /**
      * 发送群
      */
-    val subject: Contact,
+    val subject: Contact?,
     /**
      * 用户信息
      */
