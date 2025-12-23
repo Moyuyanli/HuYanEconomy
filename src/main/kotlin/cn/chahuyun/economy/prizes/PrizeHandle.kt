@@ -30,14 +30,14 @@ object PrizeHandle {
     }
 
     private fun handleTitle(raffleResult: RaffleResult) {
-
+        TODO()
     }
 
     private fun handleProp(raffleResult: RaffleResult) {
-
+        TODO()
     }
 
     private fun handlePunishment(raffleResult: RaffleResult) {
-
+        TODO()
     }
 }
