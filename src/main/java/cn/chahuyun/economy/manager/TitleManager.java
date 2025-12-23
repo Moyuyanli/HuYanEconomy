@@ -11,6 +11,7 @@ import cn.chahuyun.economy.model.title.TitleTemplate;
 import cn.chahuyun.economy.model.title.TitleTemplateSimpleImpl;
 import cn.chahuyun.economy.plugin.TitleTemplateManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
+import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
@@ -50,27 +51,64 @@ public class TitleManager {
      */
     public static void init() {
         TitleTemplateManager.registerTitleTemplate(
-                new TitleTemplateSimpleImpl(TitleCode.SIGN_15, TitleCode.SIGN_15_EXPIRED, "签到狂人",
+                // Kotlin 的 TitleTemplateSimpleImpl 使用 String 颜色值（不带 #），并且构造器含 canIBuy/price/gradient/impactName
+                new TitleTemplateSimpleImpl(
+                        TitleCode.SIGN_15, TitleCode.SIGN_15_EXPIRED, "签到狂人",
+                        false, null,
                         true, false,
-                        "[只是个传说]", new Color(0xff7f50), new Color(0xff6348)),
-                new TitleTemplateSimpleImpl(TitleCode.MONOPOLY, TitleCode.MONOPOLY_EXPIRED, "大富翁",
+                        "[只是个传说]",
+                        ImageUtil.colorHex(new Color(0xff7f50)),
+                        ImageUtil.colorHex(new Color(0xff6348))
+                ),
+                new TitleTemplateSimpleImpl(
+                        TitleCode.MONOPOLY, TitleCode.MONOPOLY_EXPIRED, "大富翁",
+                        false, null,
                         true, true,
-                        "[大富翁]", new Color(0xff4757), new Color(0xffa502)),
-                new TitleTemplateSimpleImpl(TitleCode.REGAL, TitleCode.REGAL_EXPIRED, "小富翁",
-                        10000.0, true, false,
-                        "[小富翁]", new Color(0xECCC68), new Color(0xffa502)),
-                new TitleTemplateSimpleImpl(TitleCode.FISHING, TitleCode.FISHING_EXPIRED, "钓鱼佬",
+                        "[大富翁]",
+                        ImageUtil.colorHex(new Color(0xff4757)),
+                        ImageUtil.colorHex(new Color(0xffa502))
+                ),
+                new TitleTemplateSimpleImpl(
+                        TitleCode.REGAL, TitleCode.REGAL_EXPIRED, "小富翁",
+                        true, 10000.0,
+                        true, false,
+                        "[小富翁]",
+                        ImageUtil.colorHex(new Color(0xECCC68)),
+                        ImageUtil.colorHex(new Color(0xffa502))
+                ),
+                new TitleTemplateSimpleImpl(
+                        TitleCode.FISHING, TitleCode.FISHING_EXPIRED, "钓鱼佬",
+                        false, null,
                         true, true,
-                        "[邓刚]", new Color(0xf02fc2), new Color(0x6094ea)),
-                new TitleTemplateSimpleImpl(TitleCode.BET_MONSTER, TitleCode.BET_MONSTER_EXPIRED, "赌怪",
+                        "[邓刚]",
+                        ImageUtil.colorHex(new Color(0xf02fc2)),
+                        ImageUtil.colorHex(new Color(0x6094ea))
+                ),
+                new TitleTemplateSimpleImpl(
+                        TitleCode.BET_MONSTER, TitleCode.BET_MONSTER_EXPIRED, "赌怪",
+                        false, null,
                         true, true,
-                        "[17张牌能秒我?]", new Color(0xFF0000), new Color(0x730000)),
-                new TitleTemplateSimpleImpl(TitleCode.ROB, TitleCode.ROB_EXPIRED, "街区传说",
+                        "[17张牌能秒我?]",
+                        ImageUtil.colorHex(new Color(0xFF0000)),
+                        ImageUtil.colorHex(new Color(0x730000))
+                ),
+                new TitleTemplateSimpleImpl(
+                        TitleCode.ROB, TitleCode.ROB_EXPIRED, "街区传说",
+                        false, null,
                         false, true,
-                        "[师承窃格瓦拉]", new Color(0x2261DC), null),
-                new TitleTemplateSimpleImpl(TitleCode.SIGN_90, TitleCode.SIGN_90_EXPIRED, "签到大王",
+                        "[师承窃格瓦拉]",
+                        ImageUtil.colorHex(new Color(0x2261DC)),
+                        ImageUtil.colorHex(new Color(0x2261DC))
+                ),
+                new TitleTemplateSimpleImpl(
+                        TitleCode.SIGN_90, TitleCode.SIGN_90_EXPIRED, "签到大王",
+                        false, null,
                         true, true,
-                        "[无敌超级签到大王•神]", new Color(0x622774), new Color(0xc53364)));
+                        "[无敌超级签到大王•神]",
+                        ImageUtil.colorHex(new Color(0x622774)),
+                        ImageUtil.colorHex(new Color(0xc53364))
+                )
+        );
 
 
         //修改版本迭代带来的错误数据
@@ -80,13 +118,19 @@ public class TitleManager {
             if (titleInfo.getCode() == null) {
                 switch (titleInfo.getTitle()) {
                     case "[只是个传说]":
-                        HibernateFactory.merge(titleInfo.setCode(TitleCode.SIGN_15).setName("签到狂人"));
+                        titleInfo.setCode(TitleCode.SIGN_15);
+                        titleInfo.setName("签到狂人");
+                        HibernateFactory.merge(titleInfo);
                         continue;
                     case "[大富翁]":
-                        HibernateFactory.merge(titleInfo.setCode(TitleCode.MONOPOLY).setName("大富翁"));
+                        titleInfo.setCode(TitleCode.MONOPOLY);
+                        titleInfo.setName("大富翁");
+                        HibernateFactory.merge(titleInfo);
                         continue;
                     case "[小富翁]":
-                        HibernateFactory.merge(titleInfo.setCode(TitleCode.REGAL).setName("小富翁"));
+                        titleInfo.setCode(TitleCode.REGAL);
+                        titleInfo.setName("小富翁");
+                        HibernateFactory.merge(titleInfo);
                         continue;
                 }
             }
@@ -106,7 +150,7 @@ public class TitleManager {
                 if (checkTitleTime(info)) {
                     continue;
                 }
-                if (info.isStatus()) {
+                if (info.getStatus()) {
                     return info;
                 }
             }
@@ -191,7 +235,7 @@ public class TitleManager {
                 continue;
             }
             String titleName = titleInfo.getName();
-            if (titleInfo.isStatus()) {
+            if (titleInfo.getStatus()) {
                 titleName += ":已启用";
             }
             builder.append(String.format("%d-%s%n", ++index, titleName));
