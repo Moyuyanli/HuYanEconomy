@@ -5,11 +5,11 @@ import cn.chahuyun.economy.entity.fish.FishInfo
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.CalendarUtil
-import cn.hutool.core.date.DateTime
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import jakarta.persistence.*
 import net.mamoe.mirai.console.permission.AbstractPermitteeId
+import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.User
 import java.io.Serializable
 import java.util.*
@@ -90,7 +90,10 @@ class UserInfo(
 ) : Serializable {
 
     @Transient
-    var user: User? = null
+    lateinit var user: User
+
+    @Transient
+    var group: Group? = null
 
     constructor(qq: Long, registerGroup: Long, name: String?, registerTime: Date?) : this(
         id = AbstractPermitteeId.ExactUser(qq).asString(),
@@ -184,14 +187,14 @@ class UserInfo(
      * @return FishInfo 钓鱼信息
      */
     fun getFishInfo(): FishInfo {
-        var fishInfo: FishInfo? = null
+        var fishInfo: FishInfo?
         try {
             fishInfo = HibernateFactory.selectOne(FishInfo::class.java, this.qq)
             if (fishInfo != null) return fishInfo
-        } catch (ignored: Exception) {
+        } catch (_: Exception) {
         }
         val newFishInfo = FishInfo(this.qq, this.registerGroup)
-        return HibernateFactory.merge(newFishInfo)!!
+        return HibernateFactory.merge(newFishInfo)
     }
 
     fun getString(): String {
@@ -204,7 +207,19 @@ class UserInfo(
      * @param code 道具code
      * @return 背包道具
      */
-    fun getProp(code: String): UserBackpack? {
+    fun getProp(code: String): UserBackpack {
+        return backpacks.find { it.propCode == code } ?: error("获取用户的第一个对应code道具错误:道具code不存在!")
+    }
+
+
+    /**
+     * 获取第一个对应的道具
+     *
+     * @param code 道具code
+     * @return 背包道具
+     */
+    fun getPropOrNull(code: String): UserBackpack? {
         return backpacks.find { it.propCode == code }
     }
+
 }
