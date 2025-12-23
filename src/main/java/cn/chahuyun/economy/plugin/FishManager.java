@@ -43,7 +43,8 @@ public class FishManager {
         //启动刷新钓鱼状态
         List<FishInfo> fishInfos = HibernateFactory.selectList(FishInfo.class);
         for (FishInfo fishInfo : fishInfos) {
-            HibernateFactory.merge(fishInfo.setStatus(false));
+            fishInfo.setStatus(false);
+            HibernateFactory.merge(fishInfo);
         }
     }
 
