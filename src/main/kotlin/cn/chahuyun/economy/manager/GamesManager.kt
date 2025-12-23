@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package cn.chahuyun.economy.manager
 
 import cn.chahuyun.authorize.EventComponent
@@ -11,18 +13,15 @@ import cn.chahuyun.economy.constant.FishPondLevelConstant
 import cn.chahuyun.economy.constant.PropsKind
 import cn.chahuyun.economy.constant.TitleCode
 import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.economy.entity.fish.*
+import cn.chahuyun.economy.entity.fish.FishInfo
+import cn.chahuyun.economy.entity.fish.FishPond
+import cn.chahuyun.economy.entity.fish.FishRanking
 import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
-import cn.chahuyun.economy.manager.BackpackManager
-import cn.chahuyun.economy.manager.TitleManager
-import cn.chahuyun.economy.manager.UserManager
-import cn.chahuyun.economy.manager.UserStatusManager
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.plugin.FactorManager
 import cn.chahuyun.economy.prop.PropsManager
-import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
@@ -45,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 import kotlin.coroutines.CoroutineContext
+import kotlin.math.roundToInt
 
 /**
  * 游戏管理
@@ -72,7 +72,7 @@ class GamesManager : CoroutineScope {
             val task = Task {
                 launch {
                     val groupPonds = HibernateFactory.selectList(FishPond::class.java, "pondType", 1)
-                    val levels = FishPondLevelConstant.values()
+                    val levels = FishPondLevelConstant.entries.toTypedArray()
 
                     for (fishPond in groupPonds) {
                         try {
@@ -133,7 +133,7 @@ class GamesManager : CoroutineScope {
         }
 
         @JvmStatic
-        fun fishStart(event: FishStartEvent) {
+        suspend fun fishStart(event: FishStartEvent) {
             val userInfo = event.userInfo
             val toRemove = mutableListOf<Long>()
 
@@ -150,7 +150,7 @@ class GamesManager : CoroutineScope {
 
                     when {
                         bait.num > 1 -> {
-                            PropsManager.useProp(backpack, UseEvent(null, null, userInfo))
+                            PropsManager.useProp(backpack, UseEvent(userInfo.user, userInfo.group, userInfo))
                             event.fishBait = bait
                         }
 
@@ -182,10 +182,10 @@ class GamesManager : CoroutineScope {
 
         @JvmStatic
         fun fishRoll(event: FishRollEvent) {
-            val minDifficulty = (event.minDifficulty ?: 1).coerceAtLeast(1)
-            val maxDifficulty = event.maxDifficulty ?: 1
-            val minGrade = (event.minGrade ?: 1).coerceAtLeast(1)
-            var maxGrade = event.maxGrade ?: 1
+            val minDifficulty = event.minDifficulty.coerceAtLeast(1)
+            val maxDifficulty = event.maxDifficulty
+            val minGrade = event.minGrade.coerceAtLeast(1)
+            val maxGrade = event.maxGrade
             val fishPond = event.fishPond
 
             var rank = RandomUtil.randomInt(minGrade, (maxGrade + 1).coerceAtLeast(minGrade + 1))
@@ -432,7 +432,7 @@ class GamesManager : CoroutineScope {
                 0f,
                 0.5f
             )
-        val minGrade = Math.round(evolution * fishBait.level).toInt()
+        val minGrade = (evolution * fishBait.level).roundToInt()
 
         val fishRoll = FishRollEvent(
             userInfo, fishInfo, fishPond, fishBait, between / 1000f, evolution,
@@ -484,7 +484,7 @@ class GamesManager : CoroutineScope {
         groupPermissions = [EconPerm.FISH_PERM]
     )
     suspend fun refresh(event: MessageEvent) {
-        val status = HibernateFactory.getSessionFactory()?.fromTransaction { session ->
+        val status = HibernateFactory.getSessionFactory().fromTransaction { session ->
             try {
                 val builder = session.criteriaBuilder
                 val query = builder.createQuery(FishInfo::class.java)
@@ -496,7 +496,7 @@ class GamesManager : CoroutineScope {
                     session.merge(it)
                 }
                 true
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 false
             }
         } ?: false
@@ -534,8 +534,8 @@ class GamesManager : CoroutineScope {
             return
         }
 
-        util.talkPermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP)?.apply {
-            getUsers().remove(user)
+        util.talkPermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP).apply {
+            users.remove(user)
             save()
         }
         group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群钓鱼关闭成功!"))
@@ -547,7 +547,7 @@ class GamesManager : CoroutineScope {
         val userInfo = UserManager.getUserInfo(event.sender)
         val fishPond = userInfo.getFishInfo().getFishPond(group)
         val level = fishPond.pondLevel
-        val value = FishPondLevelConstant.values()[level - 1]
+        val value = FishPondLevelConstant.entries[level - 1]
         val money = fishPond.getFishPondMoney()
 
         group.sendMessage(
