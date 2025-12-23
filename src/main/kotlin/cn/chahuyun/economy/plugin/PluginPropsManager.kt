@@ -12,7 +12,6 @@ import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.cron.CronUtil
 import cn.hutool.cron.task.Task
-import java.util.*
 
 /**
  * 插件道具管理 (Kotlin 重构版)
@@ -164,12 +163,13 @@ class PropExpireCheckTask : Task {
         for (data in collect) {
             try {
                 val kind = data.kind ?: continue
+                val id = data.id ?: continue
                 val propClass = PropsManager.shopClass(kind) ?: continue
                 val prop = PropsManager.deserialization(data, propClass)
 
                 if (prop is Expirable && prop.isExpired()) {
-                    Log.info("道具已过期，正在销毁: kind=$kind, code=${prop.code}, id=${data.id}")
-                    PropsManager.destroyProsInBackpack(data.id)
+                    Log.info("道具已过期，正在销毁: kind=$kind, code=${prop.code}, id=${id}")
+                    PropsManager.destroyProsInBackpack(id)
                 }
             } catch (e: Exception) {
                 Log.error("检查道具过期时发生异常，道具 id=${data.id}", e)
