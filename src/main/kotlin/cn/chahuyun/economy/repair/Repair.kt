@@ -67,7 +67,8 @@ class FishPondRepair() : Repair {
         for (rank in fishRanks) {
             val fishPond = rank.fishPond
 
-            var find = fishPondSet.find { it.id == fishPond.id }
+            val id = fishPond?.id ?: error("错误,背包中道具id为空!")
+            var find = fishPondSet.find { it.id == id }
             if (find != null) {
                 continue
             }
@@ -173,7 +174,7 @@ class PropRepair : Repair {
 
         // 2. 堆叠物品合并修复
         val backpackList = HibernateFactory.selectList(UserBackpack::class.java)
-        val stackMap = mutableMapOf<Pair<String, String>, BaseProp>()
+        val stackMap = mutableMapOf<Pair<String?, String?>, BaseProp>()
 
         for (backpack in backpackList) {
             try {
@@ -186,7 +187,8 @@ class PropRepair : Repair {
                         base.num += currentNum
                         
                         // 销毁重复的道具数据
-                        PropsManager.destroyProsInBackpack(backpack.propId)
+                        val propId = backpack.propId ?: error("错误,背包中道具id为空!")
+                        PropsManager.destroyProsInBackpack(propId)
                         // 将这个重复的背包项标记为待删除（或者直接删除）
                         HibernateFactory.delete(backpack)
                         
@@ -195,7 +197,8 @@ class PropRepair : Repair {
                         // 为了简化，我们直接在循环结束后统一更新，或者这里找到主背包
                         val mainBackpack = backpackList.find { it.userId == key.first && it.propCode == key.second && it.id != backpack.id }
                         if (mainBackpack != null) {
-                            PropsManager.updateProp(mainBackpack.propId, base as BaseProp)
+                            val id = mainBackpack.propId ?: error("错误,背包中道具id为空!")
+                            PropsManager.updateProp(id, base as BaseProp)
                         }
                     } else {
                         stackMap[key] = prop
@@ -204,7 +207,7 @@ class PropRepair : Repair {
             } catch (e: Exception) {
                 try {
                     HibernateFactory.delete(backpack)
-                } catch (ex: Exception) {
+                } catch (_: Exception) {
                     // 忽略
                 }
             }
