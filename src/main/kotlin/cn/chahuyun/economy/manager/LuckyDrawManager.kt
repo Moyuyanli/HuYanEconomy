@@ -35,7 +35,7 @@ class LuckyDrawManager {
         fun take(userId: Long): UserRaffle {
             val userRaffle = HibernateFactory.selectOne(UserRaffle::class.java, userId)
             if (userRaffle != null) return userRaffle
-            return HibernateFactory.merge(UserRaffle(userId))!!
+            return HibernateFactory.merge(UserRaffle(userId))
         }
 
         // 检查单抽冷却
