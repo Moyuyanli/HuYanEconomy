@@ -1,9 +1,12 @@
 package cn.chahuyun.economy.model.props
 
 import cn.chahuyun.economy.manager.UserManager
-import cn.chahuyun.economy.prop.*
+import cn.chahuyun.economy.prop.CardProp
+import cn.chahuyun.economy.prop.Stackable
+import cn.chahuyun.economy.prop.UseResult
+import cn.chahuyun.economy.prop.UseResult.Companion.success
 import cn.chahuyun.hibernateplus.HibernateFactory
-import java.util.*
+import net.mamoe.mirai.contact.nameCardOrNick
 
 /**
  * 道具卡 (Kotlin 重构版)
@@ -32,13 +35,14 @@ class PropsCard(
             NAME_CHANGE -> {
                 val sender = event.sender
                 val userInfo = UserManager.getUserInfo(sender)
-                userInfo.name = sender.nick
+                userInfo.name = sender.nameCardOrNick
                 HibernateFactory.merge(userInfo)
-                UseResult.success("改名卡使用成功!", shouldRemove = true)
+                success("改名卡使用成功!", shouldRemove = true)
             }
 
             else -> {
-                super.use(event) // 使用 CardProp 的默认激活逻辑
+                status = true
+                success("$name 使用成功")
             }
         }
     }
