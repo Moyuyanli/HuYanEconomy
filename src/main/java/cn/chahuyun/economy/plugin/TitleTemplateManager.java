@@ -82,10 +82,13 @@ public final class TitleTemplateManager {
         }
         TitleTemplate template = titleTemplateMap.get(templateCode);
         Date validityPeriod = null;
-        if (template.getValidityPeriod() > 0) {
+        if (template.getValidityPeriod() != null && template.getValidityPeriod() > 0) {
             validityPeriod = DateUtil.offsetDay(new Date(), template.getValidityPeriod());
         }
-        return template.createTitleInfo(userInfo).setCode(template.getTemplateCode()).setDueTime(validityPeriod);
+        TitleInfo titleInfo = template.createTitleInfo(userInfo);
+        titleInfo.setCode(template.getTemplateCode());
+        titleInfo.setDueTime(validityPeriod);
+        return titleInfo;
     }
 
     /**
