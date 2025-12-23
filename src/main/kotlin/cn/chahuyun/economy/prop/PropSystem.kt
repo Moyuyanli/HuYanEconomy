@@ -69,7 +69,7 @@ interface Usable {
      * 使用道具的具体逻辑
      * @return 使用结果，包含反馈消息及后续处理指令
      */
-    fun use(event: UseEvent): UseResult
+    suspend fun use(event: UseEvent): UseResult
 }
 
 /**
