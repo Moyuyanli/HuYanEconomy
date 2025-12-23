@@ -128,7 +128,7 @@ class FishPond(
      * 保存
      */
     fun save(): FishPond {
-        return HibernateFactory.merge(this)!!
+        return HibernateFactory.merge(this)
     }
 
     override fun equals(other: Any?): Boolean {

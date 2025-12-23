@@ -61,7 +61,8 @@ class FishInfo(
     constructor(qq: Long, group: Long) : this(
         id = qq,
         qq = qq,
-        fishRod = false,
+        isFishRod = false,
+        status = false,
         rodLevel = 0,
         defaultFishPond = "g-$group"
     )
@@ -73,7 +74,7 @@ class FishInfo(
      * @return net.mamoe.mirai.message.data.MessageChain
      */
     fun updateRod(userInfo: UserInfo): SingleMessage {
-        val user = userInfo.user ?: return PlainText("获取用户信息失败!")
+        val user = userInfo.user
         val moneyByUser = EconomyUtil.getMoneyByUser(user)
         var upMoney = 1
         return when {
@@ -142,7 +143,7 @@ class FishInfo(
         if (fishPond != null) return fishPond
 
         fishPond = FishPond(1, group.id, HuYanEconomy.config?.owner ?: 0L, group.name + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！")
-        return HibernateFactory.merge(fishPond)!!
+        return HibernateFactory.merge(fishPond)
     }
 
     /**
@@ -195,10 +196,6 @@ class FishInfo(
             }
         }
 
-    /**
-     * 获取钓鱼状态
-     */
-    fun getStatus(): Boolean = status
 
     /**
      * 关闭钓鱼状态
