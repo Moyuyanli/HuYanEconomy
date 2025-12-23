@@ -37,8 +37,9 @@ class FunctionProps(
 
     override var num: Int = 1
     override var unit: String = "个"
+    override val isStack: Boolean = true
 
-    override fun use(event: UseEvent): UseResult {
+    override suspend fun use(event: UseEvent): UseResult {
         return when (code) {
             RED_EYES -> {
                 val factor = FactorManager.getUserFactor(event.userInfo)
@@ -100,4 +101,3 @@ class FunctionProps(
         return "道具名称: $name\n价格: $cost 金币\n描述: $description"
     }
 }
-

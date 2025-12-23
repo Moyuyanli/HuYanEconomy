@@ -32,7 +32,7 @@ class FishBait(
     var level: Int = 1
     var quality: Float = 0.01f
 
-    override fun use(event: UseEvent): UseResult {
+    override suspend fun use(event: UseEvent): UseResult {
         if (num <= 0) return UseResult.fail("鱼饵已耗尽")
         // 逻辑保持简单，具体的消耗由 PropsManager 根据 num 自动处理
         return UseResult.success("使用了鱼饵")

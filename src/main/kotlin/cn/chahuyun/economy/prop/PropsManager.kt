@@ -54,7 +54,7 @@ object PropsManager {
     @JvmStatic
     fun addProp(prop: BaseProp): Long {
         val data = serialization(prop)
-        return HibernateFactory.merge(data).id
+        return HibernateFactory.merge(data)!!.id
     }
 
     @JvmStatic

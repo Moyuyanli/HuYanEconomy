@@ -75,7 +75,7 @@ object PluginPropsManager {
                 cost = 9999
                 canBuy = true
                 canItExpire = true
-                expire = 30
+                expireDays = 30
             }
         )
         cards.forEach { PropsShop.addShop(it.code, it) }

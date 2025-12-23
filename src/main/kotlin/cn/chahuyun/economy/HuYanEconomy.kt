@@ -127,11 +127,7 @@ object HuYanEconomy : KotlinPlugin(
         val eventChannel = GlobalEventChannel.parentScope(this)
 
         // 监听自定义签到事件
-        eventChannel.subscribeAlways<SignEvent>(
-            context = EmptyCoroutineContext,
-            concurrencyKind = ConcurrencyKind.CONCURRENT,
-            priority = EventPriority.HIGH
-        ) {
+        eventChannel.subscribeAlways<SignEvent>(priority = EventPriority.HIGH) {
             SignManager.randomSignGold(it)
         }
 
@@ -141,7 +137,7 @@ object HuYanEconomy : KotlinPlugin(
 
         Log.info("事件已监听!")
 
-        EconomyPluginConfig.isFirstStart = false
+        EconomyPluginConfig.firstStart = false
         Log.info("HuYanEconomy已加载！当前版本 ${description.version} !")
     }
 

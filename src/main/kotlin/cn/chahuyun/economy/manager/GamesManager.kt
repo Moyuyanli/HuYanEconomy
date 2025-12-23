@@ -14,10 +14,10 @@ import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.entity.fish.*
 import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
-import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.plugin.FactorManager
 import cn.chahuyun.economy.prop.PropsManager
+import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
@@ -54,62 +54,67 @@ class GamesManager : CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + supervisorJob
 
-    companion object {
+    companion object : CoroutineScope {
         private val supervisorJob = SupervisorJob()
+        override val coroutineContext: CoroutineContext
+            get() = Dispatchers.Default + supervisorJob
+
         private val playerCooling = ConcurrentHashMap<Long, Date>()
         private val isProcessing = ConcurrentHashMap<Long, AtomicBoolean>()
 
         @JvmStatic
         fun init() {
             val task = Task {
-                val groupPonds = HibernateFactory.selectList(FishPond::class.java, "pondType", 1)
-                val levels = FishPondLevelConstant.values()
+                launch {
+                    val groupPonds = HibernateFactory.selectList(FishPond::class.java, "pondType", 1)
+                    val levels = FishPondLevelConstant.values()
 
-                for (fishPond in groupPonds) {
-                    try {
-                        val currentLevelIndex = fishPond.pondLevel - 1
+                    for (fishPond in groupPonds) {
+                        try {
+                            val currentLevelIndex = fishPond.pondLevel - 1
 
-                        // 如果已经是最高等级，跳过
-                        if (currentLevelIndex >= levels.size) {
-                            continue
-                        }
-
-                        val nextLevelConfig = levels[currentLevelIndex]
-                        val upgradeCost = nextLevelConfig.amount.toDouble()
-
-                        if (fishPond.getFishPondMoney() >= upgradeCost) {
-                            if (EconomyUtil.plusMoneyToPluginBankForId(
-                                    fishPond.code,
-                                    fishPond.description ?: "",
-                                    -upgradeCost
-                                )
-                            ) {
-                                val oldLevel = fishPond.pondLevel
-                                val newLevel = oldLevel + 1
-
-                                fishPond.pondLevel = newLevel
-                                fishPond.minLevel = nextLevelConfig.minFishLevel
-                                fishPond.save()
-
-                                val bot = if (Bot.instances.isNotEmpty()) Bot.instances[0] else null
-                                if (bot != null) {
-                                    val group = bot.getGroup(fishPond.group)
-                                    if (group != null) {
-                                        group.sendMessage(
-                                            "鱼塘 [${fishPond.name}] 已经积攒够了升级的资金！开始升级鱼塘了！\n" +
-                                                    "鱼塘等级: $oldLevel -> $newLevel\n" +
-                                                    "最低鱼竿等级限制: ${nextLevelConfig.minFishLevel}"
-                                        )
-                                    } else {
-                                        bot.getFriend(fishPond.admin)
-                                            ?.sendMessage("群鱼塘 ${fishPond.name} 升级到 $newLevel 级了")
-                                    }
-                                }
-                                Log.info("游戏管理: 鱼塘 ${fishPond.name} 升级成功: $oldLevel -> $newLevel")
+                            // 如果已经是最高等级，跳过
+                            if (currentLevelIndex >= levels.size) {
+                                continue
                             }
+
+                            val nextLevelConfig = levels[currentLevelIndex]
+                            val upgradeCost = nextLevelConfig.amount.toDouble()
+
+                            if (fishPond.getFishPondMoney() >= upgradeCost) {
+                                if (EconomyUtil.plusMoneyToPluginBankForId(
+                                        fishPond.code,
+                                        fishPond.description ?: "",
+                                        -upgradeCost
+                                    )
+                                ) {
+                                    val oldLevel = fishPond.pondLevel
+                                    val newLevel = oldLevel + 1
+
+                                    fishPond.pondLevel = newLevel
+                                    fishPond.minLevel = nextLevelConfig.minFishLevel
+                                    fishPond.save()
+
+                                    val bot = if (Bot.instances.isNotEmpty()) Bot.instances[0] else null
+                                    if (bot != null) {
+                                        val group = bot.getGroup(fishPond.group)
+                                        if (group != null) {
+                                            group.sendMessage(
+                                                "鱼塘 [${fishPond.name}] 已经积攒够了升级的资金！开始升级鱼塘了！\n" +
+                                                        "鱼塘等级: $oldLevel -> $newLevel\n" +
+                                                        "最低鱼竿等级限制: ${nextLevelConfig.minFishLevel}"
+                                            )
+                                        } else {
+                                            bot.getFriend(fishPond.admin)
+                                                ?.sendMessage("群鱼塘 ${fishPond.name} 升级到 $newLevel 级了")
+                                        }
+                                    }
+                                    Log.info("游戏管理: 鱼塘 ${fishPond.name} 升级成功: $oldLevel -> $newLevel")
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.error("游戏管理: 鱼塘 ${fishPond.name}(${fishPond.code}) 自动升级异常", e)
                         }
-                    } catch (e: Exception) {
-                        Log.error("游戏管理: 鱼塘 ${fishPond.name}(${fishPond.code}) 自动升级异常", e)
                     }
                 }
             }
@@ -130,10 +135,10 @@ class GamesManager : CoroutineScope {
             for (backpack in userInfo.backpacks) {
                 if (event.fishBait == null && backpack.propKind == PropsKind.fishBait) {
                     val bait = try {
-                        PropsManager.getProp(backpack, FishBait::class.java)
+                        PropsManager.getProp(backpack, cn.chahuyun.economy.model.fish.FishBait::class.java)
                     } catch (e: Exception) {
-                        if (e.message == "该道具不存在！") {
-                            toRemove.add(backpack.propId)
+                        if (e.message == "该道具数据不存在") {
+                            toRemove.add(backpack.propId ?: 0L)
                             continue
                         } else throw e
                     }
@@ -145,17 +150,17 @@ class GamesManager : CoroutineScope {
                         }
 
                         bait.num == 1 -> {
-                            toRemove.add(backpack.propId)
+                            toRemove.add(backpack.propId ?: 0L)
                             event.fishBait = PropsManager.copyProp(bait)
                         }
 
                         else -> {
-                            event.fishBait = FishBait().apply {
+                            event.fishBait = cn.chahuyun.economy.model.fish.FishBait().apply {
                                 level = 1
                                 quality = 0.01f
                                 name = "空钩"
                             }
-                            BackpackManager.delPropToBackpack(userInfo, backpack.propId)
+                            BackpackManager.delPropToBackpack(userInfo, backpack.propId ?: 0L)
                         }
                     }
                 }
@@ -172,10 +177,10 @@ class GamesManager : CoroutineScope {
 
         @JvmStatic
         fun fishRoll(event: FishRollEvent) {
-            val minDifficulty = event.minDifficulty.coerceAtLeast(1)
-            val maxDifficulty = event.maxDifficulty
-            val minGrade = event.minGrade.coerceAtLeast(1)
-            var maxGrade = event.maxGrade
+            val minDifficulty = (event.minDifficulty ?: 1).coerceAtLeast(1)
+            val maxDifficulty = event.maxDifficulty ?: 1
+            val minGrade = (event.minGrade ?: 1).coerceAtLeast(1)
+            var maxGrade = event.maxGrade ?: 1
             val fishPond = event.fishPond
 
             var rank = RandomUtil.randomInt(minGrade, (maxGrade + 1).coerceAtLeast(minGrade + 1))
@@ -202,17 +207,17 @@ class GamesManager : CoroutineScope {
         }
 
         @JvmStatic
-        fun buyFishRod(event: MessageEvent) {
+        suspend fun buyFishRod(event: MessageEvent) {
             Log.info("购买鱼竿指令")
             val userInfo = UserManager.getUserInfo(event.sender)
-            val fishInfo = userInfo.fishInfo
+            val fishInfo = userInfo.getFishInfo()
             val subject = event.subject
 
             if (fishInfo.isFishRod) {
                 subject.sendMessage(
                     MessageUtil.formatMessageChain(
                         event.message,
-                        HuYanEconomy.msgConfig.repeatPurchaseRod
+                        HuYanEconomy.msgConfig?.repeatPurchaseRod ?: ""
                     )
                 )
                 return
@@ -223,7 +228,7 @@ class GamesManager : CoroutineScope {
                 subject.sendMessage(
                     MessageUtil.formatMessageChain(
                         event.message,
-                        HuYanEconomy.msgConfig.coinNotEnoughForRod
+                        HuYanEconomy.msgConfig?.coinNotEnoughForRod ?: ""
                     )
                 )
                 return
@@ -235,7 +240,7 @@ class GamesManager : CoroutineScope {
                 subject.sendMessage(
                     MessageUtil.formatMessageChain(
                         event.message,
-                        HuYanEconomy.msgConfig.buyFishingRodSuccess
+                        HuYanEconomy.msgConfig?.buyFishingRodSuccess ?: ""
                     )
                 )
             } else {
@@ -244,17 +249,17 @@ class GamesManager : CoroutineScope {
         }
 
         @JvmStatic
-        fun upFishRod(event: MessageEvent) {
+        suspend fun upFishRod(event: MessageEvent) {
             Log.info("升级鱼竿指令")
             val userInfo = UserManager.getUserInfo(event.sender)
             val subject = event.subject
-            val fishInfo = userInfo.fishInfo
+            val fishInfo = userInfo.getFishInfo()
 
             if (!fishInfo.isFishRod) {
                 subject.sendMessage(
                     MessageUtil.formatMessageChain(
                         event.message,
-                        HuYanEconomy.msgConfig.noneRodUpgradeMsg
+                        HuYanEconomy.msgConfig?.noneRodUpgradeMsg ?: ""
                     )
                 )
                 return
@@ -263,7 +268,7 @@ class GamesManager : CoroutineScope {
                 subject.sendMessage(
                     MessageUtil.formatMessageChain(
                         event.message,
-                        HuYanEconomy.msgConfig.upgradeWhenFishing
+                        HuYanEconomy.msgConfig?.upgradeWhenFishing ?: ""
                     )
                 )
                 return
@@ -272,14 +277,14 @@ class GamesManager : CoroutineScope {
         }
 
         @JvmStatic
-        fun fishTop(event: MessageEvent) {
+        suspend fun fishTop(event: MessageEvent) {
             Log.info("钓鱼榜指令")
             val bot = event.bot
             val subject = event.subject
 
-            val rankingList = HibernateFactory.selectList(FishRanking::class.java).apply {
-                sortByDescending { it.money }
-            }.take(10)
+            val rankingList = HibernateFactory.selectList(FishRanking::class.java)
+                .sortedByDescending { it.money }
+                .take(10)
 
             if (rankingList.isEmpty()) {
                 subject.sendMessage(MessageUtil.formatMessageChain(event.message, "暂时没人钓鱼!"))
@@ -296,10 +301,10 @@ class GamesManager : CoroutineScope {
         }
 
         @JvmStatic
-        fun viewFishLevel(event: MessageEvent) {
+        suspend fun viewFishLevel(event: MessageEvent) {
             Log.info("鱼竿等级指令")
             val userInfo = UserManager.getUserInfo(event.sender)
-            val rodLevel = userInfo.fishInfo.rodLevel
+            val rodLevel = userInfo.getFishInfo().rodLevel
             event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你的鱼竿等级为%s级", rodLevel))
         }
     }
@@ -316,7 +321,7 @@ class GamesManager : CoroutineScope {
         val messageDate = Date(event.time.toLong() * 1000L)
 
         val userInfo = UserManager.getUserInfo(sender)
-        val fishInfo = userInfo.fishInfo
+        val fishInfo = userInfo.getFishInfo()
         val fishTitle = TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.FISHING)
 
         if (checkAndProcessFishing(userInfo, fishTitle, fishInfo, subject, message)) return
@@ -363,7 +368,7 @@ class GamesManager : CoroutineScope {
                     "鱼塘:${fishPond.name}\n" +
                     "等级:${fishPond.pondLevel}\n" +
                     "最低鱼竿等级:${fishPond.minLevel}\n" +
-                    fishPond.description
+                    (fishPond.description ?: "")
         )
         Log.info("${userInfo.name}开始钓鱼")
 
@@ -384,7 +389,7 @@ class GamesManager : CoroutineScope {
             withTimeoutOrNull(180 * 1000L) {
                 while (isActive) {
                     val nextMessage = withContext(Dispatchers.IO) {
-                        MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.id, sender.id, 180)
+                        MessageUtil.nextUserForGroupMessageEventSync(subject.id, sender.id, 180)
                     } ?: break
 
                     if (Pattern.matches("[拉起!！]", nextMessage.message.contentToString())) {
@@ -407,8 +412,8 @@ class GamesManager : CoroutineScope {
 
         val between = DateUtil.between(planTime, resultTime, DateUnit.MS, true)
         val surprise = between <= 500
-        var maxDifficulty = fishStartEvent.maxDifficulty
-        var maxGrade = fishStartEvent.maxGrade
+        var maxDifficulty = fishStartEvent.maxDifficulty ?: 1
+        var maxGrade = fishStartEvent.maxGrade ?: 1
 
         when {
             between <= 500 -> maxDifficulty *= 2
@@ -422,11 +427,11 @@ class GamesManager : CoroutineScope {
                 0f,
                 0.5f
             )
-        val minGrade = Math.round(evolution * fishBait.level)
+        val minGrade = Math.round(evolution * fishBait.level).toInt()
 
         val fishRoll = FishRollEvent(
             userInfo, fishInfo, fishPond, fishBait, between / 1000f, evolution,
-            maxGrade, minGrade, maxDifficulty, fishStartEvent.minDifficulty, surprise
+            maxGrade, minGrade, maxDifficulty, fishStartEvent.minDifficulty ?: 1, surprise
         ).broadcast()
 
         val fish = fishRoll.fish ?: run {
@@ -441,7 +446,7 @@ class GamesManager : CoroutineScope {
         val pondMoney = money * fishPond.rebate
 
         if (EconomyUtil.plusMoneyToUser(sender, userMoney) &&
-            EconomyUtil.plusMoneyToPluginBankForId(fishPond.code, fishPond.description, pondMoney)
+            EconomyUtil.plusMoneyToPluginBankForId(fishPond.code, fishPond.description ?: "", pondMoney)
         ) {
             fishPond.addNumber()
             val format =
@@ -456,7 +461,7 @@ class GamesManager : CoroutineScope {
         HibernateFactory.merge(
             FishRanking(
                 userInfo.qq,
-                userInfo.name,
+                userInfo.name ?: "",
                 dimensions,
                 money,
                 fishInfo.rodLevel,
@@ -473,8 +478,8 @@ class GamesManager : CoroutineScope {
         userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN],
         groupPermissions = [EconPerm.FISH_PERM]
     )
-    fun refresh(event: MessageEvent) {
-        val status = HibernateFactory.getSession().fromTransaction { session ->
+    suspend fun refresh(event: MessageEvent) {
+        val status = HibernateFactory.getSessionFactory()?.fromTransaction { session ->
             try {
                 val builder = session.criteriaBuilder
                 val query = builder.createQuery(FishInfo::class.java)
@@ -489,14 +494,14 @@ class GamesManager : CoroutineScope {
             } catch (e: Exception) {
                 false
             }
-        }
+        } ?: false
         playerCooling.clear()
         val msg = if (status) "钓鱼状态刷新成功!" else "钓鱼状态刷新失败!"
         event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
     }
 
     @MessageAuthorize(text = "开启 钓鱼", userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
-    fun startFish(event: GroupMessageEvent) {
+    suspend fun startFish(event: GroupMessageEvent) {
         val group = event.group
         val user = UserUtil.group(group.id)
         val util = PermUtil.INSTANCE
@@ -514,7 +519,7 @@ class GamesManager : CoroutineScope {
     }
 
     @MessageAuthorize(text = "关闭 钓鱼", userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
-    fun offFish(event: GroupMessageEvent) {
+    suspend fun offFish(event: GroupMessageEvent) {
         val group = event.group
         val user = UserUtil.group(group.id)
         val util = PermUtil.INSTANCE
@@ -524,7 +529,7 @@ class GamesManager : CoroutineScope {
             return
         }
 
-        util.talkPermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP).apply {
+        util.talkPermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP)?.apply {
             users.remove(user)
             save()
         }
@@ -532,12 +537,13 @@ class GamesManager : CoroutineScope {
     }
 
     @MessageAuthorize(text = "鱼塘等级", groupPermissions = [EconPerm.FISH_PERM])
-    fun viewFishPond(event: GroupMessageEvent) {
+    suspend fun viewFishPond(event: GroupMessageEvent) {
         val group = event.group
-        val fishPond = UserManager.getUserInfo(event.sender).fishInfo.getFishPond(group)
+        val userInfo = UserManager.getUserInfo(event.sender)
+        val fishPond = userInfo.getFishInfo().getFishPond(group)
         val level = fishPond.pondLevel
         val value = FishPondLevelConstant.values()[level - 1]
-        val money = fishPond.fishPondMoney
+        val money = fishPond.getFishPondMoney()
 
         group.sendMessage(
             MessageUtil.formatMessageChain(
@@ -550,7 +556,7 @@ class GamesManager : CoroutineScope {
                         "鱼塘升级所需金额:%d%n" +
                         "鱼塘金额:%.1f%n" +
                         "鱼塘升级进度:%.1f%%",
-                fishPond.name,
+                fishPond.name ?: "",
                 level,
                 fishPond.number,
                 fishPond.minLevel,
@@ -561,7 +567,7 @@ class GamesManager : CoroutineScope {
         )
     }
 
-    private fun checkAndProcessFishing(
+    private suspend fun checkAndProcessFishing(
         userInfo: UserInfo,
         isFishing: Boolean,
         fishInfo: FishInfo,
@@ -606,7 +612,7 @@ class GamesManager : CoroutineScope {
         }
     }
 
-    private fun failedFishing(userInfo: UserInfo, user: User, subject: Contact, fishInfo: FishInfo): Boolean {
+    private suspend fun failedFishing(userInfo: UserInfo, user: User, subject: Contact, fishInfo: FishInfo): Boolean {
         val errorMessages = arrayOf("风吹的...", "眼花了...", "走神了...", "呀！切线了...", "钓鱼佬绝不空军！")
         val randomed = RandomUtil.randomInt(0, 10001)
         return when {
