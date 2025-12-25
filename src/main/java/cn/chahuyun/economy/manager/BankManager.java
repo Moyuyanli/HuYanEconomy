@@ -49,7 +49,7 @@ public class BankManager {
      * @date 2022/12/21 11:03
      */
     public static void init() {
-        BankInfo one = HibernateFactory.selectOne(BankInfo.class, 1);
+        BankInfo one = HibernateFactory.selectOneById(BankInfo.class, 1);
         if (one == null) {
             BankInfo bankInfo = new BankInfo("global", "主银行", "经济服务", HuYanEconomy.config.getOwner(), 0);
             HibernateFactory.merge(bankInfo);
@@ -149,7 +149,7 @@ public class BankManager {
     public void viewBankInterest(MessageEvent event) {
         Log.info("银行指令");
 
-        BankInfo bankInfo = HibernateFactory.selectOne(BankInfo.class, 1);
+        BankInfo bankInfo = HibernateFactory.selectOneById(BankInfo.class, 1);
         event.getSubject().sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本周银行利率是%.1f%%", bankInfo.getInterest() / 10.0));
     }
 

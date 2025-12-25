@@ -97,7 +97,7 @@ public class UserManager {
         String userId = account.getUuid();
         //查询用户
         try {
-            UserInfo userInfo = HibernateFactory.selectOne(UserInfo.class, userId);
+            UserInfo userInfo = HibernateFactory.selectOneById(UserInfo.class, userId);
             if (userInfo == null) {
                 throw new RuntimeException();
             }

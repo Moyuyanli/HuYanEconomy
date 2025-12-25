@@ -59,7 +59,7 @@ public class RobManager {
      */
     @NotNull
     public static RobInfo getRobInfo(UserInfo userInfo) {
-        RobInfo one = HibernateFactory.selectOne(RobInfo.class, userInfo.getQq());
+        RobInfo one = HibernateFactory.selectOneById(RobInfo.class, userInfo.getQq());
         if (one == null) {
             one = new RobInfo(userInfo.getQq(), new Date(), 0, 0, 0);
             return HibernateFactory.merge(one);

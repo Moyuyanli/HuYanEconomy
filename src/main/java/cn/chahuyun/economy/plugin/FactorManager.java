@@ -16,7 +16,7 @@ public class FactorManager {
     private final static Class<UserFactor> z = UserFactor.class;
 
     public static void init() {
-        GlobalFactor one = HibernateFactory.selectOne(t, 1);
+        GlobalFactor one = HibernateFactory.selectOneById(t, 1);
 
         if (one == null) {
             one = new GlobalFactor();
@@ -31,7 +31,7 @@ public class FactorManager {
      * @return 全局因子
      */
     public static GlobalFactor getGlobalFactor() {
-        return HibernateFactory.selectOne(t, 1);
+        return HibernateFactory.selectOneById(t, 1);
     }
 
     /**
@@ -50,7 +50,7 @@ public class FactorManager {
      * @return 用户因子
      */
     public static UserFactor getUserFactor(UserInfo user) {
-        UserFactor one = HibernateFactory.selectOne(z, user.getQq());
+        UserFactor one = HibernateFactory.selectOneById(z, user.getQq());
 
         if (one == null) {
             one = new UserFactor();

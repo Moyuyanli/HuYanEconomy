@@ -194,7 +194,7 @@ public class UserStatusManager {
      */
     @NotNull
     public static UserStatus getUserStatus(@NotNull Long qq) {
-        UserStatus one = HibernateFactory.selectOne(UserStatus.class, qq);
+        UserStatus one = HibernateFactory.selectOneById(UserStatus.class, qq);
 
         if (one == null) {
             UserStatus status = new UserStatus();
