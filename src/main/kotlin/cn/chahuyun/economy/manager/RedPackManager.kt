@@ -172,7 +172,7 @@ class RedPackManager {
         if (info.size < 2) return
         val id = info[1].toIntOrNull() ?: return
 
-        val redPack = HibernateFactory.selectOne(RedPack::class.java, id)
+        val redPack = HibernateFactory.selectOneById<RedPack>(id)
 
         if (redPack == null) {
             subject.sendMessage(MessageUtil.formatMessageChain(message, "红包不存在!"))

@@ -53,8 +53,7 @@ object HuYanEconomy : KotlinPlugin(
     /**
      * 配置
      */
-    @JvmField
-    var config: EconomyConfig? = null
+    lateinit var config: EconomyConfig
 
     /**
      * 钓鱼消息配置

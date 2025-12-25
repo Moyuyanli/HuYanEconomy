@@ -189,7 +189,7 @@ class UserInfo(
     fun getFishInfo(): FishInfo {
         var fishInfo: FishInfo?
         try {
-            fishInfo = HibernateFactory.selectOne(FishInfo::class.java, this.qq)
+            fishInfo = HibernateFactory.selectOneById<FishInfo>(this.qq)
             if (fishInfo != null) return fishInfo
         } catch (_: Exception) {
         }
