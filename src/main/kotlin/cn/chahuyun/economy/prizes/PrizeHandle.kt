@@ -5,6 +5,7 @@ import cn.chahuyun.economy.exception.RaffleException
 import cn.chahuyun.economy.utils.EconomyUtil
 import net.mamoe.mirai.Bot
 
+@Suppress("unused")
 object PrizeHandle {
 
     fun handle(prizes: List<RaffleResult>) {
