@@ -65,7 +65,7 @@ public class SignManager {
      * @date 2022/11/15 14:53
      */
     @MessageAuthorize(text = {"签到", "打卡", "sign"}, blackPermissions = EconPerm.SIGN_BLACK_PERM)
-    public static void sign(GroupMessageEvent event) {
+    public void sign(GroupMessageEvent event) {
         Log.info("签到指令");
 
         User user = event.getSender();

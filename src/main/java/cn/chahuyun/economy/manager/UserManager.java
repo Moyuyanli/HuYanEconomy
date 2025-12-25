@@ -144,7 +144,7 @@ public class UserManager {
      * @date 2022/11/23 9:37
      */
     @MessageAuthorize(text = {"个人信息", "info"})
-    public static void getUserInfoImage(MessageEvent event) {
+    public void getUserInfoImage(MessageEvent event) {
         Log.info("个人信息指令");
 
         Contact subject = event.getSubject();

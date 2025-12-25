@@ -41,7 +41,7 @@ public class TransferManager {
             text = "转账(\\[mirai:at:\\d+])? \\d+( \\d+)?",
             messageMatching = MessageMatchingEnum.REGULAR
     )
-    public static void userToUser(MessageEvent event) {
+    public void userToUser(MessageEvent event) {
         Log.info("转账指令");
 
         Contact subject = event.getSubject();
@@ -109,7 +109,7 @@ public class TransferManager {
             messageMatching = MessageMatchingEnum.REGULAR,
             userPermissions = {AuthPerm.OWNER, AuthPerm.ADMIN}
     )
-    public static void Cheat(MessageEvent event) {
+    public void Cheat(MessageEvent event) {
         Log.info("作弊指令");
 
         Contact subject = event.getSubject();

@@ -72,7 +72,7 @@ public class BankManager {
      * @date 2022/12/21 11:04
      */
     @MessageAuthorize(text = "存款 \\d+|deposit \\d+", messageMatching = MessageMatchingEnum.REGULAR)
-    public static void deposit(MessageEvent event) {
+    public void deposit(MessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
 
@@ -109,7 +109,7 @@ public class BankManager {
      * @date 2022/12/21 11:04
      */
     @MessageAuthorize(text = "取款 \\d+|withdraw \\d+", messageMatching = MessageMatchingEnum.REGULAR)
-    public static void withdrawal(MessageEvent event) {
+    public void withdrawal(MessageEvent event) {
         UserInfo userInfo = UserManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
 
@@ -146,7 +146,7 @@ public class BankManager {
      * @date 2022/12/23 16:08
      */
     @MessageAuthorize(text = {"本周利率", "银行利率"})
-    public static void viewBankInterest(MessageEvent event) {
+    public void viewBankInterest(MessageEvent event) {
         Log.info("银行指令");
 
         BankInfo bankInfo = HibernateFactory.selectOne(BankInfo.class, 1);
@@ -159,7 +159,7 @@ public class BankManager {
      * @param event 消息
      */
     @MessageAuthorize(text = {"富豪榜", "经济排行"})
-    public static void viewRegalTop(MessageEvent event) {
+    public void viewRegalTop(MessageEvent event) {
         Log.info("经济指令");
 
         Contact subject = event.getSubject();

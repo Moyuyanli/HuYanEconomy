@@ -134,7 +134,7 @@ public class LotteryManager {
             messageMatching = MessageMatchingEnum.REGULAR,
             groupPermissions = EconPerm.LOTTERY_PERM
     )
-    public static void addLottery(GroupMessageEvent event) {
+    public void addLottery(GroupMessageEvent event) {
         Log.info("彩票指令");
 
         User user = event.getSender();

@@ -213,7 +213,7 @@ public class TitleManager {
      * @param event 消息事件
      */
     @MessageAuthorize(text = {"我的称号", "称号列表", "拥有称号"})
-    public static void viewTitleInfo(MessageEvent event) {
+    public void viewTitleInfo(MessageEvent event) {
         Log.info("查询称号指令");
 
         Contact subject = event.getSubject();
@@ -254,7 +254,7 @@ public class TitleManager {
      * @param event 消息事件
      */
     @MessageAuthorize(text = "称号商店")
-    public static void viewCanByTitle(MessageEvent event) {
+    public void viewCanByTitle(MessageEvent event) {
         Log.info("查询称号商店指令");
 
         MessageChainBuilder builder = new MessageChainBuilder();
@@ -279,7 +279,7 @@ public class TitleManager {
             text = "购买称号 (\\S+)",
             messageMatching = MessageMatchingEnum.REGULAR
     )
-    public static void buyTitle(MessageEvent event) {
+    public void buyTitle(MessageEvent event) {
         Log.info("购买称号指令");
 
         Contact subject = event.getSubject();
@@ -336,7 +336,7 @@ public class TitleManager {
             text = "切换称号 (\\d+)",
             messageMatching = MessageMatchingEnum.REGULAR
     )
-    public static void userTitle(MessageEvent event) {
+    public void userTitle(MessageEvent event) {
         Log.info("切换称号指令");
 
         User user = event.getSender();
