@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.command
 
-import cn.chahuyun.economy.BuildConstants
+import cn.chahuyun.economy.EconomyBuildConstants
 import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.repair.RepairManager
 import net.mamoe.mirai.console.command.CommandSender
@@ -14,7 +14,7 @@ class EconomyCommand : CompositeCommand(
     @SubCommand("v")
     @Description("查询当前壶言经济版本")
     suspend fun CommandSender.version() {
-        sendMessage("当前壶言经济版本 ${BuildConstants.VERSION}")
+        sendMessage("当前壶言经济版本 ${EconomyBuildConstants.VERSION}")
     }
 
     @SubCommand("repair")
