@@ -534,7 +534,7 @@ class GamesManager : CoroutineScope {
             return
         }
 
-        util.talkPermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP).apply {
+        util.takePermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP).apply {
             users.remove(user)
             save()
         }
