@@ -104,7 +104,7 @@ class RedPackManager {
             subject.sendMessage(MessageUtil.formatMessageChain(sender.id, "随机红包创建成功!"))
         }
 
-        val prefix = HuYanEconomy.config?.prefix ?: ""
+        val prefix = HuYanEconomy.config.prefix
         subject.sendMessage(
             MessageUtil.formatMessageChain(
                 "%s 发送了一个红包,快来抢红包吧！%n" +
@@ -442,7 +442,7 @@ class RedPackManager {
             return
         }
 
-        val permGroup = PermUtil.talkPermGroupByName(EconPerm.GROUP.RED_PACKET_PERM_GROUP)
+        val permGroup = PermUtil.takePermGroupByName(EconPerm.GROUP.RED_PACKET_PERM_GROUP)
         permGroup.users.remove(user)
         permGroup.save()
 
