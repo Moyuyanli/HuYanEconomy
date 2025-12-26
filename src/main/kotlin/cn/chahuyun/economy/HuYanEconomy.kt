@@ -34,13 +34,13 @@ import net.mamoe.mirai.event.GlobalEventChannel
 object HuYanEconomy : KotlinPlugin(
     JvmPluginDescription(
         id = "cn.chahuyun.HuYanEconomy",
-        version = BuildConstants.VERSION,
+        version = EconomyBuildConstants.VERSION,
         name = "HuYanEconomy"
     ) {
         author("Moyuyanli")
         info("壶言经济")
         dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", ">=1.0.6", false)
-        dependsOn("cn.chahuyun.HuYanAuthorize", ">=1.3.1", false)
+        dependsOn("cn.chahuyun.HuYanAuthorize", ">=1.3.5", false)
     }
 ) {
 
@@ -120,10 +120,11 @@ object HuYanEconomy : KotlinPlugin(
 
         // 注册消息
         AuthorizeServer.registerEvents(
-            this,
-            "cn.chahuyun.economy.manager",
-            ExceptionHandle(),
-            EconomyConfig.prefix
+            plugin = this,
+            packageName = "cn.chahuyun.economy.manager",
+            exceptionHandle = ExceptionHandle(),
+            prefix = EconomyConfig.prefix,
+            useKsp = true
         )
 
         val eventChannel = GlobalEventChannel.parentScope(this)
