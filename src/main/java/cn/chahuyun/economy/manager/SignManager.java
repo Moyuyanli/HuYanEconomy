@@ -462,7 +462,7 @@ public class SignManager {
             return;
         }
 
-        PermGroup permGroup = util.talkPermGroupByName(EconPerm.GROUP.SIGN_BLACK_GROUP);
+        PermGroup permGroup = util.takePermGroupByName(EconPerm.GROUP.SIGN_BLACK_GROUP);
 
         permGroup.getUsers().remove(user);
         permGroup.save();

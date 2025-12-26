@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.constant;
 
-import cn.chahuyun.economy.BuildConstants;
+import cn.chahuyun.economy.EconomyBuildConstants;
 import net.mamoe.mirai.utils.MiraiLogger;
 
 /**
@@ -17,7 +17,7 @@ public class Icon {
     private static final String icon6 = " |_|  |_|\\__,_||_|\\__,_|_| |_|______\\___\\___/|_| |_|\\___/|_| |_| |_|\\__, |";
     private static final String icon7 = "                                                                     __/ |";
     private static final String icon8 = "                                                                    |___/ ";
-    private static final String icon9 = "                                                              v " + BuildConstants.VERSION;
+    private static final String icon9 = "                                                              v " + EconomyBuildConstants.VERSION;
 
     /**
      * 打印log

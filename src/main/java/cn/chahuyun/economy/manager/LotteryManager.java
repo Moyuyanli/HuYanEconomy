@@ -309,7 +309,7 @@ public class LotteryManager {
             return;
         }
 
-        PermGroup permGroup = util.talkPermGroupByName(EconPerm.GROUP.LOTTERY_PERM_GROUP);
+        PermGroup permGroup = util.takePermGroupByName(EconPerm.GROUP.LOTTERY_PERM_GROUP);
 
         permGroup.getUsers().remove(user);
         permGroup.save();

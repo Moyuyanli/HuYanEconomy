@@ -34,7 +34,7 @@ public class PermCodeManager {
         PermGroup group = util.selectPermGroupOneByName(EconPerm.GROUP.FISH_PERM_GROUP);
 
         if (group == null) {
-            group = util.talkPermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP);
+            group = util.takePermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP);
             Perm perm = util.takePerm(EconPerm.FISH_PERM);
             util.addPermToPermGroupByPermGroup(perm, group);
         }
@@ -42,7 +42,7 @@ public class PermCodeManager {
         group = util.selectPermGroupOneByName(EconPerm.GROUP.ROB_PERM_GROUP);
 
         if (group == null) {
-            group = util.talkPermGroupByName(EconPerm.GROUP.ROB_PERM_GROUP);
+            group = util.takePermGroupByName(EconPerm.GROUP.ROB_PERM_GROUP);
             Perm perm = util.takePerm(EconPerm.ROB_PERM);
             util.addPermToPermGroupByPermGroup(perm, group);
         }
@@ -50,7 +50,7 @@ public class PermCodeManager {
         group = util.selectPermGroupOneByName(EconPerm.GROUP.LOTTERY_PERM_GROUP);
 
         if (group == null) {
-            group = util.talkPermGroupByName(EconPerm.GROUP.LOTTERY_PERM_GROUP);
+            group = util.takePermGroupByName(EconPerm.GROUP.LOTTERY_PERM_GROUP);
             Perm perm = util.takePerm(EconPerm.LOTTERY_PERM);
             util.addPermToPermGroupByPermGroup(perm, group);
         }
@@ -58,7 +58,7 @@ public class PermCodeManager {
         group = util.selectPermGroupOneByName(EconPerm.GROUP.RED_PACKET_PERM_GROUP);
 
         if (group == null) {
-            group = util.talkPermGroupByName(EconPerm.GROUP.RED_PACKET_PERM_GROUP);
+            group = util.takePermGroupByName(EconPerm.GROUP.RED_PACKET_PERM_GROUP);
             Perm perm = util.takePerm(EconPerm.RED_PACKET_PERM);
             util.addPermToPermGroupByPermGroup(perm, group);
         }
@@ -66,7 +66,7 @@ public class PermCodeManager {
         group = util.selectPermGroupOneByName(EconPerm.GROUP.SIGN_BLACK_GROUP);
 
         if (group == null) {
-            group = util.talkPermGroupByName(EconPerm.GROUP.SIGN_BLACK_GROUP);
+            group = util.takePermGroupByName(EconPerm.GROUP.SIGN_BLACK_GROUP);
             Perm perm = util.takePerm(EconPerm.SIGN_BLACK_PERM);
             util.addPermToPermGroupByPermGroup(perm, group);
         }
@@ -74,7 +74,7 @@ public class PermCodeManager {
         group = util.selectPermGroupOneByName(EconPerm.GROUP.RAFFLE_PERM_GROUP);
 
         if (group == null) {
-            group = util.talkPermGroupByName(EconPerm.GROUP.RAFFLE_PERM_GROUP);
+            group = util.takePermGroupByName(EconPerm.GROUP.RAFFLE_PERM_GROUP);
             Perm perm = util.takePerm(EconPerm.RAFFLE_PERM);
             util.addPermToPermGroupByPermGroup(perm, group);
         }
