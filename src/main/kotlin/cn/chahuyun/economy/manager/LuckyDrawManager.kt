@@ -33,7 +33,7 @@ class LuckyDrawManager {
         private val tenCooldownMap = mutableMapOf<Long, Long>()
 
         fun take(userId: Long): UserRaffle {
-            val userRaffle = HibernateFactory.selectOne(UserRaffle::class.java, userId)
+            val userRaffle = HibernateFactory.selectOneById<UserRaffle>(userId)
             if (userRaffle != null) return userRaffle
             return HibernateFactory.merge(UserRaffle(userId))
         }
