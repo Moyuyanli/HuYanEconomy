@@ -2,7 +2,7 @@ package cn.chahuyun.economy.manager
 
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
-import cn.chahuyun.economy.BuildConstants
+import cn.chahuyun.economy.EconomyBuildConstants
 import net.mamoe.mirai.event.events.GroupMessageEvent
 
 @EventComponent
@@ -13,7 +13,7 @@ class HelpManager {
         event.subject.sendMessage(
             """
             ══════════ HuYan经济插件帮助 ══════════
-            版本：${BuildConstants.VERSION}
+            版本：${EconomyBuildConstants.VERSION}
             
             ── 个人模块 ──
             签到         每日签到功能
@@ -55,7 +55,7 @@ class HelpManager {
         event.subject.sendMessage(
             """
             ══════════ HuYan经济插件游戏帮助 ══════════
-            版本：${BuildConstants.VERSION}
+            版本：${EconomyBuildConstants.VERSION}
             
             ── 钓鱼游戏 ──
             购买鱼竿     购买一根0级鱼竿
