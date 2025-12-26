@@ -27,7 +27,7 @@ dependencies {
     //依赖
     compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
 
-    val auth = "1.3.2"
+    val auth = "1.3.6"
     compileOnly("cn.chahuyun:HuYanAuthorize:$auth")
     ksp("cn.chahuyun:HuYanAuthorize-ksp:$auth")
 
@@ -47,7 +47,7 @@ mirai {
 }
 
 buildConfig {
-    className("BuildConstants")
+    className("EconomyBuildConstants")
     packageName("cn.chahuyun.economy")
     useKotlinOutput()
     buildConfigField("String", "VERSION", "\"${project.version}\"")

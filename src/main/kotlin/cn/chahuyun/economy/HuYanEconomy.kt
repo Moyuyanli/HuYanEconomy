@@ -40,7 +40,7 @@ object HuYanEconomy : KotlinPlugin(
         author("Moyuyanli")
         info("壶言经济")
         dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", ">=1.0.6", false)
-        dependsOn("cn.chahuyun.HuYanAuthorize", ">=1.3.5", false)
+        dependsOn("cn.chahuyun.HuYanAuthorize", ">=1.3.6", false)
     }
 ) {
 
