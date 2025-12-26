@@ -120,7 +120,7 @@ class UserInfo(
         // 获取签到时间，向后偏移一天
         val calendar = CalendarUtil.calendar(DateUtil.offsetDay(signTime, 1))
         // 自定义更新签到时间 默认为 04:00:00
-        calendar.set(Calendar.HOUR_OF_DAY, config?.reSignTime ?: 4)
+        calendar.set(Calendar.HOUR_OF_DAY, config.reSignTime)
         calendar.set(Calendar.MINUTE, 0)
         calendar.set(Calendar.SECOND, 0)
         val time = calendar.time
