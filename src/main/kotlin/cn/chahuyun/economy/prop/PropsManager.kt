@@ -68,7 +68,8 @@ object PropsManager {
     }
 
     @JvmStatic
-    fun usePropJava(backpack: UserBackpack, event: UseEvent) = runBlocking { return@runBlocking useProp(backpack,event) }
+    fun usePropJava(backpack: UserBackpack, event: UseEvent) =
+        runBlocking { return@runBlocking useProp(backpack, event) }
 
     suspend fun useProp(backpack: UserBackpack, event: UseEvent): UseResult {
         val prop = getProp(backpack) ?: return UseResult.fail("道具不存在")
@@ -100,7 +101,7 @@ object PropsManager {
 
     @JvmStatic
     fun destroyPros(id: Long) {
-        val data = HibernateFactory.selectOne(PropsData::class.java, id)
+        val data = HibernateFactory.selectOneById<PropsData>(id)
         if (data != null) HibernateFactory.delete(data)
     }
 
@@ -147,7 +148,7 @@ object PropsManager {
 
     @JvmStatic
     fun <T : BaseProp> deserialization(id: Long, clazz: Class<T>): T {
-        val propsData = HibernateFactory.selectOne(PropsData::class.java, id)
+        val propsData = HibernateFactory.selectOneById<PropsData>( id)
             ?: throw RuntimeException("该道具数据不存在")
 
         val jsonConfig = JSONConfig.create().setIgnoreError(true)
