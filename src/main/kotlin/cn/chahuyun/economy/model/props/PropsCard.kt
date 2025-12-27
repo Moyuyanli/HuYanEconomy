@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.model.props
 
-import cn.chahuyun.economy.manager.UserManager
+import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.prop.CardProp
 import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.economy.prop.UseResult
@@ -34,7 +34,7 @@ class PropsCard(
         return when (code) {
             NAME_CHANGE -> {
                 val sender = event.sender
-                val userInfo = UserManager.getUserInfo(sender)
+                val userInfo = UserCoreManager.getUserInfo(sender)
                 userInfo.name = sender.nameCardOrNick
                 HibernateFactory.merge(userInfo)
                 success("改名卡使用成功!", shouldRemove = true)
