@@ -2,6 +2,10 @@ package cn.chahuyun.economy
 
 import cn.chahuyun.authorize.AuthorizeServer
 import cn.chahuyun.authorize.exception.ExceptionHandle
+import cn.chahuyun.economy.action.BankAction
+import cn.chahuyun.economy.action.GamesAction
+import cn.chahuyun.economy.action.LotteryAction
+import cn.chahuyun.economy.action.SignAction
 import cn.chahuyun.economy.command.EconomyCommand
 import cn.chahuyun.economy.config.EconomyConfig
 import cn.chahuyun.economy.config.EconomyPluginConfig
@@ -11,7 +15,7 @@ import cn.chahuyun.economy.constant.Icon
 import cn.chahuyun.economy.data.PrizesData
 import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
-import cn.chahuyun.economy.manager.*
+import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.plugin.*
 import cn.chahuyun.economy.sign.SignEvent
 import cn.chahuyun.economy.utils.EconomyUtil
@@ -106,12 +110,12 @@ object HuYanEconomy : KotlinPlugin(
 
         // 功能加载
         EconomyUtil.init()
-        LotteryManager.init()
+        LotteryAction.init()
         FishManager.init()
-        BankManager.init()
+        BankAction.init()
         TitleManager.init()
         YiYanManager.init()
-        GamesManager.init()
+        GamesAction.init()
         FactorManager.init()
         PluginPropsManager.init()
 
@@ -119,9 +123,10 @@ object HuYanEconomy : KotlinPlugin(
         TitleTemplateManager.loadingCustomTitle()
 
         // 注册消息
+        // 注册消息（统一扫描 action 包）
         AuthorizeServer.registerEvents(
             plugin = this,
-            packageName = "cn.chahuyun.economy.manager",
+            packageName = "cn.chahuyun.economy.action",
             exceptionHandle = ExceptionHandle(),
             prefix = EconomyConfig.prefix,
             useKsp = true
@@ -130,13 +135,10 @@ object HuYanEconomy : KotlinPlugin(
         val eventChannel = GlobalEventChannel.parentScope(this)
 
         // 监听自定义签到事件
-        eventChannel.subscribeAlways<SignEvent>(priority = EventPriority.HIGH) {
-            SignManager.randomSignGold(it)
-        }
-
-        eventChannel.subscribeAlways<SignEvent> { SignManager.signProp(it) }
-        eventChannel.subscribeAlways<FishStartEvent> { GamesManager.fishStart(it) }
-        eventChannel.subscribeAlways<FishRollEvent> { GamesManager.fishRoll(it) }
+        eventChannel.subscribeAlways<SignEvent>(priority = EventPriority.HIGH) { SignAction.randomSignGold(it) }
+        eventChannel.subscribeAlways<SignEvent> { SignAction.signProp(it) }
+        eventChannel.subscribeAlways<FishStartEvent> { GamesAction.fishStart(it) }
+        eventChannel.subscribeAlways<FishRollEvent> { GamesAction.fishRoll(it) }
 
         Log.info("事件已监听!")
 
@@ -147,8 +149,8 @@ object HuYanEconomy : KotlinPlugin(
     override fun onDisable() {
         PLUGIN_STATUS = false
 
-        GamesManager.shutdown()
-        LotteryManager.close()
+        GamesAction.shutdown()
+        LotteryAction.close()
         YiYanManager.shutdown()
         CronUtil.stop()
         Log.info("插件已卸载!")
