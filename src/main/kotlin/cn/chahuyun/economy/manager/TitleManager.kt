@@ -134,20 +134,17 @@ object TitleManager {
     private fun getInfo(userInfo: UserInfo): TitleInfo {
         val titleInfo = TitleInfo()
         titleInfo.gradient = false
-        val user = userInfo.user
+        val user = runCatching { userInfo.user }.getOrNull()
         if (user is Member) {
-            var title = user.specialTitle
-            val color: String
-            if (title.isBlank()) {
-                title = user.rankTitle
-                color = "8a8886"
-                if (title.isBlank()) {
-                    title = "[无]"
-                }
+            // 彻底避免读取 rankTitle（Overflow 环境下会触发群活跃信息查询并刷屏 Warning）
+            val specialTitle = runCatching { user.specialTitle }.getOrDefault("")
+            val (rawTitle, color) = if (specialTitle.isNotBlank()) {
+                specialTitle to "ff00ff"
             } else {
-                color = "ff00ff"
+                "[无]" to "8a8886"
             }
-            titleInfo.title = String.format("[%s]", title)
+
+            titleInfo.title = String.format("[%s]", rawTitle)
             titleInfo.sColor = color
         } else {
             titleInfo.title = "[无]"
