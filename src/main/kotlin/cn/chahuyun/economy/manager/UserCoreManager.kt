@@ -38,9 +38,11 @@ object UserCoreManager {
         if (one == null) {
             val info = UserInfo(userId, 0, user.nick, Date())
             info.registerGroup = group?.id ?: 0
-            info.user = user
-            info.group = group
-            return requireNotNull(HibernateFactory.merge(info))
+            // merge 可能返回新的实体实例（transient 字段不会被带过去），必须回填运行时上下文
+            val merged = requireNotNull(HibernateFactory.merge(info))
+            merged.user = user
+            merged.group = group
+            return merged
         }
 
         one.user = user
@@ -71,7 +73,7 @@ object UserCoreManager {
     fun getUserInfoImageBase(userInfo: UserInfo): BufferedImage? {
         return try {
             customBottom(userInfo)
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             Log.error("用户管理:个人信息基础信息绘图错误!", e)
             null
         }
