@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package cn.chahuyun.economy.entity.fish
 
 import cn.chahuyun.economy.HuYanEconomy
@@ -124,7 +126,7 @@ class FishInfo(
             val group = split[1].toLong()
             val botGroup = HuYanEconomy.bot?.getGroup(group)
             val finalFishPond = if (botGroup != null) {
-                FishPond(1, group, HuYanEconomy.config?.owner ?: 0L, botGroup.name + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！")
+                FishPond(1, group, HuYanEconomy.config.owner, botGroup.name + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！")
             } else {
                 FishPond(1, 0, 0, "空鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！")
             }
@@ -142,7 +144,7 @@ class FishInfo(
         var fishPond = HibernateFactory.selectOne(FishPond::class.java, "code", "g-${group.id}")
         if (fishPond != null) return fishPond
 
-        fishPond = FishPond(1, group.id, HuYanEconomy.config?.owner ?: 0L, group.name + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！")
+        fishPond = FishPond(1, group.id, HuYanEconomy.config.owner, group.name + "鱼塘", "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！")
         return HibernateFactory.merge(fishPond)
     }
 
