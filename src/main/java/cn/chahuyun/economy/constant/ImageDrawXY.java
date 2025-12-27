@@ -68,4 +68,20 @@ public enum ImageDrawXY {
         this.x = x;
         this.y = y;
     }
+
+    /**
+     * 给 Kotlin 编译器使用的显式 Getter。
+     * Kotlin 编译阶段不会运行 Lombok，因此看不到 @Getter 生成的方法。
+     */
+    public int getX() {
+        return x;
+    }
+
+    /**
+     * 给 Kotlin 编译器使用的显式 Getter。
+     * Kotlin 编译阶段不会运行 Lombok，因此看不到 @Getter 生成的方法。
+     */
+    public int getY() {
+        return y;
+    }
 }
