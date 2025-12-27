@@ -1,10 +1,11 @@
-package cn.chahuyun.economy.manager;
+package cn.chahuyun.economy.action;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.AuthPerm;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.manager.UserCoreManager;
 import cn.chahuyun.economy.model.bank.Bank;
 import cn.chahuyun.economy.model.bank.action.Transfer;
 import cn.chahuyun.economy.utils.EconomyUtil;
@@ -27,7 +28,7 @@ import net.mamoe.mirai.message.data.SingleMessage;
  * @date 2022/11/14 12:27
  */
 @EventComponent
-public class TransferManager {
+public class TransferAction {
 
 
     /**
@@ -45,7 +46,7 @@ public class TransferManager {
         Log.info("转账指令");
 
         Contact subject = event.getSubject();
-        UserInfo userInfo = UserManager.getUserInfo(event.getSender());
+        UserInfo userInfo = UserCoreManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
         Group group = null;
 
@@ -113,7 +114,7 @@ public class TransferManager {
         Log.info("作弊指令");
 
         Contact subject = event.getSubject();
-        UserInfo userInfo = UserManager.getUserInfo(event.getSender());
+        UserInfo userInfo = UserCoreManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
         MessageChain message = event.getMessage();
         String code = message.serializeToMiraiCode();

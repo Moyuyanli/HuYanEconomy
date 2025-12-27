@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.manager;
+package cn.chahuyun.economy.action;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
@@ -12,6 +12,8 @@ import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.manager.TitleManager;
+import cn.chahuyun.economy.manager.UserCoreManager;
 import cn.chahuyun.economy.model.props.PropsCard;
 import cn.chahuyun.economy.model.props.UseEvent;
 import cn.chahuyun.economy.plugin.ImageManager;
@@ -52,7 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2022/11/14 12:25
  */
 @EventComponent
-public class SignManager {
+public class SignAction {
 
     private static int index = 0;
 
@@ -72,7 +74,7 @@ public class SignManager {
         Contact subject = event.getSubject();
         MessageChain message = event.getMessage();
 
-        UserInfo userInfo = UserManager.getUserInfo(user);
+        UserInfo userInfo = UserCoreManager.getUserInfo(user);
 
         MessageChainBuilder messages = MessageUtil.quoteReply(message);
 
@@ -117,8 +119,8 @@ public class SignManager {
             messages.append(String.format("你的连签线断在了%d天,可惜~", userInfo.getOldSignNumber()));
         }
 
-        TitleManager.checkSignTitle(userInfo, subject);
-        TitleManager.checkMonopoly(userInfo, subject);
+        TitleManager.checkSignTitleJava(userInfo, subject);
+        TitleManager.checkMonopolyJava(userInfo, subject);
 
         sendSignImage(userInfo, subject, messages.build());
     }
@@ -176,7 +178,7 @@ public class SignManager {
         ArrayList<UserBackpack> list = new ArrayList<>(backpacks);
 
         Class<PropsCard> cardClass = PropsCard.class;
-        if (BackpackManager.checkPropInUser(userInfo, PropsCard.MONTHLY)) {
+        if (BackpackAction.checkPropInUser(userInfo, PropsCard.MONTHLY)) {
             UserBackpack prop = userInfo.getProp(PropsCard.MONTHLY);
             if (PropsManager.getProp(prop, cardClass).getStatus()) {
                 event.setSign_2(true);
@@ -196,7 +198,7 @@ public class SignManager {
                     try {
                         card = PropsManager.deserialization(propId, cardClass);
                     } catch (Exception e) {
-                        BackpackManager.delPropToBackpack(userInfo, propId);
+                        BackpackAction.delPropToBackpack(userInfo, propId);
                         continue;
                     }
                     if (event.isSign_2()) {
@@ -204,7 +206,7 @@ public class SignManager {
                     }
                     if (card.getStatus()) {
                         multiples += 1;
-                        BackpackManager.delPropToBackpack(userInfo, propId);
+                        BackpackAction.delPropToBackpack(userInfo, propId);
                         event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张双倍签到卡，本次签到奖励翻倍!"));
                         event.setSign_2(true);
                     }
@@ -214,7 +216,7 @@ public class SignManager {
                     try {
                         card = PropsManager.deserialization(propId, cardClass);
                     } catch (Exception e) {
-                        BackpackManager.delPropToBackpack(userInfo, propId);
+                        BackpackAction.delPropToBackpack(userInfo, propId);
                         continue;
                     }
                     if (event.isSign_3()) {
@@ -222,7 +224,7 @@ public class SignManager {
                     }
                     if (card.getStatus()) {
                         multiples += 2;
-                        BackpackManager.delPropToBackpack(userInfo, propId);
+                        BackpackAction.delPropToBackpack(userInfo, propId);
                         event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张三倍签到卡，本次签到奖励三翻倍!"));
                         event.setSign_3(true);
                     }
@@ -231,7 +233,7 @@ public class SignManager {
                     try {
                         card = PropsManager.deserialization(propId, cardClass);
                     } catch (Exception e) {
-                        BackpackManager.delPropToBackpack(userInfo, propId);
+                        BackpackAction.delPropToBackpack(userInfo, propId);
                         continue;
                     }
                     if (event.isSign_in()) {
@@ -270,7 +272,7 @@ public class SignManager {
      * @date 2022/12/5 16:22
      */
     private static void sendSignImage(UserInfo userInfo, Contact subject, MessageChain messages) {
-        BufferedImage userInfoImageBase = UserManager.getUserInfoImageBase(userInfo);
+        BufferedImage userInfoImageBase = UserCoreManager.getUserInfoImageBase(userInfo);
         if (userInfoImageBase == null) {
             return;
         }
@@ -476,7 +478,7 @@ public class SignManager {
         Group group = event.getGroup();
         Member sender = event.getSender();
 
-        UserInfo userInfo = UserManager.getUserInfo(sender);
+        UserInfo userInfo = UserCoreManager.getUserInfo(sender);
 
         DateTime dateTime = DateUtil.offsetDay(userInfo.getSignTime(), -1);
 

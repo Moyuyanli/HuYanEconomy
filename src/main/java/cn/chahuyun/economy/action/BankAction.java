@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.manager;
+package cn.chahuyun.economy.action;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
@@ -6,14 +6,13 @@ import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.bank.BankInfo;
+import cn.chahuyun.economy.manager.BankInterestTask;
+import cn.chahuyun.economy.manager.UserCoreManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
-import cn.chahuyun.economy.utils.ShareUtils;
 import cn.chahuyun.hibernateplus.HibernateFactory;
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.cron.CronUtil;
-import cn.hutool.cron.task.Task;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
@@ -25,10 +24,7 @@ import net.mamoe.mirai.message.data.MessageChainBuilder;
 import net.mamoe.mirai.message.data.PlainText;
 import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -39,7 +35,7 @@ import java.util.stream.Collectors;
  * @date 2022/11/14 12:26
  */
 @EventComponent
-public class BankManager {
+public class BankAction {
 
     /**
      * 初始化银行<p>
@@ -60,7 +56,7 @@ public class BankManager {
         } catch (Exception e) {
             Log.error("银行管理:利息加载出错!", e);
         }
-        BankInterestTask bankInterestTask = new BankInterestTask("bank", bankInfos);
+        BankInterestTask bankInterestTask = new BankInterestTask("bank", bankInfos == null ? Collections.emptyList() : bankInfos);
         CronUtil.schedule("bank", "0 0 4 * * ?", bankInterestTask);
     }
 
@@ -73,7 +69,7 @@ public class BankManager {
      */
     @MessageAuthorize(text = "存款 \\d+|deposit \\d+", messageMatching = MessageMatchingEnum.REGULAR)
     public void deposit(MessageEvent event) {
-        UserInfo userInfo = UserManager.getUserInfo(event.getSender());
+        UserInfo userInfo = UserCoreManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
 
         Contact subject = event.getSubject();
@@ -110,7 +106,7 @@ public class BankManager {
      */
     @MessageAuthorize(text = "取款 \\d+|withdraw \\d+", messageMatching = MessageMatchingEnum.REGULAR)
     public void withdrawal(MessageEvent event) {
-        UserInfo userInfo = UserManager.getUserInfo(event.getSender());
+        UserInfo userInfo = UserCoreManager.getUserInfo(event.getSender());
         User user = userInfo.getUser();
 
         Contact subject = event.getSubject();
@@ -174,7 +170,7 @@ public class BankManager {
 
         int index = 1;
         for (Map.Entry<EconomyAccount, Double> entry : collect.entrySet()) {
-            UserInfo userInfo = UserManager.getUserInfo(entry.getKey());
+            UserInfo userInfo = UserCoreManager.getUserInfo(entry.getKey());
             Group group = bot.getGroup(userInfo.getRegisterGroup());
             String name;
             if (group == null) {
@@ -189,57 +185,4 @@ public class BankManager {
         subject.sendMessage(builder.build());
     }
 
-}
-
-
-/**
- * 银行的利息管理
- *
- * @author Moyuyanli
- * @date 2022/12/23 9:22
- */
-class BankInterestTask implements Task {
-
-
-    private final String id;
-    /**
-     * 银行信息
-     */
-    private final List<BankInfo> bankList;
-
-    public BankInterestTask(String id, List<BankInfo> bankList) {
-        this.id = id;
-        this.bankList = bankList;
-    }
-
-    /**
-     * 执行作业
-     * <p>
-     * 作业的具体实现需考虑异常情况，默认情况下任务异常在监听中统一监听处理，如果不加入监听，异常会被忽略<br>
-     * 因此最好自行捕获异常后处理
-     */
-    @Override
-    public void execute() {
-        for (BankInfo bankInfo : bankList) {
-            if (bankInfo.getInterestSwitch() && DateUtil.thisDayOfWeek() == 2) {
-                bankInfo.setInterest(BankInfo.randomInterest());
-                HibernateFactory.merge(bankInfo);
-            }
-            if (bankInfo.getId() == 1) {
-                int interest = bankInfo.getInterest();
-                Map<EconomyAccount, Double> accountByBank = EconomyUtil.getAccountByBank();
-                for (Map.Entry<EconomyAccount, Double> entry : accountByBank.entrySet()) {
-                    UserInfo userInfo = UserManager.getUserInfo(entry.getKey());
-                    double v = ShareUtils.rounding(entry.getValue()) * (interest / 1000.0);
-                    v = Double.parseDouble(String.format("%.1f", v));
-                    if (EconomyUtil.plusMoneyToBankForAccount(entry.getKey(), v)) {
-                        userInfo.setBankEarnings(v);
-                        HibernateFactory.merge(userInfo);
-                    } else {
-                        Log.error("银行利息管理:" + id + "添加利息出错");
-                    }
-                }
-            }
-        }
-    }
 }

@@ -1,10 +1,11 @@
-package cn.chahuyun.economy.manager;
+package cn.chahuyun.economy.action;
 
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
 import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.manager.UserCoreManager;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
 import net.mamoe.mirai.event.events.FriendMessageEvent;
@@ -15,7 +16,7 @@ import xyz.cssxsh.mirai.economy.service.EconomyAccount;
 import java.util.UUID;
 
 @EventComponent
-public class FundingManager {
+public class FundingAction {
 
 
     @MessageAuthorize(text = "#fund bind \\d+", messageMatching = MessageMatchingEnum.REGULAR)
@@ -24,7 +25,7 @@ public class FundingManager {
         String content = message.contentToString();
 
         String qqId = content.split(" ")[2];
-        UserInfo user = UserManager.getUserInfo(Long.parseLong(qqId));
+        UserInfo user = UserCoreManager.getUserInfo(Long.parseLong(qqId));
 
         if (user == null) {
             event.getSender().sendMessage("未找到该用户");
@@ -50,7 +51,7 @@ public class FundingManager {
         String content = message.contentToString();
 
         String uuid = content.split(" ")[2];
-        UserInfo user = UserManager.getUserInfo(uuid);
+        UserInfo user = UserCoreManager.getUserInfo(uuid);
 
         if (user == null) {
             event.getSender().sendMessage("未找到该用户");

@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.manager;
+package cn.chahuyun.economy.action;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
@@ -15,6 +15,8 @@ import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.UserStatus;
 import cn.chahuyun.economy.entity.rob.RobInfo;
+import cn.chahuyun.economy.manager.TitleManager;
+import cn.chahuyun.economy.manager.UserCoreManager;
 import cn.chahuyun.economy.model.props.FunctionProps;
 import cn.chahuyun.economy.model.props.UseEvent;
 import cn.chahuyun.economy.plugin.FactorManager;
@@ -46,7 +48,7 @@ import java.util.Map;
  * @date 2022/11/15 10:01
  */
 @EventComponent
-public class RobManager {
+public class RobAction {
 
 
     private final static Map<User, Date> cooling = new HashMap<>();
@@ -80,7 +82,7 @@ public class RobManager {
         MessageChain message = event.getMessage();
 
         Member user = event.getSender();
-        UserInfo thisUser = UserManager.getUserInfo(user);
+        UserInfo thisUser = UserCoreManager.getUserInfo(user);
 
         if (cooling.containsKey(user)) {
             Date date = cooling.get(user);
@@ -93,8 +95,8 @@ public class RobManager {
 
         cooling.put(user, new Date());
 
-        if (UserStatusManager.checkUserNotInHome(thisUser)) {
-            UserStatus userStatus = UserStatusManager.getUserStatus(user.getId());
+        if (UserStatusAction.checkUserNotInHome(thisUser)) {
+            UserStatus userStatus = UserStatusAction.getUserStatus(user.getId());
             switch (userStatus.getPlace()) {
                 //医院
                 case HOSPITAL:
@@ -122,10 +124,10 @@ public class RobManager {
             return;
         }
 
-        UserInfo atUser = UserManager.getUserInfo(member);
+        UserInfo atUser = UserCoreManager.getUserInfo(member);
 
-        if (UserStatusManager.checkUserNotInHome(atUser)) {
-            UserStatus userStatus = UserStatusManager.getUserStatus(atUser);
+        if (UserStatusAction.checkUserNotInHome(atUser)) {
+            UserStatus userStatus = UserStatusAction.getUserStatus(atUser);
             switch (userStatus.getPlace()) {
                 case HOSPITAL:
                     group.sendMessage(MessageUtil.formatMessageChain(message, "医院禁止抢劫/打人！"));
@@ -153,7 +155,7 @@ public class RobManager {
         UserFactor userFactor = FactorManager.getUserFactor(thisUser);
         UserFactor atUserFactor = FactorManager.getUserFactor(atUser);
 
-        if (BackpackManager.checkPropInUser(thisUser, FunctionProps.ELECTRIC_BATON)) {
+        if (BackpackAction.checkPropInUser(thisUser, FunctionProps.ELECTRIC_BATON)) {
             UserBackpack prop = thisUser.getProp(FunctionProps.ELECTRIC_BATON);
 
             if (prop == null) return;
@@ -167,7 +169,7 @@ public class RobManager {
 
         }
 
-        if (BackpackManager.checkPropInUser(atUser, FunctionProps.ELECTRIC_BATON)) {
+        if (BackpackAction.checkPropInUser(atUser, FunctionProps.ELECTRIC_BATON)) {
             UserBackpack prop = atUser.getProp(FunctionProps.ELECTRIC_BATON);
 
             if (prop == null) return;
@@ -214,7 +216,7 @@ public class RobManager {
                 if (hit <= irritable) {
                     group.sendMessage(MessageUtil.formatMessageChain(message, "你把他全身搜了个遍，连%.0f块钱都拿不出来，你气不过，打了他一顿，把他打进医院了。", thatLowMoney));
 
-                    UserStatusManager.moveHospital(atUser, RandomUtil.randomInt(50, 501));
+                    UserStatusAction.moveHospital(atUser, RandomUtil.randomInt(50, 501));
                 } else {
                     group.sendMessage(MessageUtil.formatMessageChain(message, "他就穷光蛋一个，出门身上一块钱没有，真悲哀。"));
                 }
@@ -256,7 +258,7 @@ public class RobManager {
             EconomyUtil.minusMoneyToUser(user, quantity);
 
             int recovery = 20;
-            UserStatusManager.movePrison(thisUser, recovery);
+            UserStatusAction.movePrison(thisUser, recovery);
 
             group.sendMessage(MessageUtil.formatMessageChain(message,
                     "你在抢劫的过程中，被警察发现了。%n" +

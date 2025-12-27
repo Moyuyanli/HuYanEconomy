@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.manager;
+package cn.chahuyun.economy.action;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
@@ -8,6 +8,7 @@ import cn.chahuyun.authorize.constant.MessageMatchingEnum;
 import cn.chahuyun.economy.constant.UserLocation;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.UserStatus;
+import cn.chahuyun.economy.manager.UserCoreManager;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.economy.utils.ShareUtils;
@@ -29,7 +30,7 @@ import java.util.Date;
  * @date 2024/9/26 9:48
  */
 @EventComponent
-public class UserStatusManager {
+public class UserStatusAction {
 
     /**
      * 检查用户是否在家
@@ -223,7 +224,7 @@ public class UserStatusManager {
         MessageChain message = event.getMessage();
         Group group = event.getGroup();
 
-        UserInfo userInfo = UserManager.getUserInfo(sender);
+        UserInfo userInfo = UserCoreManager.getUserInfo(sender);
 
         UserStatus userStatus = getUserStatus(userInfo);
 
@@ -267,7 +268,7 @@ public class UserStatusManager {
         MessageChain message = event.getMessage();
         Member sender = event.getSender();
 
-        UserInfo userInfo = UserManager.getUserInfo(sender);
+        UserInfo userInfo = UserCoreManager.getUserInfo(sender);
 
         if (checkUserInHome(userInfo)) {
             group.sendMessage(MessageUtil.formatMessageChain(message, "你已经在家里了！"));
@@ -298,7 +299,7 @@ public class UserStatusManager {
             Log.warning("该用户不存在!");
             return;
         }
-        userInfo = UserManager.getUserInfo(member);
+        userInfo = UserCoreManager.getUserInfo(member);
 
         moveHome(userInfo);
         group.sendMessage(MessageUtil.formatMessageChain(message, "你让ta回家躺着去."));

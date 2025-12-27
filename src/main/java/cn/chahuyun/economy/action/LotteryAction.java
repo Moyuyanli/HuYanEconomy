@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.manager;
+package cn.chahuyun.economy.action;
 
 import cn.chahuyun.authorize.EventComponent;
 import cn.chahuyun.authorize.MessageAuthorize;
@@ -10,13 +10,14 @@ import cn.chahuyun.authorize.utils.UserUtil;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.constant.EconPerm;
 import cn.chahuyun.economy.entity.LotteryInfo;
+import cn.chahuyun.economy.manager.LotteryDayTask;
+import cn.chahuyun.economy.manager.LotteryHoursTask;
+import cn.chahuyun.economy.manager.LotteryMinutesTask;
 import cn.chahuyun.economy.utils.EconomyUtil;
 import cn.chahuyun.economy.utils.Log;
 import cn.chahuyun.economy.utils.MessageUtil;
 import cn.chahuyun.hibernateplus.HibernateFactory;
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.cron.CronUtil;
-import cn.hutool.cron.task.Task;
 import lombok.val;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
@@ -25,9 +26,10 @@ import net.mamoe.mirai.contact.NormalMember;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.data.MessageChain;
-import net.mamoe.mirai.message.data.MessageChainBuilder;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -41,10 +43,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @date 2022/11/15 10:01
  */
 @EventComponent
-public class LotteryManager {
+public class LotteryAction {
 
-    static final AtomicBoolean minuteTiming = new AtomicBoolean(false);
-    static final AtomicBoolean hoursTiming = new AtomicBoolean(false);
+    public static final AtomicBoolean minuteTiming = new AtomicBoolean(false);
+    public static final AtomicBoolean hoursTiming = new AtomicBoolean(false);
 
 
     /**
@@ -317,286 +319,4 @@ public class LotteryManager {
         group.sendMessage(MessageUtil.formatMessageChain(event.getMessage(), "本群的猜签关闭成功!"));
     }
 
-}
-
-
-/**
- * 彩票定时任务<p>
- * 分钟<p>
- *
- * @author Moyuyanli
- * @date 2022/12/6 14:43
- */
-class LotteryMinutesTask implements Task {
-
-    private final String id;
-
-    LotteryMinutesTask(String id) {
-        this.id = id;
-    }
-
-    /**
-     * 执行作业
-     * <p>
-     * 作业的具体实现需考虑异常情况，默认情况下任务异常在监听中统一监听处理，如果不加入监听，异常会被忽略<br>
-     * 因此最好自行捕获异常后处理
-     */
-    @Override
-    public void execute() {
-        Bot bot = HuYanEconomy.INSTANCE.bot;
-        String[] current = {
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9)),
-                String.valueOf(RandomUtil.randomInt(0, 9))
-        };
-        StringBuilder currentString = new StringBuilder(current[0]);
-        for (int i = 1; i < current.length; i++) {
-            String s = current[i];
-            currentString.append(",").append(s);
-        }
-
-
-        Set<Long> groups = new HashSet<>();
-
-        List<LotteryInfo> lotteryInfoList = HibernateFactory.selectList(LotteryInfo.class, "type", 1);
-        if (lotteryInfoList == null || lotteryInfoList.isEmpty()) {
-            return;
-        }
-        for (LotteryInfo lotteryInfo : lotteryInfoList) {
-            groups.add(lotteryInfo.getGroup());
-            //位置正确的数量
-            int location = 0;
-            //计算奖金
-            double bonus = 0;
-
-            String[] split = lotteryInfo.getNumber().split(",");
-            for (int i = 0; i < split.length; i++) {
-                String s = split[i];
-                if (s.equals(current[i])) {
-                    location++;
-                }
-            }
-            switch (location) {
-                case 3:
-                    bonus = lotteryInfo.getMoney() * 160;
-                    break;
-                case 2:
-                    bonus = lotteryInfo.getMoney() * 6;
-                    break;
-                case 1:
-                    bonus = lotteryInfo.getMoney() * 0.7;
-                    break;
-            }
-            lotteryInfo.setBonus(bonus);
-            lotteryInfo.setCurrent(currentString.toString());
-            lotteryInfo = HibernateFactory.merge(lotteryInfo);
-            LotteryManager.result(1, location, lotteryInfo);
-        }
-
-        for (Long group : groups) {
-            String format = String.format("本期小签开签啦！\n开签号码%s", currentString);
-            Objects.requireNonNull(bot.getGroup(group)).sendMessage(format);
-        }
-
-        //定时任务执行完成，清除自身  我这里需要 其实可以不用
-        CronUtil.remove(id);
-        LotteryManager.minuteTiming.set(false);
-    }
-}
-
-/**
- * 彩票定时任务<p>
- * 小时<p>
- *
- * @author Moyuyanli
- * @date 2022/12/6 14:43
- */
-class LotteryHoursTask implements Task {
-    private final String id;
-
-    LotteryHoursTask(String id) {
-        this.id = id;
-    }
-
-    /**
-     * 执行作业
-     * <p>
-     * 作业的具体实现需考虑异常情况，默认情况下任务异常在监听中统一监听处理，如果不加入监听，异常会被忽略<br>
-     * 因此最好自行捕获异常后处理
-     */
-    @Override
-    public void execute() {
-        Bot bot = HuYanEconomy.INSTANCE.bot;
-        String[] current = {
-                String.valueOf(RandomUtil.randomInt(0, 10)),
-                String.valueOf(RandomUtil.randomInt(0, 10)),
-                String.valueOf(RandomUtil.randomInt(0, 10)),
-                String.valueOf(RandomUtil.randomInt(0, 10))
-        };
-
-
-        StringBuilder currentString = new StringBuilder(current[0]);
-        for (int i = 1; i < current.length; i++) {
-            String s = current[i];
-            currentString.append(",").append(s);
-        }
-
-        Set<Long> groups = new HashSet<>();
-
-        List<LotteryInfo> lotteryInfos = HibernateFactory.selectList(LotteryInfo.class, "type", 2);
-        if (lotteryInfos == null || lotteryInfos.isEmpty()) {
-            return;
-        }
-        for (LotteryInfo lotteryInfo : lotteryInfos) {
-            groups.add(lotteryInfo.getGroup());
-            //位置正确的数量
-            int location = 0;
-            //计算奖金
-            double bonus = 0;
-
-            String[] split = lotteryInfo.getNumber().split(",");
-            for (int i = 0; i < split.length; i++) {
-                String s = split[i];
-                if (s.equals(current[i])) {
-                    location++;
-                }
-            }
-            switch (location) {
-                case 4:
-                    bonus = lotteryInfo.getMoney() * 1250;
-                    break;
-                case 3:
-                    bonus = lotteryInfo.getMoney() * 35;
-                    break;
-                case 2:
-                    bonus = lotteryInfo.getMoney() * 2.5;
-                    break;
-                case 1:
-                    bonus = lotteryInfo.getMoney() * 0.5;
-                    break;
-            }
-            lotteryInfo.setBonus(bonus);
-            lotteryInfo.setCurrent(currentString.toString());
-            lotteryInfo = HibernateFactory.merge(lotteryInfo);
-            LotteryManager.result(2, location, lotteryInfo);
-        }
-        for (Long group : groups) {
-            String format = String.format("本期中签开签啦！\n开签号码%s", currentString);
-            Objects.requireNonNull(bot.getGroup(group)).sendMessage(format);
-        }
-
-        CronUtil.remove(id);
-        LotteryManager.hoursTiming.set(false);
-    }
-}
-
-/**
- * 彩票定时任务<p>
- * 天<p>
- *
- * @author Moyuyanli
- * @date 2022/12/6 14:43
- */
-class LotteryDayTask implements Task {
-
-    private final String id;
-
-
-    LotteryDayTask(String id) {
-        this.id = id;
-    }
-
-    /**
-     * 执行作业
-     * <p>
-     * 作业的具体实现需考虑异常情况，默认情况下任务异常在监听中统一监听处理，如果不加入监听，异常会被忽略<br>
-     * 因此最好自行捕获异常后处理
-     */
-    @Override
-    public void execute() {
-        Bot bot = HuYanEconomy.INSTANCE.bot;
-        String[] current = {
-                String.valueOf(RandomUtil.randomInt(0, 10)),
-                String.valueOf(RandomUtil.randomInt(0, 10)),
-                String.valueOf(RandomUtil.randomInt(0, 10)),
-                String.valueOf(RandomUtil.randomInt(0, 10)),
-                String.valueOf(RandomUtil.randomInt(0, 10))
-        };
-
-        StringBuilder currentString = new StringBuilder(current[0]);
-        for (int i = 1; i < current.length; i++) {
-            String s = current[i];
-            currentString.append(",").append(s);
-        }
-
-        Set<Long> groups = new HashSet<>();
-        List<LotteryInfo> list = new ArrayList<>();
-
-        List<LotteryInfo> lotteryInfos = HibernateFactory.selectList(LotteryInfo.class, "type", 2);
-        if (lotteryInfos == null || lotteryInfos.isEmpty()) {
-            return;
-        }
-
-        for (LotteryInfo lotteryInfo : lotteryInfos) {
-            groups.add(lotteryInfo.getGroup());
-            //位置正确的数量
-            int location = 0;
-            //计算奖金
-            double bonus = 0;
-
-            String[] split = lotteryInfo.getNumber().split(",");
-            for (int i = 0; i < split.length; i++) {
-                String s = split[i];
-                if (s.equals(current[i])) {
-                    location++;
-                }
-            }
-            switch (location) {
-                case 5:
-                    bonus = lotteryInfo.getMoney() * 10000;
-                    break;
-                case 4:
-                    bonus = lotteryInfo.getMoney() * 200;
-                    break;
-                case 3:
-                    bonus = lotteryInfo.getMoney() * 12;
-                    break;
-                case 2:
-                    bonus = lotteryInfo.getMoney() * 1.4;
-                    break;
-                case 1:
-                    bonus = lotteryInfo.getMoney() * 0.3;
-                    break;
-            }
-            lotteryInfo.setBonus(bonus);
-            lotteryInfo.setCurrent(currentString.toString());
-            lotteryInfo = HibernateFactory.merge(lotteryInfo);
-            LotteryManager.result(3, location, lotteryInfo);
-            if (location == 5) {
-                list.add(lotteryInfo);
-            }
-        }
-
-        for (Long group : groups) {
-            Group botGroup = bot.getGroup(group);
-            MessageChainBuilder singleMessages = new MessageChainBuilder();
-            String format = String.format("本期大签开签啦！\n开签号码%s", currentString);
-            singleMessages.append(format).append("\n以下是本期大签开签着:↓");
-            if (list.isEmpty()) {
-                singleMessages.append("无!");
-            } else {
-                for (LotteryInfo lotteryInfo : list) {
-                    assert botGroup != null;
-                    NormalMember normalMember = botGroup.get(lotteryInfo.getQq());
-                    if (normalMember == null) {
-                        singleMessages.append(String.format("%s:%s->奖金:%s", lotteryInfo.getQq(), lotteryInfo.getNumber(), lotteryInfo.getBonus()));
-                    } else {
-                        singleMessages.append(String.format("%s:%s->奖金:%s", normalMember.getNick(), lotteryInfo.getNumber(), lotteryInfo.getBonus()));
-                    }
-                }
-            }
-            Objects.requireNonNull(botGroup).sendMessage(format);
-        }
-        CronUtil.remove(id);
-    }
 }
