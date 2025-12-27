@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package cn.chahuyun.economy.manager
+package cn.chahuyun.economy.action
 
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
@@ -18,6 +18,8 @@ import cn.chahuyun.economy.entity.fish.FishPond
 import cn.chahuyun.economy.entity.fish.FishRanking
 import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
+import cn.chahuyun.economy.manager.TitleManager
+import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.plugin.FactorManager
@@ -54,7 +56,7 @@ import kotlin.math.roundToInt
  * @date 2025/12/22
  */
 @EventComponent
-class GamesManager : CoroutineScope {
+class GamesAction : CoroutineScope {
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default + supervisorJob
@@ -165,13 +167,13 @@ class GamesManager : CoroutineScope {
                                 quality = 0.01f
                                 name = "空钩"
                             }
-                            BackpackManager.delPropToBackpack(userInfo, backpack.propId ?: 0L)
+                            BackpackAction.delPropToBackpack(userInfo, backpack.propId ?: 0L)
                         }
                     }
                 }
             }
 
-            toRemove.forEach { BackpackManager.delPropToBackpack(userInfo, it) }
+            toRemove.forEach { BackpackAction.delPropToBackpack(userInfo, it) }
 
             event.fishBait?.let {
                 event.maxDifficulty = event.calculateMaxDifficulty()
@@ -214,7 +216,7 @@ class GamesManager : CoroutineScope {
         @JvmStatic
         suspend fun buyFishRod(event: MessageEvent) {
             Log.info("购买鱼竿指令")
-            val userInfo = UserManager.getUserInfo(event.sender)
+            val userInfo = UserCoreManager.getUserInfo(event.sender)
             val fishInfo = userInfo.getFishInfo()
             val subject = event.subject
 
@@ -256,7 +258,7 @@ class GamesManager : CoroutineScope {
         @JvmStatic
         suspend fun upFishRod(event: MessageEvent) {
             Log.info("升级鱼竿指令")
-            val userInfo = UserManager.getUserInfo(event.sender)
+            val userInfo = UserCoreManager.getUserInfo(event.sender)
             val subject = event.subject
             val fishInfo = userInfo.getFishInfo()
 
@@ -308,7 +310,7 @@ class GamesManager : CoroutineScope {
         @JvmStatic
         suspend fun viewFishLevel(event: MessageEvent) {
             Log.info("鱼竿等级指令")
-            val userInfo = UserManager.getUserInfo(event.sender)
+            val userInfo = UserCoreManager.getUserInfo(event.sender)
             val rodLevel = userInfo.getFishInfo().rodLevel
             event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你的鱼竿等级为%s级", rodLevel))
         }
@@ -325,16 +327,16 @@ class GamesManager : CoroutineScope {
         val message = event.message
         val messageDate = Date(event.time.toLong() * 1000L)
 
-        val userInfo = UserManager.getUserInfo(sender)
+        val userInfo = UserCoreManager.getUserInfo(sender)
         val fishInfo = userInfo.getFishInfo()
         val fishTitle = TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.FISHING)
 
         if (checkAndProcessFishing(userInfo, fishTitle, fishInfo, subject, message)) return
 
-        if (UserStatusManager.checkUserNotInHome(userInfo) && !UserStatusManager.checkUserInFishpond(userInfo)) {
+        if (UserStatusAction.checkUserNotInHome(userInfo) && !UserStatusAction.checkUserInFishpond(userInfo)) {
             val msg = when {
-                UserStatusManager.checkUserInHospital(userInfo) -> "你还在医院躺着咧，怎么钓鱼?"
-                UserStatusManager.checkUserInPrison(userInfo) -> "在监狱就不要想钓鱼的事了..."
+                UserStatusAction.checkUserInHospital(userInfo) -> "你还在医院躺着咧，怎么钓鱼?"
+                UserStatusAction.checkUserInPrison(userInfo) -> "在监狱就不要想钓鱼的事了..."
                 else -> "你当前不在可以钓鱼的地方"
             }
             subject.sendMessage(MessageUtil.formatMessageChain(message, msg))
@@ -342,7 +344,7 @@ class GamesManager : CoroutineScope {
             return
         }
 
-        UserStatusManager.moveFishpond(userInfo, 0)
+        UserStatusAction.moveFishpond(userInfo, 0)
         val fishPond = fishInfo.getFishPond(subject)
 
         if (fishInfo.rodLevel < fishPond.minLevel) {
@@ -474,7 +476,7 @@ class GamesManager : CoroutineScope {
                 fishPond
             )
         )
-        UserStatusManager.moveHome(userInfo)
+        UserStatusAction.moveHome(userInfo)
         TitleManager.checkFishTitle(userInfo, subject)
     }
 
@@ -544,7 +546,7 @@ class GamesManager : CoroutineScope {
     @MessageAuthorize(text = ["鱼塘等级"], groupPermissions = [EconPerm.FISH_PERM])
     suspend fun viewFishPond(event: GroupMessageEvent) {
         val group = event.group
-        val userInfo = UserManager.getUserInfo(event.sender)
+        val userInfo = UserCoreManager.getUserInfo(event.sender)
         val fishPond = userInfo.getFishInfo().getFishPond(group)
         val level = fishPond.pondLevel
         val value = FishPondLevelConstant.entries[level - 1]
@@ -628,7 +630,7 @@ class GamesManager : CoroutineScope {
                         "你钓起来一具尸体，附近的钓鱼佬报警了，你真是百口模辩啊！"
                     )
                 )
-                UserStatusManager.movePrison(userInfo, 60)
+                UserStatusAction.movePrison(userInfo, 60)
                 fishInfo.switchStatus()
                 true
             }

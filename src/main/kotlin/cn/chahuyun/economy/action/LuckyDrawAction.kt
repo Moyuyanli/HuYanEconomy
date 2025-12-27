@@ -1,6 +1,6 @@
 @file:Suppress("DuplicatedCode")
 
-package cn.chahuyun.economy.manager
+package cn.chahuyun.economy.action
 
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
@@ -19,7 +19,7 @@ import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.GroupMessageEvent
 
 @EventComponent
-class LuckyDrawManager {
+class LuckyDrawAction {
 
     companion object {
         // 单抽冷却时间(60秒)

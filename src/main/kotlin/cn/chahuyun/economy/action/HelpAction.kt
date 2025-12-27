@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.manager
+package cn.chahuyun.economy.action
 
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
@@ -6,7 +6,7 @@ import cn.chahuyun.economy.EconomyBuildConstants
 import net.mamoe.mirai.event.events.GroupMessageEvent
 
 @EventComponent
-class HelpManager {
+class HelpAction {
 
     @MessageAuthorize(["help", "帮助"])
     suspend fun help(event: GroupMessageEvent) {

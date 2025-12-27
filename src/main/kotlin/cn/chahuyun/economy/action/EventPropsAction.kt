@@ -1,8 +1,9 @@
-package cn.chahuyun.economy.manager
+package cn.chahuyun.economy.action
 
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
+import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.fish.FishBait
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.prop.PropsShop
@@ -24,7 +25,7 @@ import kotlin.math.ceil
  * @date 2024/9/25 10:40
  */
 @EventComponent
-class EventPropsManager {
+class EventPropsAction {
 
     @MessageAuthorize(text = ["道具商店( \\d+)?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun viewShop(event: GroupMessageEvent) {
@@ -128,7 +129,7 @@ class EventPropsManager {
         builder.add(QuoteReply(message))
         builder.add("本次购买道具:")
 
-        val userInfo = UserManager.getUserInfo(sender)
+        val userInfo = UserCoreManager.getUserInfo(sender)
 
         for (i in 1 until split.size) {
             var code = split[i]
@@ -167,7 +168,7 @@ class EventPropsManager {
 
             if (EconomyUtil.minusMoneyToUser(userInfo.user, finalCost.toDouble())) {
                 if (template is Stackable) {
-                    if (BackpackManager.checkPropInUser(userInfo, propCode)) {
+                    if (BackpackAction.checkPropInUser(userInfo, propCode)) {
                         val baseNumber = FishBait.fishbaitTimer[propCode] ?: 1
                         val buyNum = number * baseNumber
 
@@ -188,12 +189,12 @@ class EventPropsManager {
                             (prop as Stackable).num = buyNum
                             PropsManager.updateProp(propId, prop)
                         }
-                        BackpackManager.addPropToBackpack(userInfo, propCode, template.kind, propId)
+                        BackpackAction.addPropToBackpack(userInfo, propCode, template.kind, propId)
                     }
                 } else {
                     repeat(number) {
                         val propId = PropsManager.addProp(template)
-                        BackpackManager.addPropToBackpack(userInfo, propCode, template.kind, propId)
+                        BackpackAction.addPropToBackpack(userInfo, propCode, template.kind, propId)
                     }
                 }
 

@@ -1,20 +1,22 @@
-package cn.chahuyun.economy.manager
+package cn.chahuyun.economy.action
 
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
 import cn.chahuyun.economy.entity.UserBackpack
 import cn.chahuyun.economy.entity.UserInfo
+import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.props.UseEvent
-import cn.chahuyun.economy.prop.BaseProp
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.event.events.GroupMessageEvent
-import net.mamoe.mirai.message.data.*
-import java.util.*
+import net.mamoe.mirai.message.data.ForwardMessageBuilder
+import net.mamoe.mirai.message.data.MessageChainBuilder
+import net.mamoe.mirai.message.data.PlainText
+import net.mamoe.mirai.message.data.QuoteReply
 import kotlin.math.ceil
 
 /**
@@ -24,7 +26,7 @@ import kotlin.math.ceil
  * @date 2022/11/15 10:00
  */
 @EventComponent
-class BackpackManager {
+class BackpackAction {
 
     companion object {
         private suspend fun showBackpack(bot: Bot, backpacks: List<UserBackpack>, group: Group, currentPage: Int, maxPage: Int) {
@@ -91,7 +93,7 @@ class BackpackManager {
         val bot = event.bot
         val group = event.subject
 
-        val userInfo = UserManager.getUserInfo(sender)
+        val userInfo = UserCoreManager.getUserInfo(sender)
         val backpacks = userInfo.backpacks
 
         if (backpacks.isEmpty()) {
@@ -144,7 +146,7 @@ class BackpackManager {
         val content = message.contentToString()
         val group = event.subject
 
-        val userInfo = UserManager.getUserInfo(sender)
+        val userInfo = UserCoreManager.getUserInfo(sender)
         val useEvent = UseEvent(sender, group, userInfo)
 
         val split = content.split(" ")
@@ -192,7 +194,7 @@ class BackpackManager {
         builder.add(QuoteReply(message))
         builder.add("本次丢弃道具:")
 
-        val userInfo = UserManager.getUserInfo(sender)
+        val userInfo = UserCoreManager.getUserInfo(sender)
 
         for (i in 1 until split.size) {
             val propIdStr = split[i]

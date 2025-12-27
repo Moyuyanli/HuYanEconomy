@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.manager
+package cn.chahuyun.economy.action
 
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
@@ -29,7 +29,7 @@ import java.util.*
  * 红包管理类，用于处理红包的创建、领取、查询等操作。
  */
 @EventComponent
-class RedPackManager {
+class RedPackAction {
 
     /**
      * 创建红包。
