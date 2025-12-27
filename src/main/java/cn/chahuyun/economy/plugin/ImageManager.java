@@ -4,7 +4,6 @@ import cn.chahuyun.economy.EconomyBuildConstants;
 import cn.chahuyun.economy.HuYanEconomy;
 import cn.chahuyun.economy.utils.ImageUtil;
 import cn.chahuyun.economy.utils.Log;
-import lombok.Getter;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -27,8 +26,12 @@ public class ImageManager {
 
     private static final List<BufferedImage> bufferedImages = new ArrayList<>(8);
     private static int next = 1;
-    @Getter
     private static Font customFont;
+
+
+    public static Font getCustomFont() {
+        return customFont;
+    }
 
     protected static void init(HuYanEconomy instance) throws IOException, FontFormatException {
 
