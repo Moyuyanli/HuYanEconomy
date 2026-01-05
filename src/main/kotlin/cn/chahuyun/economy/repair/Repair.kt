@@ -13,6 +13,7 @@ import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.json.JSONUtil
 import java.sql.Connection
+import java.util.Locale.getDefault
 
 
 interface Repair {
@@ -154,19 +155,27 @@ class PropRepair : Repair {
                     jsonObject.remove("expire")
                 }
 
+                // 修复道具数量为0的情况
+                if (jsonObject.containsKey("num")) {
+                    if (jsonObject.getInt("num") == 0) {
+                        jsonObject["num"] = 1
+                    }
+                }
+
                 // --- 尝试映射到新类 ---
-                val kind = propsData.kind ?: jsonObject.getStr("kind") ?: continue
+                var kind = propsData.kind ?: jsonObject.getStr("kind") ?: continue
+                kind = kind.uppercase(getDefault())
+                jsonObject["kind"]= kind
                 val propClass = PropsManager.shopClass(kind) ?: continue
-                
+
                 // 使用修正后的 JSON 反序列化出对象
                 val prop = JSONUtil.toBean(jsonObject, propClass)
 
                 // --- 利用 PropsManager 同步核心列数据 ---
                 val updatedPropsData = PropsManager.serialization(prop)
                 updatedPropsData.id = propsData.id
-                
-                HibernateFactory.merge(updatedPropsData)
 
+                HibernateFactory.merge(updatedPropsData)
             } catch (e: Exception) {
                 cn.chahuyun.economy.utils.Log.error("升级道具数据失败: id=${propsData.id}", e)
             }
@@ -185,17 +194,18 @@ class PropRepair : Repair {
                         val base = stackMap[key]!! as Stackable
                         val currentNum = if (prop.num <= 0) 1 else prop.num
                         base.num += currentNum
-                        
+
                         // 销毁重复的道具数据
                         val propId = backpack.propId ?: error("错误,背包中道具id为空!")
                         PropsManager.destroyProsInBackpack(propId)
                         // 将这个重复的背包项标记为待删除（或者直接删除）
                         HibernateFactory.delete(backpack)
-                        
+
                         // 更新主道具的数据（找到 stackMap 中的那个）
                         // 注意：这里需要找到 stackMap 中对应的那个 propId 对应的背包
                         // 为了简化，我们直接在循环结束后统一更新，或者这里找到主背包
-                        val mainBackpack = backpackList.find { it.userId == key.first && it.propCode == key.second && it.id != backpack.id }
+                        val mainBackpack =
+                            backpackList.find { it.userId == key.first && it.propCode == key.second && it.id != backpack.id }
                         if (mainBackpack != null) {
                             val id = mainBackpack.propId ?: error("错误,背包中道具id为空!")
                             PropsManager.updateProp(id, base as BaseProp)
@@ -222,7 +232,8 @@ class PropRepair : Repair {
             } catch (_: Exception) {
                 try {
                     HibernateFactory.delete(backpack)
-                } catch (_: Exception) { /* 忽略 */ }
+                } catch (_: Exception) { /* 忽略 */
+                }
             }
         }
         return true
