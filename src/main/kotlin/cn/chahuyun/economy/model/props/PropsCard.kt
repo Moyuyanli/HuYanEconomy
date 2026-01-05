@@ -28,7 +28,7 @@ class PropsCard(
 
     override var num: Int = 1
     override var unit: String = "张"
-    override val isStack: Boolean = true
+    override var isStack: Boolean = true
 
     override suspend fun use(event: UseEvent): UseResult {
         return when (code) {
@@ -37,7 +37,8 @@ class PropsCard(
                 val userInfo = UserCoreManager.getUserInfo(sender)
                 userInfo.name = sender.nameCardOrNick
                 HibernateFactory.merge(userInfo)
-                success("改名卡使用成功!", shouldRemove = true)
+
+                success("改名卡使用成功!")
             }
 
             else -> {
