@@ -12,6 +12,7 @@ import cn.chahuyun.economy.constant.ImageDrawXY;
 import cn.chahuyun.economy.constant.TitleCode;
 import cn.chahuyun.economy.entity.UserBackpack;
 import cn.chahuyun.economy.entity.UserInfo;
+import cn.chahuyun.economy.manager.BackpackManager;
 import cn.chahuyun.economy.manager.TitleManager;
 import cn.chahuyun.economy.manager.UserCoreManager;
 import cn.chahuyun.economy.model.props.PropsCard;
@@ -178,7 +179,7 @@ public class SignAction {
         ArrayList<UserBackpack> list = new ArrayList<>(backpacks);
 
         Class<PropsCard> cardClass = PropsCard.class;
-        if (BackpackAction.checkPropInUser(userInfo, PropsCard.MONTHLY)) {
+        if (BackpackManager.checkPropInUser(userInfo, PropsCard.MONTHLY)) {
             UserBackpack prop = userInfo.getProp(PropsCard.MONTHLY);
             if (PropsManager.getProp(prop, cardClass).getStatus()) {
                 event.setSign_2(true);
@@ -198,7 +199,7 @@ public class SignAction {
                     try {
                         card = PropsManager.deserialization(propId, cardClass);
                     } catch (Exception e) {
-                        BackpackAction.delPropToBackpack(userInfo, propId);
+                        BackpackManager.delPropToBackpack(userInfo, propId);
                         continue;
                     }
                     if (event.isSign_2()) {
@@ -206,7 +207,7 @@ public class SignAction {
                     }
                     if (card.getStatus()) {
                         multiples += 1;
-                        BackpackAction.delPropToBackpack(userInfo, propId);
+                        BackpackManager.delPropToBackpack(userInfo, propId);
                         event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张双倍签到卡，本次签到奖励翻倍!"));
                         event.setSign_2(true);
                     }
@@ -216,7 +217,7 @@ public class SignAction {
                     try {
                         card = PropsManager.deserialization(propId, cardClass);
                     } catch (Exception e) {
-                        BackpackAction.delPropToBackpack(userInfo, propId);
+                        BackpackManager.delPropToBackpack(userInfo, propId);
                         continue;
                     }
                     if (event.isSign_3()) {
@@ -224,7 +225,7 @@ public class SignAction {
                     }
                     if (card.getStatus()) {
                         multiples += 2;
-                        BackpackAction.delPropToBackpack(userInfo, propId);
+                        BackpackManager.delPropToBackpack(userInfo, propId);
                         event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张三倍签到卡，本次签到奖励三翻倍!"));
                         event.setSign_3(true);
                     }
@@ -233,7 +234,7 @@ public class SignAction {
                     try {
                         card = PropsManager.deserialization(propId, cardClass);
                     } catch (Exception e) {
-                        BackpackAction.delPropToBackpack(userInfo, propId);
+                        BackpackManager.delPropToBackpack(userInfo, propId);
                         continue;
                     }
                     if (event.isSign_in()) {
@@ -274,6 +275,8 @@ public class SignAction {
     private static void sendSignImage(UserInfo userInfo, Contact subject, MessageChain messages) {
         BufferedImage userInfoImageBase = UserCoreManager.getUserInfoImageBase(userInfo);
         if (userInfoImageBase == null) {
+            // 底图生成失败时，务必回退发送纯文本，避免“签到无任何回应”
+            subject.sendMessage(messages);
             return;
         }
         Graphics2D graphics = ImageUtil.getG2d(userInfoImageBase);
