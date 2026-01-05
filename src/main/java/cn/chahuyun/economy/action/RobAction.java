@@ -15,6 +15,7 @@ import cn.chahuyun.economy.entity.UserFactor;
 import cn.chahuyun.economy.entity.UserInfo;
 import cn.chahuyun.economy.entity.UserStatus;
 import cn.chahuyun.economy.entity.rob.RobInfo;
+import cn.chahuyun.economy.manager.BackpackManager;
 import cn.chahuyun.economy.manager.TitleManager;
 import cn.chahuyun.economy.manager.UserCoreManager;
 import cn.chahuyun.economy.model.props.FunctionProps;
@@ -141,8 +142,15 @@ public class RobAction {
         RobInfo thisRobInfo = getRobInfo(thisUser);
         RobInfo atRobInfo = getRobInfo(atUser);
 
-        if (DateUtil.isSameDay(new Date(), atRobInfo.getNowTime())) {
-            Integer beRobNumber = atRobInfo.getBeRobNumber();
+        Date nowTime = atRobInfo.getNowTime();
+
+        if (nowTime == null) {
+            nowTime = new Date();
+            atRobInfo.setNowTime(nowTime);
+        }
+
+        if (DateUtil.isSameDay(new Date(), nowTime)) {
+            int beRobNumber = atRobInfo.getBeRobNumber() != null ? atRobInfo.getBeRobNumber() : 0;
             if (beRobNumber >= 20) {
                 group.sendMessage(MessageUtil.formatMessageChain(message, "他今天已经被抢了20次了，上帝都觉得他可怜！"));
                 return;
@@ -155,10 +163,8 @@ public class RobAction {
         UserFactor userFactor = FactorManager.getUserFactor(thisUser);
         UserFactor atUserFactor = FactorManager.getUserFactor(atUser);
 
-        if (BackpackAction.checkPropInUser(thisUser, FunctionProps.ELECTRIC_BATON)) {
+        if (BackpackManager.checkPropInUser(thisUser, FunctionProps.ELECTRIC_BATON)) {
             UserBackpack prop = thisUser.getProp(FunctionProps.ELECTRIC_BATON);
-
-            if (prop == null) return;
 
             if (PropsManager.usePropJava(prop, new UseEvent(user, group, thisUser)).getSuccess()) {
                 userFactor.setForce(userFactor.getForce() + 0.3);
@@ -169,10 +175,8 @@ public class RobAction {
 
         }
 
-        if (BackpackAction.checkPropInUser(atUser, FunctionProps.ELECTRIC_BATON)) {
+        if (BackpackManager.checkPropInUser(atUser, FunctionProps.ELECTRIC_BATON)) {
             UserBackpack prop = atUser.getProp(FunctionProps.ELECTRIC_BATON);
-
-            if (prop == null) return;
 
             if (PropsManager.usePropJava(prop, new UseEvent(user, group, atUser)).getSuccess()) {
                 atUserFactor.setDodge(atUserFactor.getDodge() + 0.2);
@@ -238,13 +242,14 @@ public class RobAction {
             EconomyUtil.plusMoneyToUser(user, moneyRandom);
             EconomyUtil.minusMoneyToUser(member, moneyRandom);
 
-            int robSuccess = thisRobInfo.getRobSuccess() + 1;
+            int success = thisRobInfo.getRobSuccess() != null ? thisRobInfo.getRobSuccess() : 0;
+            int robSuccess = success + 1;
             if (robSuccess == 50 && !TitleManager.checkTitleIsExist(thisUser, TitleCode.ROB)) {
                 TitleManager.addTitleInfo(thisUser, TitleCode.ROB);
                 group.sendMessage(MessageUtil.formatMessageChain(user.getId(), "你成功抢劫50次，获得 街区传说 称号！"));
             }
             thisRobInfo.setRobSuccess(robSuccess);
-            atRobInfo.setBeRobNumber(atRobInfo.getBeRobNumber() + 1);
+            atRobInfo.setBeRobNumber(success + 1);
             HibernateFactory.merge(thisRobInfo);
             HibernateFactory.merge(atRobInfo);
             return;
