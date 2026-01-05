@@ -115,7 +115,7 @@ object HuYanEconomy : KotlinPlugin(
         BankAction.init()
         TitleManager.init()
         YiYanManager.init()
-        GamesAction.init()
+        cn.chahuyun.economy.manager.GamesManager.init()
         FactorManager.init()
         PluginPropsManager.init()
 
@@ -149,7 +149,7 @@ object HuYanEconomy : KotlinPlugin(
     override fun onDisable() {
         PLUGIN_STATUS = false
 
-        GamesAction.shutdown()
+        cn.chahuyun.economy.manager.GamesManager.shutdown()
         LotteryAction.close()
         YiYanManager.shutdown()
         CronUtil.stop()
