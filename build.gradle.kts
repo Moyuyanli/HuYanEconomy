@@ -22,7 +22,7 @@ plugins {
 }
 
 group = "cn.chahuyun"
-version = "1.9.1"
+version = "1.9.2"
 
 // 关键：mirai-console 自身（app classloader）已经携带 log4j-api。
 // 如果我们的插件（private classloader）也携带任意 log4j 产物，就会出现“同名类被不同 ClassLoader 各加载一份”，
@@ -43,7 +43,7 @@ dependencies {
     //依赖
     compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
 
-    val auth = "1.3.6"
+    val auth = "1.3.7"
     compileOnly("cn.chahuyun:HuYanAuthorize:$auth")
     ksp("cn.chahuyun:HuYanAuthorize-ksp:$auth")
 
@@ -64,7 +64,7 @@ dependencies {
     // 关键：不要让 hibernate-plus 把 Hibernate/ByteBuddy/HikariCP 等传递依赖再次打进插件包（private classloader），
     // 否则会和 mirai-hibernate-plugin（shared/app）里同名类冲突，产生 ServiceConfigurationError: "xxx not a subtype"。
     // 运行期 Hibernate 由 mirai-hibernate-plugin 提供即可。
-    implementation("cn.chahuyun:hibernate-plus:2.1.0")
+    implementation("cn.chahuyun:hibernate-plus:2.1.1")
 
     testConsoleRuntime("top.mrxiaom.mirai:overflow-core:$ofVersion")
 }
@@ -93,11 +93,15 @@ buildConfig {
     )
 }
 
-
 mavenPublishing {
     // 设置成手动发布（运行结束后要到 Central 确认发布），如果要自动发布，就用 AUTOMATIC
     publishingType = MavenPublishingExtension.PublishingType.USER_MANAGED
     // 改成你自己的信息
     url = "https://github.com/moyuyanli/HuYanEconomy"
     developer("moyuyanli", "572490972@qq.com")
+}
+
+// 强制让 KSP 任务永远“不过期”
+tasks.matching { it.name.startsWith("kspKotlin") }.configureEach {
+    outputs.upToDateWhen { false }
 }
