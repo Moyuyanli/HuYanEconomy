@@ -73,6 +73,7 @@ object PluginPropsManager {
                 description = "持续一个月的5倍经济，无法与签到卡同时生效!"
                 cost = 9999
                 canBuy = true
+                isStack = false
                 canItExpire = true
                 expireDays = 30
             }
@@ -92,6 +93,7 @@ object PluginPropsManager {
                 description = "喝完就有劲了!"
                 cost = 888
                 canBuy = true
+                unit = "瓶"
                 // 红牛是消耗品，逻辑由重构后的 ConsumableProp 处理（虽然目前 FunctionProps 还没继承它，但后续可以统一）
             },
             FunctionProps(PropsKind.functionProp, FunctionProps.MUTE_1, "1分钟禁言卡").apply {
