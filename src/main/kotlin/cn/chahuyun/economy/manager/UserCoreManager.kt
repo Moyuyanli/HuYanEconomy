@@ -7,6 +7,7 @@ import cn.chahuyun.economy.plugin.ImageManager
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.ImageUtil
 import cn.chahuyun.economy.utils.Log
+import cn.chahuyun.economy.utils.MoneyFormatUtil
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUtil
 import net.mamoe.mirai.contact.*
@@ -182,7 +183,7 @@ object UserCoreManager {
         g2d.drawString(userInfo.signNumber.toString(), ImageDrawXY.SIGN_NUM.x, ImageDrawXY.SIGN_NUM.y)
 
         val money = EconomyUtil.getMoneyByUser(user).toString()
-        val bank = EconomyUtil.getMoneyByBank(user).toString()
+        val bank = MoneyFormatUtil.format(EconomyUtil.getMoneyByBank(user))
 
         g2d.font = font.deriveFont(32f)
         g2d.drawString(money, ImageDrawXY.MY_MONEY.x, ImageDrawXY.MY_MONEY.y)
