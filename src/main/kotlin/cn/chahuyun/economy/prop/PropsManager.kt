@@ -393,10 +393,12 @@ object PropsManager {
     /**
      * 获取指定类型标识符对应的道具类
      *
+     * todo 改成getPropClass
      * @param kind 道具类型标识符
      * @return 对应的Class对象，不存在返回null
      */
     @JvmStatic
+    @Deprecated("准备弃用")
     fun shopClass(kind: String): Class<out BaseProp>? = propsClassMap[kind]
 }
 
