@@ -9,6 +9,7 @@ import cn.chahuyun.economy.entity.props.PropsData
 import cn.chahuyun.economy.entity.rob.RobInfo
 import cn.chahuyun.economy.prop.BaseProp
 import cn.chahuyun.economy.prop.PropsManager
+import cn.chahuyun.economy.prop.PropsManager.destroy
 import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.json.JSONUtil
@@ -139,6 +140,12 @@ class RobRepair : Repair {
  * 将旧版扁平 JSON 升级为结构化存储
  */
 class PropRepair : Repair {
+    /**
+     * 修复
+     * 执行道具数据的修复操作，包括字段迁移、数量修复、堆叠物品合并等
+     *
+     * @return 修复操作是否成功完成，成功返回true，失败返回false
+     */
     override fun repair(): Boolean {
         // 1. 同步 PropsData 的列数据
         val propsDataList = HibernateFactory.selectList(PropsData::class.java)
@@ -165,7 +172,7 @@ class PropRepair : Repair {
                 // --- 尝试映射到新类 ---
                 var kind = propsData.kind ?: jsonObject.getStr("kind") ?: continue
                 kind = kind.uppercase(getDefault())
-                jsonObject["kind"]= kind
+                jsonObject["kind"] = kind
                 val propClass = PropsManager.shopClass(kind) ?: continue
 
                 // 使用修正后的 JSON 反序列化出对象
@@ -183,43 +190,60 @@ class PropRepair : Repair {
 
         // 2. 堆叠物品合并修复
         val backpackList = HibernateFactory.selectList(UserBackpack::class.java)
-        val stackMap = mutableMapOf<Pair<String?, String?>, BaseProp>()
+        val userBackpackToBaseProp = mutableMapOf<Pair<String, String>, UserBackpack>()
+        for_backpack@ for (backpack in backpackList) {
+            //取道具code
+            val propCode = if (backpack.propCode != null) {
+                backpack.propCode
+            } else {
+                backpack.destroy()
+                continue
+            }
 
-        for (backpack in backpackList) {
-            try {
-                val prop = PropsManager.getProp(backpack) ?: continue
-                if (prop is Stackable && prop.isStack) {
-                    val key = backpack.userId to backpack.propCode
-                    if (stackMap.containsKey(key)) {
-                        val base = stackMap[key]!! as Stackable
-                        val currentNum = if (prop.num <= 0) 1 else prop.num
-                        base.num += currentNum
+            if (backpack.propId == null) {
+                backpack.destroy()
+                continue
+            }
 
-                        // 销毁重复的道具数据
-                        val propId = backpack.propId ?: error("错误,背包中道具id为空!")
-                        PropsManager.destroyProsInBackpack(propId)
-                        // 将这个重复的背包项标记为待删除（或者直接删除）
-                        HibernateFactory.delete(backpack)
+            val template = PropsManager.getTemplate<BaseProp>(propCode)
 
-                        // 更新主道具的数据（找到 stackMap 中的那个）
-                        // 注意：这里需要找到 stackMap 中对应的那个 propId 对应的背包
-                        // 为了简化，我们直接在循环结束后统一更新，或者这里找到主背包
-                        val mainBackpack =
-                            backpackList.find { it.userId == key.first && it.propCode == key.second && it.id != backpack.id }
-                        if (mainBackpack != null) {
-                            val id = mainBackpack.propId ?: error("错误,背包中道具id为空!")
-                            PropsManager.updateProp(id, base as BaseProp)
-                        }
-                    } else {
-                        stackMap[key] = prop
+            if (template is Stackable && template.isStack) {
+                val userId = backpack.userId
+                if (userId == null) {
+                    backpack.destroy()
+                    continue
+                }
+                val key = userId to propCode
+                if (userBackpackToBaseProp.containsKey(key)) {
+                    val only = userBackpackToBaseProp[key]
+                    val one = (only?.getPropLegacy() ?: run {
+                        only?.destroy()
+                        userBackpackToBaseProp.remove(key)
+                        null
+                    }) ?: continue@for_backpack
+
+                    val prop = backpack.getPropLegacy()
+                    if (prop !is Stackable) {
+                        backpack.destroy()
+                        continue@for_backpack
                     }
+                    val num = if (prop.num <= 0) 1 else prop.num
+
+                    //可堆叠物品数量合并
+                    if (one is Stackable) {
+                        one.num += num
+                    }
+
+                    val updatedPropsData = PropsManager.serialization(one)
+                    updatedPropsData.id = only?.propId
+
+                    HibernateFactory.merge(updatedPropsData)
+                    backpack.destroy()
+                } else {
+                    userBackpackToBaseProp[key] = backpack
                 }
-            } catch (_: Exception) {
-                try {
-                    HibernateFactory.delete(backpack)
-                } catch (_: Exception) {
-                    // 忽略
-                }
+            } else {
+                continue
             }
         }
 
@@ -227,11 +251,11 @@ class PropRepair : Repair {
         HibernateFactory.selectList(UserBackpack::class.java).forEach { backpack ->
             try {
                 if (PropsManager.getProp(backpack) == null) {
-                    HibernateFactory.delete(backpack)
+                    backpack.destroy()
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 try {
-                    HibernateFactory.delete(backpack)
+                    backpack.destroy()
                 } catch (_: Exception) { /* 忽略 */
                 }
             }
