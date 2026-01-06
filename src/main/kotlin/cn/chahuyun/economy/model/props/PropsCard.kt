@@ -5,6 +5,7 @@ import cn.chahuyun.economy.prop.CardProp
 import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.economy.prop.UseResult
 import cn.chahuyun.economy.prop.UseResult.Companion.success
+import cn.chahuyun.economy.utils.DateUtil.format
 import cn.chahuyun.hibernateplus.HibernateFactory
 import net.mamoe.mirai.contact.nameCardOrNick
 
@@ -49,6 +50,9 @@ class PropsCard(
     }
 
     override fun toShopInfo(): String {
-        return "道具名称: $name\n道具描述: $description\n道具价值: $cost 金币"
+        return when (code) {
+            MONTHLY -> "道具名称: $name\n道具描述: $description\n过期时间: ${expiredTime?.format() ?: "永久"}\n道具价值: $cost 金币"
+            else -> "道具名称: $name\n道具描述: $description\n道具价值: $cost 金币"
+        }
     }
 }
