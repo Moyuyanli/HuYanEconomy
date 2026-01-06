@@ -42,17 +42,27 @@ class UserBackpack(
     /**
      * 获取该背包道具
      *
-     * @param tClass 类型
      * @return 道具
      */
-    fun <T : BaseProp> getProp(tClass: Class<T>): T? {
+    inline fun <reified T : BaseProp> getProp(): T {
+        return PropsManager.getProp(this, T::class.java)
+    }
+
+    /**
+     * 获取指定类型的属性对象
+     *
+     * @param T 泛型类型参数，必须继承自BaseProp
+     * @param tClass 要获取的属性类型的Class对象
+     * @return 返回指定类型的属性实例
+     */
+    fun <T : BaseProp> getProp(tClass: Class<T>): T {
         return PropsManager.getProp(this, tClass)
     }
 
     /**
      * 获取该背包道具 (兼容旧版 API)
      */
-    @Deprecated("使用泛型版本 getProp(clazz)", ReplaceWith("getProp(tClass)"))
+    @Deprecated("使用泛型版本 getProp(clazz)", ReplaceWith("getProp()"))
     fun getPropLegacy(): BaseProp? {
         return PropsManager.getProp(this)
     }
