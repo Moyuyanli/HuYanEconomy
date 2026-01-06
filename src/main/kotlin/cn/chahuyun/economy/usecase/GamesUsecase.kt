@@ -13,6 +13,7 @@ import cn.chahuyun.economy.fish.FishStartEvent
 import cn.chahuyun.economy.manager.GamesManager
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.manager.UserCoreManager
+import cn.chahuyun.economy.model.fish.FishBait
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.repository.FishRepository
@@ -45,9 +46,9 @@ object GamesUsecase {
         for (backpack in userInfo.backpacks) {
             if (event.fishBait == null && backpack.propKind == cn.chahuyun.economy.constant.PropsKind.fishBait) {
                 val bait = try {
-                    cn.chahuyun.economy.prop.PropsManager.getProp(
+                    PropsManager.getProp(
                         backpack,
-                        cn.chahuyun.economy.model.fish.FishBait::class.java
+                        FishBait::class.java
                     )
                 } catch (e: Exception) {
                     if (e.message == "该道具数据不存在") {
