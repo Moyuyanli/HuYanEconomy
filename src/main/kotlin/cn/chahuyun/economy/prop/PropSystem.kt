@@ -88,6 +88,13 @@ interface BaseProp : Serializable {
      * @return 格式化的商店展示信息字符串
      */
     fun toShopInfo(): String
+
+    /**
+     * 克隆当前属性对象，创建并返回一个新的BaseProp实例
+     *
+     * @return BaseProp 返回当前对象的一个克隆副本
+     */
+    fun copyProp(): BaseProp
 }
 
 
@@ -170,7 +177,7 @@ abstract class AbstractProp(
     override val kind: String,
     override val code: String,
     override var name: String,
-) : BaseProp {
+) : BaseProp, Cloneable {
     override var description: String = ""
     override var cost: Int = 0
     override var canBuy: Boolean = false
@@ -179,6 +186,26 @@ abstract class AbstractProp(
 
     override fun toString(): String =
         "道具名称: $name\n道具数量: ${if (this is Stackable) "${this.num} ${this.unit}" else 1}\n道具描述: $description"
+
+    /**
+     * 实现接口要求的克隆方法
+     */
+    @Suppress("UNCHECKED_CAST")
+    override fun copyProp(): BaseProp {
+        return this.clone() as BaseProp
+    }
+
+    /**
+     * 重写 Object 的 clone 方法，并提升权限为 public
+     */
+    public override fun clone(): Any {
+        return try {
+            super.clone() // 调用 JVM 原生内存复制
+        } catch (e: CloneNotSupportedException) {
+            // 理论上只要实现了 Cloneable 接口，这里就不会报错
+            throw InternalError(e)
+        }
+    }
 }
 
 /**
