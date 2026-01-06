@@ -37,7 +37,7 @@ class FunctionProps(
 
     override var num: Int = 1
     override var unit: String = "个"
-    override val isStack: Boolean = true
+    override var isStack: Boolean = true
 
     override suspend fun use(event: UseEvent): UseResult {
         return when (code) {
