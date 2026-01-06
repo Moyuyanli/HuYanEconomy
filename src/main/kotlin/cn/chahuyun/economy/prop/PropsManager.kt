@@ -3,6 +3,7 @@ package cn.chahuyun.economy.prop
 import cn.chahuyun.economy.entity.UserBackpack
 import cn.chahuyun.economy.entity.props.PropsData
 import cn.chahuyun.economy.model.props.UseEvent
+import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUtil
 import cn.hutool.json.JSONConfig
@@ -19,6 +20,9 @@ object PropsManager {
 
     private val propsClassMap = ConcurrentHashMap<String, Class<out BaseProp>>()
 
+    @PublishedApi
+    internal val propsTemplateMap = ConcurrentHashMap<String, BaseProp>()
+
     /**
      * 注册道具类型到管理器
      *
@@ -27,11 +31,38 @@ object PropsManager {
      * @return 注册成功返回true，如果该类型已存在则返回false
      */
     @JvmStatic
-    fun registerProp(kind: String, propClass: Class<out BaseProp>): Boolean {
+    fun registerKindToPropClass(kind: String, propClass: Class<out BaseProp>): Boolean {
         if (propsClassMap.containsKey(kind)) return false
         propsClassMap[kind] = propClass
         return true
     }
+
+
+    /**
+     * 注册代码到道具映射表中
+     *
+     * 如果该道具可以购买,同步注册到商店
+     *
+     * @param prop 要注册的基础道具对象
+     * @param code 要注册的道具代码，如果为null则使用prop.code作为默认值
+     * @return 注册成功返回true，如果该代码已存在则返回false
+     */
+    @JvmStatic
+    fun registerCodeToProp(prop: BaseProp, code: String? = null): Boolean {
+        if (!propsClassMap.containsKey(prop.kind)) {
+            Log.debug("道具模板的类型未注册!")
+            return false
+        }
+        val onlyCode = code ?: prop.code
+        // 检查道具代码是否已存在，存在则返回false
+        if (propsTemplateMap.containsKey(onlyCode)) return false
+        // 将道具添加到模板映射表中
+        propsTemplateMap[onlyCode] = prop
+        // 如果道具可购买，则添加到商店中
+        if (prop.canBuy) PropsShop.addShop(onlyCode, prop)
+        return true
+    }
+
 
     /**
      * 检查指定的道具类型代码是否存在
@@ -40,7 +71,54 @@ object PropsManager {
      * @return 存在返回true，不存在返回false
      */
     @JvmStatic
-    fun checkCodeExist(kind: String): Boolean = propsClassMap.containsKey(kind)
+    fun checkKindExist(kind: String): Boolean = propsClassMap.containsKey(kind)
+
+    /**
+     * 检查指定的道具code是否存在
+     *
+     * @param code 道具code标识符
+     * @return 存在返回true，不存在返回false
+     */
+    @JvmStatic
+    fun checkCodeExist(code: String): Boolean = propsTemplateMap.containsKey(code)
+
+    /**
+     * 【Kotlin 专用】获取道具模板副本
+     * 利用 reified 关键字实化泛型，支持运行时类型检查
+     * * 调用示例：val weapon = PropManager.getTemplate<WeaponProp>("W001")
+     */
+    inline fun <reified T : BaseProp> getTemplate(code: String): T {
+        val prop = propsTemplateMap[code] ?: error("获取道具模板失败, 道具 code: [$code] 不存在!")
+        val copy = prop.copyProp()
+
+        // 由于使用了 reified，这里的 is T 在运行时是真实有效的
+        if (copy !is T) {
+            error("道具类型不匹配! 期望: ${T::class.java.simpleName}, 实际: ${copy.javaClass.simpleName}")
+        }
+        return copy
+    }
+
+    /**
+     * 【Java 专用】获取道具模板副本
+     * 通过 Class 显式传递类型信息
+     * * 调用示例：WeaponProp w = PropManager.getTemplate("W001", WeaponProp.class)
+     */
+    @JvmStatic
+    @JvmName("getTemplate") // 确保 Java 端看到的名称是 getTemplate
+    fun <T : BaseProp> getTemplate(code: String, clazz: Class<T>): T {
+        val prop =
+            propsTemplateMap[code] ?: throw IllegalArgumentException("获取道具模板失败, 道具 code: [$code] 不存在!")
+        val copy = prop.copyProp()
+
+        // 在 Java 环境下，使用 isInstance 检查类型
+        if (!clazz.isInstance(copy)) {
+            throw IllegalArgumentException("道具类型不匹配! 期望: ${clazz.simpleName}, 实际: ${copy.javaClass.simpleName}")
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return copy as T
+    }
+
 
     /**
      * 根据用户背包信息获取道具实例
@@ -54,8 +132,8 @@ object PropsManager {
             val clazz = propsClassMap[backpack.propKind] ?: return null
             val propId = backpack.propId ?: error("错误,背包中道具id为空!")
             deserialization(propId, clazz)
-        } catch (_: Exception) {
-            HibernateFactory.delete(backpack)
+        } catch (e: Exception) {
+            Log.error("获取背包道具失败(ID: ${backpack.id}), 可能数据已损坏: ${e.message}")
             null
         }
     }
@@ -64,15 +142,30 @@ object PropsManager {
      * 根据用户背包信息和指定类型获取道具实例
      *
      * @param backpack 用户背包对象
+     * @return 返回指定类型的道具实例
+     */
+    @JvmName("getPropWithType")
+    inline fun <reified T : BaseProp> getProp(backpack: UserBackpack): T {
+        return getProp(backpack, T::class.java)
+    }
+
+    /**
+     * 根据用户背包信息和指定类型获取道具实例
+     *
+     * java 专用
+     *
+     * @param backpack 用户背包对象
      * @param clazz 道具类型的Class对象
      * @return 返回指定类型的道具实例
      */
     @JvmStatic
-    @Suppress("UNCHECKED_CAST")
     fun <T : BaseProp> getProp(backpack: UserBackpack, clazz: Class<T>): T {
-        val propId = backpack.propId ?: error("错误,背包中道具id为空!")
+        // 检查背包中道具id是否为空，为空则抛出异常
+        val propId = backpack.propId ?: throw IllegalArgumentException("背包中道具id为空!")
+        // 通过道具id和类型进行反序列化获取道具实例
         return deserialization(propId, clazz)
     }
+
 
     /**
      * 根据道具类型和ID获取道具实例
@@ -140,14 +233,14 @@ object PropsManager {
         if (result.success) {
             val propId = backpack.propId ?: error("错误,背包中道具id为空!")
             if (result.shouldRemove) {
-                destroyProsInBackpack(propId)
+                destroyProsAndBackpack(propId)
             } else if (result.shouldUpdate) {
                 if (prop is Stackable) {
                     if (prop.num > 1) {
                         prop.num--
                         updateProp(propId, prop)
                     } else {
-                        destroyProsInBackpack(propId)
+                        destroyProsAndBackpack(propId)
                     }
                 } else {
                     updateProp(propId, prop)
@@ -175,11 +268,33 @@ object PropsManager {
      * @param propId 道具ID
      */
     @JvmStatic
-    fun destroyProsInBackpack(propId: Long) {
+    fun destroyProsAndBackpack(propId: Long) {
         destroyPros(propId)
         val backpack = HibernateFactory.selectOne(UserBackpack::class.java, "propId", propId)
         if (backpack != null) HibernateFactory.delete(backpack)
     }
+
+    /**
+     * 销毁背包中的道具（同时删除道具数据和背包记录）
+     *
+     * @param backpack 用户背包对象，包含要销毁的道具信息
+     */
+    @JvmStatic
+    fun destroyProsAndBackpackByBackpack(backpack: UserBackpack) {
+        val propId = backpack.propId ?: error("销毁道具错误,背包无对应道具id")
+        // 销毁道具数据
+        destroyPros(propId)
+        // 查询并删除背包记录
+        val userBackpack = HibernateFactory.selectOne(UserBackpack::class.java, "propId", propId)
+        if (userBackpack != null) HibernateFactory.delete(userBackpack)
+    }
+
+    /**
+     * 扩展函数，销毁当前背包中的道具
+     * 调用destroyProsAndBackpackByBackpack方法销毁当前背包对象对应的道具
+     */
+    fun UserBackpack.destroy() = destroyProsAndBackpackByBackpack(this)
+
 
     /**
      * 核心字段同步序列化
@@ -229,10 +344,17 @@ object PropsManager {
     @JvmStatic
     fun <T : BaseProp> deserialization(id: Long, clazz: Class<T>): T {
         val propsData = HibernateFactory.selectOneById<PropsData>(id)
-            ?: throw RuntimeException("该道具数据不存在")
+            ?: throw RuntimeException("该道具数据不存在, ID: $id")
 
         val jsonConfig = JSONConfig.create().setIgnoreError(true)
-        return JSONUtil.toBean(propsData.data, jsonConfig, clazz)
+        val data = propsData.data ?: throw RuntimeException("道具数据内容为空，ID: $id")
+
+        return try {
+            JSONUtil.toBean(data, jsonConfig, clazz)
+                ?: throw RuntimeException("道具反序列化结果为空")
+        } catch (e: Exception) {
+            throw RuntimeException("道具反序列化失败，ID: $id, 目标类型: ${clazz.name}, 错误: ${e.message}", e)
+        }
     }
 
     /**
@@ -245,7 +367,14 @@ object PropsManager {
     @JvmStatic
     fun <T : BaseProp> deserialization(one: PropsData, clazz: Class<T>): T {
         val jsonConfig = JSONConfig.create().setIgnoreError(true)
-        return JSONUtil.toBean(one.data, jsonConfig, clazz)
+        val data = one.data ?: throw RuntimeException("道具数据内容为空，ID: ${one.id}")
+
+        return try {
+            JSONUtil.toBean(data, jsonConfig, clazz)
+                ?: throw RuntimeException("道具反序列化结果为空")
+        } catch (e: Exception) {
+            throw RuntimeException("道具反序列化失败，ID: ${one.id}, 目标类型: ${clazz.name}, 错误: ${e.message}", e)
+        }
     }
 
     /**
