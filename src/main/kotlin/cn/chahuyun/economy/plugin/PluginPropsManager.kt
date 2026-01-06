@@ -7,7 +7,6 @@ import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.PropsCard
 import cn.chahuyun.economy.prop.Expirable
 import cn.chahuyun.economy.prop.PropsManager
-import cn.chahuyun.economy.prop.PropsShop
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.cron.CronUtil
@@ -21,9 +20,9 @@ object PluginPropsManager {
     @JvmStatic
     fun init() {
         // 注册道具类型
-        PropsManager.registerProp(PropsKind.card, PropsCard::class.java)
-        PropsManager.registerProp(PropsKind.functionProp, FunctionProps::class.java)
-        PropsManager.registerProp(PropsKind.fishBait, FishBait::class.java)
+        PropsManager.registerKindToPropClass(PropsKind.card, PropsCard::class.java)
+        PropsManager.registerKindToPropClass(PropsKind.functionProp, FunctionProps::class.java)
+        PropsManager.registerKindToPropClass(PropsKind.fishBait, FishBait::class.java)
 
         // 初始化签到卡
         initCards()
@@ -55,6 +54,7 @@ object PluginPropsManager {
                 cost = 5888
                 canBuy = true
                 canItExpire = false
+                isStack = false
             },
             PropsCard(PropsKind.card, PropsCard.NAME_CHANGE, "改名卡").apply {
                 description = "刷新你现在的信息!"
@@ -78,7 +78,7 @@ object PluginPropsManager {
                 expireDays = 30
             }
         )
-        cards.forEach { PropsShop.addShop(it.code, it) }
+        cards.forEach { PropsManager.registerCodeToProp(it) }
     }
 
     private fun initFunctionProps() {
@@ -88,6 +88,8 @@ object PluginPropsManager {
                 cost = 1888
                 canBuy = true
                 electricity = 100
+                unit = "把"
+                isStack = false
             },
             FunctionProps(PropsKind.functionProp, FunctionProps.RED_EYES, "红牛").apply {
                 description = "喝完就有劲了!"
@@ -101,15 +103,17 @@ object PluginPropsManager {
                 cost = 3600
                 canBuy = true
                 muteTime = 1
+                unit = "张"
             },
             FunctionProps(PropsKind.functionProp, FunctionProps.MUTE_30, "30分钟禁言卡").apply {
                 description = "对人宝具:强制退网半小时！"
                 cost = 90000
                 canBuy = true
                 muteTime = 30
+                unit = "张"
             }
         )
-        props.forEach { PropsShop.addShop(it.code, it) }
+        props.forEach { PropsManager.registerCodeToProp(it) }
     }
 
     private fun initFishBaits() {
@@ -121,6 +125,7 @@ object PluginPropsManager {
                 cost = 66
                 description = "最基础的鱼饵，量大管饱(鱼管饱)"
                 canBuy = true
+                unit = "包"
             },
             FishBait(PropsKind.fishBait, FishBait.BAIT_2, "中级鱼饵").apply {
                 num = 20
@@ -129,6 +134,7 @@ object PluginPropsManager {
                 cost = 269
                 description = "中级鱼饵，闻着就有一股香味。"
                 canBuy = true
+                unit = "包"
             },
             FishBait(PropsKind.fishBait, FishBait.BAIT_3, "高级鱼饵").apply {
                 num = 15
@@ -137,6 +143,7 @@ object PluginPropsManager {
                 cost = 588
                 description = "除了贵，全是优点"
                 canBuy = true
+                unit = "包"
             },
             FishBait(PropsKind.fishBait, FishBait.BAIT_L_1, "特化型(香味)鱼饵").apply {
                 num = 18
@@ -145,6 +152,7 @@ object PluginPropsManager {
                 cost = 450
                 description = "袋子都封不住他的气味，看来传播性很好！"
                 canBuy = true
+                unit = "包"
             },
             FishBait(PropsKind.fishBait, FishBait.BAIT_Q_1, "特化型(口味)鱼饵").apply {
                 num = 18
@@ -153,9 +161,10 @@ object PluginPropsManager {
                 cost = 350
                 description = "我家鱼吃了都说好吃！"
                 canBuy = true
+                unit = "包"
             }
         )
-        baits.forEach { PropsShop.addShop(it.code, it) }
+        baits.forEach { PropsManager.registerCodeToProp(it) }
     }
 }
 
@@ -171,7 +180,7 @@ class PropExpireCheckTask : Task {
 
                 if (prop is Expirable && prop.isExpired()) {
                     Log.info("道具已过期，正在销毁: kind=$kind, code=${prop.code}, id=${id}")
-                    PropsManager.destroyProsInBackpack(id)
+                    PropsManager.destroyProsAndBackpack(id)
                 }
             } catch (e: Exception) {
                 Log.error("检查道具过期时发生异常，道具 id=${data.id}", e)
