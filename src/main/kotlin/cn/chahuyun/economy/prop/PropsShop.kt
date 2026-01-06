@@ -14,12 +14,12 @@ object PropsShop {
      * 添加道具到商店
      */
     @JvmStatic
-    fun addShop(code: String, props: BaseProp) {
+    internal fun addShop(code: String, props: BaseProp) {
         if (shop.containsKey(code)) {
             Log.debug("道具已存在于商店中: $code")
             return
         }
-        if (!PropsManager.checkCodeExist(props.kind)) {
+        if (!PropsManager.checkKindExist(props.kind)) {
             Log.error("道具类型未注册: ${props.kind}")
             return
         }
