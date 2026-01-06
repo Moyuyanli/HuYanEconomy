@@ -175,9 +175,12 @@ class PropRepair : Repair {
                 jsonObject["kind"] = kind
                 val propClass = PropsManager.shopClass(kind) ?: continue
 
+                if (jsonObject.containsKey("code") || jsonObject.getStr("code").isNullOrBlank()) {
+                    jsonObject["code"] = HibernateFactory.selectOne<UserBackpack>("propId", propsData.id!!)
+                }
+
                 // 使用修正后的 JSON 反序列化出对象
                 val prop = JSONUtil.toBean(jsonObject, propClass)
-
                 // --- 利用 PropsManager 同步核心列数据 ---
                 val updatedPropsData = PropsManager.serialization(prop)
                 updatedPropsData.id = propsData.id
