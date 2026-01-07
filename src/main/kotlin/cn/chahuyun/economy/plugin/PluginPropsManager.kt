@@ -42,12 +42,14 @@ object PluginPropsManager {
                 cost = 88
                 canBuy = true
                 canItExpire = false
+                isConsumption = true
             },
             PropsCard(PropsKind.card, PropsCard.SIGN_3, "签到三倍金币卡").apply {
                 description = "\"不要999，不要888，只要188金币，你的下一次签到将翻三倍！\""
                 cost = 188
                 canBuy = true
                 canItExpire = false
+                isConsumption = true
             },
             PropsCard(PropsKind.card, PropsCard.HEALTH, "医保卡").apply {
                 description = "少年，你还在为付不起医药费而发愁吗？？？"
@@ -61,6 +63,7 @@ object PluginPropsManager {
                 cost = 2333
                 canBuy = true
                 canItExpire = false
+                isConsumption = true
             },
             PropsCard(PropsKind.card, PropsCard.SIGN_IN, "补签卡").apply {
                 description = "\"花123购买一张补签卡，将会在你的下次签到自动生效\""
@@ -68,6 +71,7 @@ object PluginPropsManager {
                 canBuy = true
                 canItExpire = false
                 status = true
+                isConsumption = true
             },
             PropsCard(PropsKind.card, PropsCard.MONTHLY, "签到月卡").apply {
                 description = "持续一个月的5倍经济，无法与签到卡同时生效!"
@@ -96,7 +100,7 @@ object PluginPropsManager {
                 cost = 888
                 canBuy = true
                 unit = "瓶"
-                // 红牛是消耗品，逻辑由重构后的 ConsumableProp 处理（虽然目前 FunctionProps 还没继承它，但后续可以统一）
+                isConsumption = true
             },
             FunctionProps(PropsKind.functionProp, FunctionProps.MUTE_1, "1分钟禁言卡").apply {
                 description = "你怎么不说话了？"
@@ -104,6 +108,7 @@ object PluginPropsManager {
                 canBuy = true
                 muteTime = 1
                 unit = "张"
+                isConsumption = true
             },
             FunctionProps(PropsKind.functionProp, FunctionProps.MUTE_30, "30分钟禁言卡").apply {
                 description = "对人宝具:强制退网半小时！"
@@ -111,6 +116,7 @@ object PluginPropsManager {
                 canBuy = true
                 muteTime = 30
                 unit = "张"
+                isConsumption = true
             }
         )
         props.forEach { PropsManager.registerCodeToProp(it) }
@@ -175,7 +181,7 @@ class PropExpireCheckTask : Task {
             try {
                 val kind = data.kind ?: continue
                 val id = data.id ?: continue
-                val propClass = PropsManager.shopClass(kind) ?: continue
+                val propClass = PropsManager.getPropClass(kind) ?: continue
                 val prop = PropsManager.deserialization(data, propClass)
 
                 if (prop is Expirable && prop.isExpired()) {
