@@ -29,6 +29,8 @@ class FishBait(
         )
     }
 
+    override var isConsumption: Boolean = true
+
     var level: Int = 1
     var quality: Float = 0.01f
 
