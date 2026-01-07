@@ -22,7 +22,7 @@ plugins {
 }
 
 group = "cn.chahuyun"
-version = "1.9.3"
+version = "1.9.4"
 
 // 关键：mirai-console 自身（app classloader）已经携带 log4j-api。
 // 如果我们的插件（private classloader）也携带任意 log4j 产物，就会出现“同名类被不同 ClassLoader 各加载一份”，
