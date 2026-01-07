@@ -7,7 +7,7 @@ import cn.chahuyun.economy.plugin.ImageManager
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.ImageUtil
 import cn.chahuyun.economy.utils.Log
-import cn.chahuyun.economy.utils.MoneyFormatUtil
+import cn.chahuyun.economy.utils.MoneyFormatUtil.toMoneyFormat
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUtil
 import net.mamoe.mirai.contact.*
@@ -182,14 +182,16 @@ object UserCoreManager {
         g2d.drawString(signTime, ImageDrawXY.SIGN_TIME.x, ImageDrawXY.SIGN_TIME.y)
         g2d.drawString(userInfo.signNumber.toString(), ImageDrawXY.SIGN_NUM.x, ImageDrawXY.SIGN_NUM.y)
 
-        val money = EconomyUtil.getMoneyByUser(user).toString()
-        val bank = MoneyFormatUtil.format(EconomyUtil.getMoneyByBank(user))
+        val money = EconomyUtil.getMoneyByUser(user).toMoneyFormat()
+        val bank = EconomyUtil.getMoneyByBank(user).toMoneyFormat()
+        val signEarnings = userInfo.signEarnings.toMoneyFormat()
+        val bankEarnings = userInfo.bankEarnings.toMoneyFormat()
 
         g2d.font = font.deriveFont(32f)
         g2d.drawString(money, ImageDrawXY.MY_MONEY.x, ImageDrawXY.MY_MONEY.y)
-        g2d.drawString(userInfo.signEarnings.toString(), ImageDrawXY.SIGN_OBTAIN.x, ImageDrawXY.SIGN_OBTAIN.y)
+        g2d.drawString(signEarnings, ImageDrawXY.SIGN_OBTAIN.x, ImageDrawXY.SIGN_OBTAIN.y)
         g2d.drawString(bank, ImageDrawXY.BANK_MONEY.x, ImageDrawXY.BANK_MONEY.y)
-        g2d.drawString(userInfo.bankEarnings.toString(), ImageDrawXY.BANK_INTEREST.x, ImageDrawXY.BANK_INTEREST.y)
+        g2d.drawString(bankEarnings, ImageDrawXY.BANK_INTEREST.x, ImageDrawXY.BANK_INTEREST.y)
 
         g2d.dispose()
         return bottom
