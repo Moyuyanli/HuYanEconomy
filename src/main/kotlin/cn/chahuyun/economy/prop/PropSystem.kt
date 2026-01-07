@@ -163,6 +163,12 @@ interface Expirable {
  * 可使用能力接口
  */
 interface Usable {
+
+    /**
+     * 使用后是否消耗
+     */
+    var isConsumption: Boolean
+
     /**
      * 使用道具的具体逻辑
      * @return 使用结果，包含反馈消息及后续处理指令
@@ -213,6 +219,8 @@ abstract class AbstractProp(
  */
 abstract class ConsumableProp(kind: String, code: String, name: String) :
     AbstractProp(kind, code, name), Stackable, Usable {
+    override var isConsumption: Boolean = false
+    
     override var num: Int = 1
     override var unit: String = "个"
 }
@@ -226,6 +234,7 @@ abstract class CardProp(kind: String, code: String, name: String) :
     override var expireDays: Int = -1
     override var expiredTime: Date? = null
     override var canItExpire: Boolean = true
+    override var isConsumption: Boolean = false
 
     var status: Boolean = false
     var enabledTime: Date? = null

@@ -1,4 +1,4 @@
-@file:Suppress("SqlResolve")
+@file:Suppress("SqlResolve", "DEPRECATION")
 
 package cn.chahuyun.economy.repair
 
@@ -173,7 +173,7 @@ class PropRepair : Repair {
                 var kind = propsData.kind ?: jsonObject.getStr("kind") ?: continue
                 kind = kind.uppercase(getDefault())
                 jsonObject["kind"] = kind
-                val propClass = PropsManager.shopClass(kind) ?: continue
+                val propClass = PropsManager.getPropClass(kind) ?: continue
 
                 if (jsonObject.containsKey("code") || jsonObject.getStr("code").isNullOrBlank()) {
                     jsonObject["code"] = HibernateFactory.selectOne<UserBackpack>("propId", propsData.id!!)
@@ -256,7 +256,7 @@ class PropRepair : Repair {
                 if (PropsManager.getProp(backpack) == null) {
                     backpack.destroy()
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 try {
                     backpack.destroy()
                 } catch (_: Exception) { /* 忽略 */
