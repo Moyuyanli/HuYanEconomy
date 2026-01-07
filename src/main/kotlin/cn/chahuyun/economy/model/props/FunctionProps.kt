@@ -38,6 +38,10 @@ class FunctionProps(
     override var num: Int = 1
     override var unit: String = "个"
     override var isStack: Boolean = true
+    /**
+     * 使用后是否消耗
+     */
+    override var isConsumption: Boolean = false
 
     override suspend fun use(event: UseEvent): UseResult {
         return when (code) {
