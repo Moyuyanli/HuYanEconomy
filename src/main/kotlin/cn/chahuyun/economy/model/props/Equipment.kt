@@ -13,6 +13,12 @@ class Equipment(
     name: String = "",
 ) : AbstractProp(kind, code, name), Usable {
 
+    /**
+     * 使用后是否消耗
+     */
+    override var isConsumption: Boolean = false
+
+
     override suspend fun use(event: UseEvent): UseResult {
         // 装备逻辑：比如穿上装备，增加属性等
         return UseResult.success("已装备 $name")
