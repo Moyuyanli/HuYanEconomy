@@ -235,7 +235,7 @@ object PropsManager {
             if (result.shouldRemove) {
                 destroyProsAndBackpack(propId)
             } else if (result.shouldUpdate) {
-                if (prop is Stackable) {
+                if (prop is Stackable && prop.isConsumption) {
                     if (prop.num > 1) {
                         prop.num--
                         updateProp(propId, prop)
@@ -378,6 +378,16 @@ object PropsManager {
     }
 
     /**
+     * 获取指定类型标识符对应的道具类
+     *
+     * @param kind 道具类型标识符
+     * @return 对应的Class对象，不存在返回null
+     */
+    @JvmStatic
+    fun getPropClass(kind: String): Class<out BaseProp>? = propsClassMap[kind]
+
+
+    /**
      * 复制道具对象
      *
      * @param baseProp 原始道具实例
@@ -385,6 +395,7 @@ object PropsManager {
      */
     @JvmStatic
     @Suppress("UNCHECKED_CAST")
+    @Deprecated("准备弃用,请使用道具自己的clone方法")
     fun <T : BaseProp> copyProp(baseProp: T): T {
         val data = serialization(baseProp)
         return deserialization(data, baseProp.javaClass)
@@ -398,7 +409,7 @@ object PropsManager {
      * @return 对应的Class对象，不存在返回null
      */
     @JvmStatic
-    @Deprecated("准备弃用")
+    @Deprecated("准备弃用", replaceWith = ReplaceWith("getPropClass(kind)"))
     fun shopClass(kind: String): Class<out BaseProp>? = propsClassMap[kind]
 }
 
