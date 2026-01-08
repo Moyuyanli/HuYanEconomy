@@ -94,7 +94,7 @@ interface BaseProp : Serializable {
      *
      * @return BaseProp 返回当前对象的一个克隆副本
      */
-    fun copyProp(): BaseProp
+    fun <T : BaseProp> copyProp(): T
 }
 
 
@@ -197,9 +197,10 @@ abstract class AbstractProp(
      * 实现接口要求的克隆方法
      */
     @Suppress("UNCHECKED_CAST")
-    override fun copyProp(): BaseProp {
-        return this.clone() as BaseProp
+    override fun <T : BaseProp> copyProp(): T {
+        return this.clone() as T
     }
+
 
     /**
      * 重写 Object 的 clone 方法，并提升权限为 public
