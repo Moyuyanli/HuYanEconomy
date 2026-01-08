@@ -191,7 +191,7 @@ abstract class AbstractProp(
     override fun toShopInfo(): String = "道具名称: $name\n道具描述: $description\n道具价值: $cost 金币"
 
     override fun toString(): String =
-        "道具名称: $name\n道具数量: ${if (this is Stackable) "${this.num} ${this.unit}" else 1}\n道具描述: $description"
+        "道具名称: $name\n道具数量: ${if (this is Stackable && isStack) "${this.num} ${this.unit}" else 1}\n道具描述: $description"
 
     /**
      * 实现接口要求的克隆方法
@@ -220,7 +220,7 @@ abstract class AbstractProp(
 abstract class ConsumableProp(kind: String, code: String, name: String) :
     AbstractProp(kind, code, name), Stackable, Usable {
     override var isConsumption: Boolean = false
-    
+
     override var num: Int = 1
     override var unit: String = "个"
 }
