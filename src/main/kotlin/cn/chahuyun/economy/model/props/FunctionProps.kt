@@ -113,8 +113,8 @@ class FunctionProps(
 
     override fun toString(): String {
         return when (code) {
-            RED_EYES -> "道具名称: $name\n道具数量: ${if (this is Stackable) "${this.num} ${this.unit}" else 1}\n持续时间: $RED_EYES_CD 分钟\n描述: $description"
-            ELECTRIC_BATON -> "道具名称: $name\n道具数量: ${if (this is Stackable) "${this.num} ${this.unit}" else 1}\n电量: $electricity%\n描述: $description"
+            RED_EYES -> "道具名称: $name\n道具数量: ${if (isStack) "${this.num} ${this.unit}" else 1}\n持续时间: $RED_EYES_CD 分钟\n描述: $description"
+            ELECTRIC_BATON -> "道具名称: $name\n道具数量: ${if (isStack) "${this.num} ${this.unit}" else 1}\n电量: $electricity%\n描述: $description"
             else -> super.toString()
         }
     }
