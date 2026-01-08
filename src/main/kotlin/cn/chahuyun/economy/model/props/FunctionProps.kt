@@ -2,6 +2,7 @@ package cn.chahuyun.economy.model.props
 
 import cn.chahuyun.economy.config.EconomyConfig
 import cn.chahuyun.economy.constant.PropConstant
+import cn.chahuyun.economy.constant.PropConstant.RED_EYES_CD
 import cn.chahuyun.economy.plugin.FactorManager
 import cn.chahuyun.economy.prop.AbstractProp
 import cn.chahuyun.economy.prop.Stackable
@@ -38,6 +39,7 @@ class FunctionProps(
     override var num: Int = 1
     override var unit: String = "个"
     override var isStack: Boolean = true
+
     /**
      * 使用后是否消耗
      */
@@ -51,14 +53,14 @@ class FunctionProps(
                 if (buff == null) {
                     factor.setBuffValue(RED_EYES, DateUtil.now())
                     FactorManager.merge(factor)
-                    UseResult.success("你猛猛炫了一瓶红牛!", shouldRemove = true)
+                    UseResult.success("你猛猛炫了一瓶红牛!")
                 } else {
                     val parse = DateUtil.parse(buff)
                     val between = DateUtil.between(Date(), parse, DateUnit.MINUTE)
                     if (between > PropConstant.RED_EYES_CD) {
                         factor.setBuffValue(RED_EYES, DateUtil.now())
                         FactorManager.merge(factor)
-                        UseResult.success("续上一瓶红牛!", shouldRemove = true)
+                        UseResult.success("续上一瓶红牛!")
                     } else {
                         UseResult.fail("红牛喝多了可对肾不好!")
                     }
@@ -68,7 +70,7 @@ class FunctionProps(
             ELECTRIC_BATON -> {
                 if (electricity >= 5) {
                     electricity -= 5
-                    UseResult.success("使用了电棒，电量剩余 $electricity%", shouldRemove = false)
+                    UseResult.success("使用了电棒，电量剩余 $electricity%")
                 } else {
                     UseResult.fail("电棒没电了!")
                 }
@@ -89,7 +91,7 @@ class FunctionProps(
                             val member = ShareUtils.getAtMember(messageEvent)
                             if (member != null) {
                                 member.mute(muteTime * 60)
-                                return UseResult.success("禁言卡使用成功！", shouldRemove = true)
+                                return UseResult.success("禁言卡使用成功！")
                             }
                         }
                     }
@@ -102,6 +104,18 @@ class FunctionProps(
     }
 
     override fun toShopInfo(): String {
-        return "道具名称: $name\n价格: $cost 金币\n描述: $description"
+        return when (code) {
+            RED_EYES -> "道具名称: $name\n价格: $cost 金币\n持续时间: $RED_EYES_CD 分钟\n描述: $description"
+            ELECTRIC_BATON -> "道具名称: $name\n价格: $cost 金币\n电量: $electricity%\n描述: $description"
+            else -> "道具名称: $name\n价格: $cost 金币\n描述: $description"
+        }
+    }
+
+    override fun toString(): String {
+        return when (code) {
+            RED_EYES -> "道具名称: $name\n道具数量: ${if (this is Stackable) "${this.num} ${this.unit}" else 1}\n持续时间: $RED_EYES_CD 分钟\n描述: $description"
+            ELECTRIC_BATON -> "道具名称: $name\n道具数量: ${if (this is Stackable) "${this.num} ${this.unit}" else 1}\n电量: $electricity%\n描述: $description"
+            else -> super.toString()
+        }
     }
 }
