@@ -67,11 +67,11 @@ object GamesUsecase {
 
                     bait.num == 1 -> {
                         toRemove.add(backpack.propId ?: 0L)
-                        event.fishBait = PropsManager.copyProp(bait)
+                        event.fishBait = bait.copyProp()
                     }
 
                     else -> {
-                        event.fishBait = cn.chahuyun.economy.model.fish.FishBait().apply {
+                        event.fishBait = FishBait().apply {
                             level = 1
                             quality = 0.01f
                             name = "空钩"
