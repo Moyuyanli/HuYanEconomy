@@ -89,13 +89,7 @@ object PropsManager {
      */
     inline fun <reified T : BaseProp> getTemplate(code: String): T {
         val prop = propsTemplateMap[code] ?: error("获取道具模板失败, 道具 code: [$code] 不存在!")
-        val copy = prop.copyProp()
-
-        // 由于使用了 reified，这里的 is T 在运行时是真实有效的
-        if (copy !is T) {
-            error("道具类型不匹配! 期望: ${T::class.java.simpleName}, 实际: ${copy.javaClass.simpleName}")
-        }
-        return copy
+        return prop.copyProp()
     }
 
     /**
@@ -108,15 +102,7 @@ object PropsManager {
     fun <T : BaseProp> getTemplate(code: String, clazz: Class<T>): T {
         val prop =
             propsTemplateMap[code] ?: throw IllegalArgumentException("获取道具模板失败, 道具 code: [$code] 不存在!")
-        val copy = prop.copyProp()
-
-        // 在 Java 环境下，使用 isInstance 检查类型
-        if (!clazz.isInstance(copy)) {
-            throw IllegalArgumentException("道具类型不匹配! 期望: ${clazz.simpleName}, 实际: ${copy.javaClass.simpleName}")
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        return copy as T
+        return prop.copyProp()
     }
 
 
