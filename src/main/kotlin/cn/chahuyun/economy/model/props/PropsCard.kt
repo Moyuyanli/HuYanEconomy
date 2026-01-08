@@ -51,8 +51,26 @@ class PropsCard(
 
     override fun toShopInfo(): String {
         return when (code) {
-            MONTHLY -> "道具名称: $name\n道具描述: $description\n过期时间: ${expiredTime?.format() ?: "永久"}\n道具价值: $cost 金币"
             else -> "道具名称: $name\n道具描述: $description\n道具价值: $cost 金币"
         }
+    }
+
+
+    override fun toString(): String {
+        // 1. 先根据类型确定差异化的文本行
+        val extraInfo = when (code) {
+            MONTHLY -> "过期时间: ${expiredTime?.format() ?: "永久"}"
+            HEALTH -> "状态: ${if (status) "使用中" else "未使用"}"
+            else -> return super.toString() // 如果不是这两种，直接返回
+        }
+
+        // 2. 使用单一的模板，确保所有行在代码中的缩进完全一致
+        return """
+        道具名称: $name
+        道具数量: ${if (isStack) "${this.num} ${this.unit}" else 1}
+        道具描述: $description
+        $extraInfo
+        道具价值: $cost 金币
+        """.trimIndent()
     }
 }
