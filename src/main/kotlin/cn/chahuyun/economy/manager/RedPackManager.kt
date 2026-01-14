@@ -73,6 +73,8 @@ object RedPackManager {
             val number = redPack.number
             val createTime = redPack.createTime
             val receivers = redPack.receiverList
+            val type = redPack.type
+            val password = redPack.password
 
             val nickNames = ArrayList<String>()
             for (receiver in receivers) {
@@ -81,16 +83,20 @@ object RedPackManager {
                 nickNames.add(nameCard ?: member?.nick ?: receiver.toString())
             }
 
+            val typeStr = "【${type.description}】"
+            val passwordStr = if (type == cn.chahuyun.economy.entity.redpack.RedPackType.PASSWORD) "\n红包口令: $password" else ""
+
             val message = PlainText(
-                "红包信息: \n" +
+                "红包信息 $typeStr: \n" +
                         "红包ID: $id" +
                         "\n红包名称: $name" +
-                        "\n红包发送者QQ号: $senderId" +
-                        "\n红包金币: $money" +
-                        "\n剩余金币: ${String.format("%.1f", (money ?: 0.0) - redPack.takenMoneys)}" +
-                        "\n红包人数: $number" +
-                        "\n红包创建时间: ${TimeConvertUtil.timeConvert(createTime ?: Date())}" +
-                        "\n红包领取者: $nickNames"
+                        "\n红包发送者: $senderId" +
+                        "\n红包总额: $money" +
+                        "\n剩余金额: ${String.format("%.1f", (money ?: 0.0) - redPack.takenMoneys)}" +
+                        "\n红包人数: ${receivers.size}/$number" +
+                        "\n创建时间: ${TimeConvertUtil.timeConvert(createTime ?: Date())}" +
+                        passwordStr +
+                        "\n已领取者: $nickNames"
             )
             forwardMessage.add(bot, message)
         }
@@ -98,31 +104,58 @@ object RedPackManager {
     }
 
     /**
+     * 红包领取结果
+     */
+    data class GrabResult(
+        val success: Boolean,
+        val amount: Double = 0.0,
+        val message: String = "",
+        val finished: Boolean = false
+    )
+
+    /**
      * 获取红包（领取逻辑）
+     *
+     * @param sender 领取者
+     * @param redPack 红包对象
+     * @param skipMessage 是否跳过发送通知消息（用于批量领取）
+     * @param passwordOverride 口令（如果提供且匹配，则允许领取口令红包）
+     * @return 领取结果
      */
     suspend fun getRedPack(
         sender: User,
         subject: Contact,
         redPack: RedPack,
-        message: MessageChain,
-    ) {
+        message: MessageChain? = null,
+        skipMessage: Boolean = false,
+        passwordOverride: String? = null
+    ): GrabResult {
         val money = redPack.money
         val number = redPack.number ?: 1
-        val isRandomPack = redPack.isRandomPack
+        val type = redPack.type
+
+        // 口令红包校验
+        if (type == cn.chahuyun.economy.entity.redpack.RedPackType.PASSWORD) {
+            if (passwordOverride == null || passwordOverride != redPack.password) {
+                return GrabResult(false, message = "这是口令红包，需要正确的口令才能领取！")
+            }
+        }
 
         val receivers = redPack.receiverList
         if (receivers.isNotEmpty() && receivers.contains(sender.id)) {
-            subject.sendMessage(MessageUtil.formatMessageChain(message, "你已经领取过该红包了！"))
-            return
+            val msg = "你已经领取过该红包了！"
+            if (!skipMessage && message != null) subject.sendMessage(MessageUtil.formatMessageChain(message, msg))
+            return GrabResult(false, message = msg)
         }
 
         if (receivers.size >= number) {
-            subject.sendMessage(MessageUtil.formatMessageChain(message, "你领取了已经领完的红包！"))
-            return
+            val msg = "你领取了已经领完的红包！"
+            if (!skipMessage && message != null) subject.sendMessage(MessageUtil.formatMessageChain(message, msg))
+            return GrabResult(false, message = msg)
         }
 
         // 领取措施
-        val perMoney: Double = if (isRandomPack) {
+        val perMoney: Double = if (redPack.isRandomAllocation) {
             redPack.getRandomPack()
         } else {
             ShareUtils.rounding((money ?: 0.0) / number)
@@ -131,31 +164,40 @@ object RedPackManager {
         redPack.takenMoneys = redPack.takenMoneys + perMoney
 
         if (!EconomyUtil.plusMoneyToUser(sender, perMoney)) {
-            subject.sendMessage(MessageUtil.formatMessageChain(message, "红包领取失败!"))
-            return
+            val msg = "红包领取失败!"
+            if (!skipMessage && message != null) subject.sendMessage(MessageUtil.formatMessageChain(message, msg))
+            return GrabResult(false, message = msg)
         }
 
         receivers.add(sender.id)
         redPack.receiverList = receivers
         RedPackRepository.save(redPack)
 
-        subject.sendMessage(
-            MessageUtil.formatMessageChain(
-                message,
-                "恭喜你领取到了一个红包，你领取了 %.1f 枚金币！",
-                perMoney
+        if (!skipMessage && message != null) {
+            subject.sendMessage(
+                MessageUtil.formatMessageChain(
+                    message,
+                    "恭喜你领取到了一个红包，你领取了 %.1f 枚金币！",
+                    perMoney
+                )
             )
-        )
+        }
 
+        var finished = false
         if (receivers.size >= number) {
             val between = cn.hutool.core.date.DateUtil.formatBetween(
                 redPack.createTime,
                 Date(),
                 cn.hutool.core.date.BetweenFormatter.Level.SECOND
             )
-            subject.sendMessage(MessageUtil.formatMessageChain("%s已被领完！共计花费%s!", redPack.name ?: "", between))
+            if (!skipMessage) {
+                subject.sendMessage(MessageUtil.formatMessageChain("%s已被领完！共计花费%s!", redPack.name ?: "", between))
+            }
             RedPackRepository.delete(redPack)
+            finished = true
         }
+
+        return GrabResult(true, amount = perMoney, message = "领取成功", finished = finished)
     }
 
     /**
