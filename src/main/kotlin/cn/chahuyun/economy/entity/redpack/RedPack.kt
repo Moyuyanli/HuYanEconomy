@@ -1,11 +1,15 @@
 package cn.chahuyun.economy.entity.redpack
 
-import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.util.RandomUtil
 import cn.hutool.core.util.StrUtil
 import jakarta.persistence.*
 import java.util.*
-import java.util.stream.Collectors
+
+enum class RedPackType(val description: String) {
+    NORMAL("普通红包"),
+    RANDOM("随机红包"),
+    PASSWORD("口令红包")
+}
 
 @Entity(name = "RedPack")
 @Table(name = "RedPack")
@@ -30,7 +34,7 @@ class RedPack(
     var sender: Long? = null,
 
     /**
-     * 金额
+     * 金币金额
      */
     var money: Double? = null,
 
@@ -45,10 +49,15 @@ class RedPack(
     var createTime: Date? = null,
 
     /**
-     * 是否随机
+     * 红包类型
      */
-    @Column(name = "is_random_pack")
-    var isRandomPack: Boolean = false,
+    @Enumerated(EnumType.STRING)
+    var type: RedPackType = RedPackType.NORMAL,
+
+    /**
+     * 红包口令（仅口令红包使用）
+     */
+    var password: String? = null,
 
     /**
      * 已领走的钱数
@@ -56,12 +65,12 @@ class RedPack(
     var takenMoneys: Double = 0.0,
 
     /**
-     * 领取着
+     * 领取者列表（存储为逗号分隔字符串）
      */
     var receivers: String? = null,
 
     /**
-     * 随机红包
+     * 随机红包金额列表（存储为逗号分隔字符串）
      */
     var randomRedPack: String? = null
 ) {
@@ -73,7 +82,7 @@ class RedPack(
     var receiverList: MutableList<Long> = mutableListOf()
         get() {
             if (field.isEmpty() && StrUtil.isNotBlank(receivers)) {
-                receivers!!.split(",").forEach { field.add(it.toLong()) }
+                receivers!!.split(",").filter { it.isNotBlank() }.forEach { field.add(it.toLong()) }
             }
             return field
         }
@@ -89,7 +98,7 @@ class RedPack(
     var randomPackList: MutableList<Double> = mutableListOf()
         get() {
             if (field.isEmpty() && StrUtil.isNotBlank(randomRedPack)) {
-                randomRedPack!!.split(",").forEach { field.add(it.toDouble()) }
+                randomRedPack!!.split(",").filter { it.isNotBlank() }.forEach { field.add(it.toDouble()) }
             }
             return field
         }
@@ -99,23 +108,28 @@ class RedPack(
         }
 
     /**
+     * 是否是随机分配模式（随机红包和口令红包默认为随机分配）
+     */
+    val isRandomAllocation: Boolean
+        get() = type == RedPackType.RANDOM || type == RedPackType.PASSWORD
+
+    /**
      * 获取随机红包
      *
      * @return 红包金额
      */
     fun getRandomPack(): Double {
-        if (randomRedPack.isNullOrBlank() || randomPackList.isEmpty()) {
+        if (randomPackList.isEmpty()) {
             throw RuntimeException("红包已经被领干净了，但仍然在领取!")
         }
         val index = RandomUtil.randomInt(0, randomPackList.size)
         val v = randomPackList[index]
         randomPackList.removeAt(index)
         this.randomPackList = randomPackList // Trigger setter to update randomRedPack string
-        HibernateFactory.merge(this)
         return v
     }
 
     override fun toString(): String {
-        return "RedPack(id=$id, name='$name', groupId=$groupId, sender=$sender, money=$money, number=$number, createTime=$createTime, isRandomPack=$isRandomPack, takenMoneys=$takenMoneys, receivers='$receivers', randomRedPack='$randomRedPack')"
+        return "RedPack(id=$id, name='$name', groupId=$groupId, sender=$sender, money=$money, number=$number, createTime=$createTime, type=$type, password=$password, takenMoneys=$takenMoneys, receivers='$receivers', randomRedPack='$randomRedPack')"
     }
 }
