@@ -21,7 +21,7 @@ class RedPackAction {
      * @param event 群消息事件
      */
     @MessageAuthorize(
-        text = ["发红包( \\d+){2}( (sj|随机))?"],
+        text = ["发红包( \\d+){2}( (sj|随机|kl|口令).*)?"],
         messageMatching = MessageMatchingEnum.REGULAR,
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )
@@ -30,12 +30,12 @@ class RedPackAction {
     }
 
     /**
-     * 领取红包。
+     * 领取红包（专项领取）。
      *
      * @param event 群消息事件
      */
     @MessageAuthorize(
-        text = ["领红包 \\d+|收红包 \\d+"],
+        text = ["领红包 .+", "收红包 .+"],
         messageMatching = MessageMatchingEnum.REGULAR,
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )
@@ -57,7 +57,7 @@ class RedPackAction {
     }
 
     /**
-     * 领取最新红包。
+     * 领取全部红包（一键全抢）。
      *
      * @param event 消息事件
      */
@@ -67,6 +67,18 @@ class RedPackAction {
     )
     suspend fun grabNewestRedPack(event: GroupMessageEvent) {
         RedPackUsecase.grabNewestRedPack(event)
+    }
+
+    /**
+     * 口令领取红包（直接发送口令）
+     */
+    @MessageAuthorize(
+        text = ["^[\\s\\S]{1,32}$"],
+        messageMatching = MessageMatchingEnum.REGULAR,
+        groupPermissions = [EconPerm.RED_PACKET_PERM]
+    )
+    suspend fun grabByPassword(event: GroupMessageEvent) {
+        RedPackUsecase.receive(event)
     }
 
     /**
