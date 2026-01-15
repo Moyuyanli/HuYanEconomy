@@ -28,6 +28,10 @@ object RedPackManager {
 
     /**
      * 二倍均值法生成随机红包列表
+     *
+     * @param totalAmount 红包总金额
+     * @param count 红包个数
+     * @return 生成的随机红包金额列表
      */
     @JvmStatic
     fun generateRandomPack(totalAmount: Double, count: Int): List<Double> {
@@ -35,6 +39,7 @@ object RedPackManager {
         var remainingAmount = totalAmount
         var remainingCount = count
 
+        // 逐个生成红包金额，最后一个红包单独处理
         for (i in 0 until count - 1) {
             val avg = remainingAmount / remainingCount
             val max = avg * 2
@@ -42,6 +47,7 @@ object RedPackManager {
             var amount = RandomUtil.randomDouble(0.1, max)
             amount = ShareUtils.rounding(amount)
 
+            // 计算剩余红包的最小预留金额，确保每个红包至少有0.1元
             val minReserved = (remainingCount - 1) * 0.1
             if (remainingAmount - amount < minReserved) {
                 amount = ShareUtils.rounding(remainingAmount - minReserved)
@@ -56,6 +62,7 @@ object RedPackManager {
         result.add(ShareUtils.rounding(remainingAmount))
         return result
     }
+
 
     suspend fun viewRedPack(
         subject: Contact,

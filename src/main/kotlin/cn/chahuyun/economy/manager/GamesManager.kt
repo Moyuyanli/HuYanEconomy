@@ -79,7 +79,16 @@ object GamesManager : CoroutineScope {
 
                                 fishPond.pondLevel = newLevel
                                 fishPond.minLevel = nextLevelConfig.minFishLevel
-                                fishPond.save()
+                                val saved = runCatching { fishPond.save() }.getOrNull()
+                                if (saved == null) {
+                                    // 回滚：升级状态未落库时把扣除的鱼塘资金退回
+                                    EconomyUtil.plusMoneyToPluginBankForId(
+                                        fishPond.code,
+                                        fishPond.description ?: "",
+                                        upgradeCost
+                                    )
+                                    throw IllegalStateException("鱼塘升级落库失败，已退款")
+                                }
 
                                 val bot = if (Bot.instances.isNotEmpty()) Bot.instances[0] else null
                                 if (bot != null) {
@@ -143,7 +152,7 @@ object GamesManager : CoroutineScope {
                 var expired = if (isFishingTitle) 5 else (10 * 60 - fishInfo.rodLevel * 3) / 60
 
                 FactorManager.getUserFactor(userInfo).getBuffValue(FunctionProps.RED_EYES)?.let { buff ->
-                    if (DateUtil.between(Date(), DateUtil.parse(buff), DateUnit.MINUTE) <= 60) {
+                    if (DateUtil.between(DateUtil.parse(buff), Date(), DateUnit.MINUTE) <= 60) {
                         expired -= (expired * 0.8).toInt()
                     } else {
                         FactorManager.merge(
