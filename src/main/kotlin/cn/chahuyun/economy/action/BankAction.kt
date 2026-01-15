@@ -21,6 +21,7 @@ import net.mamoe.mirai.message.data.ForwardMessageBuilder
 import net.mamoe.mirai.message.data.MessageChainBuilder
 import net.mamoe.mirai.message.data.PlainText
 import xyz.cssxsh.mirai.economy.service.EconomyAccount
+import kotlin.math.floor
 
 /**
  * 银行管理
@@ -88,6 +89,36 @@ class BankAction {
             singleMessages.append("存款失败!")
             subject.sendMessage(singleMessages.build())
             Log.error("银行管理:存款失败!")
+        }
+    }
+
+    /**
+     * 一键存款：把钱包余额的整数部分全部存入主银行
+     */
+    @MessageAuthorize(text = ["存款!", "deposit!"])
+    suspend fun depositAllInteger(event: MessageEvent) {
+        val userInfo: UserInfo = UserCoreManager.getUserInfo(event.sender)
+        val user = userInfo.user
+        val subject: Contact = event.subject
+
+        val message = event.message
+        val singleMessages: MessageChainBuilder = MessageUtil.quoteReply(message)
+
+        val wallet = EconomyUtil.getMoneyByUser(user)
+        val amount = floor(wallet).toInt()
+        if (amount <= 0) {
+            singleMessages.append("你的钱包没有可存入的整数金币")
+            subject.sendMessage(singleMessages.build())
+            return
+        }
+
+        if (EconomyUtil.turnUserToBank(user, amount.toDouble())) {
+            singleMessages.append(String.format("已一键存入 %d 金币", amount))
+            subject.sendMessage(singleMessages.build())
+        } else {
+            singleMessages.append("一键存款失败!")
+            subject.sendMessage(singleMessages.build())
+            Log.error("银行管理:一键存款失败")
         }
     }
 
