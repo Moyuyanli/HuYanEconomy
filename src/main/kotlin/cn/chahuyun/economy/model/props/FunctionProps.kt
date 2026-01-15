@@ -56,7 +56,7 @@ class FunctionProps(
                     UseResult.success("你猛猛炫了一瓶红牛!")
                 } else {
                     val parse = DateUtil.parse(buff)
-                    val between = DateUtil.between(Date(), parse, DateUnit.MINUTE)
+                    val between = DateUtil.between(parse, Date(), DateUnit.MINUTE)
                     if (between > PropConstant.RED_EYES_CD) {
                         factor.setBuffValue(RED_EYES, DateUtil.now())
                         FactorManager.merge(factor)
