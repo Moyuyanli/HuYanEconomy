@@ -15,6 +15,7 @@ import cn.chahuyun.economy.constant.Icon
 import cn.chahuyun.economy.data.PrizesData
 import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
+import cn.chahuyun.economy.manager.PrivateBankManager
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.plugin.*
 import cn.chahuyun.economy.sign.SignEvent
@@ -114,6 +115,7 @@ object HuYanEconomy : KotlinPlugin(
         FishManager.init()
         BankAction.init()
         TitleManager.init()
+        PrivateBankManager.init()
         YiYanManager.init()
         cn.chahuyun.economy.manager.GamesManager.init()
         FactorManager.init()
