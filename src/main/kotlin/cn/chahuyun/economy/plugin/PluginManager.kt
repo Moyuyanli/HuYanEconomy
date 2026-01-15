@@ -30,7 +30,7 @@ object PluginManager {
         // 检查插件版本
         CheckLatestVersion.init()
 
-        val instance = HuYanEconomy.INSTANCE
+        val instance = HuYanEconomy
         val path: Path = instance.dataFolderPath
         val font = File(path.resolve("font").toUri())
         if (!font.exists()) {

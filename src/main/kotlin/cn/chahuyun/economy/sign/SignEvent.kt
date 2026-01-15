@@ -44,7 +44,7 @@ class SignEvent(
     /**
      * 引用回复
      */
-    fun sendQuote(messages: MessageChain): MessageReceipt<Group> {
+    suspend fun sendQuote(messages: MessageChain): MessageReceipt<Group> {
         return group.sendMessage(QuoteReply(this.messages).plus(messages))
     }
 }

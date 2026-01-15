@@ -7,10 +7,7 @@ import cn.hutool.cron.CronUtil
 import cn.hutool.cron.task.Task
 import net.mamoe.mirai.contact.User
 import xyz.cssxsh.mirai.economy.EconomyService
-import xyz.cssxsh.mirai.economy.service.EconomyAccount
-import xyz.cssxsh.mirai.economy.service.EconomyCurrency
-import xyz.cssxsh.mirai.economy.service.IEconomyService
-import xyz.cssxsh.mirai.economy.service.UserEconomyAccount
+import xyz.cssxsh.mirai.economy.service.*
 import java.text.DecimalFormat
 import java.util.concurrent.ConcurrentHashMap
 
@@ -22,11 +19,11 @@ object EconomyUtil {
 
     // 获取经济账户实例
     @JvmField
-    val economyService: IEconomyService = EconomyService.INSTANCE
+    val economyService: IEconomyService = EconomyService
 
     private data class BankTotalSnapshot(
         val total: Double,
-        val updatedAt: Long
+        val updatedAt: Long,
     )
 
     private val bankTotalCache = ConcurrentHashMap<String, BankTotalSnapshot>()
@@ -75,11 +72,13 @@ object EconomyUtil {
     @JvmStatic
     fun getMoneyByUser(user: User, currency: EconomyCurrency): Double {
         return try {
-            economyService.custom(HuYanEconomy.INSTANCE).use { context ->
-                val account: UserEconomyAccount = economyService.account(user)
-                val format = DecimalFormat("#.0")
-                val str = format.format(context.get(account, currency))
-                str.toDouble()
+            economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                with(context) {
+                    val account: UserEconomyAccount = economyService.account(user)
+                    val format = DecimalFormat("#.0")
+                    val v = account[currency]
+                    format.format(v).toDouble()
+                }
             }
         } catch (e: Exception) {
             Log.error("经济获取出错:获取用户钱包余额", e)
@@ -103,10 +102,12 @@ object EconomyUtil {
     fun getMoneyByBank(user: User, currency: EconomyCurrency): Double {
         return try {
             economyService.global().use { global ->
-                val account: UserEconomyAccount = economyService.account(user)
-                val format = DecimalFormat("#.0")
-                val str = format.format(global.get(account, currency))
-                str.toDouble()
+                with(global) {
+                    val account: UserEconomyAccount = economyService.account(user)
+                    val format = DecimalFormat("#.0")
+                    val v = account[currency]
+                    format.format(v).toDouble()
+                }
             }
         } catch (e: Exception) {
             Log.error("经济获取出错:获取用户银行余额", e)
@@ -130,10 +131,12 @@ object EconomyUtil {
     fun getMoneyByBankFromId(userId: String, description: String, currency: EconomyCurrency): Double {
         return try {
             economyService.global().use { global ->
-                val account: EconomyAccount = economyService.account(userId, description)
-                val format = DecimalFormat("#.0")
-                val str = format.format(global.get(account, currency))
-                str.toDouble()
+                with(global) {
+                    val account: EconomyAccount = economyService.account(userId, description)
+                    val format = DecimalFormat("#.0")
+                    val v = account[currency]
+                    format.format(v).toDouble()
+                }
             }
         } catch (e: Exception) {
             Log.error("经济获取出错:获取用户银行余额", e)
@@ -156,14 +159,16 @@ object EconomyUtil {
     fun getMoneyFromPluginBankForId(
         userId: String,
         description: String,
-        currency: EconomyCurrency
+        currency: EconomyCurrency,
     ): Double {
         return try {
-            economyService.custom(HuYanEconomy.INSTANCE).use { context ->
-                val account: EconomyAccount = economyService.account(userId, description)
-                val format = DecimalFormat("#.0")
-                val v = context.get(account, currency)
-                format.format(v).toDouble()
+            economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                with(context) {
+                    val account: EconomyAccount = economyService.account(userId, description)
+                    val format = DecimalFormat("#.0")
+                    val v = account[currency]
+                    format.format(v).toDouble()
+                }
             }
         } catch (e: Exception) {
             Log.error("经济获取出错:获取自定义银行用户余额", e)
@@ -189,19 +194,18 @@ object EconomyUtil {
     @JvmStatic
     fun turnUserToUser(user: User, toUser: User, quantity: Double, currency: EconomyCurrency): Boolean {
         return try {
-            economyService.custom(HuYanEconomy.INSTANCE).use { context ->
-                val account: UserEconomyAccount = economyService.account(user)
-                val toAccount: UserEconomyAccount = economyService.account(toUser)
-                val userMoney = context.get(account, currency)
-                if (userMoney - quantity < 0) {
-                    return false
+            economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                with(context) {
+                    val account: UserEconomyAccount = economyService.account(user)
+                    val toAccount: UserEconomyAccount = economyService.account(toUser)
+                    val userMoney = account[currency]
+                    if (userMoney - quantity < 0) {
+                        return false
+                    }
+                    account.minusAssign(currency, quantity)
+                    toAccount.plusAssign(currency, quantity)
+                    true
                 }
-                context.transaction(currency) { balance ->
-                    balance[account] = balance.getValue(account) - quantity
-                    balance[toAccount] = balance.getValue(toAccount) + quantity
-                    null
-                }
-                true
             }
         } catch (e: Exception) {
             Log.error("经济转移出错:用户->用户", e)
@@ -227,17 +231,21 @@ object EconomyUtil {
     @JvmStatic
     fun turnUserToBank(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
         return try {
-            economyService.custom(HuYanEconomy.INSTANCE).use { context ->
-                economyService.global().use { global ->
-                    val account: UserEconomyAccount = economyService.account(user)
-                    val bankAccount: UserEconomyAccount = economyService.account(user)
-                    val money = context.get(account, currency)
-                    if (money - quantity < 0) {
-                        return false
+            economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                economyService.global().use { global: GlobalEconomyContext ->
+                    with(context) {
+                        with(global) {
+                            val account: UserEconomyAccount = economyService.account(user)
+                            val bankAccount: UserEconomyAccount = economyService.account(user)
+                            val money = context.run { account[currency] }
+                            if (money - quantity < 0) {
+                                return false
+                            }
+                            context.run { account.minusAssign(currency, quantity) }
+                            bankAccount.plusAssign(currency, quantity)
+                            true
+                        }
                     }
-                    context.minusAssign(account, currency, quantity)
-                    global.plusAssign(bankAccount, currency, quantity)
-                    true
                 }
             }
         } catch (e: Exception) {
@@ -264,17 +272,21 @@ object EconomyUtil {
     @JvmStatic
     fun turnBankToUser(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
         return try {
-            economyService.global().use { global ->
-                economyService.custom(HuYanEconomy.INSTANCE).use { context ->
-                    val bankAccount: UserEconomyAccount = economyService.account(user)
-                    val account: UserEconomyAccount = economyService.account(user)
-                    val bankMoney = global.get(bankAccount, currency)
-                    if (bankMoney - quantity < 0) {
-                        return false
+            economyService.global().use { global: GlobalEconomyContext ->
+                economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                    with(global) {
+                        with(context) {
+                            val bankAccount: UserEconomyAccount = economyService.account(user)
+                            val account: UserEconomyAccount = economyService.account(user)
+                            val bankMoney = global.run { bankAccount[currency] }
+                            if (bankMoney - quantity < 0) {
+                                return false
+                            }
+                            global.run { bankAccount.minusAssign(currency, quantity) }
+                            account.plusAssign(currency, quantity)
+                            true
+                        }
                     }
-                    global.minusAssign(bankAccount, currency, quantity)
-                    context.plusAssign(account, currency, quantity)
-                    true
                 }
             }
         } catch (e: Exception) {
@@ -299,10 +311,12 @@ object EconomyUtil {
     @JvmStatic
     fun plusMoneyToUser(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
         return try {
-            economyService.custom(HuYanEconomy.INSTANCE).use { context ->
-                val account: UserEconomyAccount = economyService.account(user)
-                context.plusAssign(account, currency, quantity)
-                true
+            economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                with(context) {
+                    val account: UserEconomyAccount = economyService.account(user)
+                    account.plusAssign(currency, quantity)
+                    true
+                }
             }
         } catch (e: Exception) {
             Log.error("经济转移出错:添加用户经济", e)
@@ -327,9 +341,11 @@ object EconomyUtil {
     fun plusMoneyToBank(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
         return try {
             economyService.global().use { context ->
-                val account: UserEconomyAccount = economyService.account(user)
-                context.plusAssign(account, currency, quantity)
-                true
+                with(context) {
+                    val account: UserEconomyAccount = economyService.account(user)
+                    account.plusAssign(currency, quantity)
+                    true
+                }
             }
         } catch (e: Exception) {
             Log.error("经济转移出错:添加用户经济", e)
@@ -353,10 +369,12 @@ object EconomyUtil {
     @JvmStatic
     fun minusMoneyToUser(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
         return try {
-            economyService.custom(HuYanEconomy.INSTANCE).use { context ->
-                val account: UserEconomyAccount = economyService.account(user)
-                context.minusAssign(account, currency, quantity)
-                true
+            economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                with(context) {
+                    val account: UserEconomyAccount = economyService.account(user)
+                    account.minusAssign(currency, quantity)
+                    true
+                }
             }
         } catch (e: Exception) {
             Log.error("经济转移出错:减少用户经济", e)
@@ -382,13 +400,15 @@ object EconomyUtil {
         userId: String,
         description: String,
         quantity: Double,
-        currency: EconomyCurrency
+        currency: EconomyCurrency,
     ): Boolean {
         return try {
-            economyService.custom(HuYanEconomy.INSTANCE).use { context ->
-                val account: EconomyAccount = economyService.account(userId, description)
-                context.plusAssign(account, currency, quantity)
-                true
+            economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                with(context) {
+                    val account: EconomyAccount = economyService.account(userId, description)
+                    account.plusAssign(currency, quantity)
+                    true
+                }
             }
         } catch (e: Exception) {
             Log.error("经济转移出错:减少用户经济", e)
@@ -413,12 +433,14 @@ object EconomyUtil {
     fun plusMoneyToWalletForAccount(
         account: EconomyAccount,
         quantity: Double,
-        currency: EconomyCurrency
+        currency: EconomyCurrency,
     ): Boolean {
         return try {
-            economyService.custom(HuYanEconomy.INSTANCE).use { context ->
-                context.plusAssign(account, currency, quantity)
-                true
+            economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                with(context) {
+                    account.plusAssign(currency, quantity)
+                    true
+                }
             }
         } catch (e: Exception) {
             Log.error("经济转移出错:减少用户经济", e)
@@ -443,12 +465,14 @@ object EconomyUtil {
     fun plusMoneyToBankForAccount(
         account: EconomyAccount,
         quantity: Double,
-        currency: EconomyCurrency
+        currency: EconomyCurrency,
     ): Boolean {
         return try {
             economyService.global().use { context ->
-                context.plusAssign(account, currency, quantity)
-                true
+                with(context) {
+                    account.plusAssign(currency, quantity)
+                    true
+                }
             }
         } catch (e: Exception) {
             Log.error("经济转移出错:减少用户经济", e)
@@ -472,8 +496,10 @@ object EconomyUtil {
     @JvmStatic
     fun getAccountByBank(economyCurrency: EconomyCurrency): Map<EconomyAccount, Double> {
         return try {
-            economyService.global().use { global ->
-                global.balance(economyCurrency)
+            economyService.global().use { global: GlobalEconomyContext ->
+                with(global) {
+                    economyCurrency.balance()
+                }
             }
         } catch (e: Exception) {
             Log.error("经济获取出错:获取银行对应货币的所有经济信息", e)
@@ -547,13 +573,12 @@ object EconomyUtil {
     @JvmStatic
     fun Cheat(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
         return try {
-            economyService.custom(HuYanEconomy.INSTANCE).use { context ->
-                val account: UserEconomyAccount = economyService.account(user)
-                context.transaction(currency) { balance ->
-                    balance[account] = balance.getValue(account) + quantity
-                    null
+            economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                with(context) {
+                    val account: UserEconomyAccount = economyService.account(user)
+                    account.plusAssign(currency, quantity)
+                    true
                 }
-                true
             }
         } catch (e: Exception) {
             Log.error("经济转移出错:用户", e)

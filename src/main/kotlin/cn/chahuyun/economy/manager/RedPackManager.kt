@@ -14,6 +14,7 @@ import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.message.data.ForwardMessageBuilder
 import net.mamoe.mirai.message.data.MessageChain
 import net.mamoe.mirai.message.data.PlainText
+import xyz.cssxsh.mirai.economy.EconomyService
 import java.util.*
 
 /**
@@ -210,7 +211,13 @@ object RedPackManager {
         val owner = group[ownerId]
         val remainingMoney = money - redPack.takenMoneys
 
-        EconomyUtil.plusMoneyToUser(owner, remainingMoney)
+        if (owner != null) {
+            EconomyUtil.plusMoneyToUser(owner, remainingMoney)
+        } else {
+            // 群内找不到成员时，按账户直接退回钱包
+            val account = EconomyService.account(ownerId.toString(), null)
+            EconomyUtil.plusMoneyToWalletForAccount(account, remainingMoney)
+        }
         group.sendMessage(MessageUtil.formatMessageChain(ownerId, "你的红包过期啦！退还金币 %.1f 个！", remainingMoney))
     }
 }

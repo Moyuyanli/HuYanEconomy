@@ -35,6 +35,11 @@ object HibernateUtil {
             DriveType.SQLITE -> {
                 configuration.address = dataFolderPath.resolve("HuYanEconomy").toString()
             }
+
+            else -> {
+                // 兜底：框架新增 DriveType 时避免编译失败；运行时按需补充配置项
+                configuration.address = dataFolderPath.resolve("HuYanEconomy").toString()
+            }
         }
 
         HibernatePlusService.loadingService(configuration)

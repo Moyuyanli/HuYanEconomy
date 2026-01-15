@@ -8,7 +8,7 @@ import net.mamoe.mirai.utils.MiraiLogger
  * 使用此类日志做统一处理
  */
 object Log {
-    private val log: MiraiLogger = HuYanEconomy.INSTANCE.logger
+    private val log: MiraiLogger = HuYanEconomy.logger
 
     @JvmField
     var name: String = "壶言经济--"

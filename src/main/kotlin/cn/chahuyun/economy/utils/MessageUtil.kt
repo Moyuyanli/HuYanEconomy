@@ -12,19 +12,17 @@ import net.mamoe.mirai.message.data.*
  */
 class MessageUtil private constructor() : MessageUtilTemplate(), cn.chahuyun.authorize.utils.MessageUtil {
 
-    override fun getChannel(): EventChannel<MessageEvent> {
-        return channel
-    }
+    override val channel: EventChannel<MessageEvent>
+        get() = messageEventChannel
 
     companion object {
-        @JvmField
         lateinit var INSTANCE: MessageUtil
 
-        private lateinit var channel: EventChannel<MessageEvent>
+        internal lateinit var messageEventChannel: EventChannel<MessageEvent>
 
         @JvmStatic
         fun init(plugin: JvmPlugin) {
-            channel = GlobalEventChannel.parentScope(plugin).filterIsInstance<MessageEvent>()
+            messageEventChannel = GlobalEventChannel.parentScope(plugin).filterIsInstance<MessageEvent>()
             INSTANCE = MessageUtil()
         }
 

@@ -71,10 +71,10 @@ class TitleInfo(
 ) : Serializable {
 
     val startColor: Color
-        get() = ImageUtil.hexColor(sColor)
+        get() = ImageUtil.hexColor(sColor ?: "8a8886")
 
     val endColor: Color
-        get() = ImageUtil.hexColor(eColor)
+        get() = ImageUtil.hexColor(eColor ?: (sColor ?: "8a8886"))
 
     constructor(userId: Long, code: String?, name: String?, title: String?) : this(
         userId = userId,

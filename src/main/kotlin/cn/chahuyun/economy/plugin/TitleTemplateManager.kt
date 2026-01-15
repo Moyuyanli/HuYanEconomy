@@ -84,7 +84,7 @@ object TitleTemplateManager {
      */
     @JvmStatic
     fun loadingCustomTitle() {
-        val path: Path = HuYanEconomy.INSTANCE.dataFolderPath
+        val path: Path = HuYanEconomy.dataFolderPath
         val file: File = path.resolve("title.json").toFile()
 
         if (!file.exists()) {

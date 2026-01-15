@@ -10,7 +10,7 @@ import net.mamoe.mirai.console.plugin.jvm.JvmPlugin
 object PermCodeManager {
     @JvmStatic
     fun init(plugin: JvmPlugin) {
-        val instance = PermissionServer.INSTANCE
+        val instance = PermissionServer
 
         instance.registerPermCode(
             plugin,
@@ -22,7 +22,7 @@ object PermCodeManager {
             Perm(EconPerm.RAFFLE_PERM, "壶言经济的抽奖权限")
         )
 
-        val util = PermUtil.INSTANCE
+        val util = PermUtil
         var group: PermGroup? = util.selectPermGroupOneByName(EconPerm.GROUP.FISH_PERM_GROUP)
         if (group == null) {
             group = util.takePermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP)

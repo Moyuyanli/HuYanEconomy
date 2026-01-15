@@ -282,8 +282,8 @@ class RobAction {
     @MessageAuthorize(text = ["开启 抢劫"], userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
     suspend fun startRob(event: GroupMessageEvent) {
         val group: Group = event.group
-        val util = PermUtil.INSTANCE
-        val user = UserUtil.INSTANCE.group(group.id)
+        val util = PermUtil
+        val user = UserUtil.group(group.id)
 
         if (util.checkUserHasPerm(user, EconPerm.ROB_PERM)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的抢劫已经开启了!"))
@@ -300,8 +300,8 @@ class RobAction {
     @MessageAuthorize(text = ["关闭 抢劫"], userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
     suspend fun endRob(event: GroupMessageEvent) {
         val group: Group = event.group
-        val util = PermUtil.INSTANCE
-        val user = UserUtil.INSTANCE.group(group.id)
+        val util = PermUtil
+        val user = UserUtil.group(group.id)
 
         if (!util.checkUserHasPerm(user, EconPerm.ROB_PERM)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的抢劫已经关闭!"))

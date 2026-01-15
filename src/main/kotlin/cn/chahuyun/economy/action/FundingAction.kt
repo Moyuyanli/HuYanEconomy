@@ -56,7 +56,11 @@ class FundingAction {
 
         val amount = content.split(" ")[3].toInt()
 
-        val account: EconomyAccount = EconomyService.INSTANCE.account(user.id, null)
+        val userId = user.id ?: run {
+            event.sender.sendMessage("用户信息异常：缺少账户id")
+            return
+        }
+        val account: EconomyAccount = EconomyService.account(userId, null)
 
         if (EconomyUtil.plusMoneyToBankForAccount(account, -amount.toDouble())) {
             event.sender.sendMessage(String.format("fund get %s %d success", uuid, amount))

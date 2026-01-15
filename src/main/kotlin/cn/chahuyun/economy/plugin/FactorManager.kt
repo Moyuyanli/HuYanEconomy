@@ -23,7 +23,10 @@ object FactorManager {
 
     @JvmStatic
     fun getGlobalFactor(): GlobalFactor {
-        return HibernateFactory.selectOneById(globalType, 1)
+        return HibernateFactory.selectOneById(globalType, 1) ?: run {
+            val created = GlobalFactor()
+            HibernateFactory.merge(created)
+        }
     }
 
     @JvmStatic

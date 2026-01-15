@@ -29,7 +29,7 @@ import cn.hutool.core.date.DateTime
 import cn.hutool.core.date.DateUtil
 import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.contact.*
-import net.mamoe.mirai.event.EventKt
+import net.mamoe.mirai.event.broadcast
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.MessageChain
 import net.mamoe.mirai.message.data.MessageChainBuilder
@@ -39,10 +39,7 @@ import java.awt.Color
 import java.awt.Font
 import java.awt.Graphics2D
 import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.IOException
+import java.io.*
 import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicInteger
@@ -79,7 +76,7 @@ class SignAction {
         signEvent.param = RandomUtil.randomInt(0, 1001)
         signEvent.eventReplyAdd(MessageUtil.formatMessageChain(message, "本次签到触发事件:"))
 
-        val broadcast = EventKt.broadcast(signEvent)
+        val broadcast = signEvent.broadcast()
 
         val goldNumber = broadcast.gold ?: 0.0
         val reply = broadcast.reply
@@ -102,7 +99,7 @@ class SignAction {
         messages.append(PlainText("签到成功!\n"))
         messages.append(PlainText(String.format("金币:%s(+%s)\n", moneyByUser, goldNumber)))
         if (reply != null) {
-            messages.add(reply)
+            messages.add(reply as net.mamoe.mirai.message.data.Message)
         }
         if (userInfo.oldSignNumber != 0) {
             messages.append(String.format("你的连签线断在了%d天,可惜~", userInfo.oldSignNumber))
@@ -163,7 +160,7 @@ class SignAction {
             }
 
             val backpacks = userInfo.backpacks
-            val list = ArrayList(backpacks)
+            val list = backpacks.toList()
 
             if (BackpackManager.checkPropInUser(userInfo, PropsCard.MONTHLY)) {
                 val prop = userInfo.getProp(PropsCard.MONTHLY)
@@ -246,7 +243,7 @@ class SignAction {
             event.gold = (event.gold ?: 0.0) * multiples
         }
 
-        private fun sendSignImage(userInfo: UserInfo, subject: Contact, messages: MessageChain) {
+        private suspend fun sendSignImage(userInfo: UserInfo, subject: Contact, messages: MessageChain) {
             val userInfoImageBase: BufferedImage = UserCoreManager.getUserInfoImageBase(userInfo) ?: run {
                 subject.sendMessage(messages)
                 return
@@ -288,7 +285,7 @@ class SignAction {
          */
         @Deprecated("已废弃")
         @JvmStatic
-        fun sendSignImage(
+        suspend fun sendSignImage(
             userInfo: UserInfo,
             user: User,
             subject: Contact,
@@ -296,15 +293,11 @@ class SignAction {
             obtain: Double,
             messages: MessageChain
         ) {
-            val instance = HuYanEconomy.INSTANCE
+            val instance = HuYanEconomy
             try {
                 val indexSuffix = if (index % 4 == 0) 4 else index % 4
-                val asStream = instance.getResourceAsStream("sign$indexSuffix.png")
+                val asStream: InputStream = instance.getResourceAsStream("sign$indexSuffix.png") ?: return
                 index++
-                if (asStream == null) {
-                    Log.error("签到图片获取错误!")
-                    return
-                }
                 val image = ImageIO.read(asStream)
                 val pen = ImageUtil.getG2d(image)
 
@@ -353,19 +346,15 @@ class SignAction {
          * 将签到图片删除并重新复制
          */
         private fun refreshSignImage() {
-            val instance = HuYanEconomy.INSTANCE
+            val instance = HuYanEconomy
             val indexSuffix = if (index % 4 == 0) 4 else index % 4
-            val asStream = instance.getResourceAsStream("sign$indexSuffix.png")
+            val asStream: InputStream = instance.getResourceAsStream("sign$indexSuffix.png") ?: return
             index++
             val file: File = instance.resolveDataFile("sign.png")
             if (file.exists()) {
                 if (file.delete()) {
                     Log.debug("签到管理:签到图片刷新成功")
                 }
-            }
-            if (asStream == null) {
-                Log.error("签到管理:签到图片刷新失败")
-                return
             }
             try {
                 Files.copy(asStream, file.toPath())
@@ -379,8 +368,8 @@ class SignAction {
     suspend fun offSign(event: GroupMessageEvent) {
         val group: Group = event.group
 
-        val util = PermUtil.INSTANCE
-        val user = UserUtil.INSTANCE.group(group.id)
+        val util = PermUtil
+        val user = UserUtil.group(group.id)
 
         if (util.checkUserHasPerm(user, EconPerm.SIGN_BLACK_PERM)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的签到已经关闭了!"))
@@ -398,8 +387,8 @@ class SignAction {
     suspend fun startSign(event: GroupMessageEvent) {
         val group: Group = event.group
 
-        val util = PermUtil.INSTANCE
-        val user = UserUtil.INSTANCE.group(group.id)
+        val util = PermUtil
+        val user = UserUtil.group(group.id)
 
         if (!util.checkUserHasPerm(user, EconPerm.SIGN_BLACK_PERM)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的签到已经开启!"))

@@ -43,7 +43,7 @@ class BankAction {
                     "主银行",
                     "经济服务",
                     HuYanEconomy.config.owner,
-                    0
+                    0.0
                 )
                 HibernateFactory.merge(bankInfo)
             }

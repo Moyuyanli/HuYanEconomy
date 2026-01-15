@@ -169,7 +169,14 @@ object UserCoreManager {
 
         g2d.font = if (nick.length > 16) font.deriveFont(Font.BOLD, 50f) else font.deriveFont(Font.BOLD, 60f)
         if (gradient) {
-            ImageUtil.drawStringGradient(nick, ImageDrawXY.NICK_NAME.x, ImageDrawXY.NICK_NAME.y, sColor, eColor, g2d)
+            ImageUtil.drawStringGradient(
+                nick,
+                ImageDrawXY.NICK_NAME.x,
+                ImageDrawXY.NICK_NAME.y,
+                sColor ?: Color.BLACK,
+                eColor ?: Color.BLACK,
+                g2d
+            )
             g2d.color = Color.BLACK
         } else {
             g2d.color = Color.BLACK

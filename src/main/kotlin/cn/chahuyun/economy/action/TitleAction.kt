@@ -75,12 +75,14 @@ class TitleAction {
         builder.append("可购买的称号如下:\n")
         val canBuyTemplate: List<TitleTemplate> = TitleTemplateManager.getCanBuyTemplate()
         for (template in canBuyTemplate) {
+            val price = template.price ?: 0.0
+            val validity = template.validityPeriod ?: -1
             builder.append(
                 String.format(
                     "%s - %s 金币-有效期: %s%n",
                     template.titleName,
-                    template.price,
-                    if (template.validityPeriod > 0) template.validityPeriod.toString() + "天" else "永久"
+                    price,
+                    if (validity > 0) validity.toString() + "天" else "永久"
                 )
             )
         }
@@ -107,13 +109,18 @@ class TitleAction {
         val sender: User = event.sender
         for (template in canBuyTemplate) {
             if (template.titleName == content.split(" +")[1]) {
+                val price = template.price
+                if (price == null) {
+                    subject.sendMessage(MessageUtil.formatMessageChain(message, "该称号当前不可购买"))
+                    return
+                }
                 val moneyByUser = EconomyUtil.getMoneyByUser(sender)
-                if (moneyByUser < template.price) {
+                if (moneyByUser < price) {
                     subject.sendMessage(
                         MessageUtil.formatMessageChain(
                             message,
                             "你的金币不够 %s ,无法购买 %s 称号!",
-                            template.price,
+                            price,
                             template.titleName
                         )
                     )
@@ -130,14 +137,15 @@ class TitleAction {
                         )
                         return
                     }
-                    if (EconomyUtil.minusMoneyToUser(sender, template.price)) {
+                    if (EconomyUtil.minusMoneyToUser(sender, price)) {
                         if (TitleManager.addTitleInfo(userInfo, template.templateCode)) {
+                            val validity = template.validityPeriod ?: -1
                             subject.sendMessage(
                                 MessageUtil.formatMessageChain(
                                     message,
                                     "你以成功购买 %s 称号,有效期 %s ",
                                     template.titleName,
-                                    if (template.validityPeriod <= 0) "无限" else template.validityPeriod.toString() + "天"
+                                    if (validity <= 0) "无限" else validity.toString() + "天"
                                 )
                             )
                         } else {

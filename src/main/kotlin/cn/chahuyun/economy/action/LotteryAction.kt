@@ -18,6 +18,7 @@ import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.cron.CronUtil
+import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.NormalMember
@@ -136,8 +137,8 @@ class LotteryAction {
     @MessageAuthorize(text = ["开启 猜签"], userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
     suspend fun startLottery(event: GroupMessageEvent) {
         val group: Group = event.group
-        val util = PermUtil.INSTANCE
-        val user = UserUtil.INSTANCE.group(group.id)
+        val util = PermUtil
+        val user = UserUtil.group(group.id)
 
         if (util.checkUserHasPerm(user, EconPerm.LOTTERY_PERM)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的猜签已经开启了!"))
@@ -154,8 +155,8 @@ class LotteryAction {
     @MessageAuthorize(text = ["关闭 猜签"], userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
     suspend fun endLottery(event: GroupMessageEvent) {
         val group: Group = event.group
-        val util = PermUtil.INSTANCE
-        val user = UserUtil.INSTANCE.group(group.id)
+        val util = PermUtil
+        val user = UserUtil.group(group.id)
 
         if (!util.checkUserHasPerm(user, EconPerm.LOTTERY_PERM)) {
             group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的猜签已经关闭!"))
@@ -195,16 +196,21 @@ class LotteryAction {
             for (lotteryInfo in lotteryInfos) {
                 when (lotteryInfo.type) {
                     1 -> {
-                        minutesLottery[lotteryInfo.number] = lotteryInfo
+                        val key = lotteryInfo.number ?: continue
+                        minutesLottery[key] = lotteryInfo
                         continue
                     }
 
                     2 -> {
-                        hoursLottery[lotteryInfo.number] = lotteryInfo
+                        val key = lotteryInfo.number ?: continue
+                        hoursLottery[key] = lotteryInfo
                         continue
                     }
 
-                    3 -> dayLottery[lotteryInfo.number] = lotteryInfo
+                    3 -> {
+                        val key = lotteryInfo.number ?: continue
+                        dayLottery[key] = lotteryInfo
+                    }
                 }
             }
 
@@ -255,49 +261,55 @@ class LotteryAction {
                 lotteryInfo.remove()
                 return
             }
-            val bot: Bot = HuYanEconomy.INSTANCE.bot ?: return
+            val bot: Bot = HuYanEconomy.bot ?: return
             val group = bot.getGroup(lotteryInfo.group) ?: return
             val member: NormalMember = group.get(lotteryInfo.qq) ?: return
             lotteryInfo.remove()
 
             if (!EconomyUtil.plusMoneyToUser(member, lotteryInfo.bonus)) {
-                member.sendMessage("奖金添加失败，请联系管理员!")
+                runBlocking { member.sendMessage("奖金添加失败，请联系管理员!") }
                 return
             }
 
-            member.sendMessage(lotteryInfo.toMessage())
+            runBlocking { member.sendMessage(lotteryInfo.toMessage()) }
             when (type) {
                 1 -> if (location == 3) {
-                    group.sendMessage(
-                        String.format(
-                            "得签着:%s(%s),奖励%s金币",
-                            member.nick,
-                            member.id,
-                            lotteryInfo.bonus
+                    runBlocking {
+                        group.sendMessage(
+                            String.format(
+                                "得签着:%s(%s),奖励%s金币",
+                                member.nick,
+                                member.id,
+                                lotteryInfo.bonus
+                            )
                         )
-                    )
+                    }
                 }
 
                 2 -> if (location == 4) {
-                    group.sendMessage(
-                        String.format(
-                            "得签着:%s(%s),奖励%s金币",
-                            member.nick,
-                            member.id,
-                            lotteryInfo.bonus
+                    runBlocking {
+                        group.sendMessage(
+                            String.format(
+                                "得签着:%s(%s),奖励%s金币",
+                                member.nick,
+                                member.id,
+                                lotteryInfo.bonus
+                            )
                         )
-                    )
+                    }
                 }
 
                 3 -> if (location == 5) {
-                    group.sendMessage(
-                        String.format(
-                            "得签着:%s(%s),奖励%s金币",
-                            member.nick,
-                            member.id,
-                            lotteryInfo.bonus
+                    runBlocking {
+                        group.sendMessage(
+                            String.format(
+                                "得签着:%s(%s),奖励%s金币",
+                                member.nick,
+                                member.id,
+                                lotteryInfo.bonus
+                            )
                         )
-                    )
+                    }
                 }
             }
         }

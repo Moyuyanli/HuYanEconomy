@@ -37,15 +37,15 @@ object FishManager {
      * 获取对应的鱼等级
      */
     @JvmStatic
-    fun getLevelFishList(fishLevel: Int): List<Fish>? {
-        return fishMap[fishLevel]
+    fun getLevelFishList(fishLevel: Int): List<Fish> {
+        return fishMap[fishLevel] ?: emptyList()
     }
 
     /**
      * 从 resources 里面读取鱼数据
      */
     private fun reloadFish() {
-        val instance = HuYanEconomy.INSTANCE
+        val instance = HuYanEconomy
         val resourceAsStream: InputStream = instance.getResourceAsStream("fish.xls") ?: return
         val map = hashMapOf(
             "等级" to "level",

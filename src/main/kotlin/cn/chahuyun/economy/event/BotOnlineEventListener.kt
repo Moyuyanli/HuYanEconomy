@@ -13,7 +13,7 @@ class BotOnlineEventListener : SimpleListenerHost() {
 
     @EventHandler
     fun onMessage(event: BotOnlineEvent) {
-        HuYanEconomy.INSTANCE.bot = event.bot
+        HuYanEconomy.bot = event.bot
         Log.info("bot 已上线!")
     }
 }
