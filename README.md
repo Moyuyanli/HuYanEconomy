@@ -72,6 +72,15 @@ bot: 123456
 
 设置完成后，再次启动mirai即可使用本插件。
 
+## 开发与构建
+
+本项目使用 Gradle + mirai-console 插件打包任务。
+
+- Windows：`./gradlew.bat buildPlugin`
+- Linux/macOS：`./gradlew buildPlugin`
+
+构建产物默认输出到 `build/mirai/`，文件名类似：`HuYanEconomy-<version>.mirai2.jar`。
+
 ## 功能列表
 
 由于一些功能上的设计缺陷，修复他们需要改动数据库，导致数据库的数据错误，因此需要执行修复指令：`hye repair`;
