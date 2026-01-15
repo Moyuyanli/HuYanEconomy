@@ -1,0 +1,82 @@
+name: 生成 Dokka 文档
+
+on:
+  push:
+    # 监听正式版本标签推送（与 release 同步），例如 v1.2.3
+    tags:
+      - "v*"
+  # 支持手动触发
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要生成文档的正式标签（例如 v1.2.3）。不填则使用当前 ref。'
+        required: false
+        type: string
+
+jobs:
+  # --- 配置中心任务 ---
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      ENABLE_DOCS: ${{ steps.flags.outputs.enable_docs }} # 是否开启文档生成功能（来自仓库文件 .github/ci-flags.json）
+      JDK_VERSION: '11'                                # 项目使用的 JDK 版本
+      JDK_DIST: 'temurin'                              # JDK 发行版
+      MAIN_BRANCH: 'master'                            # 项目的主分支名称
+    steps:
+      - name: 读取 CI 开关（仓库内配置）
+        id: flags
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(".github/ci-flags.json")
+          cfg = {}
+          if p.exists():
+            cfg = json.loads(p.read_text(encoding="utf-8"))
+          def b(key, default):
+            v = cfg.get(key, default)
+            return "true" if bool(v) else "false"
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+            f.write(f"enable_docs={b('enable_docs', True)}\n")
+          PY
+      - run: echo "配置加载完成"
+
+  dokka:
+    needs: setup
+    # 仅在开启了文档功能时执行（由仓库 Actions Variable 控制：ENABLE_DOCS=true/false）；
+    # 并排除试错标签（例如 v1.2.3-t1）
+    if: needs.setup.outputs.ENABLE_DOCS == 'true' && !contains(github.ref, '-t') && (github.event_name != 'workflow_dispatch' || inputs.tag == '' || !contains(inputs.tag, '-t'))
+    runs-on: ubuntu-latest
+    env:
+      DOC_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.tag != '' && inputs.tag || github.ref_name }}
+
+    steps:
+      # 1. 检出代码
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DOC_REF }}
+
+      # 2. 设置 JDK 环境
+      - name: 设置 JDK ${{ needs.setup.outputs.JDK_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ needs.setup.outputs.JDK_DIST }}
+          java-version: ${{ needs.setup.outputs.JDK_VERSION }}
+
+      # 3. 赋予 Gradle 脚本执行权限
+      - name: 赋予 gradlew 执行权限
+        run: chmod +x gradlew
+
+      # 4. 生成 Dokka HTML 文档
+      - name: 生成 Dokka HTML
+        run: ./gradlew dokkaHtml
+
+      # 5. 发布到 GitHub Pages (gh-pages 分支)
+      - name: 部署到 GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          # 优先使用 ACTION_TOKEN，否则回退到默认的 GITHUB_TOKEN
+          github_token: ${{ secrets.ACTION_TOKEN || secrets.GITHUB_TOKEN }}
+          publish_dir: build/dokka/html

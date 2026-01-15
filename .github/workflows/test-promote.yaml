@@ -1,0 +1,123 @@
+name: 试错测试与晋升
+
+on:
+  push:
+    # 仅监听试错标签推送（例如 v1.2.3-t1）
+    tags:
+      - "v*-t*"
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      ENABLE_DOCS: ${{ steps.flags.outputs.enable_docs }}
+      JDK_VERSION: '11'
+      JDK_DIST: 'temurin'
+      BUILD_COMMAND: './gradlew buildPlugin'
+      # 这里指向发布工作流文件名（用于 workflow_dispatch）
+      RELEASE_WORKFLOW_FILE: 'release.yaml'
+    steps:
+      - name: 读取 CI 开关（仓库内配置）
+        id: flags
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(".github/ci-flags.json")
+          cfg = {}
+          if p.exists():
+            cfg = json.loads(p.read_text(encoding="utf-8"))
+          def b(key, default):
+            v = cfg.get(key, default)
+            return "true" if bool(v) else "false"
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+            f.write(f"enable_docs={b('enable_docs', True)}\n")
+          PY
+      - run: echo "配置加载完成"
+
+  test-and-promote:
+    needs: setup
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # 创建并推送 tag
+      actions: write    # 触发 workflow_dispatch
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 设置 JDK ${{ needs.setup.outputs.JDK_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ needs.setup.outputs.JDK_DIST }}
+          java-version: ${{ needs.setup.outputs.JDK_VERSION }}
+
+      - name: 赋予 gradlew 执行权限
+        run: chmod +x gradlew
+
+      - name: 运行测试并编译
+        run: ${{ needs.setup.outputs.BUILD_COMMAND }}
+
+      - name: 晋升为正式版标签
+        id: promote
+        shell: bash
+        run: |
+          TRIAL_TAG='${{ github.ref_name }}'
+          FINAL_TAG="$(echo "$TRIAL_TAG" | sed 's/-t.*//')"
+          echo "测试通过，正在将 $TRIAL_TAG 晋升为正式版本 $FINAL_TAG"
+
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          if git rev-parse "$FINAL_TAG" >/dev/null 2>&1; then
+            echo "错误: 标签 $FINAL_TAG 已存在，跳过晋升。"
+            exit 1
+          fi
+
+          git tag "$FINAL_TAG"
+          git push origin "$FINAL_TAG"
+
+          echo "final_tag=$FINAL_TAG" >> "$GITHUB_OUTPUT"
+
+      # 重要：Actions 用 GITHUB_TOKEN 推送 tag 默认不会触发新的 push workflow（防止递归触发）。
+      # 因此这里显式 dispatch 发布工作流，发布工作流会 checkout 到 final_tag 再构建/发布。
+      - name: 触发发布工作流（workflow_dispatch）
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const workflow_id = "${{ needs.setup.outputs.RELEASE_WORKFLOW_FILE }}";
+            const ref = context.payload.repository.default_branch;
+            const tag = "${{ steps.promote.outputs.final_tag }}";
+            core.info(`Dispatch workflow=${workflow_id}, ref=${ref}, tag=${tag}`);
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id,
+              ref,
+              inputs: { tag }
+            });
+
+      # 同理：Actions 使用 GITHUB_TOKEN 推送 tag 往往不会触发 on: push。
+      # 文档发布也应由“测试通过”显式触发，确保链路稳定。
+      - name: 触发 Dokka 文档工作流（workflow_dispatch）
+        if: needs.setup.outputs.ENABLE_DOCS == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const workflow_id = "generate-docs.yaml";
+            const ref = context.payload.repository.default_branch;
+            const tag = "${{ steps.promote.outputs.final_tag }}";
+            core.info(`Dispatch workflow=${workflow_id}, ref=${ref}, tag=${tag}`);
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id,
+              ref,
+              inputs: { tag }
+            });
+
+

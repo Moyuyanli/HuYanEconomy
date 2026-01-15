@@ -1,0 +1,195 @@
+name: 版本发布
+
+on:
+  push:
+    # 监听以 v 开头的标签推送
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要发布的正式标签（例如 v1.2.3）。通常由试错晋升工作流触发。'
+        required: true
+        type: string
+
+jobs:
+  # --- 配置中心：可在不同项目中直接修改此处参数 ---
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      ENABLE_RELEASE: ${{ steps.flags.outputs.enable_release }}              # 是否开启自动发布功能（来自仓库文件 .github/ci-flags.json）
+      ENABLE_CHANGELOG_SYNC: ${{ steps.flags.outputs.enable_changelog_sync }}# 是否同步 CHANGELOG.md（来自仓库文件 .github/ci-flags.json）
+      CHANGELOG_SOURCE: 'commit'      # 更新日志来源: 'commit' 或 'pr'
+      JDK_VERSION: '11'               # JDK 版本
+      JDK_DIST: 'temurin'             # JDK 发行版
+      BUILD_COMMAND: './gradlew buildPlugin' # 构建命令
+      # 发布资源路径：buildPlugin 的产物不一定在 build/libs，这里做多路径兜底
+      RELEASE_FILES: |
+        # 确保添加产物的唯一匹配性
+        build/libs/*.jar
+        build/mirai/*.jar
+    steps:
+      - name: 读取 CI 开关（仓库内配置）
+        id: flags
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(".github/ci-flags.json")
+          cfg = {}
+          if p.exists():
+            cfg = json.loads(p.read_text(encoding="utf-8"))
+          def b(key, default):
+            v = cfg.get(key, default)
+            return "true" if bool(v) else "false"
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+            f.write(f"enable_release={b('enable_release', True)}\n")
+            f.write(f"enable_changelog_sync={b('enable_changelog_sync', True)}\n")
+          PY
+      - run: echo "配置加载完成"
+
+  # 任务 B：正式发布与日志生成 (处理 v*.*.* 标签，且不含 -t)
+  release:
+    needs: setup
+    # 逻辑：只处理正式标签（不含 -t），或者由 workflow_dispatch 指定 tag 触发
+    if: |
+      needs.setup.outputs.ENABLE_RELEASE == 'true' && (
+        (github.event_name == 'push' && !contains(github.ref, '-t')) ||
+        (github.event_name == 'workflow_dispatch')
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: 设置 JDK ${{ needs.setup.outputs.JDK_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ needs.setup.outputs.JDK_DIST }}
+          java-version: ${{ needs.setup.outputs.JDK_VERSION }}
+
+      - name: 赋予 gradlew 执行权限
+        run: chmod +x gradlew
+
+      - name: 编译构建
+        run: ${{ needs.setup.outputs.BUILD_COMMAND }}
+
+      # 方式 1：基于 Commit (默认)
+      # 说明：本仓库是 Kotlin/Gradle 项目，没有 package.json。
+      # TriPSs/conventional-changelog-action 默认依赖 package.json 且会在某些场景判定“空发布”导致 CHANGELOG.md 为空。
+      # 这里改为直接使用 conventional-changelog CLI 基于 git tags/历史生成，避免 detached HEAD/版本文件依赖问题。
+      - name: 设置 Node.js（用于生成 Changelog）
+        if: needs.setup.outputs.CHANGELOG_SOURCE == 'commit'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装 conventional-changelog
+        if: needs.setup.outputs.CHANGELOG_SOURCE == 'commit'
+        run: |
+          npm i -g conventional-changelog-cli conventional-changelog-angular
+
+      - name: 生成更新日志 (基于 Commit)
+        if: needs.setup.outputs.CHANGELOG_SOURCE == 'commit'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+
+          # 关键：试错标签（*-t*）和正式标签经常打在同一个 commit 上，
+          # 如果不排除它们，changelog 会把 “vX.Y.Z-tN” 当成最近一次发布，导致本次正式版区间为空（最终只剩日期）。
+          # 这里仅删除本地 tag，不影响远端仓库。
+          git tag -l '*-t*' | xargs -r git tag -d
+
+          # conventional-changelog 默认会读 package.json 里的 version 来拼 tag（如 v{version}）。
+          # 本仓库没有 package.json，若不提供会出现 “...compare/prev...v” 这种缺失版本的标题。
+          VERSION="${RELEASE_TAG#v}"
+          cat > package.json <<EOF
+          {"name":"one-more-run","version":"$VERSION"}
+          EOF
+
+          # 如果存在上一个 tag，则生成“本次发布”区间的 changelog；否则生成全量（首发版）
+          PREV_TAG="$(git describe --tags --abbrev=0 "${RELEASE_TAG}^" 2>/dev/null || true)"
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found. Generating full changelog (first release)."
+            conventional-changelog -p angular -r 0 -o CHANGELOG.md
+          else
+            echo "Previous tag: $PREV_TAG. Generating changelog since last release."
+            conventional-changelog -p angular -r 1 -o CHANGELOG.md
+          fi
+
+      - name: 上传 CHANGELOG.md（供同步 job 使用）
+        if: needs.setup.outputs.CHANGELOG_SOURCE == 'commit'
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: CHANGELOG.md
+
+      # 最终执行：发布 GitHub Release
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_TAG }}
+          generate_release_notes: ${{ needs.setup.outputs.CHANGELOG_SOURCE == 'pr' }}
+          body_path: ${{ needs.setup.outputs.CHANGELOG_SOURCE == 'commit' && 'CHANGELOG.md' || '' }}
+          files: ${{ needs.setup.outputs.RELEASE_FILES }}
+          fail_on_unmatched_files: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  # 任务 C：将 CHANGELOG.md 同步提交回默认分支（不影响发布；失败会被忽略）
+  sync-changelog:
+    needs: [setup, release]
+    if: |
+      always() &&
+      needs.setup.outputs.ENABLE_CHANGELOG_SYNC == 'true' &&
+      needs.setup.outputs.CHANGELOG_SOURCE == 'commit' &&
+      needs.release.result == 'success'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: 检出默认分支
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+
+      - name: 下载生成的 CHANGELOG.md
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+          path: .
+
+      - name: 提交并推送 CHANGELOG.md（若有变化）
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f CHANGELOG.md ]; then
+            echo "No CHANGELOG.md artifact found; skip."
+            exit 0
+          fi
+
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+
+          git add CHANGELOG.md
+          if git diff --cached --quiet; then
+            echo "CHANGELOG.md unchanged; skip commit."
+            exit 0
+          fi
+
+          git commit -m "chore(docs): update changelog for ${RELEASE_TAG} [skip ci]"
+          git push origin "HEAD:${DEFAULT_BRANCH}"

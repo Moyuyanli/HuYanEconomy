@@ -1,0 +1,34 @@
+changelog:
+  exclude:
+    labels:
+      - ignore
+    authors:
+      - github-actions[bot]
+  categories:
+    - title: '🚀 新功能 (Features)'
+      labels:
+        - feat
+        - feature
+    - title: '🐛 问题修复 (Fixes)'
+      labels:
+        - fix
+        - bug
+    - title: '🛠 重构 (Refactors)'
+      labels:
+        - refactor
+    - title: '📖 文档更新 (Documentation)'
+      labels:
+        - docs
+    - title: '🧪 测试相关 (Tests)'
+      labels:
+        - test
+    - title: '🧱 破坏性变更 (Breaking Changes)'
+      labels:
+        - breaking
+    - title: '📦 依赖更新 (Dependencies)'
+      labels:
+        - dependencies
+  # 兜底配置：如果没有匹配到标签，则显示在其他变更中
+  template: |
+    ## 变更内容
+    $CHANGELOG
