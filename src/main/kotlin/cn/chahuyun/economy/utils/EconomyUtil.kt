@@ -343,7 +343,11 @@ object EconomyUtil {
             economyService.global().use { context ->
                 with(context) {
                     val account: UserEconomyAccount = economyService.account(user)
-                    account.plusAssign(currency, quantity)
+                    if (quantity >= 0) {
+                        account.plusAssign(currency, quantity)
+                    } else {
+                        account.minusAssign(currency, -quantity)
+                    }
                     true
                 }
             }
@@ -406,12 +410,115 @@ object EconomyUtil {
             economyService.custom(HuYanEconomy).use { context: EconomyContext ->
                 with(context) {
                     val account: EconomyAccount = economyService.account(userId, description)
-                    account.plusAssign(currency, quantity)
+                    if (quantity >= 0) {
+                        account.plusAssign(currency, quantity)
+                    } else {
+                        account.minusAssign(currency, -quantity)
+                    }
                     true
                 }
             }
         } catch (e: Exception) {
             Log.error("经济转移出错:减少用户经济", e)
+            false
+        }
+    }
+
+    /**
+     * 给 [全局银行] 指定账户 (userId + description) 增减余额
+     * quantity 允许为负数（负数表示扣减）
+     */
+    @JvmStatic
+    fun plusMoneyToBankFromId(
+        userId: String,
+        description: String,
+        quantity: Double,
+        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
+    ): Boolean {
+        return try {
+            economyService.global().use { global: GlobalEconomyContext ->
+                with(global) {
+                    val account: EconomyAccount = economyService.account(userId, description)
+                    if (quantity >= 0) {
+                        account.plusAssign(currency, quantity)
+                    } else {
+                        account.minusAssign(currency, -quantity)
+                    }
+                    true
+                }
+            }
+        } catch (e: Exception) {
+            Log.error("经济转移出错:全局银行账户加减", e)
+            false
+        }
+    }
+
+    /**
+     * 从 [用户钱包(custom)] 转入 [全局银行] 指定账户 (toUserId + toDescription)
+     */
+    @JvmStatic
+    fun turnUserWalletToGlobalBankAccount(
+        user: User,
+        toUserId: String,
+        toDescription: String,
+        quantity: Double,
+        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
+    ): Boolean {
+        if (quantity <= 0) return false
+        return try {
+            economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                economyService.global().use { global: GlobalEconomyContext ->
+                    with(context) {
+                        with(global) {
+                            val wallet: UserEconomyAccount = economyService.account(user)
+                            val walletMoney = context.run { wallet[currency] }
+                            if (walletMoney - quantity < 0) return false
+
+                            context.run { wallet.minusAssign(currency, quantity) }
+                            val toAccount: EconomyAccount = economyService.account(toUserId, toDescription)
+                            toAccount.plusAssign(currency, quantity)
+                            true
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.error("经济转移出错:钱包->全局银行账户", e)
+            false
+        }
+    }
+
+    /**
+     * 从 [全局银行] 指定账户 (fromUserId + fromDescription) 转入 [用户钱包(custom)]
+     */
+    @JvmStatic
+    fun turnGlobalBankAccountToUserWallet(
+        fromUserId: String,
+        fromDescription: String,
+        user: User,
+        quantity: Double,
+        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
+    ): Boolean {
+        if (quantity <= 0) return false
+        return try {
+            economyService.global().use { global: GlobalEconomyContext ->
+                economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                    with(global) {
+                        with(context) {
+                            val fromAccount: EconomyAccount = economyService.account(fromUserId, fromDescription)
+                            val fromMoney = global.run { fromAccount[currency] }
+                            if (fromMoney - quantity < 0) return false
+
+                            global.run { fromAccount.minusAssign(currency, quantity) }
+                            val wallet: UserEconomyAccount = economyService.account(user)
+                            wallet.plusAssign(currency, quantity)
+                            true
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.error("经济转移出错:全局银行账户->钱包", e)
             false
         }
     }
@@ -470,12 +577,52 @@ object EconomyUtil {
         return try {
             economyService.global().use { context ->
                 with(context) {
-                    account.plusAssign(currency, quantity)
+                    if (quantity >= 0) {
+                        account.plusAssign(currency, quantity)
+                    } else {
+                        account.minusAssign(currency, -quantity)
+                    }
                     true
                 }
             }
         } catch (e: Exception) {
             Log.error("经济转移出错:减少用户经济", e)
+            false
+        }
+    }
+
+    /**
+     * 从 [用户主银行(global)] 转入 [插件自定义账户(custom)]。
+     * 用于跨账本锁定保证金、私人银行库存注入等。
+     */
+    @JvmStatic
+    fun turnUserGlobalBankToPluginBankForId(
+        user: User,
+        toUserId: String,
+        toDescription: String,
+        quantity: Double,
+        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
+    ): Boolean {
+        if (quantity <= 0) return false
+        return try {
+            economyService.global().use { global: GlobalEconomyContext ->
+                economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                    with(global) {
+                        with(context) {
+                            val fromAccount: UserEconomyAccount = economyService.account(user)
+                            val fromMoney = global.run { fromAccount[currency] }
+                            if (fromMoney - quantity < 0) return false
+
+                            global.run { fromAccount.minusAssign(currency, quantity) }
+                            val toAccount: EconomyAccount = economyService.account(toUserId, toDescription)
+                            toAccount.plusAssign(currency, quantity)
+                            true
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.error("经济转移出错:主银行->自定义账户", e)
             false
         }
     }
