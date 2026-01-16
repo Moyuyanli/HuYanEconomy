@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.plugin
 
-import cn.chahuyun.authorize.PermissionServer
+import cn.chahuyun.authorize.AuthorizeServer
 import cn.chahuyun.authorize.entity.Perm
 import cn.chahuyun.authorize.entity.PermGroup
 import cn.chahuyun.authorize.utils.PermUtil
@@ -10,9 +10,8 @@ import net.mamoe.mirai.console.plugin.jvm.JvmPlugin
 object PermCodeManager {
     @JvmStatic
     fun init(plugin: JvmPlugin) {
-        val instance = PermissionServer
 
-        instance.registerPermCode(
+        AuthorizeServer.registerPermissions(
             plugin,
             Perm(EconPerm.FISH_PERM, "壶言经济的钓鱼权限"),
             Perm(EconPerm.LOTTERY_PERM, "壶言经济的彩票权限"),

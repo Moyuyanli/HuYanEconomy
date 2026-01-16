@@ -23,5 +23,9 @@ class PrivateBankReview(
     /** 1-5 */
     var rating: Int = 5,
 
+    /** 用户评价文本（可为空） */
+    @Lob
+    var content: String? = null,
+
     var createdAt: Date = Date(),
 )

@@ -8,4 +8,6 @@ object PrivateBankLedger {
     const val LIQUIDITY_DESC = "pb-liquidity"  // 自定义(custom)流动金池（20%）
     const val INVENTORY_DESC = "pb-inventory"  // 自定义(custom)行长注入库存
     const val GUARANTEE_DESC = "pb-guarantee"  // 自定义(custom)10M 风险保证金
+
+    const val FOX_BOND_LOCK_DESC = "pb-foxbond-lock" // 自定义(custom)狐卷锁仓资金池（按 bondCode 记账）
 }

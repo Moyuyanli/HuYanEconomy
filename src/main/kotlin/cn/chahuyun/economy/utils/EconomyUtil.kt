@@ -628,6 +628,112 @@ object EconomyUtil {
     }
 
     /**
+     * 从 [用户主银行(global)] 转入 [全局银行] 指定账户 (toUserId + toDescription)。
+     * 用于私人银行创建时把启动资金沉淀到银行自身的全局银行子账户等。
+     */
+    @JvmStatic
+    fun turnUserGlobalBankToGlobalBankAccount(
+        user: User,
+        toUserId: String,
+        toDescription: String,
+        quantity: Double,
+        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
+    ): Boolean {
+        if (quantity <= 0) return false
+        return try {
+            economyService.global().use { global: GlobalEconomyContext ->
+                with(global) {
+                    val fromAccount: UserEconomyAccount = economyService.account(user)
+                    val fromMoney = global.run { fromAccount[currency] }
+                    if (fromMoney - quantity < 0) return false
+
+                    global.run { fromAccount.minusAssign(currency, quantity) }
+                    val toAccount: EconomyAccount = economyService.account(toUserId, toDescription)
+                    toAccount.plusAssign(currency, quantity)
+                    true
+                }
+            }
+        } catch (e: Exception) {
+            Log.error("经济转移出错:主银行->全局银行账户", e)
+            false
+        }
+    }
+
+    /**
+     * 从 [全局银行] 指定账户 (fromUserId + fromDescription) 转入 [插件自定义账户(custom)]。
+     * 用于私人银行把准备金、国卷到期资金等迁移到自定义账本。
+     */
+    @JvmStatic
+    fun turnGlobalBankAccountToPluginBankForId(
+        fromUserId: String,
+        fromDescription: String,
+        toUserId: String,
+        toDescription: String,
+        quantity: Double,
+        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
+    ): Boolean {
+        if (quantity <= 0) return false
+        return try {
+            economyService.global().use { global: GlobalEconomyContext ->
+                economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                    with(global) {
+                        with(context) {
+                            val fromAccount: EconomyAccount = economyService.account(fromUserId, fromDescription)
+                            val fromMoney = global.run { fromAccount[currency] }
+                            if (fromMoney - quantity < 0) return false
+
+                            global.run { fromAccount.minusAssign(currency, quantity) }
+                            val toAccount: EconomyAccount = economyService.account(toUserId, toDescription)
+                            toAccount.plusAssign(currency, quantity)
+                            true
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.error("经济转移出错:全局银行账户->自定义账户", e)
+            false
+        }
+    }
+
+    /**
+     * 从 [插件自定义账户(custom)] 转入 [全局银行] 指定账户 (toUserId + toDescription)。
+     * 主要用于私银玩法中的“锁定资产到期回流”等场景。
+     */
+    @JvmStatic
+    fun turnPluginBankForIdToGlobalBankAccount(
+        fromUserId: String,
+        fromDescription: String,
+        toUserId: String,
+        toDescription: String,
+        quantity: Double,
+        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
+    ): Boolean {
+        if (quantity <= 0) return false
+        return try {
+            economyService.custom(HuYanEconomy).use { context: EconomyContext ->
+                economyService.global().use { global: GlobalEconomyContext ->
+                    with(context) {
+                        with(global) {
+                            val fromAccount: EconomyAccount = economyService.account(fromUserId, fromDescription)
+                            val fromMoney = context.run { fromAccount[currency] }
+                            if (fromMoney - quantity < 0) return false
+
+                            context.run { fromAccount.minusAssign(currency, quantity) }
+                            val toAccount: EconomyAccount = economyService.account(toUserId, toDescription)
+                            toAccount.plusAssign(currency, quantity)
+                            true
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.error("经济转移出错:自定义账户->全局银行账户", e)
+            false
+        }
+    }
+
+    /**
      * 获取银行的所有经济信息
      * 默认货币
      */
