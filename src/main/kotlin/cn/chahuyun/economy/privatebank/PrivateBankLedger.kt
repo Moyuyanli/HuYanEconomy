@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.privatebank
 
 /**
- * 私人银行相关账本描述常量
+ * 银行（PrivateBank 模块）相关账本描述常量
  */
 object PrivateBankLedger {
     const val RESERVE_DESC = "pb-reserve"      // 主银行(global)准备金池（80%）

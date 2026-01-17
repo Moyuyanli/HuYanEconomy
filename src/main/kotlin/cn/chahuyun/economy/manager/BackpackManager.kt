@@ -41,9 +41,9 @@ object BackpackManager {
         // 遍历背包中的道具并添加到消息节点中
         for (backpack in backpacks) {
             val prop = PropsManager.getProp(backpack) ?: continue
-            nodes.add(bot, PlainText(String.format("物品id:%d%n%s", backpack.propId, prop)))
+            nodes.add(bot, PlainText("物品id:${backpack.propId}\n${prop}"))
         }
-        nodes.add(bot, MessageUtil.formatMessage("--- 当前页数: %d / 最大页数: %d ---", currentPage, maxPage))
+        nodes.add(bot, MessageUtil.formatMessage("--- 当前页数: ${currentPage} / 最大页数: ${maxPage} ---"))
         group.sendMessage(nodes.build())
     }
 

@@ -3,7 +3,6 @@ package cn.chahuyun.economy.usecase
 import cn.chahuyun.authorize.utils.PermUtil
 import cn.chahuyun.authorize.utils.UserUtil
 import cn.chahuyun.economy.HuYanEconomy
-import cn.chahuyun.economy.action.UserStatusAction
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.constant.FishPondLevelConstant
 import cn.chahuyun.economy.constant.TitleCode
@@ -17,9 +16,7 @@ import cn.chahuyun.economy.model.fish.FishBait
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.repository.FishRepository
-import cn.chahuyun.economy.utils.EconomyUtil
-import cn.chahuyun.economy.utils.Log
-import cn.chahuyun.economy.utils.MessageUtil
+import cn.chahuyun.economy.utils.*
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import cn.hutool.core.util.RandomUtil
@@ -138,10 +135,10 @@ object GamesUsecase {
 
         if (GamesManager.checkAndProcessFishing(userInfo, fishTitle, fishInfo, subject, message)) return
 
-        if (UserStatusAction.checkUserNotInHome(userInfo) && !UserStatusAction.checkUserInFishpond(userInfo)) {
+        if (cn.chahuyun.economy.manager.UserStatusManager.checkUserNotInHome(userInfo) && !cn.chahuyun.economy.manager.UserStatusManager.checkUserInFishpond(userInfo)) {
             val msg = when {
-                UserStatusAction.checkUserInHospital(userInfo) -> "你还在医院躺着咧，怎么钓鱼?"
-                UserStatusAction.checkUserInPrison(userInfo) -> "在监狱就不要想钓鱼的事了..."
+                cn.chahuyun.economy.manager.UserStatusManager.checkUserInHospital(userInfo) -> "你还在医院躺着咧，怎么钓鱼?"
+                cn.chahuyun.economy.manager.UserStatusManager.checkUserInPrison(userInfo) -> "在监狱就不要想钓鱼的事了..."
                 else -> "你当前不在可以钓鱼的地方"
             }
             subject.sendMessage(MessageUtil.formatMessageChain(message, msg))
@@ -149,7 +146,7 @@ object GamesUsecase {
             return
         }
 
-        UserStatusAction.moveFishpond(userInfo, 0)
+        cn.chahuyun.economy.manager.UserStatusManager.moveFishpond(userInfo, 0)
         val fishPond = fishInfo.getFishPond(subject)
 
         if (fishInfo.rodLevel < fishPond.minLevel) {
@@ -282,7 +279,7 @@ object GamesUsecase {
                 fishPond
             )
         )
-        UserStatusAction.moveHome(userInfo)
+        cn.chahuyun.economy.manager.UserStatusManager.moveHome(userInfo)
         TitleManager.checkFishTitle(userInfo, subject)
     }
 
@@ -338,21 +335,14 @@ object GamesUsecase {
         group.sendMessage(
             MessageUtil.formatMessageChain(
                 event.message,
-                "当前鱼塘信息:%n" +
-                        "鱼塘名称:%s%n" +
-                        "鱼塘等级:%d%n" +
-                        "鱼塘钓鱼次数:%d%n" +
-                        "鱼塘最低鱼竿等级:%d%n" +
-                        "鱼塘升级所需金额:%d%n" +
-                        "鱼塘金额:%.1f%n" +
-                        "鱼塘升级进度:%.1f%%",
-                fishPond.name ?: "",
-                level,
-                fishPond.number,
-                fishPond.minLevel,
-                value.amount,
-                money,
-                (money / value.amount * 100)
+                "当前鱼塘信息:\n" +
+                    "鱼塘名称:${fishPond.name ?: ""}\n" +
+                    "鱼塘等级:${level}\n" +
+                    "鱼塘钓鱼次数:${fishPond.number}\n" +
+                    "鱼塘最低鱼竿等级:${fishPond.minLevel}\n" +
+                    "鱼塘升级所需金额:${MoneyFormatUtil.format(value.amount.toDouble())}\n" +
+                    "鱼塘金额:${MoneyFormatUtil.format(money)}\n" +
+                    "鱼塘升级进度:${FormatUtil.fixed(money / value.amount * 100, 1)}%"
             )
         )
     }

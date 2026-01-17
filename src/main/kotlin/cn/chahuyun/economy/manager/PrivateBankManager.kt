@@ -7,7 +7,7 @@ import cn.hutool.cron.CronUtil
 import cn.hutool.cron.task.Task
 
 /**
- * 私人银行模块定时任务
+ * 银行（PrivateBank 模块）定时任务
  */
 object PrivateBankManager {
 
@@ -27,7 +27,7 @@ object PrivateBankManager {
         CronUtil.schedule("private-bank-foxbond-settle", "0 5 18 1,15 * ?", PrivateBankFoxBondSettleTask())
         CronUtil.schedule("private-bank-foxbond-redeem", "0 15 4 * * ?", PrivateBankFoxBondRedeemTask())
 
-        Log.info("私人银行模块已初始化")
+        Log.info("银行模块已初始化")
     }
 
     private class PrivateBankInterestTask : Task {
@@ -59,7 +59,7 @@ object PrivateBankManager {
                     }
                 }
             }.onFailure { e ->
-                Log.error("私人银行:利息结算任务异常", e)
+                Log.error("银行:利息结算任务异常", e)
             }
         }
     }
@@ -69,7 +69,7 @@ object PrivateBankManager {
             runCatching {
                 PrivateBankService.ensureWeeklyBondIssue()
             }.onFailure { e ->
-                Log.error("私人银行:国卷发行任务异常", e)
+                Log.error("银行:国卷发行任务异常", e)
             }
         }
     }
@@ -79,10 +79,10 @@ object PrivateBankManager {
             runCatching {
                 val bonds = PrivateBankFoxBondService.issueBondsForToday()
                 if (bonds.isNotEmpty()) {
-                    Log.info("私人银行:狐卷已发行 ${bonds.size} 张")
+                    Log.info("银行:狐卷已发行 ${bonds.size} 张")
                 }
             }.onFailure { e ->
-                Log.error("私人银行:狐卷发行任务异常", e)
+                Log.error("银行:狐卷发行任务异常", e)
             }
         }
     }
@@ -92,10 +92,10 @@ object PrivateBankManager {
             runCatching {
                 val n = PrivateBankFoxBondService.settleExpiredBids()
                 if (n > 0) {
-                    Log.info("私人银行:狐卷结算完成 $n 张")
+                    Log.info("银行:狐卷结算完成 $n 张")
                 }
             }.onFailure { e ->
-                Log.error("私人银行:狐卷结算任务异常", e)
+                Log.error("银行:狐卷结算任务异常", e)
             }
         }
     }
@@ -105,10 +105,10 @@ object PrivateBankManager {
             runCatching {
                 val n = PrivateBankFoxBondService.redeemMaturedHoldings()
                 if (n > 0) {
-                    Log.info("私人银行:狐卷到期回流 $n 笔")
+                    Log.info("银行:狐卷到期回流 $n 笔")
                 }
             }.onFailure { e ->
-                Log.error("私人银行:狐卷到期回流任务异常", e)
+                Log.error("银行:狐卷到期回流任务异常", e)
             }
         }
     }
@@ -118,10 +118,10 @@ object PrivateBankManager {
             runCatching {
                 val n = PrivateBankService.collectOverdueLoans()
                 if (n > 0) {
-                    Log.info("私人银行:到期贷款已处理 $n 笔")
+                    Log.info("银行:到期贷款已处理 $n 笔")
                 }
             }.onFailure { e ->
-                Log.error("私人银行:到期贷款追缴任务异常", e)
+                Log.error("银行:到期贷款追缴任务异常", e)
             }
         }
     }

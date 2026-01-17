@@ -6,6 +6,7 @@ import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
+import cn.chahuyun.economy.utils.MoneyFormatUtil
 import cn.chahuyun.hibernateplus.HibernateFactory
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
@@ -172,11 +173,11 @@ class FishInfo(
      */
     private fun isMoney(user: User, userMoney: Double, upMoney: Int): SingleMessage {
         if (userMoney - upMoney < 0) {
-            return PlainText(String.format("你的金币不够%s啦！", upMoney))
+            return PlainText("你的金币不够${MoneyFormatUtil.format(upMoney.toDouble())}啦！")
         }
         if (EconomyUtil.minusMoneyToUser(user, upMoney.toDouble())) {
             upFishRod()
-            return PlainText(String.format("升级成功,花费%s金币!你的鱼竿更强了!\n%s->%s", upMoney, this.rodLevel - 1, rodLevel))
+            return PlainText("升级成功,花费${MoneyFormatUtil.format(upMoney.toDouble())}金币!你的鱼竿更强了!\n${this.rodLevel - 1}->${rodLevel}")
         }
         return PlainText("升级失败!")
     }

@@ -1,7 +1,6 @@
 package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.HuYanEconomy
-import cn.chahuyun.economy.action.LotteryAction
 import cn.chahuyun.economy.entity.LotteryInfo
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.util.RandomUtil
@@ -65,7 +64,7 @@ class LotteryMinutesTask(
             lotteryInfo.bonus = bonus
             lotteryInfo.current = currentString
             val merged = HibernateFactory.merge(lotteryInfo)
-            LotteryAction.result(1, location, merged)
+            LotteryManager.result(1, location, merged)
         }
 
         for (group in groups) {
@@ -74,7 +73,7 @@ class LotteryMinutesTask(
         }
 
         CronUtil.remove(id)
-        LotteryAction.minuteTiming.set(false)
+        LotteryManager.minuteTiming.set(false)
     }
 }
 
@@ -127,7 +126,7 @@ class LotteryHoursTask(
             lotteryInfo.bonus = bonus
             lotteryInfo.current = currentString
             val merged = HibernateFactory.merge(lotteryInfo)
-            LotteryAction.result(2, location, merged)
+            LotteryManager.result(2, location, merged)
         }
 
         for (group in groups) {
@@ -136,7 +135,7 @@ class LotteryHoursTask(
         }
 
         CronUtil.remove(id)
-        LotteryAction.hoursTiming.set(false)
+        LotteryManager.hoursTiming.set(false)
     }
 }
 
@@ -193,7 +192,7 @@ class LotteryDayTask(
             lotteryInfo.bonus = bonus
             lotteryInfo.current = currentString
             val merged = HibernateFactory.merge(lotteryInfo)
-            LotteryAction.result(3, location, merged)
+            LotteryManager.result(3, location, merged)
             if (location == 5) {
                 list.add(merged)
             }

@@ -1,0 +1,40 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "gradle buildPlugin",
+			"type": "shell",
+			"command": "g:\\IdeaProject\\github\\HuYanEconomy\\gradlew.bat",
+			"args": [
+				"buildPlugin",
+				"--console=plain"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "gradle buildPlugin stacktrace",
+			"type": "shell",
+			"command": "g:\\IdeaProject\\github\\HuYanEconomy\\gradlew.bat",
+			"args": [
+				"buildPlugin",
+				"--console=plain",
+				"--stacktrace"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "gradle buildPlugin log",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Set-Location 'g:\\IdeaProject\\github\\HuYanEconomy'; .\\gradlew.bat buildPlugin --console=plain --stacktrace 2>&1 | Tee-Object -FilePath .\\buildplugin.log"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

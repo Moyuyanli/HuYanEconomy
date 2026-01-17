@@ -2,10 +2,7 @@ package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.entity.redpack.RedPack
 import cn.chahuyun.economy.repository.RedPackRepository
-import cn.chahuyun.economy.utils.EconomyUtil
-import cn.chahuyun.economy.utils.MessageUtil
-import cn.chahuyun.economy.utils.ShareUtils
-import cn.chahuyun.economy.utils.TimeConvertUtil
+import cn.chahuyun.economy.utils.*
 import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Contact
@@ -99,8 +96,8 @@ object RedPackManager {
                         "红包ID: $id" +
                         "\n红包名称: $name" +
                         "\n红包发送者: $senderId" +
-                        "\n红包总额: $money" +
-                        "\n剩余金额: ${String.format("%.1f", (money ?: 0.0) - redPack.takenMoneys)}" +
+                        "\n红包总额: ${MoneyFormatUtil.format(money ?: 0.0)}" +
+                        "\n剩余金额: ${MoneyFormatUtil.format((money ?: 0.0) - redPack.takenMoneys)}" +
                         "\n红包人数: ${receivers.size}/$number" +
                         "\n创建时间: ${TimeConvertUtil.timeConvert(createTime ?: Date())}" +
                         passwordStr +
@@ -185,8 +182,7 @@ object RedPackManager {
             subject.sendMessage(
                 MessageUtil.formatMessageChain(
                     message,
-                    "恭喜你领取到了一个红包，你领取了 %.1f 枚金币！",
-                    perMoney
+                    "恭喜你领取到了一个红包，你领取了 ${MoneyFormatUtil.format(perMoney)} 枚金币！"
                 )
             )
         }
@@ -199,7 +195,7 @@ object RedPackManager {
                 cn.hutool.core.date.BetweenFormatter.Level.SECOND
             )
             if (!skipMessage) {
-                subject.sendMessage(MessageUtil.formatMessageChain("%s已被领完！共计花费%s!", redPack.name ?: "", between))
+                subject.sendMessage(MessageUtil.formatMessageChain("${redPack.name ?: ""}已被领完！共计花费${between}!"))
             }
             RedPackRepository.delete(redPack)
             finished = true
@@ -225,7 +221,9 @@ object RedPackManager {
             val account = EconomyService.account(ownerId.toString(), null)
             EconomyUtil.plusMoneyToWalletForAccount(account, remainingMoney)
         }
-        group.sendMessage(MessageUtil.formatMessageChain(ownerId, "你的红包过期啦！退还金币 %.1f 个！", remainingMoney))
+        group.sendMessage(
+            MessageUtil.formatMessageChain(ownerId, "你的红包过期啦！退还金币 ${MoneyFormatUtil.format(remainingMoney)} 个！")
+        )
     }
 }
 

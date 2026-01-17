@@ -144,7 +144,7 @@ object TitleManager {
                 "[无]" to "8a8886"
             }
 
-            titleInfo.title = String.format("[%s]", rawTitle)
+            titleInfo.title = "[${rawTitle}]"
             titleInfo.sColor = color
         } else {
             titleInfo.title = "[无]"

@@ -181,7 +181,7 @@ interface Usable {
  */
 abstract class AbstractProp(
     override val kind: String,
-    override val code: String,
+    override var code: String,
     override var name: String,
 ) : BaseProp, Cloneable {
     override var description: String = ""

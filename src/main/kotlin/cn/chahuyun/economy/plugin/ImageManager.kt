@@ -2,6 +2,7 @@ package cn.chahuyun.economy.plugin
 
 import cn.chahuyun.economy.EconomyBuildConstants
 import cn.chahuyun.economy.HuYanEconomy
+import cn.chahuyun.economy.utils.FormatUtil
 import cn.chahuyun.economy.utils.ImageUtil
 import cn.chahuyun.economy.utils.Log
 import kotlinx.coroutines.Dispatchers
@@ -77,7 +78,7 @@ object ImageManager {
                         val done = completed.incrementAndGet()
                         if (done % step == 0 || done == totalFiles) {
                             val percentage = done.toDouble() / totalFiles.toDouble() * 100.0
-                            Log.info(String.format("处理进度: %.2f%%", percentage))
+                            Log.info("处理进度: ${FormatUtil.fixed(percentage, 2)}%")
                         }
                     }
                 }

@@ -3,9 +3,7 @@ package cn.chahuyun.economy.privatebank
 import cn.chahuyun.economy.entity.privatebank.PrivateBankFoxBond
 import cn.chahuyun.economy.entity.privatebank.PrivateBankFoxBondBid
 import cn.chahuyun.economy.entity.privatebank.PrivateBankFoxBondHolding
-import cn.chahuyun.economy.utils.EconomyUtil
-import cn.chahuyun.economy.utils.Log
-import cn.chahuyun.economy.utils.ShareUtils
+import cn.chahuyun.economy.utils.*
 import cn.hutool.core.date.DateUtil
 import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.contact.User
@@ -83,26 +81,22 @@ object PrivateBankFoxBondService {
         }
 
         val bank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == owner.id }
-            ?: return false to "你还没有创建私人银行"
+            ?: return false to "你还没有创建自己的银行"
         if (bank.isDefaulter()) return false to "失信期间禁止参与竞标"
 
         if (bidRate > bond.baseRate + 1e-9) {
-            return false to "竞标利率不得高于原始利率（原始 %.2f%%/day）".format(bond.baseRate)
+            return false to "竞标利率不得高于原始利率（原始 ${FormatUtil.fixed(bond.baseRate, 2)}%/day）"
         }
 
         val minRate = baseBankInterestPercent()
         if (bidRate + 1e-9 < minRate) {
-            return false to "竞标利率不得低于主银行基准均值（%.1f%%）".format(minRate)
+            return false to "竞标利率不得低于主银行基准均值（${FormatUtil.fixed(minRate, 1)}%）"
         }
 
         val reserve = EconomyUtil.getMoneyByBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC)
         if (reserve + 1e-6 < bond.faceValue + premium) {
-            return false to "准备金不足：需 %.1f（面额 %.1f + 溢价 %.1f），当前 %.1f".format(
-                ShareUtils.rounding(bond.faceValue + premium),
-                ShareUtils.rounding(bond.faceValue),
-                ShareUtils.rounding(premium),
-                ShareUtils.rounding(reserve)
-            )
+            val need = ShareUtils.rounding(bond.faceValue + premium)
+            return false to "准备金不足：需 ${MoneyFormatUtil.format(need)}（面额 ${MoneyFormatUtil.format(bond.faceValue)} + 溢价 ${MoneyFormatUtil.format(premium)}），当前 ${MoneyFormatUtil.format(reserve)}"
         }
 
         // 同一银行对同一狐卷仅保留一条竞标（merge 会按 id 工作，因此这里手动复用已有记录）
@@ -117,12 +111,7 @@ object PrivateBankFoxBondService {
         bid.createdAt = now
         PrivateBankRepository.saveFoxBondBid(bid)
 
-        return true to "竞标已提交：狐卷 ${bond.code} 面额=%.1f 原始=%.2f%%/day 你的溢价=%.1f 你的利率=%.2f%%/day".format(
-            ShareUtils.rounding(bond.faceValue),
-            bond.baseRate,
-            ShareUtils.rounding(premium),
-            bidRate
-        )
+        return true to "竞标已提交：狐卷 ${bond.code} 面额=${MoneyFormatUtil.format(bond.faceValue)} 原始=${FormatUtil.fixed(bond.baseRate, 2)}%/day 你的溢价=${MoneyFormatUtil.format(premium)} 你的利率=${FormatUtil.fixed(bidRate, 2)}%/day"
     }
 
     fun settleExpiredBids(now: Date = Date()): Int {

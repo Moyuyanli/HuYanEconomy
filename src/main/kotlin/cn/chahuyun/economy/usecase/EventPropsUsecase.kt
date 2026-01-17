@@ -57,7 +57,7 @@ object EventPropsUsecase {
             }
 
             if (!PropsShop.checkPropExist(code) && !PropsShop.checkPropNameExist(code)) {
-                builder.add(MessageUtil.formatMessage("\n道具 %s 不存在!", code))
+                builder.add(MessageUtil.formatMessage("\n道具 ${code} 不存在!"))
                 continue
             }
 
@@ -72,7 +72,7 @@ object EventPropsUsecase {
             val finalCost = cost * number
 
             if (money < finalCost) {
-                builder.add(MessageUtil.formatMessage("\n道具 %s ,余额不足%d,购买失败!", name, finalCost))
+                builder.add(MessageUtil.formatMessage("\n道具 ${name} ,余额不足${finalCost},购买失败!"))
                 continue
             }
 
@@ -109,9 +109,9 @@ object EventPropsUsecase {
                 }
 
                 val unit = if (template is Stackable) template.unit else "个"
-                builder.add(MessageUtil.formatMessage("\n道具 %s 购买 %d %s 成功!", name, number, unit))
+                builder.add(MessageUtil.formatMessage("\n道具 ${name} 购买 ${number} ${unit} 成功!"))
             } else {
-                builder.add(MessageUtil.formatMessage("\n道具 %s 购买失败!", name))
+                builder.add(MessageUtil.formatMessage("\n道具 ${name} 购买失败!"))
             }
         }
 

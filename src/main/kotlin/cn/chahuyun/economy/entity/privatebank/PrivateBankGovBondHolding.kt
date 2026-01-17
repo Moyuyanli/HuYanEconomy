@@ -4,7 +4,7 @@ import jakarta.persistence.*
 import java.util.*
 
 /**
- * 国卷持仓（归属私人银行行长/银行）
+ * 国卷持仓（归属银行；PrivateBank 模块）
  */
 @Entity(name = "PrivateBankGovBondHolding")
 @Table(name = "PrivateBankGovBondHolding")

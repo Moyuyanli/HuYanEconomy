@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package cn.chahuyun.economy.prop
 
 import cn.chahuyun.economy.entity.UserBackpack
@@ -7,6 +9,7 @@ import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUtil
 import cn.hutool.json.JSONConfig
+import cn.hutool.json.JSONObject
 import cn.hutool.json.JSONUtil
 import kotlinx.coroutines.runBlocking
 import java.util.*
@@ -17,6 +20,17 @@ import java.util.concurrent.ConcurrentHashMap
  * 实现开闭原则，基于接口处理道具行为
  */
 object PropsManager {
+
+    private fun isInvalidCode(code: String?): Boolean {
+        return code.isNullOrBlank() || code == "code"
+    }
+
+    private fun applyCodeIfPossible(prop: BaseProp, code: String?) {
+        if (isInvalidCode(code)) return
+        if (prop is AbstractProp && isInvalidCode(prop.code)) {
+            prop.code = code!!
+        }
+    }
 
     private val propsClassMap = ConcurrentHashMap<String, Class<out BaseProp>>()
 
@@ -186,6 +200,23 @@ object PropsManager {
      */
     @JvmStatic
     fun updateProp(id: Long, prop: BaseProp) {
+        // 防止历史数据/反序列化缺陷导致 code 被写空。
+        // 若当前对象 code 无效，则尝试从数据库已存在的 PropsData 回填。
+        if (isInvalidCode(prop.code)) {
+            val existing = HibernateFactory.selectOneById<PropsData>(id)
+            val fallback = existing?.code
+                ?.takeIf { !isInvalidCode(it) }
+                ?: existing?.data
+                    ?.let {
+                        runCatching {
+                            JSONUtil.parseObj(it).getStr("code")
+                        }.getOrNull()
+                    }
+                    ?.takeIf { !isInvalidCode(it) }
+
+            applyCodeIfPossible(prop, fallback)
+        }
+
         val data = serialization(prop)
         data.id = id
         HibernateFactory.merge(data)
@@ -336,8 +367,22 @@ object PropsManager {
         val data = propsData.data ?: throw RuntimeException("道具数据内容为空，ID: $id")
 
         return try {
-            JSONUtil.toBean(data, jsonConfig, clazz)
+            val jsonObject = JSONUtil.parseObj(data)
+
+            // 优先以“列->JSON”的方式补齐 code，避免 Kotlin val/父类字段导致 toBean 丢失 code。
+            if (isInvalidCode(jsonObject.getStr("code")) && !isInvalidCode(propsData.code)) {
+                jsonObject["code"] = propsData.code
+            }
+            if (isInvalidCode(jsonObject.getStr("kind")) && !propsData.kind.isNullOrBlank()) {
+                jsonObject["kind"] = propsData.kind
+            }
+
+            val prop = JSONUtil.toBean(jsonObject.toString(), jsonConfig, clazz)
                 ?: throw RuntimeException("道具反序列化结果为空")
+
+            // 最终兜底：如果 toBean 仍然未能正确注入 code，则从 JSON/列回填到对象。
+            applyCodeIfPossible(prop, jsonObject.getStr("code") ?: propsData.code)
+            prop
         } catch (e: Exception) {
             throw RuntimeException("道具反序列化失败，ID: $id, 目标类型: ${clazz.name}, 错误: ${e.message}", e)
         }
@@ -356,8 +401,19 @@ object PropsManager {
         val data = one.data ?: throw RuntimeException("道具数据内容为空，ID: ${one.id}")
 
         return try {
-            JSONUtil.toBean(data, jsonConfig, clazz)
+            val jsonObject: JSONObject = JSONUtil.parseObj(data)
+            if (isInvalidCode(jsonObject.getStr("code")) && !isInvalidCode(one.code)) {
+                jsonObject["code"] = one.code
+            }
+            if (isInvalidCode(jsonObject.getStr("kind")) && !one.kind.isNullOrBlank()) {
+                jsonObject["kind"] = one.kind
+            }
+
+            val prop = JSONUtil.toBean(jsonObject.toString(), jsonConfig, clazz)
                 ?: throw RuntimeException("道具反序列化结果为空")
+
+            applyCodeIfPossible(prop, jsonObject.getStr("code") ?: one.code)
+            prop
         } catch (e: Exception) {
             throw RuntimeException("道具反序列化失败，ID: ${one.id}, 目标类型: ${clazz.name}, 错误: ${e.message}", e)
         }

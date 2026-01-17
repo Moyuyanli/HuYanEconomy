@@ -27,23 +27,19 @@ class MessageUtil private constructor() : MessageUtilTemplate(), cn.chahuyun.aut
         }
 
         @JvmStatic
-        fun formatMessage(format: String, vararg params: Any?): PlainText {
-            return PlainText(String.format(format, *params))
+        fun formatMessage(text: String): PlainText = PlainText(text)
+
+        @JvmStatic
+        fun formatMessageChain(text: String): MessageChain = MessageChainBuilder().append(PlainText(text)).build()
+
+        @JvmStatic
+        fun formatMessageChain(citation: MessageChain, text: String): MessageChain {
+            return MessageChainBuilder().append(QuoteReply(citation)).append(PlainText(text)).build()
         }
 
         @JvmStatic
-        fun formatMessageChain(format: String, vararg params: Any?): MessageChain {
-            return MessageChainBuilder().append(String.format(format, *params)).build()
-        }
-
-        @JvmStatic
-        fun formatMessageChain(citation: MessageChain, format: String, vararg params: Any?): MessageChain {
-            return MessageChainBuilder().append(QuoteReply(citation)).append(String.format(format, *params)).build()
-        }
-
-        @JvmStatic
-        fun formatMessageChain(at: Long, format: String, vararg params: Any?): MessageChain {
-            return MessageChainBuilder().append(At(at)).append(String.format(format, *params)).build()
+        fun formatMessageChain(at: Long, text: String): MessageChain {
+            return MessageChainBuilder().append(At(at)).append(PlainText(text)).build()
         }
 
         @JvmStatic
@@ -52,18 +48,16 @@ class MessageUtil private constructor() : MessageUtilTemplate(), cn.chahuyun.aut
         }
 
         @JvmStatic
-        fun formatMessageBuild(format: String, vararg params: Any?): MessageChainBuilder {
-            return MessageChainBuilder().append(String.format(format, *params))
+        fun formatMessageBuild(text: String): MessageChainBuilder = MessageChainBuilder().append(PlainText(text))
+
+        @JvmStatic
+        fun formatMessageBuild(citation: MessageChain, text: String): MessageChainBuilder {
+            return MessageChainBuilder().append(QuoteReply(citation)).append(PlainText(text))
         }
 
         @JvmStatic
-        fun formatMessageBuild(citation: MessageChain, format: String, vararg params: Any?): MessageChainBuilder {
-            return MessageChainBuilder().append(QuoteReply(citation)).append(String.format(format, *params))
-        }
-
-        @JvmStatic
-        fun formatMessageBuild(at: Long, format: String, vararg params: Any?): MessageChainBuilder {
-            return MessageChainBuilder().append(At(at)).append(String.format(format, *params))
+        fun formatMessageBuild(at: Long, text: String): MessageChainBuilder {
+            return MessageChainBuilder().append(At(at)).append(PlainText(text))
         }
     }
 }

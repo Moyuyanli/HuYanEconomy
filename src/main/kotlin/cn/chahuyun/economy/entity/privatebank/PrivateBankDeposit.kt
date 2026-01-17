@@ -4,7 +4,7 @@ import jakarta.persistence.*
 import java.util.*
 
 /**
- * 储户在某私人银行的存款记录（本金+利息累积）。
+ * 储户在某银行的存款记录（PrivateBank 模块；本金+利息累积）。
  */
 @Entity(name = "PrivateBankDeposit")
 @Table(

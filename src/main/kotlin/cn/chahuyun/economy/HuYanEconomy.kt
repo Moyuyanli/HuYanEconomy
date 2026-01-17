@@ -2,10 +2,7 @@ package cn.chahuyun.economy
 
 import cn.chahuyun.authorize.AuthorizeServer
 import cn.chahuyun.authorize.exception.ExceptionHandle
-import cn.chahuyun.economy.action.BankAction
 import cn.chahuyun.economy.action.GamesAction
-import cn.chahuyun.economy.action.LotteryAction
-import cn.chahuyun.economy.action.SignAction
 import cn.chahuyun.economy.command.EconomyCommand
 import cn.chahuyun.economy.config.EconomyConfig
 import cn.chahuyun.economy.config.EconomyPluginConfig
@@ -15,6 +12,8 @@ import cn.chahuyun.economy.constant.Icon
 import cn.chahuyun.economy.data.PrizesData
 import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
+import cn.chahuyun.economy.manager.BankManager
+import cn.chahuyun.economy.manager.LotteryManager
 import cn.chahuyun.economy.manager.PrivateBankManager
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.plugin.*
@@ -111,9 +110,9 @@ object HuYanEconomy : KotlinPlugin(
 
         // 功能加载
         EconomyUtil.init()
-        LotteryAction.init()
+        LotteryManager.init()
         FishManager.init()
-        BankAction.init()
+        BankManager.init()
         TitleManager.init()
         PrivateBankManager.init()
         YiYanManager.init()
@@ -137,8 +136,8 @@ object HuYanEconomy : KotlinPlugin(
         val eventChannel = GlobalEventChannel.parentScope(this)
 
         // 监听自定义签到事件
-        eventChannel.subscribeAlways<SignEvent>(priority = EventPriority.HIGH) { SignAction.randomSignGold(it) }
-        eventChannel.subscribeAlways<SignEvent> { SignAction.signProp(it) }
+        eventChannel.subscribeAlways<SignEvent>(priority = EventPriority.HIGH) { cn.chahuyun.economy.manager.SignManager.randomSignGold(it) }
+        eventChannel.subscribeAlways<SignEvent> { cn.chahuyun.economy.manager.SignManager.signProp(it) }
         eventChannel.subscribeAlways<FishStartEvent> { GamesAction.fishStart(it) }
         eventChannel.subscribeAlways<FishRollEvent> { GamesAction.fishRoll(it) }
 
@@ -152,7 +151,7 @@ object HuYanEconomy : KotlinPlugin(
         PLUGIN_STATUS = false
 
         cn.chahuyun.economy.manager.GamesManager.shutdown()
-        LotteryAction.close()
+        LotteryManager.close()
         YiYanManager.shutdown()
         CronUtil.stop()
         Log.info("插件已卸载!")

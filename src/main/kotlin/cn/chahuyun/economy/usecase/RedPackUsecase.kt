@@ -10,10 +10,7 @@ import cn.chahuyun.economy.entity.redpack.RedPack
 import cn.chahuyun.economy.entity.redpack.RedPackType
 import cn.chahuyun.economy.manager.RedPackManager
 import cn.chahuyun.economy.repository.RedPackRepository
-import cn.chahuyun.economy.utils.EconomyUtil
-import cn.chahuyun.economy.utils.Log
-import cn.chahuyun.economy.utils.MessageUtil
-import cn.chahuyun.economy.utils.TimeConvertUtil
+import cn.chahuyun.economy.utils.*
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import net.mamoe.mirai.event.events.GroupMessageEvent
@@ -130,19 +127,12 @@ object RedPackUsecase {
 
         subject.sendMessage(
             MessageUtil.formatMessageChain(
-                "%s 发送了一个 %s,快来抢红包吧！\n" +
-                        "红包ID: %d\n" +
-                        "红包金额: %.1f 枚金币\n" +
-                        "红包个数: %d\n" +
-                        "发送时间: %s\n" +
-                        "%s",
-                sender.nick,
-                typeDesc,
-                id,
-                money,
-                number,
-                TimeConvertUtil.timeConvert(pack.createTime ?: Date()),
-                claimMsg
+                "${sender.nick} 发送了一个 ${typeDesc},快来抢红包吧！\n" +
+                    "红包ID: ${id}\n" +
+                    "红包金额: ${MoneyFormatUtil.format(money)} 枚金币\n" +
+                    "红包个数: ${number}\n" +
+                    "发送时间: ${TimeConvertUtil.timeConvert(pack.createTime ?: Date())}\n" +
+                    "${claimMsg}"
             )
         )
     }
@@ -256,7 +246,7 @@ object RedPackUsecase {
             val messageChain = buildMessageChain {
                 +At(sender.id)
                 +" $password"
-                +"\n你抢 $name 抢到 ${String.format("%.1f", amount)}"
+                +"\n你抢 $name 抢到 ${MoneyFormatUtil.format(amount)}"
             }
             subject.sendMessage(messageChain)
         } else if (results.size > 1) {
@@ -264,7 +254,7 @@ object RedPackUsecase {
                 +At(sender.id)
                 +"你本次抢到的口令红包:\n"
                 results.forEach { (name, amount) ->
-                    +"$name,你抢到了 ${String.format("%.1f", amount)}\n"
+                    +"$name,你抢到了 ${MoneyFormatUtil.format(amount)}\n"
                 }
             }
             subject.sendMessage(messageChain)
@@ -319,7 +309,7 @@ object RedPackUsecase {
                 +At(sender.id)
                 +"你本次抢到的红包:\n"
                 results.forEach { (name, amount) ->
-                    +"$name,你抢到了 ${String.format("%.1f", amount)}\n"
+                    +"$name,你抢到了 ${MoneyFormatUtil.format(amount)}\n"
                 }
             }
             subject.sendMessage(messageChain)

@@ -4,7 +4,7 @@ import jakarta.persistence.*
 import java.util.*
 
 /**
- * 私人银行（Private Banking System）
+ * 银行（PrivateBank 模块；Private Banking System）
  *
  * 说明：
  * - 真实资金托管分别落在：

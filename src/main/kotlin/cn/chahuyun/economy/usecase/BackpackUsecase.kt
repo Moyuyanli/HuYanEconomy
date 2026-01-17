@@ -104,13 +104,13 @@ object BackpackUsecase {
             for (backpack in backpacks) {
                 if (backpack.propId == propId) {
                     val result = PropsManager.useProp(backpack, useEvent)
-                    builder.add(MessageUtil.formatMessage("\n%d %s!", propId, result.message))
+                    builder.add(MessageUtil.formatMessage("\n${propId} ${result.message}!"))
                     success = true
                     break
                 }
             }
             if (!success) {
-                builder.add(MessageUtil.formatMessage("\n%d 你没有这个道具!", propId))
+                builder.add(MessageUtil.formatMessage("\n${propId} 你没有这个道具!"))
             }
         }
 
@@ -151,14 +151,14 @@ object BackpackUsecase {
                     val prop = PropsManager.getProp(backpack)
                     val name = prop?.name ?: "未知道具"
                     BackpackManager.delPropToBackpack(userInfo, propId)
-                    builder.add(MessageUtil.formatMessage("\n你丢掉了你的 %s 。", name))
+                    builder.add(MessageUtil.formatMessage("\n你丢掉了你的 ${name} 。"))
                     match = true
                     break
                 }
             }
 
             if (!match) {
-                builder.add(MessageUtil.formatMessage("\n没找到 %d 的道具。", propId))
+                builder.add(MessageUtil.formatMessage("\n没找到 ${propId} 的道具。"))
             }
         }
 

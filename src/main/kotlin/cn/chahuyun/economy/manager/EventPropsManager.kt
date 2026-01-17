@@ -53,8 +53,7 @@ object EventPropsManager {
         for ((key, value) in shopInfo) {
             if (index >= endIndex) break
             if (index >= startIndex) {
-                val format = String.format("道具code:%s%n%s", key, value)
-                nodes.add(bot, PlainText(format))
+                nodes.add(bot, PlainText("道具code:${key}\n${value}"))
             }
             index++
         }
@@ -62,7 +61,7 @@ object EventPropsManager {
         // 添加页脚信息
         nodes.add(
             bot,
-            PlainText(String.format("当前页数: %d / 总页数: %d ; 总条数: %d", currentPage, totalPages, totalItems))
+            PlainText("当前页数: ${currentPage} / 总页数: ${totalPages} ; 总条数: ${totalItems}")
         )
 
         // 发送消息

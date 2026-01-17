@@ -3,6 +3,7 @@ package cn.chahuyun.economy.manager
 import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.entity.bank.BankInfo
 import cn.chahuyun.economy.utils.EconomyUtil
+import cn.chahuyun.economy.utils.FormatUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.ShareUtils
 import cn.chahuyun.hibernateplus.HibernateFactory
@@ -31,7 +32,7 @@ class BankInterestTask(
                 for ((account, money) in accountByBank) {
                     val userInfo: UserInfo = UserCoreManager.getUserInfo(account)
                     var v = ShareUtils.rounding(money) * (interest / 1000.0)
-                    v = String.format("%.1f", v).toDouble()
+                    v = FormatUtil.round(v, 1)
                     if (EconomyUtil.plusMoneyToBankForAccount(account, v)) {
                         userInfo.bankEarnings = v
                         HibernateFactory.merge(userInfo)

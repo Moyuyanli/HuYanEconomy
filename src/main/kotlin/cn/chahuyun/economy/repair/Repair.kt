@@ -175,10 +175,12 @@ class PropRepair : Repair {
                 jsonObject["kind"] = kind
                 val propClass = PropsManager.getPropClass(kind) ?: continue
 
-                if (jsonObject.containsKey("code") || jsonObject.getStr("code")
-                        .isNullOrBlank() || jsonObject.getStr("code") == "code"
-                ) {
-                    jsonObject["code"] = HibernateFactory.selectOne<UserBackpack>("propId", propsData.id!!)?.propCode
+                val codeStr = jsonObject.getStr("code")
+                if (!jsonObject.containsKey("code") || codeStr.isNullOrBlank() || codeStr == "code") {
+                    val fallback = HibernateFactory.selectOne<UserBackpack>("propId", propsData.id!!)?.propCode
+                    if (!fallback.isNullOrBlank()) {
+                        jsonObject["code"] = fallback
+                    }
                 }
 
                 // 使用修正后的 JSON 反序列化出对象

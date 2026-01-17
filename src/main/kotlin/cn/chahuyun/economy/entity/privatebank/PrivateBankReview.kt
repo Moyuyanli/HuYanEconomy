@@ -4,7 +4,7 @@ import jakarta.persistence.*
 import java.util.*
 
 /**
- * 私人银行评分（储户评价）
+ * 银行评分（PrivateBank 模块；储户评价）
  */
 @Entity(name = "PrivateBankReview")
 @Table(

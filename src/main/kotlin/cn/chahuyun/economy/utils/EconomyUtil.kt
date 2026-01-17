@@ -593,7 +593,7 @@ object EconomyUtil {
 
     /**
      * 从 [用户主银行(global)] 转入 [插件自定义账户(custom)]。
-     * 用于跨账本锁定保证金、私人银行库存注入等。
+        * 用于跨账本锁定保证金、银行（PrivateBank 模块）库存注入等。
      */
     @JvmStatic
     fun turnUserGlobalBankToPluginBankForId(
@@ -629,7 +629,7 @@ object EconomyUtil {
 
     /**
      * 从 [用户主银行(global)] 转入 [全局银行] 指定账户 (toUserId + toDescription)。
-     * 用于私人银行创建时把启动资金沉淀到银行自身的全局银行子账户等。
+        * 用于银行（PrivateBank 模块）创建时把启动资金沉淀到银行自身的全局银行子账户等。
      */
     @JvmStatic
     fun turnUserGlobalBankToGlobalBankAccount(
@@ -661,7 +661,7 @@ object EconomyUtil {
 
     /**
      * 从 [全局银行] 指定账户 (fromUserId + fromDescription) 转入 [插件自定义账户(custom)]。
-     * 用于私人银行把准备金、国卷到期资金等迁移到自定义账本。
+        * 用于银行（PrivateBank 模块）把准备金、国卷到期资金等迁移到自定义账本。
      */
     @JvmStatic
     fun turnGlobalBankAccountToPluginBankForId(

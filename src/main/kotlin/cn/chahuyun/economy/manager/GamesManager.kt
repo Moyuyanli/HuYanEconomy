@@ -1,7 +1,6 @@
 package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.HuYanEconomy
-import cn.chahuyun.economy.action.UserStatusAction
 import cn.chahuyun.economy.constant.FishPondLevelConstant
 import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.entity.fish.FishInfo
@@ -164,8 +163,7 @@ object GamesManager : CoroutineScope {
                     subject.sendMessage(
                         MessageUtil.formatMessageChain(
                             chain,
-                            "你还差%s分钟来抛第二杆!",
-                            expired - between
+                            "你还差${expired - between}分钟来抛第二杆!"
                         )
                     )
                     return true
@@ -190,7 +188,7 @@ object GamesManager : CoroutineScope {
                         "你钓起来一具尸体，附近的钓鱼佬报警了，你真是百口模辩啊！"
                     )
                 )
-                UserStatusAction.movePrison(userInfo, 60)
+                UserStatusManager.movePrison(userInfo, 60)
                 fishInfo.switchStatus()
                 true
             }
@@ -305,7 +303,7 @@ object GamesManager : CoroutineScope {
         Log.info("鱼竿等级指令")
         val userInfo = UserCoreManager.getUserInfo(event.sender)
         val rodLevel = userInfo.getFishInfo().rodLevel
-        event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你的鱼竿等级为%s级", rodLevel))
+        event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你的鱼竿等级为${rodLevel}级"))
     }
 }
 

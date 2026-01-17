@@ -77,7 +77,7 @@ class UserInfo(
     var bankEarnings: Double = 0.0,
 
     /**
-     * 默认私人银行 code（用于“存款/取款/贷款/还款”等指令在不填参时路由到指定私银）
+        * 默认银行 code（PrivateBank 模块；用于“存款/取款/贷款/还款”等指令在不填参时路由到指定银行）
      */
     var defaultPrivateBankCode: String? = null,
 

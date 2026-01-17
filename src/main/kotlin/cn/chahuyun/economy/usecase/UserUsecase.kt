@@ -56,7 +56,7 @@ object UserUsecase {
             Log.error("用户管理:查询个人信息上传图片出错!", e)
         }
 
-        singleMessages.append(userInfo.getString()).append(String.format("金币:%s", moneyByUser))
+        singleMessages.append(userInfo.getString()).append("金币:${MoneyFormatUtil.format(moneyByUser)}")
 
         val userInfoImageBase = UserCoreManager.getUserInfoImageBase(userInfo)
         if (userInfoImageBase == null) {
@@ -127,9 +127,9 @@ object UserUsecase {
         subject.sendMessage(
             MessageUtil.formatMessageChain(
                 message,
-                "你的经济状况:%n钱包余额:%.1f%n银行存款:%.1f",
-                money,
-                bank
+                "你的经济状况:\n" +
+                    "钱包余额:${FormatUtil.fixed(money, 1)}\n" +
+                    "银行存款:${FormatUtil.fixed(bank, 1)}"
             )
         )
     }
@@ -142,8 +142,8 @@ object UserUsecase {
         builder.add(QuoteReply(event.message))
 
         val group: Group = event.subject
-        if (cn.chahuyun.economy.action.UserStatusAction.checkUserInHospital(userInfo)) {
-            val userStatus: UserStatus = cn.chahuyun.economy.action.UserStatusAction.getUserStatus(userInfo)
+        if (cn.chahuyun.economy.manager.UserStatusManager.checkUserInHospital(userInfo)) {
+            val userStatus: UserStatus = cn.chahuyun.economy.manager.UserStatusManager.getUserStatus(userInfo)
 
             val price = userStatus.recoveryTime.toDouble() * 3.0
             val real: Double
@@ -152,19 +152,18 @@ object UserUsecase {
                 real = ShareUtils.rounding(price * 0.8)
                 builder.add(
                     MessageUtil.formatMessage(
-                        "你在出院的时候使用的医保卡，医药费打8折。%n原价/实付医药费:%s/%s",
-                        price,
-                        real
+                        "你在出院的时候使用的医保卡，医药费打8折。\n" +
+                            "原价/实付医药费:${MoneyFormatUtil.format(price)}/${MoneyFormatUtil.format(real)}"
                     )
                 )
             } else {
                 real = price
-                builder.add(MessageUtil.formatMessage("你出院了！这次只掏了%s的医药费！", real))
+                builder.add(MessageUtil.formatMessage("你出院了！这次只掏了${MoneyFormatUtil.format(real)}的医药费！"))
             }
 
             if (EconomyUtil.minusMoneyToUser(user, real)) {
                 group.sendMessage(builder.build())
-                cn.chahuyun.economy.action.UserStatusAction.moveHome(userInfo)
+                cn.chahuyun.economy.manager.UserStatusManager.moveHome(userInfo)
             } else {
                 group.sendMessage("出院失败!")
             }
