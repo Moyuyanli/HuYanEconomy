@@ -2,9 +2,8 @@ package cn.chahuyun.economy.utils
 
 import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.constant.Constant
+import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.EconomyUtil.init
-import cn.hutool.cron.CronUtil
-import cn.hutool.cron.task.Task
 import net.mamoe.mirai.contact.User
 import xyz.cssxsh.mirai.economy.EconomyService
 import xyz.cssxsh.mirai.economy.service.*
@@ -808,12 +807,12 @@ object EconomyUtil {
 
     private fun scheduleBankTotalCache() {
         if (bankTotalTaskRegistered) return
-        CronUtil.schedule("bank-total-cache", "0 0 */3 * * ?", BankTotalCacheTask())
+        HuYanScheduler.schedule("bank-total-cache", "0 0 */3 * * ?", BankTotalCacheTask())
         bankTotalTaskRegistered = true
     }
 
-    private class BankTotalCacheTask : Task {
-        override fun execute() {
+    private class BankTotalCacheTask : Runnable {
+        override fun run() {
             refreshBankTotalCache()
         }
     }

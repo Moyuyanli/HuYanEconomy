@@ -7,14 +7,13 @@ import cn.chahuyun.economy.entity.fish.FishInfo
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.plugin.FactorManager
 import cn.chahuyun.economy.repository.FishRepository
+import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import cn.hutool.core.util.RandomUtil
-import cn.hutool.cron.CronUtil
-import cn.hutool.cron.task.Task
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -48,19 +47,18 @@ object GamesManager : CoroutineScope {
 
     @JvmStatic
     fun init() {
-        val task = Task {
+        val task = Runnable {
             launch {
                 val groupPonds = FishRepository.listGroupPonds()
                 val levels = FishPondLevelConstant.entries.toTypedArray()
 
                 for (fishPond in groupPonds) {
                     try {
-                        val currentLevelIndex = fishPond.pondLevel - 1
-
                         // 如果已经是最高等级，跳过
-                        if (currentLevelIndex >= levels.size) {
+                        if (fishPond.pondLevel >= FishPondLevelConstant.MAX_LEVEL) {
                             continue
                         }
+                        val currentLevelIndex = fishPond.pondLevel - 1
 
                         val nextLevelConfig = levels[currentLevelIndex]
                         val upgradeCost = nextLevelConfig.amount.toDouble()
@@ -112,7 +110,7 @@ object GamesManager : CoroutineScope {
                 }
             }
         }
-        CronUtil.schedule("0 0 12 * * ?", task)
+        HuYanScheduler.schedule("fish-pond-upgrade", "0 0 12 * * ?", task)
     }
 
     @JvmStatic

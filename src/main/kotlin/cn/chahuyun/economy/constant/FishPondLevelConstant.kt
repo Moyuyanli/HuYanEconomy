@@ -18,6 +18,8 @@ enum class FishPondLevelConstant(val amount: Int, val minFishLevel: Int) {
     LV_10(100000, 30); // 修复了 Java 版本中 LV_10 是 10000 的可能错误（应为 100000?）
 
     companion object {
+        const val MAX_LEVEL = 10
+
         fun values(): Array<FishPondLevelConstant> = entries.toTypedArray()
     }
 }

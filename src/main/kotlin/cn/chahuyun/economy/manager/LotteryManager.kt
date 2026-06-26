@@ -2,11 +2,11 @@ package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.entity.LotteryInfo
+import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 import cn.chahuyun.hibernateplus.HibernateFactory
-import cn.hutool.cron.CronUtil
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.NormalMember
@@ -70,9 +70,9 @@ object LotteryManager {
 
         if (dayLottery.isNotEmpty()) {
             val dayTaskId = "dayTask"
-            CronUtil.remove(dayTaskId)
+            HuYanScheduler.cancel(dayTaskId)
             val dayTask = LotteryDayTask(dayTaskId)
-            CronUtil.schedule(dayTaskId, "0 0 0 * * ?", dayTask)
+            HuYanScheduler.schedule(dayTaskId, "0 0 0 * * ?", dayTask)
         }
     }
 
@@ -82,9 +82,9 @@ object LotteryManager {
             return
         }
         val hoursTaskId = "hoursTask"
-        CronUtil.remove(hoursTaskId)
+        HuYanScheduler.cancel(hoursTaskId)
         val hoursTask = LotteryHoursTask(hoursTaskId)
-        CronUtil.schedule(hoursTaskId, "0 0 * * * ?", hoursTask)
+        HuYanScheduler.schedule(hoursTaskId, "0 0 * * * ?", hoursTask)
         hoursTiming.set(true)
     }
 
@@ -94,9 +94,9 @@ object LotteryManager {
             return
         }
         val minutesTaskId = "minutesTask"
-        CronUtil.remove(minutesTaskId)
+        HuYanScheduler.cancel(minutesTaskId)
         val minutesTask = LotteryMinutesTask(minutesTaskId)
-        CronUtil.schedule(minutesTaskId, "0 * * * * ?", minutesTask)
+        HuYanScheduler.schedule(minutesTaskId, "0 * * * * ?", minutesTask)
         minuteTiming.set(true)
     }
 
@@ -148,10 +148,10 @@ object LotteryManager {
     }
 
     /**
-     * 关闭定时器（沿用旧行为：停止 CronUtil）。
+     * 关闭定时器。
      */
     @JvmStatic
     fun close() {
-        CronUtil.stop()
+        HuYanScheduler.stop()
     }
 }

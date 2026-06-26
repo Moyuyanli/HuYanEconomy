@@ -1,10 +1,10 @@
 package cn.chahuyun.economy.plugin
 
 import cn.chahuyun.economy.HuYanEconomy
+import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.version.CheckLatestVersion
 import cn.hutool.core.io.FileUtil
-import cn.hutool.cron.CronUtil
 import java.awt.FontFormatException
 import java.io.File
 import java.io.IOException
@@ -25,7 +25,7 @@ object PluginManager {
     @JvmStatic
     fun init() {
         // 插件加载的时候启动调度器
-        CronUtil.start()
+        HuYanScheduler.start()
 
         // 检查插件版本
         CheckLatestVersion.init()

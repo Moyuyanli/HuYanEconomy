@@ -1,9 +1,13 @@
 package cn.chahuyun.economy.plugin
 
 import cn.chahuyun.economy.model.yiyan.YiYan
+import cn.chahuyun.economy.scheduler.HuYanScheduler
+import cn.chahuyun.economy.utils.Log
 import cn.hutool.http.HttpUtil
 import cn.hutool.json.JSONUtil
-import java.util.concurrent.*
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -11,8 +15,6 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 object YiYanManager {
     private val yiyanQueue: BlockingQueue<YiYan> = LinkedBlockingQueue(5)
-    private val scheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
-    private val executor: ExecutorService = Executors.newFixedThreadPool(1)
     private val isShutdown = AtomicBoolean(false)
 
     @JvmStatic
@@ -23,18 +25,16 @@ object YiYanManager {
     private fun requestOneYiYan() {
         if (isShutdown.get()) return
 
-        CompletableFuture.runAsync({
-            try {
-                val yiYan = JSONUtil.parseObj(HttpUtil.get("https://v1.hitokoto.cn")).toBean(YiYan::class.java)
-                yiyanQueue.put(yiYan)
-            } catch (e: Exception) {
-                yiyanQueue.offer(YiYan(-1, "这里是小狐狸哒~", "kemomimi", "小狐狸语录"))
-            } finally {
-                if (!isShutdown.get()) {
-                    scheduler.schedule({ requestOneYiYan() }, 1, TimeUnit.SECONDS)
-                }
+        try {
+            val yiYan = JSONUtil.parseObj(HttpUtil.get("https://v1.hitokoto.cn")).toBean(YiYan::class.java)
+            yiyanQueue.put(yiYan)
+        } catch (e: Exception) {
+            yiyanQueue.offer(YiYan(-1, "这里是小狐狸哒~", "kemomimi", "小狐狸语录"))
+        } finally {
+            if (!isShutdown.get()) {
+                HuYanScheduler.scheduleOnce("yiyan", 1, TimeUnit.SECONDS) { requestOneYiYan() }
             }
-        }, executor)
+        }
     }
 
     @JvmStatic
@@ -47,25 +47,13 @@ object YiYanManager {
     }
 
     /**
-     * 优雅地关闭所有线程
+     * 优雅地关闭
      */
     @JvmStatic
     fun shutdown() {
         if (isShutdown.compareAndSet(false, true)) {
-            scheduler.shutdown()
-            executor.shutdown()
-            try {
-                if (!scheduler.awaitTermination(1, TimeUnit.SECONDS)) {
-                    scheduler.shutdownNow()
-                }
-                if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
-                    executor.shutdownNow()
-                }
-            } catch (e: InterruptedException) {
-                scheduler.shutdownNow()
-                executor.shutdownNow()
-                Thread.currentThread().interrupt()
-            }
+            HuYanScheduler.cancel("yiyan")
+            Log.info("一言管理:已关闭")
         }
     }
 }

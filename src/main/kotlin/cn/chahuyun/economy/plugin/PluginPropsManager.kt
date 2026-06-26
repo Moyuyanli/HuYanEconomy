@@ -7,10 +7,9 @@ import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.PropsCard
 import cn.chahuyun.economy.prop.Expirable
 import cn.chahuyun.economy.prop.PropsManager
+import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
-import cn.hutool.cron.CronUtil
-import cn.hutool.cron.task.Task
 
 /**
  * 插件道具管理 (Kotlin 重构版)
@@ -32,7 +31,7 @@ object PluginPropsManager {
         initFishBaits()
 
         // 每天凌晨4点检查过期道具
-        CronUtil.schedule("0 0 4 * * ?", PropExpireCheckTask())
+        HuYanScheduler.schedule("prop-expire-check", "0 0 4 * * ?", PropExpireCheckTask())
     }
 
     private fun initCards() {
@@ -174,8 +173,8 @@ object PluginPropsManager {
     }
 }
 
-class PropExpireCheckTask : Task {
-    override fun execute() {
+class PropExpireCheckTask : Runnable {
+    override fun run() {
         val collect = HibernateFactory.selectList(PropsData::class.java)
         for (data in collect) {
             try {

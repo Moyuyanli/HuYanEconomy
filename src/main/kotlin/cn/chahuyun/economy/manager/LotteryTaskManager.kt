@@ -2,10 +2,9 @@ package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.entity.LotteryInfo
+import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.util.RandomUtil
-import cn.hutool.cron.CronUtil
-import cn.hutool.cron.task.Task
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.NormalMember
@@ -19,9 +18,9 @@ import net.mamoe.mirai.contact.NormalMember
 
 class LotteryMinutesTask(
     private val id: String
-) : Task {
+) : Runnable {
 
-    override fun execute(): Unit = runBlocking {
+    override fun run(): Unit = runBlocking {
         val bot = requireNotNull(HuYanEconomy.bot)
         val current = arrayOf(
             RandomUtil.randomInt(0, 9).toString(),
@@ -72,16 +71,16 @@ class LotteryMinutesTask(
             bot.getGroup(group)?.sendMessage(format)
         }
 
-        CronUtil.remove(id)
+        HuYanScheduler.cancel(id)
         LotteryManager.minuteTiming.set(false)
     }
 }
 
 class LotteryHoursTask(
     private val id: String
-) : Task {
+) : Runnable {
 
-    override fun execute(): Unit = runBlocking {
+    override fun run(): Unit = runBlocking {
         val bot = requireNotNull(HuYanEconomy.bot)
         val current = arrayOf(
             RandomUtil.randomInt(0, 10).toString(),
@@ -134,16 +133,16 @@ class LotteryHoursTask(
             bot.getGroup(group)?.sendMessage(format)
         }
 
-        CronUtil.remove(id)
+        HuYanScheduler.cancel(id)
         LotteryManager.hoursTiming.set(false)
     }
 }
 
 class LotteryDayTask(
     private val id: String
-) : Task {
+) : Runnable {
 
-    override fun execute(): Unit = runBlocking {
+    override fun run(): Unit = runBlocking {
         val bot = requireNotNull(HuYanEconomy.bot)
         val current = arrayOf(
             RandomUtil.randomInt(0, 10).toString(),
@@ -217,7 +216,7 @@ class LotteryDayTask(
             botGroup?.sendMessage(format)
         }
 
-        CronUtil.remove(id)
+        HuYanScheduler.cancel(id)
     }
 }
 

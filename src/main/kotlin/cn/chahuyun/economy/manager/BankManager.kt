@@ -2,9 +2,9 @@ package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.entity.bank.BankInfo
+import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
-import cn.hutool.cron.CronUtil
 
 /**
  * 主银行初始化与定时任务管理。
@@ -38,6 +38,6 @@ object BankManager {
         }
 
         val bankInterestTask = BankInterestTask("bank", bankInfos)
-        CronUtil.schedule("bank", "0 0 4 * * ?", bankInterestTask)
+        HuYanScheduler.schedule("bank", "0 0 4 * * ?", bankInterestTask)
     }
 }

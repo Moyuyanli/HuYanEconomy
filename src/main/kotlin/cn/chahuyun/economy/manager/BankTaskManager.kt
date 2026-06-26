@@ -8,7 +8,6 @@ import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.ShareUtils
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUtil
-import cn.hutool.cron.task.Task
 import xyz.cssxsh.mirai.economy.service.EconomyAccount
 
 /**
@@ -17,9 +16,9 @@ import xyz.cssxsh.mirai.economy.service.EconomyAccount
 class BankInterestTask(
     private val id: String,
     private val bankList: List<BankInfo>
-) : Task {
+) : Runnable {
 
-    override fun execute() {
+    override fun run() {
         for (bankInfo in bankList) {
             if (bankInfo.interestSwitch && DateUtil.thisDayOfWeek() == 2) {
                 bankInfo.interest = BankInfo.randomInterest()

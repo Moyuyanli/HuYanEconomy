@@ -329,8 +329,24 @@ object GamesUsecase {
         val userInfo = UserCoreManager.getUserInfo(event.sender)
         val fishPond = userInfo.getFishInfo().getFishPond(group)
         val level = fishPond.pondLevel
-        val value = FishPondLevelConstant.entries[level - 1]
         val money = fishPond.getFishPondMoney()
+
+        if (level >= FishPondLevelConstant.MAX_LEVEL) {
+            group.sendMessage(
+                MessageUtil.formatMessageChain(
+                    event.message,
+                    "当前鱼塘信息:\n" +
+                        "鱼塘名称:${fishPond.name ?: ""}\n" +
+                        "鱼塘等级:${level} (已满级)\n" +
+                        "鱼塘钓鱼次数:${fishPond.number}\n" +
+                        "鱼塘最低鱼竿等级:${fishPond.minLevel}\n" +
+                        "鱼塘金额:${MoneyFormatUtil.format(money)}"
+                )
+            )
+            return
+        }
+
+        val value = FishPondLevelConstant.entries[level - 1]
 
         group.sendMessage(
             MessageUtil.formatMessageChain(

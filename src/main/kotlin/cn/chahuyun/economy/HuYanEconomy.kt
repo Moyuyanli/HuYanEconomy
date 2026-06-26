@@ -17,12 +17,12 @@ import cn.chahuyun.economy.manager.LotteryManager
 import cn.chahuyun.economy.manager.PrivateBankManager
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.plugin.*
+import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.sign.SignEvent
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.HibernateUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
-import cn.hutool.cron.CronUtil
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.console.command.CommandManager
 import net.mamoe.mirai.console.extension.PluginComponentStorage
@@ -153,7 +153,7 @@ object HuYanEconomy : KotlinPlugin(
         cn.chahuyun.economy.manager.GamesManager.shutdown()
         LotteryManager.close()
         YiYanManager.shutdown()
-        CronUtil.stop()
+        HuYanScheduler.stop()
         Log.info("插件已卸载!")
     }
 }
