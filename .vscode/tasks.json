@@ -35,6 +35,20 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "gradle buildPlugin",
+			"type": "shell",
+			"command": "g:\\IdeaProject\\github\\HuYanEconomy\\gradlew.bat",
+			"args": [
+				"buildPlugin",
+				"--console=plain"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }

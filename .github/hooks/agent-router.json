@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .github/scripts/agent-router.ps1",
+        "timeout": 10
+      }
+    ]
+  }
+}
