@@ -5,12 +5,15 @@ import cn.chahuyun.authorize.utils.PermUtil
 import cn.chahuyun.authorize.utils.UserUtil
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.constant.ImageDrawXY
+import cn.chahuyun.economy.manager.BackpackManager
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.plugin.ImageManager
 import cn.chahuyun.economy.plugin.PluginManager
-import cn.chahuyun.economy.sign.SignEvent
+import cn.chahuyun.economy.sign.BeforeSignEvent
+import cn.chahuyun.economy.sign.SignCommittedEvent
+import cn.chahuyun.economy.sign.SignRewardEvent
 import cn.chahuyun.economy.utils.*
 import cn.hutool.core.date.DateTime
 import cn.hutool.core.date.DateUtil
@@ -48,19 +51,26 @@ object SignUsecase {
 
         val messages = MessageUtil.quoteReply(message)
 
+        val beforeEvent = BeforeSignEvent(userInfo, event).broadcast()
+        if (beforeEvent.cancelled) {
+            messages.append(beforeEvent.cancelMessage ?: PlainText("签到已取消!"))
+            subject.sendMessage(messages.build())
+            return
+        }
+
         if (!userInfo.sign()) {
             messages.append(PlainText("你已经签到过了哦!"))
             subject.sendMessage(messages.build())
             return
         }
 
-        val signEvent = SignEvent(userInfo, event)
+        val signEvent = SignRewardEvent(userInfo, event)
         signEvent.param = RandomUtil.randomInt(0, 1001)
         signEvent.eventReplyAdd(MessageUtil.formatMessageChain(message, "本次签到触发事件:"))
 
         val broadcast = signEvent.broadcast()
 
-        val goldNumber = broadcast.gold ?: 0.0
+        val goldNumber = broadcast.finalReward
         val reply = broadcast.reply
         userInfo = broadcast.userInfo
 
@@ -75,6 +85,9 @@ object SignUsecase {
         }
 
         userInfo.signEarnings = goldNumber
+        broadcast.propsToConsume.forEach { backpack ->
+            BackpackManager.delPropToBackpack(userInfo, backpack)
+        }
         UserCoreManager.saveUserInfo(userInfo)
 
         val moneyByUser = EconomyUtil.getMoneyByUser(userInfo.user)
@@ -90,7 +103,9 @@ object SignUsecase {
         TitleManager.checkSignTitleJava(userInfo, subject)
         TitleManager.checkMonopolyJava(userInfo, subject)
 
-        sendSignImage(userInfo, subject, messages.build())
+        val resultMessages = messages.build()
+        SignCommittedEvent(userInfo, event, goldNumber, resultMessages).broadcast()
+        sendSignImage(userInfo, subject, resultMessages)
     }
 
     suspend fun offSign(event: GroupMessageEvent) {

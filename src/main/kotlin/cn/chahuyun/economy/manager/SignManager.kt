@@ -5,7 +5,7 @@ import cn.chahuyun.economy.model.props.PropsCard
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.prop.PropsManager
-import cn.chahuyun.economy.sign.SignEvent
+import cn.chahuyun.economy.sign.SignRewardEvent
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.message.data.MessageChainBuilder
@@ -18,7 +18,7 @@ object SignManager {
      * 优先级: EventPriority.HIGH
      */
     @JvmStatic
-    fun randomSignGold(event: SignEvent) {
+    fun randomSignGold(event: SignRewardEvent) {
         var goldNumber: Double
         val builder = MessageChainBuilder()
 
@@ -37,7 +37,7 @@ object SignManager {
             builder.add(PlainText("你™直接天降神韵!"))
         }
 
-        event.gold = goldNumber
+        event.baseReward = goldNumber
         event.reply = builder.build()
     }
 
@@ -46,7 +46,7 @@ object SignManager {
      * 优先级: EventPriority.NORMAL
      */
     @JvmStatic
-    fun signProp(event: SignEvent) {
+    fun signProp(event: SignRewardEvent) {
         val userInfo: UserInfoDto = event.userInfo
         var multiples = 1
 
@@ -64,8 +64,8 @@ object SignManager {
         if (BackpackManager.checkPropInUser(userInfo, PropsCard.MONTHLY)) {
             val prop = userInfo.getProp(PropsCard.MONTHLY)
             if (PropsManager.getProp(prop, PropsCard::class.java).status) {
-                event.sign_2 = true
-                event.sign_3 = true
+                event.doubleCardApplied = true
+                event.tripleCardApplied = true
                 multiples += 4
                 event.eventReplyAdd(MessageUtil.formatMessageChain("已启用签到月卡,本次签到奖励翻5倍!"))
             }
@@ -74,23 +74,22 @@ object SignManager {
         for (backpack in list) {
             val propId = backpack.propId
             val propCode = backpack.propCode
-            if (propId == null || propCode == null) continue
             when (propCode) {
                 PropsCard.SIGN_2 -> {
                     val card = try {
                         PropsManager.deserialization(propId, PropsCard::class.java)
                     } catch (_: Exception) {
-                        BackpackManager.delPropToBackpack(userInfo, propId)
+                        event.consumeProp(backpack)
                         continue
                     }
-                    if (event.sign_2) {
+                    if (event.doubleCardApplied) {
                         continue
                     }
                     if (card.status) {
                         multiples += 1
-                        BackpackManager.delPropToBackpack(userInfo, propId)
+                        event.consumeProp(backpack)
                         event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张双倍签到卡，本次签到奖励翻倍!"))
-                        event.sign_2 = true
+                        event.doubleCardApplied = true
                     }
                 }
 
@@ -98,17 +97,17 @@ object SignManager {
                     val card = try {
                         PropsManager.deserialization(propId, PropsCard::class.java)
                     } catch (_: Exception) {
-                        BackpackManager.delPropToBackpack(userInfo, propId)
+                        event.consumeProp(backpack)
                         continue
                     }
-                    if (event.sign_3) {
+                    if (event.tripleCardApplied) {
                         continue
                     }
                     if (card.status) {
                         multiples += 2
-                        BackpackManager.delPropToBackpack(userInfo, propId)
+                        event.consumeProp(backpack)
                         event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张三倍签到卡，本次签到奖励三翻倍!"))
-                        event.sign_3 = true
+                        event.tripleCardApplied = true
                     }
                 }
 
@@ -119,7 +118,7 @@ object SignManager {
                         BackpackManager.delPropToBackpack(userInfo, propId)
                         continue
                     }
-                    if (event.sign_in) {
+                    if (event.makeupCardApplied) {
                         continue
                     }
 
@@ -134,11 +133,11 @@ object SignManager {
                     val useEvent = UseEvent(userInfo.user, event.group, userInfo)
                     PropsManager.usePropJava(backpack, useEvent)
                     event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张补签卡，续上断掉的签到天数!"))
-                    event.sign_in = true
+                    event.makeupCardApplied = true
                 }
             }
         }
 
-        event.gold = (event.gold ?: 0.0) * multiples
+        event.addMultiplier(multiples - 1)
     }
 }

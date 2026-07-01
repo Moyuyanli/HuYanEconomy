@@ -20,7 +20,7 @@ import cn.chahuyun.economy.plugin.*
 import cn.chahuyun.economy.proxy.DataSourceStrategyImpl
 import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.scheduler.HuYanScheduler
-import cn.chahuyun.economy.sign.SignEvent
+import cn.chahuyun.economy.sign.SignRewardEvent
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.HibernateUtil
 import cn.chahuyun.economy.utils.Log
@@ -143,8 +143,8 @@ object HuYanEconomy : KotlinPlugin(
         val eventChannel = GlobalEventChannel.parentScope(this)
 
         // 监听自定义签到事件
-        eventChannel.subscribeAlways<SignEvent>(priority = EventPriority.HIGH) { cn.chahuyun.economy.manager.SignManager.randomSignGold(it) }
-        eventChannel.subscribeAlways<SignEvent> { cn.chahuyun.economy.manager.SignManager.signProp(it) }
+        eventChannel.subscribeAlways<SignRewardEvent>(priority = EventPriority.HIGH) { cn.chahuyun.economy.manager.SignManager.randomSignGold(it) }
+        eventChannel.subscribeAlways<SignRewardEvent> { cn.chahuyun.economy.manager.SignManager.signProp(it) }
         eventChannel.subscribeAlways<FishStartEvent> { GamesAction.fishStart(it) }
         eventChannel.subscribeAlways<FishRollEvent> { GamesAction.fishRoll(it) }
 
