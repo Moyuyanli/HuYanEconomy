@@ -1,6 +1,5 @@
 package cn.chahuyun.economy.entity.fish
 
-import cn.chahuyun.economy.plugin.FishManager
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.hibernateplus.HibernateFactory
 import jakarta.persistence.*
@@ -111,7 +110,7 @@ class FishPond(
      */
     fun getFishList(level: Int): List<Fish> {
         if (pondType == 1) {
-            return FishManager.getLevelFishList(level)
+            return HibernateFactory.selectList(Fish::class.java, "level", level)
         }
         return fishList ?: mutableListOf()
     }

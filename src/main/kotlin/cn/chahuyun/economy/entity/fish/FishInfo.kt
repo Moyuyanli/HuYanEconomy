@@ -3,7 +3,7 @@
 package cn.chahuyun.economy.entity.fish
 
 import cn.chahuyun.economy.HuYanEconomy
-import cn.chahuyun.economy.entity.UserInfo
+import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil
@@ -76,7 +76,7 @@ class FishInfo(
      * @param userInfo 用户信息
      * @return net.mamoe.mirai.message.data.MessageChain
      */
-    fun updateRod(userInfo: UserInfo): SingleMessage {
+    fun updateRod(userInfo: UserInfoDto): SingleMessage {
         val user = userInfo.user
         val moneyByUser = EconomyUtil.getMoneyByUser(user)
         var upMoney = 1

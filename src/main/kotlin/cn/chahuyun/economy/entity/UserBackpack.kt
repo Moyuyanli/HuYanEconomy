@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.entity
 
+import cn.chahuyun.economy.model.user.UserBackpackDto
 import cn.chahuyun.economy.prop.BaseProp
 import cn.chahuyun.economy.prop.PropsManager
 import jakarta.persistence.*
@@ -45,7 +46,7 @@ class UserBackpack(
      * @return 道具
      */
     inline fun <reified T : BaseProp> getProp(): T {
-        return PropsManager.getProp(this, T::class.java)
+        return PropsManager.getProp(toDto(), T::class.java)
     }
 
     /**
@@ -56,7 +57,7 @@ class UserBackpack(
      * @return 返回指定类型的属性实例
      */
     fun <T : BaseProp> getProp(tClass: Class<T>): T {
-        return PropsManager.getProp(this, tClass)
+        return PropsManager.getProp(toDto(), tClass)
     }
 
     /**
@@ -64,6 +65,14 @@ class UserBackpack(
      */
     @Deprecated("使用泛型版本 getProp(clazz)", ReplaceWith("getProp()"))
     fun getPropLegacy(): BaseProp? {
-        return PropsManager.getProp(this)
+        return PropsManager.getProp(toDto())
     }
+
+    fun toDto(): UserBackpackDto = UserBackpackDto(
+        id = id ?: 0,
+        userId = userId ?: "",
+        propCode = propCode ?: "",
+        propKind = propKind ?: "",
+        propId = propId ?: 0
+    )
 }
