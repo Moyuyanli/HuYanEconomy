@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.model.title
 
-import cn.chahuyun.economy.entity.TitleInfo
-import cn.chahuyun.economy.entity.UserInfo
+import cn.chahuyun.economy.model.user.TitleInfoDto
+import cn.chahuyun.economy.model.user.UserInfoDto
 
 /**
  * 称号模板
@@ -28,7 +28,7 @@ abstract class TitleTemplate(
      */
     val price: Double?
 ) : TitleApi {
-    override fun createTitleInfo(userInfo: UserInfo): TitleInfo {
-        return TitleInfo(userInfo.qq, templateCode, titleName, null)
+    override fun createTitleInfo(userInfo: UserInfoDto): TitleInfoDto {
+        return TitleInfoDto(userId = userInfo.qq, code = templateCode, name = titleName)
     }
 }

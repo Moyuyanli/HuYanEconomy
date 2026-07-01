@@ -1,8 +1,5 @@
 package cn.chahuyun.economy.model.title
 
-import cn.chahuyun.economy.entity.TitleInfo
-import cn.chahuyun.economy.entity.UserInfo
-
 /**
  * 自定义称号模型
  */

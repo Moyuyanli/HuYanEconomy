@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.model.title
 
-import cn.chahuyun.economy.entity.TitleInfo
-import cn.chahuyun.economy.entity.UserInfo
+import cn.chahuyun.economy.model.user.TitleInfoDto
+import cn.chahuyun.economy.model.user.UserInfoDto
 
 /**
  * 简单称号模板实现
@@ -42,13 +42,17 @@ class TitleTemplateSimpleImpl(
         eColor = eColor
     )
 
-    override fun createTitleInfo(userInfo: UserInfo): TitleInfo {
-        return TitleInfo(userInfo.qq, templateCode, titleName, title).apply {
-            status = true
-            this.impactName = this@TitleTemplateSimpleImpl.impactName ?: false
-            this.gradient = this@TitleTemplateSimpleImpl.gradient ?: false
-            this.sColor = this@TitleTemplateSimpleImpl.sColor
-            this.eColor = this@TitleTemplateSimpleImpl.eColor
-        }
+    override fun createTitleInfo(userInfo: UserInfoDto): TitleInfoDto {
+        return TitleInfoDto(
+            userId = userInfo.qq,
+            code = templateCode,
+            name = titleName,
+            status = true,
+            title = title,
+            impactName = impactName ?: false,
+            gradient = gradient ?: false,
+            sColor = sColor,
+            eColor = eColor
+        )
     }
 }

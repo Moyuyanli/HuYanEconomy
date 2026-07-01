@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.model.props
 
-import cn.chahuyun.economy.entity.UserInfo
+import cn.chahuyun.economy.model.user.UserInfoDto
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.User
 import java.util.*
@@ -20,11 +20,11 @@ class UseEvent(
     /**
      * 用户信息
      */
-    val userInfo: UserInfo,
+    val userInfo: UserInfoDto,
     /**
      * 时间
      */
     val time: Date = Date()
 ) {
-    constructor(sender: User, subject: Group, userInfo: UserInfo) : this(sender, subject, userInfo, Date())
+    constructor(sender: User, subject: Group, userInfo: UserInfoDto) : this(sender, subject, userInfo, Date())
 }

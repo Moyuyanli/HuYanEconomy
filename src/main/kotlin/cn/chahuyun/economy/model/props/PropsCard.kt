@@ -6,7 +6,6 @@ import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.economy.prop.UseResult
 import cn.chahuyun.economy.prop.UseResult.Companion.success
 import cn.chahuyun.economy.utils.DateUtil.format
-import cn.chahuyun.hibernateplus.HibernateFactory
 import net.mamoe.mirai.contact.nameCardOrNick
 
 /**
@@ -37,7 +36,7 @@ class PropsCard(
                 val sender = event.sender
                 val userInfo = UserCoreManager.getUserInfo(sender)
                 userInfo.name = sender.nameCardOrNick
-                HibernateFactory.merge(userInfo)
+                UserCoreManager.saveUserInfo(userInfo)
 
                 success("改名卡使用成功!")
             }

@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.model.title
 
-import cn.chahuyun.economy.entity.TitleInfo
-import cn.chahuyun.economy.entity.UserInfo
+import cn.chahuyun.economy.model.user.TitleInfoDto
+import cn.chahuyun.economy.model.user.UserInfoDto
 
 /**
  * 称号 API 接口
@@ -13,6 +13,5 @@ interface TitleApi {
      * @param userInfo 用户信息
      * @return 称号信息
      */
-    fun createTitleInfo(userInfo: UserInfo): TitleInfo
+    fun createTitleInfo(userInfo: UserInfoDto): TitleInfoDto
 }
-
