@@ -17,6 +17,8 @@ import cn.chahuyun.economy.manager.LotteryManager
 import cn.chahuyun.economy.manager.PrivateBankManager
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.plugin.*
+import cn.chahuyun.economy.proxy.DataSourceStrategyImpl
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.sign.SignEvent
 import cn.chahuyun.economy.utils.EconomyUtil
@@ -107,6 +109,11 @@ object HuYanEconomy : KotlinPlugin(
 
         // 初始化插件数据库
         HibernateUtil.init(this)
+
+        // 实体代理器框架初始化（Phase 1-2）
+        DataSourceStrategyImpl.loadFromConfig()
+        EntityProxyRegistry.init()
+        Log.info("实体代理器模块版本: ${EntityProxyRegistry.currentVersions()}")
 
         // 功能加载
         EconomyUtil.init()
