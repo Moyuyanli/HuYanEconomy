@@ -1,9 +1,8 @@
-package cn.chahuyun.economy.privatebank
+﻿package cn.chahuyun.economy.privatebank
 
-import cn.chahuyun.economy.entity.bank.BankInfo
-import cn.chahuyun.economy.entity.privatebank.*
+import cn.chahuyun.economy.manager.BankManager
+import cn.chahuyun.economy.model.privatebank.*
 import cn.chahuyun.economy.utils.*
-import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import cn.hutool.core.util.RandomUtil
@@ -14,10 +13,10 @@ import kotlin.math.ln
 
 object PrivateBankService {
 
-    /** 创建门槛（主银行余额） */
+    /** 鍒涘缓闂ㄦ锛堜富閾惰浣欓锛?*/
     const val CREATE_THRESHOLD = 100_000_000.0
 
-    /** 创建时扣除并沉淀到私银资产的启动资金 */
+    /** 鍒涘缓鏃舵墸闄ゅ苟娌夋穩鍒扮閾惰祫浜х殑鍚姩璧勯噾 */
     const val CREATE_STARTUP_AMOUNT = 100_000_000.0
 
     private const val RESERVE_RATIO = 0.8
@@ -25,30 +24,29 @@ object PrivateBankService {
     private const val LOAN_TERM_DAYS = 14
 
     private fun baseInterest(): Int {
-        val bankInfo = HibernateFactory.selectOneById(BankInfo::class.java, 1)
-        return bankInfo?.interest ?: 0
+        return BankManager.getBankInfo(1)?.interest ?: 0
     }
 
-    /** 主银行基准利率（百分比值，例如 0.8 表示 0.8%） */
+    /** 涓婚摱琛屽熀鍑嗗埄鐜囷紙鐧惧垎姣斿€硷紝渚嬪 0.8 琛ㄧず 0.8%锛?*/
     fun baseInterestPercent(): Double = baseInterest() / 10.0
 
     private fun allowedInterestRange(base: Int): IntRange {
-        // ±0.3% -> interest 量纲为 0.1%，因此 ±3
+        // 卤0.3% -> interest 閲忕翰涓?0.1%锛屽洜姝?卤3
         return (base - 3)..(base + 3)
     }
 
-    private fun findBankByCodeOrName(key: String): PrivateBank? {
+    private fun findBankByCodeOrName(key: String): PrivateBankDto? {
         val trimmed = key.trim()
         if (trimmed.isBlank()) return null
         return PrivateBankRepository.findBankByCode(trimmed)
             ?: PrivateBankRepository.listBanks().firstOrNull { it.name == trimmed }
     }
 
-    fun getBank(key: String): PrivateBank? = findBankByCodeOrName(key)
+    fun getBank(key: String): PrivateBankDto? = findBankByCodeOrName(key)
 
     fun borrowFromBank(user: User, bankKey: String, amount: Double): Pair<Boolean, String> {
-        if (amount <= 0) return false to "金额必须大于 0"
-        val bank = findBankByCodeOrName(bankKey) ?: return false to "未找到该银行：$bankKey"
+        if (amount <= 0) return false to "閲戦蹇呴』澶т簬 0"
+        val bank = findBankByCodeOrName(bankKey) ?: return false to "鏈壘鍒拌閾惰锛?bankKey"
         val offer = PrivateBankRepository.listLoanOffers(bank.code)
             .filter { it.enabled && it.remaining >= amount }
             .minByOrNull { it.interest }
@@ -82,7 +80,7 @@ object PrivateBankService {
     fun createBank(owner: User, codeInput: String?, name: String): Pair<Boolean, String> {
         val existingOwnerBank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == owner.id }
         if (existingOwnerBank != null) {
-            return false to "创建失败：你已拥有自己的银行（code=${existingOwnerBank.code}）"
+            return false to "创建失败：你已拥有自己的银行(code=${existingOwnerBank.code})"
         }
 
         val bankBalance = EconomyUtil.getMoneyByBank(owner)
@@ -92,13 +90,13 @@ object PrivateBankService {
 
         val code = (codeInput ?: "").trim().ifBlank { generateBankCode(owner.id) }
         if (!validateBankCode(code)) {
-            return false to "创建失败：银行 code 仅允许字母数字及 -_，长度 3-48"
+            return false to "鍒涘缓澶辫触锛氶摱琛?code 浠呭厑璁稿瓧姣嶆暟瀛楀強 -_锛岄暱搴?3-48"
         }
         if (PrivateBankRepository.findBankByCode(code) != null) {
-            return false to "创建失败：该 code 已被占用：$code"
+            return false to "鍒涘缓澶辫触锛氳 code 宸茶鍗犵敤锛?code"
         }
 
-        val bank = PrivateBank(
+        val bank = PrivateBankDto(
             code = code,
             name = name,
             ownerQq = owner.id,
@@ -109,27 +107,27 @@ object PrivateBankService {
         val reservePart = ShareUtils.rounding(CREATE_STARTUP_AMOUNT * RESERVE_RATIO)
         val liquidityPart = ShareUtils.rounding(CREATE_STARTUP_AMOUNT - reservePart)
 
-        // 1) 启动资金 80%：从行长主银行 -> 私银在主银行的准备金子账户
+        // 1) 鍚姩璧勯噾 80%锛氫粠琛岄暱涓婚摱琛?-> 绉侀摱鍦ㄤ富閾惰鐨勫噯澶囬噾瀛愯处鎴?
         if (!EconomyUtil.turnUserGlobalBankToGlobalBankAccount(owner, bank.code, PrivateBankLedger.RESERVE_DESC, reservePart)) {
-            return false to "创建失败：启动资金划转(准备金)失败（请确认主银行余额足够且经济服务可用）"
+            return false to "创建失败：启动资金划转准备金失败"
         }
 
-        // 2) 启动资金 20%：从行长主银行 -> 私银自定义账本的流动金池
+        // 2) 鍚姩璧勯噾 20%锛氫粠琛岄暱涓婚摱琛?-> 绉侀摱鑷畾涔夎处鏈殑娴佸姩閲戞睜
         if (!EconomyUtil.turnUserGlobalBankToPluginBankForId(owner, bank.code, PrivateBankLedger.LIQUIDITY_DESC, liquidityPart)) {
-            // 回滚准备金
+            // 鍥炴粴鍑嗗閲?
             EconomyUtil.plusMoneyToBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC, -reservePart)
             EconomyUtil.plusMoneyToBank(owner, reservePart)
-            return false to "创建失败：启动资金划转(流动金)失败"
+            return false to "鍒涘缓澶辫触锛氬惎鍔ㄨ祫閲戝垝杞?娴佸姩閲?澶辫触"
         }
 
         PrivateBankRepository.saveBank(bank)
-        return true to "创建成功：${bank.name}（code=${bank.code}）启动资金 100,000,000 已入账（准备金 ${MoneyFormatUtil.format(reservePart)} / 流动金 ${MoneyFormatUtil.format(liquidityPart)}）"
+        return true to "创建成功：${bank.name}(code=${bank.code}) 启动资金 100,000,000 已入账（准备金 ${MoneyFormatUtil.format(reservePart)} / 流动金 ${MoneyFormatUtil.format(liquidityPart)}）"
     }
 
     fun deposit(user: User, bankCode: String, amount: Double): Pair<Boolean, String> {
-        if (amount <= 0) return false to "金额必须大于 0"
+        if (amount <= 0) return false to "閲戦蹇呴』澶т簬 0"
 
-        val bank = findBankByCodeOrName(bankCode) ?: return false to "未找到该银行：$bankCode"
+        val bank = findBankByCodeOrName(bankCode) ?: return false to "鏈壘鍒拌閾惰锛?bankCode"
         if (bank.vipOnly) {
             val list = (bank.vipWhitelist ?: "").split(',').mapNotNull { it.trim().takeIf(String::isNotBlank) }
             if (list.isNotEmpty() && user.id.toString() !in list) {
@@ -143,31 +141,31 @@ object PrivateBankService {
         val reservePart = ShareUtils.rounding(amount * RESERVE_RATIO)
         val liquidityPart = ShareUtils.rounding(amount - reservePart)
 
-        // 1) reservePart：钱包(custom) -> 主银行(global) bankCode/pb-reserve
+        // 1) reservePart锛氶挶鍖?custom) -> 涓婚摱琛?global) bankCode/pb-reserve
         if (!EconomyUtil.turnUserWalletToGlobalBankAccount(user, bank.code, PrivateBankLedger.RESERVE_DESC, reservePart)) {
-            return false to "存入失败：准备金划转失败"
+            return false to "瀛樺叆澶辫触锛氬噯澶囬噾鍒掕浆澶辫触"
         }
 
-        // 2) liquidityPart：钱包扣减 + 进入流动金池(custom)
+        // 2) liquidityPart锛氶挶鍖呮墸鍑?+ 杩涘叆娴佸姩閲戞睜(custom)
         if (!EconomyUtil.minusMoneyToUser(user, liquidityPart)) {
-            // 回滚准备金
+            // 鍥炴粴鍑嗗閲?
             EconomyUtil.turnGlobalBankAccountToUserWallet(bank.code, PrivateBankLedger.RESERVE_DESC, user, reservePart)
             return false to "存入失败：钱包扣减失败"
         }
         if (!EconomyUtil.plusMoneyToPluginBankForId(bank.code, PrivateBankLedger.LIQUIDITY_DESC, liquidityPart)) {
-            // 回滚
+            // 鍥炴粴
             EconomyUtil.plusMoneyToUser(user, liquidityPart)
             EconomyUtil.turnGlobalBankAccountToUserWallet(bank.code, PrivateBankLedger.RESERVE_DESC, user, reservePart)
             return false to "存入失败：流动金池入账失败"
         }
 
-        val deposit = PrivateBankRepository.findDeposit(bank.code, user.id) ?: PrivateBankDeposit(
+        val deposit = PrivateBankRepository.findDeposit(bank.code, user.id) ?: PrivateBankDepositDto(
             bankCode = bank.code,
             userQq = user.id,
             principal = 0.0
         )
         deposit.principal = ShareUtils.rounding(deposit.principal + amount)
-        deposit.updatedAt = Date()
+        deposit.updatedAt = System.currentTimeMillis()
         PrivateBankRepository.saveDeposit(deposit)
 
         refreshRating(bank.code)
@@ -176,8 +174,8 @@ object PrivateBankService {
     }
 
     fun withdraw(user: User, bankCode: String, amount: Double): Pair<Boolean, String> {
-        if (amount <= 0) return false to "金额必须大于 0"
-        val bank = findBankByCodeOrName(bankCode) ?: return false to "未找到该银行：$bankCode"
+        if (amount <= 0) return false to "閲戦蹇呴』澶т簬 0"
+        val bank = findBankByCodeOrName(bankCode) ?: return false to "鏈壘鍒拌閾惰锛?bankCode"
 
         val deposit = PrivateBankRepository.findDeposit(bank.code, user.id)
             ?: return false to "你在该银行没有存款"
@@ -192,24 +190,24 @@ object PrivateBankService {
         val ok = forcePayToUserWallet(bank, amount, user)
         return if (ok) {
             deposit.principal = ShareUtils.rounding(deposit.principal - amount)
-            deposit.updatedAt = Date()
+            deposit.updatedAt = System.currentTimeMillis()
             PrivateBankRepository.saveDeposit(deposit)
             refreshRating(bank.code)
-            true to "取款成功：${MoneyFormatUtil.format(amount)}"
+            true to "鍙栨鎴愬姛锛?{MoneyFormatUtil.format(amount)}"
         } else {
             bank.withdrawFailures += 1
-            bank.defaulterUntil = DateUtil.offsetDay(Date(), 30)
-            bank.depositorInterest = baseInterest() // 失信期间强制同步主银行利率
+            bank.defaulterUntil = DateUtil.offsetDay(Date(), 30).time
+            bank.depositorInterest = baseInterest() // 澶变俊鏈熼棿寮哄埗鍚屾涓婚摱琛屽埄鐜?
             PrivateBankRepository.saveBank(bank)
             refreshRating(bank.code)
-            false to "取款失败：该银行资金链不足，已标记为失信银行（30天）"
+            false to "鍙栨澶辫触锛氳閾惰璧勯噾閾句笉瓒筹紝宸叉爣璁颁负澶变俊閾惰锛?0澶╋級"
         }
     }
 
-    private fun forcePayToUserWallet(bank: PrivateBank, amount: Double, user: User): Boolean {
+    private fun forcePayToUserWallet(bank: PrivateBankDto, amount: Double, user: User): Boolean {
         var remaining = amount
 
-        // 1) 流动金池(custom)
+        // 1) 娴佸姩閲戞睜(custom)
         val liquidity = EconomyUtil.getMoneyFromPluginBankForId(bank.code, PrivateBankLedger.LIQUIDITY_DESC)
         val takeLiquidity = liquidity.coerceAtMost(remaining)
         if (takeLiquidity > 0) {
@@ -223,7 +221,7 @@ object PrivateBankService {
 
         if (remaining <= 0) return true
 
-        // 2) 准备金池(global)
+        // 2) 鍑嗗閲戞睜(global)
         val reserve = EconomyUtil.getMoneyByBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC)
         val takeReserve = reserve.coerceAtMost(remaining)
         if (takeReserve > 0) {
@@ -233,7 +231,7 @@ object PrivateBankService {
 
         if (remaining <= 0) return true
 
-        // 3) 银行库存(custom)
+        // 3) 閾惰搴撳瓨(custom)
         val inventory = EconomyUtil.getMoneyFromPluginBankForId(bank.code, PrivateBankLedger.INVENTORY_DESC)
         val takeInventory = inventory.coerceAtMost(remaining)
         if (takeInventory > 0) {
@@ -247,7 +245,7 @@ object PrivateBankService {
 
         if (remaining <= 0) return true
 
-        // 4) 行长个人钱包(custom)
+        // 4) 琛岄暱涓汉閽卞寘(custom)
         val ownerUser = runCatching { user.bot.getFriend(bank.ownerQq) ?: user.bot.getStranger(bank.ownerQq) }.getOrNull()
         if (ownerUser != null) {
             val ownerWallet = EconomyUtil.getMoneyByUser(ownerUser)
@@ -264,11 +262,11 @@ object PrivateBankService {
 
         if (remaining <= 0) return true
 
-        // 5) 国卷资产（强制提前折价赎回）
+        // 5) 鍥藉嵎璧勪骇锛堝己鍒舵彁鍓嶆姌浠疯祹鍥烇級
         remaining = forceLiquidateBonds(bank, remaining, user) ?: return false
         if (remaining <= 0) return true
 
-        // 6) 风险保证金(custom)
+        // 6) 椋庨櫓淇濊瘉閲?custom)
         val guarantee = EconomyUtil.getMoneyFromPluginBankForId(bank.code, PrivateBankLedger.GUARANTEE_DESC)
         val takeGuarantee = guarantee.coerceAtMost(remaining)
         if (takeGuarantee > 0) {
@@ -284,25 +282,25 @@ object PrivateBankService {
     }
 
     /**
-     * 强制提前赎回国卷（折价 10%），把资金直接支付给取款用户。
-     * 返回剩余未覆盖金额；返回 null 表示处理异常。
+     * 寮哄埗鎻愬墠璧庡洖鍥藉嵎锛堟姌浠?10%锛夛紝鎶婅祫閲戠洿鎺ユ敮浠樼粰鍙栨鐢ㄦ埛銆?
+     * 杩斿洖鍓╀綑鏈鐩栭噾棰濓紱杩斿洖 null 琛ㄧず澶勭悊寮傚父銆?
      */
-    private fun forceLiquidateBonds(bank: PrivateBank, remaining: Double, user: User): Double? {
+    private fun forceLiquidateBonds(bank: PrivateBankDto, remaining: Double, user: User): Double? {
         var left = remaining
         return try {
-            val holdings = PrivateBankRepository.listBondHoldings(bank.code).filter { it.redeemedAt == null }
-                .sortedBy { it.boughtAt.time }
+            val holdings = PrivateBankRepository.listBondHoldings(bank.code).filter { it.redeemedAt == 0L }
+                .sortedBy { it.boughtAt }
 
             for (h in holdings) {
                 if (left <= 0) break
-                val redeemable = (h.principal * 0.9).coerceAtMost(left) // 折价
+                val redeemable = (h.principal * 0.9).coerceAtMost(left) // 鎶樹环
                 if (redeemable <= 0) continue
 
-                // 按比例缩减持仓
+                // 鎸夋瘮渚嬬缉鍑忔寔浠?
                 val ratio = redeemable / (h.principal * 0.9)
                 h.principal = ShareUtils.rounding(h.principal * (1 - ratio))
                 if (h.principal <= 0.0001) {
-                    h.redeemedAt = Date()
+                    h.redeemedAt = System.currentTimeMillis()
                 }
                 PrivateBankRepository.saveBondHolding(h)
 
@@ -313,7 +311,7 @@ object PrivateBankService {
             }
             left
         } catch (e: Exception) {
-            Log.error("银行:强制赎回国卷失败", e)
+            Log.error("閾惰:寮哄埗璧庡洖鍥藉嵎澶辫触", e)
             null
         }
     }
@@ -323,31 +321,31 @@ object PrivateBankService {
     }
 
     fun addReview(user: User, bankCode: String, rating: Int, content: String?): Pair<Boolean, String> {
-        if (rating !in 1..5) return false to "评分必须在 1-5"
-        val bank = findBankByCodeOrName(bankCode) ?: return false to "未找到该银行：$bankCode"
+        if (rating !in 1..5) return false to "璇勫垎蹇呴』鍦?1-5"
+        val bank = findBankByCodeOrName(bankCode) ?: return false to "鏈壘鍒拌閾惰锛?bankCode"
 
         val deposit = PrivateBankRepository.findDeposit(bank.code, user.id)
-            ?: return false to "评分失败：你在该银行没有存款"
+            ?: return false to "璇勫垎澶辫触锛氫綘鍦ㄨ閾惰娌℃湁瀛樻"
 
-        val days = DateUtil.between(deposit.createdAt, Date(), DateUnit.DAY)
+        val days = DateUtil.between(Date(deposit.createdAt), Date(), DateUnit.DAY)
         if (days < 7) {
-            return false to "评分失败：存款需满 7 天后才可评分（当前 ${days} 天）"
+            return false to "璇勫垎澶辫触锛氬瓨娆鹃渶婊?7 澶╁悗鎵嶅彲璇勫垎锛堝綋鍓?${days} 澶╋級"
         }
 
         val now = Date()
         val recentCount = PrivateBankRepository.listReviewsByUser(bank.code, user.id)
-            .count { DateUtil.between(it.createdAt, now, DateUnit.DAY) < 30 }
+            .count { DateUtil.between(Date(it.createdAt), now, DateUnit.DAY) < 30 }
         if (recentCount >= 2) {
             return false to "评分失败：一个月内最多评分 2 次"
         }
 
         val clean = content?.trim()?.takeIf { it.isNotBlank() }?.take(500)
         PrivateBankRepository.addReview(
-            PrivateBankReview(
+            PrivateBankReviewDto(
                 bankCode = bank.code,
                 userQq = user.id,
                 rating = rating,
-                content = clean
+                content = clean ?: ""
             )
         )
 
@@ -356,9 +354,9 @@ object PrivateBankService {
     }
 
     fun setDepositorInterest(owner: User, bankCode: String, modeOrRate: String): Pair<Boolean, String> {
-        val bank = findBankByCodeOrName(bankCode) ?: return false to "未找到该银行：$bankCode"
-        if (bank.ownerQq != owner.id) return false to "只有行长可以设置利率"
-        if (bank.isDefaulter()) return false to "失信期间禁止调整利率"
+        val bank = findBankByCodeOrName(bankCode) ?: return false to "鏈壘鍒拌閾惰锛?bankCode"
+        if (bank.ownerQq != owner.id) return false to "鍙湁琛岄暱鍙互璁剧疆鍒╃巼"
+        if (bank.isDefaulter()) return false to "澶变俊鏈熼棿绂佹璋冩暣鍒╃巼"
 
         val base = baseInterest()
         val allowed = allowedInterestRange(base)
@@ -368,10 +366,10 @@ object PrivateBankService {
             "min" -> allowed.first
             "now" -> base
             else -> {
-                // 支持输入 1.2（百分比）或 12（interest 整数）
-                val v = key.toDoubleOrNull() ?: return false to "利率参数错误：请填 rate/max/min/now"
+                // 鏀寔杈撳叆 1.2锛堢櫨鍒嗘瘮锛夋垨 12锛坕nterest 鏁存暟锛?
+                val v = key.toDoubleOrNull() ?: return false to "鍒╃巼鍙傛暟閿欒锛氳濉?rate/max/min/now"
                 val asInterest = if (v < 10) {
-                    // 视为百分比，例如 1.2 -> 12
+                    // 瑙嗕负鐧惧垎姣旓紝渚嬪 1.2 -> 12
                     (v * 10.0).toInt()
                 } else {
                     v.toInt()
@@ -381,19 +379,19 @@ object PrivateBankService {
         }
 
         if (nextInterest !in allowed) {
-            return false to "利率超出允许范围：主银行 ${FormatUtil.fixed(base / 10.0, 1)}% 的 ±0.3%（允许 ${FormatUtil.fixed(allowed.first / 10.0, 1)}% - ${FormatUtil.fixed(allowed.last / 10.0, 1)}%）"
+            return false to "利率超出允许范围：${FormatUtil.fixed(allowed.first / 10.0, 1)}% - ${FormatUtil.fixed(allowed.last / 10.0, 1)}%"
         }
 
         bank.depositorInterest = nextInterest
         PrivateBankRepository.saveBank(bank)
         refreshRating(bank.code)
-        return true to "设置成功：当前利率 ${FormatUtil.fixed(bank.depositorInterest / 10.0, 1)}%"
+        return true to "璁剧疆鎴愬姛锛氬綋鍓嶅埄鐜?${FormatUtil.fixed(bank.depositorInterest / 10.0, 1)}%"
     }
 
     private fun maxLoanOffersByStar(star: Int): Int = star.coerceIn(1, 5)
 
     private fun maxLoanInterestByStar(star: Int): Int {
-        // interest 量纲为 0.1%，这里给一个随星级提升的上限
+        // interest 閲忕翰涓?0.1%锛岃繖閲岀粰涓€涓殢鏄熺骇鎻愬崌鐨勪笂闄?
         return when (star.coerceIn(1, 5)) {
             1 -> 25
             2 -> 35
@@ -420,7 +418,7 @@ object PrivateBankService {
         val avgReview = if (reviews.isEmpty()) 0.0 else reviews.map { it.rating }.average()
         bank.avgReview = avgReview
 
-        // 简单评分模型：存款规模(对数) + 取款成功率 + 评价
+        // 绠€鍗曡瘎鍒嗘ā鍨嬶細瀛樻瑙勬ā(瀵规暟) + 鍙栨鎴愬姛鐜?+ 璇勪环
         val depositScore = if (totalDeposit <= 0) 0.0 else (ln(totalDeposit + 1) / ln(10.0) / 7.0).coerceIn(0.0, 1.0)
         val reviewScore = (avgReview / 5.0).coerceIn(0.0, 1.0)
 
@@ -430,30 +428,30 @@ object PrivateBankService {
         PrivateBankRepository.saveBank(bank)
     }
 
-    fun ensureWeeklyBondIssue(): PrivateBankGovBondIssue {
+    fun ensureWeeklyBondIssue(): PrivateBankGovBondIssueDto {
         val now = Date()
         val weekKey = DateUtil.format(now, "yyyy-'W'ww")
         val existing = PrivateBankRepository.findBondIssueByWeek(weekKey)
         if (existing != null) return existing
 
-        val issue = PrivateBankGovBondIssue(
+        val issue = PrivateBankGovBondIssueDto(
             weekKey = weekKey,
             rateMultiplier = RandomUtil.randomDouble(2.0, 3.01),
             lockDays = RandomUtil.randomInt(3, 8),
             totalLimit = 2_000_000.0,
             remaining = 2_000_000.0,
-            createdAt = now
+            createdAt = now.time
         )
         return PrivateBankRepository.saveBondIssue(issue)
     }
 
     fun buyBond(owner: User, bankCode: String, amount: Double): Pair<Boolean, String> {
-        if (amount <= 0) return false to "金额必须大于 0"
-        val bank = PrivateBankRepository.findBankByCode(bankCode) ?: return false to "未找到该银行：$bankCode"
-        if (bank.ownerQq != owner.id) return false to "只有行长可以购买国卷"
+        if (amount <= 0) return false to "閲戦蹇呴』澶т簬 0"
+        val bank = PrivateBankRepository.findBankByCode(bankCode) ?: return false to "鏈壘鍒拌閾惰锛?bankCode"
+        if (bank.ownerQq != owner.id) return false to "鍙湁琛岄暱鍙互璐拱鍥藉嵎"
 
         val issue = ensureWeeklyBondIssue()
-        if (issue.remaining < amount) return false to "本周国卷剩余额度不足（剩余 ${MoneyFormatUtil.format(issue.remaining)}）"
+        if (issue.remaining < amount) return false to "本周国债剩余额度不足（剩余 ${MoneyFormatUtil.format(issue.remaining)}）"
 
         val liquidity = EconomyUtil.getMoneyFromPluginBankForId(bank.code, PrivateBankLedger.LIQUIDITY_DESC)
         if (liquidity < amount) return false to "流动金池余额不足（当前 ${MoneyFormatUtil.format(liquidity)}）"
@@ -466,52 +464,52 @@ object PrivateBankService {
         PrivateBankRepository.saveBondIssue(issue)
 
         PrivateBankRepository.saveBondHolding(
-            PrivateBankGovBondHolding(
+            PrivateBankGovBondHoldingDto(
                 bankCode = bank.code,
                 issueId = issue.id,
                 principal = amount,
                 rateMultiplier = issue.rateMultiplier,
                 lockDays = issue.lockDays,
-                boughtAt = Date()
+                boughtAt = System.currentTimeMillis()
             )
         )
 
-        return true to "购买成功：国卷 ${MoneyFormatUtil.format(amount)}（锁仓 ${issue.lockDays} 天，倍数 ${FormatUtil.fixed(issue.rateMultiplier, 2)}x）"
+        return true to "购买成功：国债 ${MoneyFormatUtil.format(amount)}（锁仓 ${issue.lockDays} 天，倍数 ${FormatUtil.fixed(issue.rateMultiplier, 2)}x）"
     }
 
     fun redeemBond(owner: User, holdingId: Int): Pair<Boolean, String> {
-        val holding = PrivateBankRepository.findBondHolding(holdingId) ?: return false to "未找到该持仓"
+        val holding = PrivateBankRepository.findBondHolding(holdingId) ?: return false to "鏈壘鍒拌鎸佷粨"
         val bank = PrivateBankRepository.findBankByCode(holding.bankCode) ?: return false to "未找到对应银行"
-        if (bank.ownerQq != owner.id) return false to "只有行长可以赎回国卷"
-        if (holding.redeemedAt != null) return false to "该持仓已赎回"
+        if (bank.ownerQq != owner.id) return false to "鍙湁琛岄暱鍙互璧庡洖鍥藉嵎"
+        if (holding.redeemedAt != 0L) return false to "璇ユ寔浠撳凡璧庡洖"
 
-        val days = DateUtil.between(holding.boughtAt, Date(), DateUnit.DAY)
+        val days = DateUtil.between(Date(holding.boughtAt), Date(), DateUnit.DAY)
         val base = baseInterest()
 
         val payout = if (days >= holding.lockDays) {
-            // 到期：按主银行利率 * 倍数计算一次性收益（简化：按天计息）
+            // 鍒版湡锛氭寜涓婚摱琛屽埄鐜?* 鍊嶆暟璁＄畻涓€娆℃€ф敹鐩婏紙绠€鍖栵細鎸夊ぉ璁℃伅锛?
             val rate = (base / 1000.0) * holding.rateMultiplier
             ShareUtils.rounding(holding.principal * (1 + rate * holding.lockDays))
         } else {
-            // 提前：折价 10%
+            // 鎻愬墠锛氭姌浠?10%
             ShareUtils.rounding(holding.principal * 0.9)
         }
 
-        holding.redeemedAt = Date()
+        holding.redeemedAt = System.currentTimeMillis()
         PrivateBankRepository.saveBondHolding(holding)
 
-        // 赎回资金进入流动金池
+        // 璧庡洖璧勯噾杩涘叆娴佸姩閲戞睜
         EconomyUtil.plusMoneyToPluginBankForId(bank.code, PrivateBankLedger.LIQUIDITY_DESC, payout)
 
-        return true to "赎回成功：到账 ${MoneyFormatUtil.format(payout)}"
+        return true to "璧庡洖鎴愬姛锛氬埌璐?${MoneyFormatUtil.format(payout)}"
     }
 
     fun publishLoan(owner: User, bankCode: String, total: Double, interest: Int, termDays: Int, source: String): Pair<Boolean, String> {
-        if (total <= 0) return false to "金额必须大于 0"
+        if (total <= 0) return false to "閲戦蹇呴』澶т簬 0"
         if (termDays !in 1..30) return false to "期限仅支持 1-30 天"
 
-        val bank = findBankByCodeOrName(bankCode) ?: return false to "未找到该银行：$bankCode"
-        if (bank.ownerQq != owner.id) return false to "只有行长可以发布贷款"
+        val bank = findBankByCodeOrName(bankCode) ?: return false to "鏈壘鍒拌閾惰锛?bankCode"
+        if (bank.ownerQq != owner.id) return false to "鍙湁琛岄暱鍙互鍙戝竷璐锋"
 
         val activeOffers = PrivateBankRepository.listLoanOffers(bank.code)
             .count { it.enabled && it.remaining > 0.0001 }
@@ -520,28 +518,28 @@ object PrivateBankService {
         }
 
         if (interest <= 0 || interest > maxLoanInterestByStar(bank.star)) {
-            return false to "发布失败：利息超出星级限制（⭐${bank.star} 最大允许 ${FormatUtil.fixed(maxLoanInterestByStar(bank.star) / 10.0, 1)}%）"
+            return false to "发布失败：利息超出星级限制（星级 ${bank.star} 最大允许 ${FormatUtil.fixed(maxLoanInterestByStar(bank.star) / 10.0, 1)}%）"
         }
 
         val src = source.uppercase(Locale.getDefault())
-        if (src != "LIQUIDITY" && src != "OWNER") return false to "source 仅支持 LIQUIDITY/OWNER"
+        if (src != "LIQUIDITY" && src != "OWNER") return false to "source 浠呮敮鎸?LIQUIDITY/OWNER"
 
-        // 先把资金冻结到库存账户，避免后续借款时资金不足
+        // 鍏堟妸璧勯噾鍐荤粨鍒板簱瀛樿处鎴凤紝閬垮厤鍚庣画鍊熸鏃惰祫閲戜笉瓒?
         val ok = if (src == "LIQUIDITY") {
             val liquidity = EconomyUtil.getMoneyFromPluginBankForId(bank.code, PrivateBankLedger.LIQUIDITY_DESC)
-            if (liquidity < total) return false to "流动金池余额不足"
+            if (liquidity < total) return false to "娴佸姩閲戞睜浣欓涓嶈冻"
             EconomyUtil.plusMoneyToPluginBankForId(bank.code, PrivateBankLedger.LIQUIDITY_DESC, -total) &&
                 EconomyUtil.plusMoneyToPluginBankForId(bank.code, PrivateBankLedger.INVENTORY_DESC, total)
         } else {
             val ownerWallet = EconomyUtil.getMoneyByUser(owner)
-            if (ownerWallet < total) return false to "行长钱包余额不足"
+            if (ownerWallet < total) return false to "琛岄暱閽卞寘浣欓涓嶈冻"
             EconomyUtil.minusMoneyToUser(owner, total) &&
                 EconomyUtil.plusMoneyToPluginBankForId(bank.code, PrivateBankLedger.INVENTORY_DESC, total)
         }
 
         if (!ok) return false to "发布失败：资金冻结失败"
 
-        val offer = PrivateBankLoanOffer(
+        val offer = PrivateBankLoanOfferDto(
             bankCode = bank.code,
             ownerQq = owner.id,
             source = src,
@@ -550,31 +548,31 @@ object PrivateBankService {
             interest = interest,
             termDays = termDays
         )
-        PrivateBankRepository.saveLoanOffer(offer)
-        return true to "发布成功：offerId=${offer.id} 可借 ${MoneyFormatUtil.format(offer.remaining)}"
+        val savedOffer = PrivateBankRepository.saveLoanOffer(offer)
+        return true to "鍙戝竷鎴愬姛锛歰fferId=${savedOffer.id} 鍙€?${MoneyFormatUtil.format(savedOffer.remaining)}"
     }
 
     fun borrow(user: User, offerId: Int, amount: Double): Pair<Boolean, String> {
-        if (amount <= 0) return false to "金额必须大于 0"
-        val offer = PrivateBankRepository.findLoanOffer(offerId) ?: return false to "未找到该贷款标的"
-        if (!offer.enabled) return false to "该贷款标的已关闭"
+        if (amount <= 0) return false to "閲戦蹇呴』澶т簬 0"
+        val offer = PrivateBankRepository.findLoanOffer(offerId) ?: return false to "鏈壘鍒拌璐锋鏍囩殑"
+        if (!offer.enabled) return false to "璇ヨ捶娆炬爣鐨勫凡鍏抽棴"
         if (offer.remaining < amount) return false to "剩余额度不足（剩余 ${MoneyFormatUtil.format(offer.remaining)}）"
 
-        // 计划口径：贷款金额进入借款人在该银行的“存款账户”（用户可自行取款使用）
+        // 璁″垝鍙ｅ緞锛氳捶娆鹃噾棰濊繘鍏ュ€熸浜哄湪璇ラ摱琛岀殑鈥滃瓨娆捐处鎴封€濓紙鐢ㄦ埛鍙嚜琛屽彇娆句娇鐢級
         if (!EconomyUtil.plusMoneyToPluginBankForId(offer.bankCode, PrivateBankLedger.INVENTORY_DESC, -amount)) {
-            return false to "放款失败：放贷仓库扣减失败"
+            return false to "放款失败：放贷库存扣减失败"
         }
 
-        // 把资金转入流动金池以覆盖可能的取款（资产形态从放贷仓库变为流动金）
+        // 鎶婅祫閲戣浆鍏ユ祦鍔ㄩ噾姹犱互瑕嗙洊鍙兘鐨勫彇娆撅紙璧勪骇褰㈡€佷粠鏀捐捶浠撳簱鍙樹负娴佸姩閲戯級
         if (!EconomyUtil.plusMoneyToPluginBankForId(offer.bankCode, PrivateBankLedger.LIQUIDITY_DESC, amount)) {
             EconomyUtil.plusMoneyToPluginBankForId(offer.bankCode, PrivateBankLedger.INVENTORY_DESC, amount)
             return false to "放款失败：流动金池入账失败"
         }
 
         val dep = PrivateBankRepository.findDeposit(offer.bankCode, user.id)
-            ?: PrivateBankDeposit(bankCode = offer.bankCode, userQq = user.id, principal = 0.0)
+            ?: PrivateBankDepositDto(bankCode = offer.bankCode, userQq = user.id, principal = 0.0)
         dep.principal = ShareUtils.rounding(dep.principal + amount)
-        dep.updatedAt = Date()
+        dep.updatedAt = System.currentTimeMillis()
         PrivateBankRepository.saveDeposit(dep)
 
         offer.remaining = ShareUtils.rounding(offer.remaining - amount)
@@ -582,7 +580,7 @@ object PrivateBankService {
 
         val dueAt = DateUtil.offsetDay(Date(), offer.termDays)
         val dueTotal = ShareUtils.rounding(amount * (1 + (offer.interest / 1000.0) * offer.termDays))
-        val loan = PrivateBankLoan(
+        val loan = PrivateBankLoanDto(
             offerId = offer.id,
             bankCode = offer.bankCode,
             lenderQq = offer.ownerQq,
@@ -592,43 +590,43 @@ object PrivateBankService {
             repaidAmount = 0.0,
             interest = offer.interest,
             termDays = offer.termDays,
-            createdAt = Date(),
-            dueAt = dueAt
+            createdAt = System.currentTimeMillis(),
+            dueAt = dueAt.time
         )
-        PrivateBankRepository.saveLoan(loan)
+        val savedLoan = PrivateBankRepository.saveLoan(loan)
 
-        return true to "借款成功：loanId=${loan.id} 金额=${MoneyFormatUtil.format(amount)} 应还=${MoneyFormatUtil.format(dueTotal)} 到期日 ${DateUtil.formatDateTime(dueAt)}"
+        return true to "鍊熸鎴愬姛锛歭oanId=${savedLoan.id} 閲戦=${MoneyFormatUtil.format(amount)} 搴旇繕=${MoneyFormatUtil.format(dueTotal)} 鍒版湡鏃?${DateUtil.formatDateTime(dueAt)}"
     }
 
     fun repay(user: User, loanId: Int): Pair<Boolean, String> {
         val loan = PrivateBankRepository.findLoan(loanId) ?: return false to "未找到借款单"
-        if (loan.borrowerQq != user.id) return false to "只能偿还自己的借款"
-        if (loan.repaidAt != null) return false to "该借款已结清"
+        if (loan.borrowerQq != user.id) return false to "鍙兘鍋胯繕鑷繁鐨勫€熸"
+        if (loan.repaidAt != 0L) return false to "该借款已结清"
         val outstanding = ShareUtils.rounding((loan.dueTotal - loan.repaidAmount).coerceAtLeast(0.0))
         return repayByAmount(user, loanId, outstanding)
     }
 
     fun repayByAmount(user: User, loanId: Int, amount: Double): Pair<Boolean, String> {
-        if (amount <= 0) return false to "金额必须大于 0"
+        if (amount <= 0) return false to "閲戦蹇呴』澶т簬 0"
         val loan = PrivateBankRepository.findLoan(loanId) ?: return false to "未找到借款单"
-        if (loan.borrowerQq != user.id) return false to "只能偿还自己的借款"
-        if (loan.repaidAt != null) return false to "该借款已结清"
+        if (loan.borrowerQq != user.id) return false to "鍙兘鍋胯繕鑷繁鐨勫€熸"
+        if (loan.repaidAt != 0L) return false to "该借款已结清"
 
         val outstanding = (loan.dueTotal - loan.repaidAmount).coerceAtLeast(0.0)
         if (outstanding <= 0.0001) {
-            loan.repaidAt = Date()
+            loan.repaidAt = System.currentTimeMillis()
             PrivateBankRepository.saveLoan(loan)
             return true to "该借款已结清"
         }
 
         val pay = amount.coerceAtMost(outstanding)
 
-        // 扣款：优先钱包，不足再扣主银行
+        // 鎵ｆ锛氫紭鍏堥挶鍖咃紝涓嶈冻鍐嶆墸涓婚摱琛?
         var remaining = pay
         val wallet = EconomyUtil.getMoneyByUser(user)
         val takeWallet = wallet.coerceAtMost(remaining)
         if (takeWallet > 0) {
-            if (!EconomyUtil.minusMoneyToUser(user, takeWallet)) return false to "扣款失败"
+            if (!EconomyUtil.minusMoneyToUser(user, takeWallet)) return false to "鎵ｆ澶辫触"
             remaining -= takeWallet
         }
         if (remaining > 0) {
@@ -636,36 +634,36 @@ object PrivateBankService {
             val takeBank = bank.coerceAtMost(remaining)
             if (takeBank > 0) {
                 if (!EconomyUtil.plusMoneyToBank(user, -takeBank)) {
-                    // 回滚钱包扣款
+                    // 鍥炴粴閽卞寘鎵ｆ
                     if (takeWallet > 0) EconomyUtil.plusMoneyToUser(user, takeWallet)
-                    return false to "扣款失败"
+                    return false to "鎵ｆ澶辫触"
                 }
                 remaining -= takeBank
             }
         }
 
         val paid = ShareUtils.rounding(pay - remaining)
-        if (paid <= 0) return false to "余额不足"
+        if (paid <= 0) return false to "浣欓涓嶈冻"
 
         EconomyUtil.plusMoneyToPluginBankForId(loan.bankCode, PrivateBankLedger.LIQUIDITY_DESC, paid)
         loan.repaidAmount = ShareUtils.rounding(loan.repaidAmount + paid)
         if (loan.repaidAmount + 0.0001 >= loan.dueTotal) {
-            loan.repaidAt = Date()
+            loan.repaidAt = System.currentTimeMillis()
         }
         PrivateBankRepository.saveLoan(loan)
 
         val left = ShareUtils.rounding((loan.dueTotal - loan.repaidAmount).coerceAtLeast(0.0))
-        return true to "还款成功：已还 ${MoneyFormatUtil.format(paid)}，剩余 ${MoneyFormatUtil.format(left)}"
+        return true to "杩樻鎴愬姛锛氬凡杩?${MoneyFormatUtil.format(paid)}锛屽墿浣?${MoneyFormatUtil.format(left)}"
     }
 
     fun repayToBankByAmount(user: User, bankCode: String, amount: Double): Pair<Boolean, String> {
-        if (amount <= 0) return false to "金额必须大于 0"
-        val bank = findBankByCodeOrName(bankCode) ?: return false to "未找到该银行：$bankCode"
+        if (amount <= 0) return false to "閲戦蹇呴』澶т簬 0"
+        val bank = findBankByCodeOrName(bankCode) ?: return false to "鏈壘鍒拌閾惰锛?bankCode"
         val loans = PrivateBankRepository.listLoansByBorrower(user.id)
-            .filter { it.repaidAt == null && it.bankCode == bank.code }
-            .sortedBy { it.createdAt.time }
+            .filter { it.repaidAt == 0L && it.bankCode == bank.code }
+            .sortedBy { it.createdAt }
 
-        if (loans.isEmpty()) return false to "你在该银行没有未结清借款"
+        if (loans.isEmpty()) return false to "浣犲湪璇ラ摱琛屾病鏈夋湭缁撴竻鍊熸"
 
         var remaining = amount
         var paidTotal = 0.0
@@ -680,25 +678,25 @@ object PrivateBankService {
             remaining -= pay
         }
 
-        return true to "已尝试还款：${MoneyFormatUtil.format(paidTotal)}"
+        return true to "宸插皾璇曡繕娆撅細${MoneyFormatUtil.format(paidTotal)}"
     }
 
     /**
-     * 到期自动扣款：优先主银行，其次钱包；扣到的钱进入私银流动金池。
-     * 可能因为用户离线/无法解析 User 对象而跳过。
+     * 鍒版湡鑷姩鎵ｆ锛氫紭鍏堜富閾惰锛屽叾娆￠挶鍖咃紱鎵ｅ埌鐨勯挶杩涘叆绉侀摱娴佸姩閲戞睜銆?
+     * 鍙兘鍥犱负鐢ㄦ埛绂荤嚎/鏃犳硶瑙ｆ瀽 User 瀵硅薄鑰岃烦杩囥€?
      */
     fun collectOverdueLoans(): Int {
         val now = Date()
         var processed = 0
         val loans = PrivateBankRepository.listUnrepaidLoans()
-            .filter { it.dueAt.before(now) && (it.dueTotal - it.repaidAmount) > 0.0001 }
+            .filter { it.dueAt < now.time && (it.dueTotal - it.repaidAmount) > 0.0001 }
 
         for (loan in loans) {
             val borrower = resolveUser(loan.borrowerQq) ?: continue
             val outstanding = (loan.dueTotal - loan.repaidAmount).coerceAtLeast(0.0)
             if (outstanding <= 0.0001) continue
 
-            // 自动扣：优先主银行
+            // 鑷姩鎵ｏ細浼樺厛涓婚摱琛?
             var remaining = outstanding
             val bankBal = EconomyUtil.getMoneyByBank(borrower)
             val takeBank = bankBal.coerceAtMost(remaining)
@@ -724,7 +722,7 @@ object PrivateBankService {
             EconomyUtil.plusMoneyToPluginBankForId(loan.bankCode, PrivateBankLedger.LIQUIDITY_DESC, paid)
             loan.repaidAmount = ShareUtils.rounding(loan.repaidAmount + paid)
             if (loan.repaidAmount + 0.0001 >= loan.dueTotal) {
-                loan.repaidAt = Date()
+                loan.repaidAt = System.currentTimeMillis()
             }
             PrivateBankRepository.saveLoan(loan)
             processed++
