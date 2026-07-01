@@ -1,9 +1,9 @@
 package cn.chahuyun.economy.plugin
 
 import cn.chahuyun.economy.HuYanEconomy
-import cn.chahuyun.economy.entity.fish.Fish
-import cn.chahuyun.economy.entity.fish.FishInfo
-import cn.chahuyun.hibernateplus.HibernateFactory
+import cn.chahuyun.economy.model.fish.FishDto
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
+import cn.chahuyun.economy.repository.FishRepository
 import cn.hutool.poi.excel.ExcelReader
 import cn.hutool.poi.excel.ExcelUtil
 import java.io.InputStream
@@ -15,29 +15,25 @@ object FishManager {
     /**
      * 归类整理的鱼
      */
-    private val fishMap: MutableMap<Int, MutableList<Fish>> = HashMap()
+    private val fishMap: MutableMap<Int, MutableList<FishDto>> = HashMap()
 
     @JvmStatic
     fun init() {
-        val fishList = HibernateFactory.selectList(Fish::class.java)
-        if (fishList.isNullOrEmpty()) {
+        val fishList = fishProxy.findAll()
+        if (fishList.isEmpty()) {
             reloadFish()
             return
         }
         readFish(fishList)
 
-        val fishInfos = HibernateFactory.selectList(FishInfo::class.java)
-        for (fishInfo in fishInfos) {
-            fishInfo.status = false
-            HibernateFactory.merge(fishInfo)
-        }
+        FishRepository.resetAllFishingStatus()
     }
 
     /**
      * 获取对应的鱼等级
      */
     @JvmStatic
-    fun getLevelFishList(fishLevel: Int): List<Fish> {
+    fun getLevelFishList(fishLevel: Int): List<FishDto> {
         return fishMap[fishLevel] ?: emptyList()
     }
 
@@ -62,17 +58,19 @@ object FishManager {
             "特殊标记" to "special"
         )
         val reader: ExcelReader = ExcelUtil.getReader(resourceAsStream)
-        val fishList: List<Fish> = reader.setHeaderAlias(map).readAll(Fish::class.java)
-        for (fish in fishList) {
-            HibernateFactory.merge(fish)
-        }
+        val fishList: List<FishDto> = reader.setHeaderAlias(map).readAll(FishDto::class.java)
+        fishProxy.saveAll(fishList)
         readFish(fishList)
     }
 
-    private fun readFish(list: List<Fish>) {
+    private fun readFish(list: List<FishDto>) {
+        fishMap.clear()
         for (fish in list) {
             val level = fish.level
             fishMap.getOrPut(level) { mutableListOf() }.add(fish)
         }
     }
+
+    private val fishProxy
+        get() = EntityProxyRegistry.get<FishDto>("fish") ?: error("鱼种代理器未初始化")
 }

@@ -1,52 +1,43 @@
 package cn.chahuyun.economy.plugin
 
-import cn.chahuyun.economy.entity.GlobalFactor
-import cn.chahuyun.economy.entity.UserFactor
-import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.hibernateplus.HibernateFactory
+import cn.chahuyun.economy.model.GlobalFactorDto
+import cn.chahuyun.economy.model.user.UserFactorDto
+import cn.chahuyun.economy.model.user.UserInfoDto
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 
 /**
  * 因子管理
  */
 object FactorManager {
-    private val globalType = GlobalFactor::class.java
-    private val userType = UserFactor::class.java
 
     @JvmStatic
     fun init() {
-        var one = HibernateFactory.selectOneById(globalType, 1)
-        if (one == null) {
-            one = GlobalFactor()
-            HibernateFactory.merge(one)
-        }
+        getGlobalFactor()
     }
 
     @JvmStatic
-    fun getGlobalFactor(): GlobalFactor {
-        return HibernateFactory.selectOneById(globalType, 1) ?: run {
-            val created = GlobalFactor()
-            HibernateFactory.merge(created)
-        }
+    fun getGlobalFactor(): GlobalFactorDto {
+        return globalFactorProxy.findById(1) ?: globalFactorProxy.save(GlobalFactorDto(id = 1))
     }
 
     @JvmStatic
-    fun merge(factor: GlobalFactor) {
-        HibernateFactory.merge(factor)
+    fun merge(factor: GlobalFactorDto) {
+        globalFactorProxy.save(factor)
     }
 
     @JvmStatic
-    fun getUserFactor(user: UserInfo): UserFactor {
-        var one = HibernateFactory.selectOneById(userType, user.qq)
-        if (one == null) {
-            one = UserFactor()
-            one.id = user.qq
-            return HibernateFactory.merge(one)
-        }
-        return one
+    fun getUserFactor(user: UserInfoDto): UserFactorDto {
+        return userFactorProxy.findById(user.qq) ?: userFactorProxy.save(UserFactorDto(id = user.qq))
     }
 
     @JvmStatic
-    fun merge(factor: UserFactor) {
-        HibernateFactory.merge(factor)
+    fun merge(factor: UserFactorDto) {
+        userFactorProxy.save(factor)
     }
+
+    private val userFactorProxy
+        get() = EntityProxyRegistry.get<UserFactorDto>("user_factor") ?: error("用户因子代理器未初始化")
+
+    private val globalFactorProxy
+        get() = EntityProxyRegistry.get<GlobalFactorDto>("global") ?: error("全局因子代理器未初始化")
 }

@@ -1,10 +1,10 @@
 package cn.chahuyun.economy.plugin
 
 import cn.chahuyun.economy.HuYanEconomy
-import cn.chahuyun.economy.entity.TitleInfo
-import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.model.title.CustomTitle
 import cn.chahuyun.economy.model.title.TitleTemplate
+import cn.chahuyun.economy.model.user.TitleInfoDto
+import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.utils.Log
 import cn.hutool.core.date.DateUtil
 import cn.hutool.core.io.FileUtil
@@ -47,7 +47,7 @@ object TitleTemplateManager {
      * 根据称号模版code创建一个称号，并绑定到对应的用户上
      */
     @JvmStatic
-    fun createTitle(templateCode: String, userInfo: UserInfo): TitleInfo? {
+    fun createTitle(templateCode: String, userInfo: UserInfoDto): TitleInfoDto? {
         if (!titleTemplateMap.containsKey(templateCode)) {
             return null
         }
@@ -57,10 +57,10 @@ object TitleTemplateManager {
         } else {
             null
         }
-        val titleInfo = template.createTitleInfo(userInfo)
-        titleInfo.code = template.templateCode
-        titleInfo.dueTime = validityPeriod
-        return titleInfo
+        return template.createTitleInfo(userInfo).copy(
+            code = template.templateCode,
+            dueTime = validityPeriod?.time ?: 0
+        )
     }
 
     /**

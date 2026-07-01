@@ -1,7 +1,6 @@
 package cn.chahuyun.economy.plugin
 
 import cn.chahuyun.economy.constant.PropsKind
-import cn.chahuyun.economy.entity.props.PropsData
 import cn.chahuyun.economy.model.fish.FishBait
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.PropsCard
@@ -9,7 +8,6 @@ import cn.chahuyun.economy.prop.Expirable
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.Log
-import cn.chahuyun.hibernateplus.HibernateFactory
 
 /**
  * 插件道具管理 (Kotlin 重构版)
@@ -175,11 +173,11 @@ object PluginPropsManager {
 
 class PropExpireCheckTask : Runnable {
     override fun run() {
-        val collect = HibernateFactory.selectList(PropsData::class.java)
+        val collect = PropsManager.listPropsData()
         for (data in collect) {
             try {
-                val kind = data.kind ?: continue
-                val id = data.id ?: continue
+                val kind = data.kind.takeIf { it.isNotBlank() } ?: continue
+                val id = data.id.takeIf { it != 0L } ?: continue
                 val propClass = PropsManager.getPropClass(kind) ?: continue
                 val prop = PropsManager.deserialization(data, propClass)
 
