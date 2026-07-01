@@ -9,7 +9,6 @@ import cn.chahuyun.economy.entity.props.PropsData
 import cn.chahuyun.economy.entity.rob.RobInfo
 import cn.chahuyun.economy.prop.BaseProp
 import cn.chahuyun.economy.prop.PropsManager
-import cn.chahuyun.economy.prop.PropsManager.destroy
 import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.json.JSONUtil
@@ -140,6 +139,12 @@ class RobRepair : Repair {
  * 将旧版扁平 JSON 升级为结构化存储
  */
 class PropRepair : Repair {
+    private fun UserBackpack.destroy() {
+        val propId = propId ?: return
+        PropsManager.destroyPros(propId)
+        HibernateFactory.delete(this)
+    }
+
     /**
      * 修复
      * 执行道具数据的修复操作，包括字段迁移、数量修复、堆叠物品合并等
@@ -186,10 +191,9 @@ class PropRepair : Repair {
                 // 使用修正后的 JSON 反序列化出对象
                 val prop = JSONUtil.toBean(jsonObject, propClass)
                 // --- 利用 PropsManager 同步核心列数据 ---
-                val updatedPropsData = PropsManager.serialization(prop)
-                updatedPropsData.id = propsData.id
+                val updatedPropsData = PropsManager.serialization(prop).copy(id = propsData.id ?: 0)
 
-                HibernateFactory.merge(updatedPropsData)
+                PropsManager.savePropsData(updatedPropsData)
             } catch (e: Exception) {
                 cn.chahuyun.economy.utils.Log.error("升级道具数据失败: id=${propsData.id}", e)
             }
@@ -241,10 +245,9 @@ class PropRepair : Repair {
                         one.num += num
                     }
 
-                    val updatedPropsData = PropsManager.serialization(one)
-                    updatedPropsData.id = only?.propId
+                    val updatedPropsData = PropsManager.serialization(one).copy(id = only?.propId ?: 0)
 
-                    HibernateFactory.merge(updatedPropsData)
+                    PropsManager.savePropsData(updatedPropsData)
                     backpack.destroy()
                 } else {
                     userBackpackToBaseProp[key] = backpack
@@ -257,7 +260,7 @@ class PropRepair : Repair {
         // 3. 最终清理残留的无效背包条目
         HibernateFactory.selectList(UserBackpack::class.java).forEach { backpack ->
             try {
-                if (PropsManager.getProp(backpack) == null) {
+                if (PropsManager.getProp(backpack.toDto()) == null) {
                     backpack.destroy()
                 }
             } catch (_: Exception) {

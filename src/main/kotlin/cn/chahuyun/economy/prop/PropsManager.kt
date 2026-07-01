@@ -1,12 +1,12 @@
-@file:Suppress("unused")
+﻿@file:Suppress("unused")
 
 package cn.chahuyun.economy.prop
 
-import cn.chahuyun.economy.entity.UserBackpack
-import cn.chahuyun.economy.entity.props.PropsData
+import cn.chahuyun.economy.model.props.PropsDataDto
 import cn.chahuyun.economy.model.props.UseEvent
+import cn.chahuyun.economy.model.user.UserBackpackDto
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.Log
-import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUtil
 import cn.hutool.json.JSONConfig
 import cn.hutool.json.JSONObject
@@ -16,8 +16,8 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 道具管理器 (Kotlin 现代重构版)
- * 实现开闭原则，基于接口处理道具行为
+ * 閬撳叿绠＄悊鍣?(Kotlin 鐜颁唬閲嶆瀯鐗?
+ * 瀹炵幇寮€闂師鍒欙紝鍩轰簬鎺ュ彛澶勭悊閬撳叿琛屼负
  */
 object PropsManager {
 
@@ -38,11 +38,11 @@ object PropsManager {
     internal val propsTemplateMap = ConcurrentHashMap<String, BaseProp>()
 
     /**
-     * 注册道具类型到管理器
+     * 娉ㄥ唽閬撳叿绫诲瀷鍒扮鐞嗗櫒
      *
-     * @param kind 道具类型标识符
-     * @param propClass 道具类的Class对象
-     * @return 注册成功返回true，如果该类型已存在则返回false
+     * @param kind 閬撳叿绫诲瀷鏍囪瘑绗?
+     * @param propClass 閬撳叿绫荤殑Class瀵硅薄
+     * @return 娉ㄥ唽鎴愬姛杩斿洖true锛屽鏋滆绫诲瀷宸插瓨鍦ㄥ垯杩斿洖false
      */
     @JvmStatic
     fun registerKindToPropClass(kind: String, propClass: Class<out BaseProp>): Boolean {
@@ -53,126 +53,126 @@ object PropsManager {
 
 
     /**
-     * 注册代码到道具映射表中
+     * 娉ㄥ唽浠ｇ爜鍒伴亾鍏锋槧灏勮〃涓?
      *
-     * 如果该道具可以购买,同步注册到商店
+     * 濡傛灉璇ラ亾鍏峰彲浠ヨ喘涔?鍚屾娉ㄥ唽鍒板晢搴?
      *
-     * @param prop 要注册的基础道具对象
-     * @param code 要注册的道具代码，如果为null则使用prop.code作为默认值
-     * @return 注册成功返回true，如果该代码已存在则返回false
+     * @param prop 瑕佹敞鍐岀殑鍩虹閬撳叿瀵硅薄
+     * @param code 瑕佹敞鍐岀殑閬撳叿浠ｇ爜锛屽鏋滀负null鍒欎娇鐢╬rop.code浣滀负榛樿鍊?
+     * @return 娉ㄥ唽鎴愬姛杩斿洖true锛屽鏋滆浠ｇ爜宸插瓨鍦ㄥ垯杩斿洖false
      */
     @JvmStatic
     fun registerCodeToProp(prop: BaseProp, code: String? = null): Boolean {
         if (!propsClassMap.containsKey(prop.kind)) {
-            Log.debug("道具模板的类型未注册!")
+            Log.debug("閬撳叿妯℃澘鐨勭被鍨嬫湭娉ㄥ唽!")
             return false
         }
         val onlyCode = code ?: prop.code
-        // 检查道具代码是否已存在，存在则返回false
+        // 妫€鏌ラ亾鍏蜂唬鐮佹槸鍚﹀凡瀛樺湪锛屽瓨鍦ㄥ垯杩斿洖false
         if (propsTemplateMap.containsKey(onlyCode)) return false
-        // 将道具添加到模板映射表中
+        // 灏嗛亾鍏锋坊鍔犲埌妯℃澘鏄犲皠琛ㄤ腑
         propsTemplateMap[onlyCode] = prop
-        // 如果道具可购买，则添加到商店中
+        // 濡傛灉閬撳叿鍙喘涔帮紝鍒欐坊鍔犲埌鍟嗗簵涓?
         if (prop.canBuy) PropsShop.addShop(onlyCode, prop)
         return true
     }
 
 
     /**
-     * 检查指定的道具类型代码是否存在
+     * 妫€鏌ユ寚瀹氱殑閬撳叿绫诲瀷浠ｇ爜鏄惁瀛樺湪
      *
-     * @param kind 道具类型标识符
-     * @return 存在返回true，不存在返回false
+     * @param kind 閬撳叿绫诲瀷鏍囪瘑绗?
+     * @return 瀛樺湪杩斿洖true锛屼笉瀛樺湪杩斿洖false
      */
     @JvmStatic
     fun checkKindExist(kind: String): Boolean = propsClassMap.containsKey(kind)
 
     /**
-     * 检查指定的道具code是否存在
+     * 妫€鏌ユ寚瀹氱殑閬撳叿code鏄惁瀛樺湪
      *
-     * @param code 道具code标识符
-     * @return 存在返回true，不存在返回false
+     * @param code 閬撳叿code鏍囪瘑绗?
+     * @return 瀛樺湪杩斿洖true锛屼笉瀛樺湪杩斿洖false
      */
     @JvmStatic
     fun checkCodeExist(code: String): Boolean = propsTemplateMap.containsKey(code)
 
     /**
-     * 【Kotlin 专用】获取道具模板副本
-     * 利用 reified 关键字实化泛型，支持运行时类型检查
-     * * 调用示例：val weapon = PropManager.getTemplate<WeaponProp>("W001")
+     * 銆怟otlin 涓撶敤銆戣幏鍙栭亾鍏锋ā鏉垮壇鏈?
+     * 鍒╃敤 reified 鍏抽敭瀛楀疄鍖栨硾鍨嬶紝鏀寔杩愯鏃剁被鍨嬫鏌?
+     * * 璋冪敤绀轰緥锛歷al weapon = PropManager.getTemplate<WeaponProp>("W001")
      */
     inline fun <reified T : BaseProp> getTemplate(code: String): T {
-        val prop = propsTemplateMap[code] ?: error("获取道具模板失败, 道具 code: [$code] 不存在!")
+        val prop = propsTemplateMap[code] ?: error("鑾峰彇閬撳叿妯℃澘澶辫触, 閬撳叿 code: [$code] 涓嶅瓨鍦?")
         return prop.copyProp()
     }
 
     /**
-     * 【Java 专用】获取道具模板副本
-     * 通过 Class 显式传递类型信息
-     * * 调用示例：WeaponProp w = PropManager.getTemplate("W001", WeaponProp.class)
+     * 銆怞ava 涓撶敤銆戣幏鍙栭亾鍏锋ā鏉垮壇鏈?
+     * 閫氳繃 Class 鏄惧紡浼犻€掔被鍨嬩俊鎭?
+     * * 璋冪敤绀轰緥锛歐eaponProp w = PropManager.getTemplate("W001", WeaponProp.class)
      */
     @JvmStatic
-    @JvmName("getTemplate") // 确保 Java 端看到的名称是 getTemplate
+    @JvmName("getTemplate") // 纭繚 Java 绔湅鍒扮殑鍚嶇О鏄?getTemplate
     fun <T : BaseProp> getTemplate(code: String, clazz: Class<T>): T {
         val prop =
-            propsTemplateMap[code] ?: throw IllegalArgumentException("获取道具模板失败, 道具 code: [$code] 不存在!")
+            propsTemplateMap[code] ?: throw IllegalArgumentException("鑾峰彇閬撳叿妯℃澘澶辫触, 閬撳叿 code: [$code] 涓嶅瓨鍦?")
         return prop.copyProp()
     }
 
 
     /**
-     * 根据用户背包信息获取道具实例
+     * 鏍规嵁鐢ㄦ埛鑳屽寘淇℃伅鑾峰彇閬撳叿瀹炰緥
      *
-     * @param backpack 用户背包对象
-     * @return 成功返回道具实例，失败返回null
+     * @param backpack 鐢ㄦ埛鑳屽寘瀵硅薄
+     * @return 鎴愬姛杩斿洖閬撳叿瀹炰緥锛屽け璐ヨ繑鍥瀗ull
      */
     @JvmStatic
-    fun getProp(backpack: UserBackpack): BaseProp? {
+    fun getProp(backpack: UserBackpackDto): BaseProp? {
         return try {
             val clazz = propsClassMap[backpack.propKind] ?: return null
-            val propId = backpack.propId ?: error("错误,背包中道具id为空!")
+            val propId = backpack.propId.takeIf { it != 0L } ?: error("閿欒,鑳屽寘涓亾鍏穒d涓虹┖!")
             deserialization(propId, clazz)
         } catch (e: Exception) {
-            Log.error("获取背包道具失败(ID: ${backpack.id}), 可能数据已损坏: ${e.message}")
+            Log.error("鑾峰彇鑳屽寘閬撳叿澶辫触(ID: ${backpack.id}), 鍙兘鏁版嵁宸叉崯鍧? ${e.message}")
             null
         }
     }
 
     /**
-     * 根据用户背包信息和指定类型获取道具实例
+     * 鏍规嵁鐢ㄦ埛鑳屽寘淇℃伅鍜屾寚瀹氱被鍨嬭幏鍙栭亾鍏峰疄渚?
      *
-     * @param backpack 用户背包对象
-     * @return 返回指定类型的道具实例
+     * @param backpack 鐢ㄦ埛鑳屽寘瀵硅薄
+     * @return 杩斿洖鎸囧畾绫诲瀷鐨勯亾鍏峰疄渚?
      */
     @JvmName("getPropWithType")
-    inline fun <reified T : BaseProp> getProp(backpack: UserBackpack): T {
+    inline fun <reified T : BaseProp> getProp(backpack: UserBackpackDto): T {
         return getProp(backpack, T::class.java)
     }
 
     /**
-     * 根据用户背包信息和指定类型获取道具实例
+     * 鏍规嵁鐢ㄦ埛鑳屽寘淇℃伅鍜屾寚瀹氱被鍨嬭幏鍙栭亾鍏峰疄渚?
      *
-     * java 专用
+     * java 涓撶敤
      *
-     * @param backpack 用户背包对象
-     * @param clazz 道具类型的Class对象
-     * @return 返回指定类型的道具实例
+     * @param backpack 鐢ㄦ埛鑳屽寘瀵硅薄
+     * @param clazz 閬撳叿绫诲瀷鐨凜lass瀵硅薄
+     * @return 杩斿洖鎸囧畾绫诲瀷鐨勯亾鍏峰疄渚?
      */
     @JvmStatic
-    fun <T : BaseProp> getProp(backpack: UserBackpack, clazz: Class<T>): T {
-        // 检查背包中道具id是否为空，为空则抛出异常
-        val propId = backpack.propId ?: throw IllegalArgumentException("背包中道具id为空!")
-        // 通过道具id和类型进行反序列化获取道具实例
+    fun <T : BaseProp> getProp(backpack: UserBackpackDto, clazz: Class<T>): T {
+        // 妫€鏌ヨ儗鍖呬腑閬撳叿id鏄惁涓虹┖锛屼负绌哄垯鎶涘嚭寮傚父
+        val propId = backpack.propId.takeIf { it != 0L } ?: throw IllegalArgumentException("鑳屽寘涓亾鍏穒d涓虹┖!")
+        // 閫氳繃閬撳叿id鍜岀被鍨嬭繘琛屽弽搴忓垪鍖栬幏鍙栭亾鍏峰疄渚?
         return deserialization(propId, clazz)
     }
 
 
     /**
-     * 根据道具类型和ID获取道具实例
+     * 鏍规嵁閬撳叿绫诲瀷鍜孖D鑾峰彇閬撳叿瀹炰緥
      *
-     * @param kind 道具类型标识符
-     * @param id 道具ID
-     * @return 成功返回道具实例，失败返回null
+     * @param kind 閬撳叿绫诲瀷鏍囪瘑绗?
+     * @param id 閬撳叿ID
+     * @return 鎴愬姛杩斿洖閬撳叿瀹炰緥锛屽け璐ヨ繑鍥瀗ull
      */
     @JvmStatic
     fun getProp(kind: String, id: Long): BaseProp? {
@@ -181,29 +181,28 @@ object PropsManager {
     }
 
     /**
-     * 添加道具到数据库
+     * 娣诲姞閬撳叿鍒版暟鎹簱
      *
-     * @param prop 道具实例
-     * @return 返回新添加道具的ID
+     * @param prop 閬撳叿瀹炰緥
+     * @return 杩斿洖鏂版坊鍔犻亾鍏风殑ID
      */
     @JvmStatic
     fun addProp(prop: BaseProp): Long {
         val data = serialization(prop)
-        return HibernateFactory.merge(data).id!!
+        return propsProxy.save(data).id
     }
 
     /**
-     * 更新数据库中的道具信息
+     * 鏇存柊鏁版嵁搴撲腑鐨勯亾鍏蜂俊鎭?
      *
-     * @param id 道具ID
-     * @param prop 道具实例
+     * @param id 閬撳叿ID
+     * @param prop 閬撳叿瀹炰緥
      */
     @JvmStatic
     fun updateProp(id: Long, prop: BaseProp) {
-        // 防止历史数据/反序列化缺陷导致 code 被写空。
-        // 若当前对象 code 无效，则尝试从数据库已存在的 PropsData 回填。
+        // Backfill code from stored data when old serialized props lost it.
         if (isInvalidCode(prop.code)) {
-            val existing = HibernateFactory.selectOneById<PropsData>(id)
+            val existing = propsProxy.findById(id)
             val fallback = existing?.code
                 ?.takeIf { !isInvalidCode(it) }
                 ?: existing?.data
@@ -218,29 +217,29 @@ object PropsManager {
         }
 
         val data = serialization(prop)
-        data.id = id
-        HibernateFactory.merge(data)
+        propsProxy.save(data.copy(id = id))
     }
 
     /**
-     * Java兼容的道具使用方法（同步调用）
+     * Java鍏煎鐨勯亾鍏蜂娇鐢ㄦ柟娉曪紙鍚屾璋冪敤锛?
      *
-     * @param backpack 用户背包对象
-     * @param event 使用事件对象
-     * @return 使用结果
+     * @param backpack 鐢ㄦ埛鑳屽寘瀵硅薄
+     * @param event 浣跨敤浜嬩欢瀵硅薄
+     * @return 浣跨敤缁撴灉
      */
+
     @JvmStatic
-    fun usePropJava(backpack: UserBackpack, event: UseEvent) =
+    fun usePropJava(backpack: UserBackpackDto, event: UseEvent) =
         runBlocking { return@runBlocking useProp(backpack, event) }
 
     /**
-     * 异步使用道具
+     * 寮傛浣跨敤閬撳叿
      *
-     * @param backpack 用户背包对象
-     * @param event 使用事件对象
-     * @return 使用结果
+     * @param backpack 鐢ㄦ埛鑳屽寘瀵硅薄
+     * @param event 浣跨敤浜嬩欢瀵硅薄
+     * @return 浣跨敤缁撴灉
      */
-    suspend fun useProp(backpack: UserBackpack, event: UseEvent): UseResult {
+    suspend fun useProp(backpack: UserBackpackDto, event: UseEvent): UseResult {
         val prop = getProp(backpack) ?: return UseResult.fail("道具不存在")
 
         if (prop !is Usable) return UseResult.fail("该道具不可直接使用")
@@ -248,7 +247,7 @@ object PropsManager {
         val result = prop.use(event)
 
         if (result.success) {
-            val propId = backpack.propId ?: error("错误,背包中道具id为空!")
+            val propId = backpack.propId.takeIf { it != 0L } ?: error("閿欒,鑳屽寘涓亾鍏穒d涓虹┖!")
             if (result.shouldRemove) {
                 destroyProsAndBackpack(propId)
             } else if (result.shouldUpdate) {
@@ -269,107 +268,87 @@ object PropsManager {
     }
 
     /**
-     * 根据ID销毁道具数据
+     * 鏍规嵁ID閿€姣侀亾鍏锋暟鎹?
      *
-     * @param id 道具ID
+     * @param id 閬撳叿ID
      */
     @JvmStatic
     fun destroyPros(id: Long) {
-        val data = HibernateFactory.selectOneById<PropsData>(id)
-        if (data != null) HibernateFactory.delete(data)
+        propsProxy.delete(id)
     }
 
     /**
-     * 销毁背包中的道具（同时删除道具数据和背包记录）
+     * 閿€姣佽儗鍖呬腑鐨勯亾鍏凤紙鍚屾椂鍒犻櫎閬撳叿鏁版嵁鍜岃儗鍖呰褰曪級
      *
-     * @param propId 道具ID
+     * @param propId 閬撳叿ID
      */
     @JvmStatic
     fun destroyProsAndBackpack(propId: Long) {
         destroyPros(propId)
-        val backpack = HibernateFactory.selectOne(UserBackpack::class.java, "propId", propId)
-        if (backpack != null) HibernateFactory.delete(backpack)
+        backpackProxy.findWhere { it.propId == propId }.forEach { backpackProxy.delete(it.id) }
     }
 
     /**
-     * 销毁背包中的道具（同时删除道具数据和背包记录）
+     * 鏍稿績瀛楁鍚屾搴忓垪鍖?
+     * 灏嗛亾鍏峰璞″簭鍒楀寲涓烘暟鎹簱瀛樺偍鏍煎紡
      *
-     * @param backpack 用户背包对象，包含要销毁的道具信息
+     * @param prop 閬撳叿瀹炰緥
+     * @return 搴忓垪鍖栧悗鐨勯亾鍏锋暟鎹璞?
      */
     @JvmStatic
-    fun destroyProsAndBackpackByBackpack(backpack: UserBackpack) {
-        val propId = backpack.propId ?: error("销毁道具错误,背包无对应道具id")
-        // 销毁道具数据
-        destroyPros(propId)
-        // 查询并删除背包记录
-        val userBackpack = HibernateFactory.selectOne(UserBackpack::class.java, "propId", propId)
-        if (userBackpack != null) HibernateFactory.delete(userBackpack)
-    }
+    fun serialization(prop: BaseProp): PropsDataDto {
+        // 鏍稿績瀛楁鎻愬彇
+        var expiredTime = 0L
 
-    /**
-     * 扩展函数，销毁当前背包中的道具
-     * 调用destroyProsAndBackpackByBackpack方法销毁当前背包对象对应的道具
-     */
-    fun UserBackpack.destroy() = destroyProsAndBackpackByBackpack(this)
-
-
-    /**
-     * 核心字段同步序列化
-     * 将道具对象序列化为数据库存储格式
-     *
-     * @param prop 道具实例
-     * @return 序列化后的道具数据对象
-     */
-    @JvmStatic
-    fun serialization(prop: BaseProp): PropsData {
-        // 核心字段提取
-        val propsData = PropsData().apply {
-            kind = prop.kind
-            code = prop.code
-        }
-
-        // 处理时效性字段同步
         if (prop is Expirable && prop.canItExpire) {
             if (prop.expiredTime == null) {
                 val days = if (prop.expireDays > 0) prop.expireDays else 1
                 prop.expiredTime = DateUtil.offsetDay(Date(), days)
             }
-            propsData.expiredTime = prop.expiredTime
+            expiredTime = prop.expiredTime?.time ?: 0
         }
 
-        // 处理堆叠字段同步
+        var num = 1
+        // 澶勭悊鍫嗗彔瀛楁鍚屾
         if (prop is Stackable) {
-            propsData.num = prop.num
+            num = prop.num
         }
 
-        // 处理状态字段同步 (针对卡片等)
+        var status = false
+        // 澶勭悊鐘舵€佸瓧娈靛悓姝?(閽堝鍗＄墖绛?
         if (prop is cn.chahuyun.economy.model.props.PropsCard) {
-            propsData.status = prop.status
+            status = prop.status
         }
 
-        propsData.data = JSONUtil.toJsonStr(prop)
-        return propsData
+        return PropsDataDto(
+            kind = prop.kind,
+            code = prop.code,
+            num = num,
+            expiredTime = expiredTime,
+            status = status,
+            data = JSONUtil.toJsonStr(prop)
+        )
     }
 
     /**
-     * 根据ID反序列化道具对象
+     * 鏍规嵁ID鍙嶅簭鍒楀寲閬撳叿瀵硅薄
      *
-     * @param id 道具ID
-     * @param clazz 道具类型的Class对象
-     * @return 反序列化后的道具实例
+     * @param id 閬撳叿ID
+     * @param clazz 閬撳叿绫诲瀷鐨凜lass瀵硅薄
+     * @return 鍙嶅簭鍒楀寲鍚庣殑閬撳叿瀹炰緥
      */
     @JvmStatic
     fun <T : BaseProp> deserialization(id: Long, clazz: Class<T>): T {
-        val propsData = HibernateFactory.selectOneById<PropsData>(id)
-            ?: throw RuntimeException("该道具数据不存在, ID: $id")
+        val propsData = propsProxy.findById(id)
+            ?: throw RuntimeException("璇ラ亾鍏锋暟鎹笉瀛樺湪, ID: $id")
 
         val jsonConfig = JSONConfig.create().setIgnoreError(true)
-        val data = propsData.data ?: throw RuntimeException("道具数据内容为空，ID: $id")
+        val data = propsData.data ?: throw RuntimeException("閬撳叿鏁版嵁鍐呭涓虹┖锛孖D: $id")
 
         return try {
             val jsonObject = JSONUtil.parseObj(data)
 
-            // 优先以“列->JSON”的方式补齐 code，避免 Kotlin val/父类字段导致 toBean 丢失 code。
+            // 浼樺厛浠モ€滃垪->JSON鈥濈殑鏂瑰紡琛ラ綈 code锛岄伩鍏?Kotlin val/鐖剁被瀛楁瀵艰嚧 toBean 涓㈠け code銆?
             if (isInvalidCode(jsonObject.getStr("code")) && !isInvalidCode(propsData.code)) {
                 jsonObject["code"] = propsData.code
             }
@@ -378,27 +357,27 @@ object PropsManager {
             }
 
             val prop = JSONUtil.toBean(jsonObject.toString(), jsonConfig, clazz)
-                ?: throw RuntimeException("道具反序列化结果为空")
+                ?: throw RuntimeException("閬撳叿鍙嶅簭鍒楀寲缁撴灉涓虹┖")
 
-            // 最终兜底：如果 toBean 仍然未能正确注入 code，则从 JSON/列回填到对象。
+            // 鏈€缁堝厹搴曪細濡傛灉 toBean 浠嶇劧鏈兘姝ｇ‘娉ㄥ叆 code锛屽垯浠?JSON/鍒楀洖濉埌瀵硅薄銆?
             applyCodeIfPossible(prop, jsonObject.getStr("code") ?: propsData.code)
             prop
         } catch (e: Exception) {
-            throw RuntimeException("道具反序列化失败，ID: $id, 目标类型: ${clazz.name}, 错误: ${e.message}", e)
+            throw RuntimeException("閬撳叿鍙嶅簭鍒楀寲澶辫触锛孖D: $id, 鐩爣绫诲瀷: ${clazz.name}, 閿欒: ${e.message}", e)
         }
     }
 
     /**
-     * 根据道具数据对象反序列化道具对象
+     * 鏍规嵁閬撳叿鏁版嵁瀵硅薄鍙嶅簭鍒楀寲閬撳叿瀵硅薄
      *
-     * @param one 道具数据对象
-     * @param clazz 道具类型的Class对象
-     * @return 反序列化后的道具实例
+     * @param one 閬撳叿鏁版嵁瀵硅薄
+     * @param clazz 閬撳叿绫诲瀷鐨凜lass瀵硅薄
+     * @return 鍙嶅簭鍒楀寲鍚庣殑閬撳叿瀹炰緥
      */
     @JvmStatic
-    fun <T : BaseProp> deserialization(one: PropsData, clazz: Class<T>): T {
+    fun <T : BaseProp> deserialization(one: PropsDataDto, clazz: Class<T>): T {
         val jsonConfig = JSONConfig.create().setIgnoreError(true)
-        val data = one.data ?: throw RuntimeException("道具数据内容为空，ID: ${one.id}")
+        val data = one.data ?: throw RuntimeException("閬撳叿鏁版嵁鍐呭涓虹┖锛孖D: ${one.id}")
 
         return try {
             val jsonObject: JSONObject = JSONUtil.parseObj(data)
@@ -410,48 +389,58 @@ object PropsManager {
             }
 
             val prop = JSONUtil.toBean(jsonObject.toString(), jsonConfig, clazz)
-                ?: throw RuntimeException("道具反序列化结果为空")
+                ?: throw RuntimeException("閬撳叿鍙嶅簭鍒楀寲缁撴灉涓虹┖")
 
             applyCodeIfPossible(prop, jsonObject.getStr("code") ?: one.code)
             prop
         } catch (e: Exception) {
-            throw RuntimeException("道具反序列化失败，ID: ${one.id}, 目标类型: ${clazz.name}, 错误: ${e.message}", e)
+            throw RuntimeException("閬撳叿鍙嶅簭鍒楀寲澶辫触锛孖D: ${one.id}, 鐩爣绫诲瀷: ${clazz.name}, 閿欒: ${e.message}", e)
         }
     }
 
     /**
-     * 获取指定类型标识符对应的道具类
+     * 鑾峰彇鎸囧畾绫诲瀷鏍囪瘑绗﹀搴旂殑閬撳叿绫?
      *
-     * @param kind 道具类型标识符
-     * @return 对应的Class对象，不存在返回null
+     * @param kind 閬撳叿绫诲瀷鏍囪瘑绗?
+     * @return 瀵瑰簲鐨凜lass瀵硅薄锛屼笉瀛樺湪杩斿洖null
      */
     @JvmStatic
     fun getPropClass(kind: String): Class<out BaseProp>? = propsClassMap[kind]
 
 
     /**
-     * 复制道具对象
+     * 澶嶅埗閬撳叿瀵硅薄
      *
-     * @param baseProp 原始道具实例
-     * @return 复制后的道具实例
+     * @param baseProp 鍘熷閬撳叿瀹炰緥
+     * @return 澶嶅埗鍚庣殑閬撳叿瀹炰緥
      */
     @JvmStatic
     @Suppress("UNCHECKED_CAST")
-    @Deprecated("准备弃用,请使用道具自己的clone方法")
+    @Deprecated("鍑嗗寮冪敤,璇蜂娇鐢ㄩ亾鍏疯嚜宸辩殑clone鏂规硶")
     fun <T : BaseProp> copyProp(baseProp: T): T {
         val data = serialization(baseProp)
         return deserialization(data, baseProp.javaClass)
     }
 
     /**
-     * 获取指定类型标识符对应的道具类
+     * 鑾峰彇鎸囧畾绫诲瀷鏍囪瘑绗﹀搴旂殑閬撳叿绫?
      *
-     * todo 改成getPropClass
-     * @param kind 道具类型标识符
-     * @return 对应的Class对象，不存在返回null
+     * todo 鏀规垚getPropClass
+     * @param kind 閬撳叿绫诲瀷鏍囪瘑绗?
+     * @return 瀵瑰簲鐨凜lass瀵硅薄锛屼笉瀛樺湪杩斿洖null
      */
     @JvmStatic
-    @Deprecated("准备弃用", replaceWith = ReplaceWith("getPropClass(kind)"))
+    @Deprecated("鍑嗗寮冪敤", replaceWith = ReplaceWith("getPropClass(kind)"))
     fun shopClass(kind: String): Class<out BaseProp>? = propsClassMap[kind]
+
+    fun listPropsData(): List<PropsDataDto> = propsProxy.findAll()
+
+    fun savePropsData(data: PropsDataDto): PropsDataDto = propsProxy.save(data)
+
+    private val propsProxy
+        get() = EntityProxyRegistry.get<PropsDataDto>("props") ?: error("Props proxy is not initialized")
+
+    private val backpackProxy
+        get() = EntityProxyRegistry.get<UserBackpackDto>("user_backpack") ?: error("User backpack proxy is not initialized")
 }
 

@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.sign
 
-import cn.chahuyun.economy.entity.UserInfo
+import cn.chahuyun.economy.model.user.UserInfoDto
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.event.AbstractEvent
 import net.mamoe.mirai.event.events.GroupMessageEvent
@@ -14,7 +14,7 @@ import net.mamoe.mirai.message.data.QuoteReply
  * 签到事件管理
  */
 class SignEvent(
-    val userInfo: UserInfo,
+    val userInfo: UserInfoDto,
     val event: GroupMessageEvent
 ) : AbstractEvent() {
     val group: Group = event.group

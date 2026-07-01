@@ -15,4 +15,7 @@ object EconomyPluginConfig : AutoSavePluginConfig("PluginConfig") {
     @ValueDescription("插件是否第一次加载")
     var firstStart: Boolean by value(true)
 
+    @ValueDescription("Entity proxy module data versions. Missing modules use V1 by default.")
+    var entityDataVersions: MutableMap<String, String> by value(mutableMapOf())
+
 }

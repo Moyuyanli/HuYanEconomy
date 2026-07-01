@@ -1,8 +1,8 @@
 package cn.chahuyun.economy.fish
 
-import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.economy.entity.fish.FishInfo
 import cn.chahuyun.economy.model.fish.FishBait
+import cn.chahuyun.economy.model.fish.FishInfoDto
+import cn.chahuyun.economy.model.user.UserInfoDto
 import net.mamoe.mirai.event.AbstractEvent
 
 /**
@@ -12,8 +12,8 @@ import net.mamoe.mirai.event.AbstractEvent
  * @date 2024-11-14 10:15
  */
 class FishStartEvent(
-    val userInfo: UserInfo,
-    val fishInfo: FishInfo
+    val userInfo: UserInfoDto,
+    val fishInfo: FishInfoDto
 ) : AbstractEvent() {
     /**
      * 鱼饵

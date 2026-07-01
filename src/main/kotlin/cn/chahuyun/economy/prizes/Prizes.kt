@@ -3,10 +3,10 @@ package cn.chahuyun.economy.prizes
 import cn.chahuyun.economy.constant.PrizeType
 import cn.chahuyun.economy.constant.RaffleType
 import cn.chahuyun.economy.data.PrizesData
-import cn.chahuyun.economy.entity.UserRaffle
-import cn.chahuyun.economy.entity.raffle.RaffleBatch
 import cn.chahuyun.economy.exception.RaffleException
-import cn.chahuyun.hibernateplus.HibernateFactory
+import cn.chahuyun.economy.model.raffle.RaffleBatchDto
+import cn.chahuyun.economy.model.user.UserRaffleDto
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import kotlinx.serialization.Serializable
 import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 import net.mamoe.mirai.contact.Group
@@ -284,7 +284,7 @@ data class RaffleContext(
     /**
      * 用户抽奖信息
      */
-    val userRaffle: UserRaffle,
+    val userRaffle: UserRaffleDto,
     /**
      * 抽奖群
      */
@@ -360,7 +360,7 @@ object PrizesUtil {
     private fun drawing(context: RaffleContext): RaffleResult {
         val rafflePool = context.pool
         val userRaffle = context.userRaffle
-        val userId = userRaffle.id ?: error("错误,抽奖人id不存在!")
+        val userId = userRaffle.id.takeIf { it != 0L } ?: error("错误,抽奖人id不存在!")
 
         //检查保底
         if (rafflePool.endTime != 0) {
@@ -387,8 +387,7 @@ object PrizesUtil {
                 }
 
                 val raffleResult = RaffleResult(prize, level.level, context.group.id, userId, rafflePool)
-                val raffleBatch = RaffleBatch(RaffleType.SINGLE, listOf(raffleResult))
-                HibernateFactory.merge(raffleBatch)
+                saveRaffleBatch(RaffleType.SINGLE, listOf(raffleResult))
                 return raffleResult
             }
         }
@@ -399,9 +398,24 @@ object PrizesUtil {
         val prize = group.getPrize()
 
         val raffleResult = RaffleResult(prize, level.level, context.group.id, userId, rafflePool)
-        val raffleBatch = RaffleBatch(RaffleType.SINGLE, listOf(raffleResult))
-        HibernateFactory.merge(raffleBatch)
+        saveRaffleBatch(RaffleType.SINGLE, listOf(raffleResult))
         return raffleResult
     }
 
+    private fun saveRaffleBatch(type: RaffleType, results: List<RaffleResult>) {
+        raffleBatchProxy.save(
+            RaffleBatchDto(
+                userId = results.first().userId,
+                groupId = results.first().groupId,
+                poolId = results.first().pool.id,
+                raffleType = type.name,
+                createTime = System.currentTimeMillis(),
+                recordCount = results.size,
+                records = results
+            )
+        )
+    }
+
+    private val raffleBatchProxy
+        get() = EntityProxyRegistry.get<RaffleBatchDto>("raffle") ?: error("抽奖批次代理器未初始化")
 }
