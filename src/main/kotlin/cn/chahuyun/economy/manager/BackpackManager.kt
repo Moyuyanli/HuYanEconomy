@@ -1,8 +1,9 @@
 package cn.chahuyun.economy.manager
 
-import cn.chahuyun.economy.entity.UserBackpack
-import cn.chahuyun.economy.entity.UserInfo
+import cn.chahuyun.economy.model.user.UserBackpackDto
+import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.prop.PropsManager
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.MessageUtil
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Group
@@ -30,7 +31,7 @@ object BackpackManager {
      */
     suspend fun showBackpack(
         bot: Bot,
-        backpacks: List<UserBackpack>,
+        backpacks: List<UserBackpackDto>,
         group: Group,
         currentPage: Int,
         maxPage: Int,
@@ -41,7 +42,7 @@ object BackpackManager {
         // 遍历背包中的道具并添加到消息节点中
         for (backpack in backpacks) {
             val prop = PropsManager.getProp(backpack) ?: continue
-            nodes.add(bot, PlainText("物品id:${backpack.propId}\n${prop}"))
+            nodes.add(bot, PlainText("物品id:${backpack.propId}\n$prop"))
         }
         nodes.add(bot, MessageUtil.formatMessage("--- 当前页数: ${currentPage} / 最大页数: ${maxPage} ---"))
         group.sendMessage(nodes.build())
@@ -56,14 +57,16 @@ object BackpackManager {
      * @param id 道具ID
      */
     @JvmStatic
-    fun addPropToBackpack(userInfo: UserInfo, code: String, kind: String, id: Long) {
-        val userBackpack = UserBackpack(
+    fun addPropToBackpack(userInfo: UserInfoDto, code: String, kind: String, id: Long) {
+        val userBackpack = UserBackpackDto(
             userId = userInfo.id,
             propCode = code,
             propKind = kind,
             propId = id
         )
-        userInfo.addPropToBackpack(userBackpack)
+        val saved = backpackProxy.save(userBackpack)
+        userInfo.backpacks = userInfo.backpacks + saved
+        userInfo.backpackCount = userInfo.backpacks.size
     }
 
     /**
@@ -73,11 +76,13 @@ object BackpackManager {
      * @param id 道具ID
      */
     @JvmStatic
-    fun delPropToBackpack(userInfo: UserInfo, id: Long) {
+    fun delPropToBackpack(userInfo: UserInfoDto, id: Long) {
         val backpacks = userInfo.backpacks
         val find = backpacks.find { it.propId == id }
         if (find != null) {
-            userInfo.removePropInBackpack(find)
+            backpackProxy.delete(find.id)
+            userInfo.backpacks = userInfo.backpacks.filterNot { it.id == find.id }
+            userInfo.backpackCount = userInfo.backpacks.size
             PropsManager.destroyPros(id)
         }
     }
@@ -89,9 +94,11 @@ object BackpackManager {
      * @param userBackpack 用户背包对象
      */
     @JvmStatic
-    fun delPropToBackpack(userInfo: UserInfo, userBackpack: UserBackpack) {
-        userInfo.removePropInBackpack(userBackpack)
-        userBackpack.propId?.let { PropsManager.destroyPros(it) }
+    fun delPropToBackpack(userInfo: UserInfoDto, userBackpack: UserBackpackDto) {
+        backpackProxy.delete(userBackpack.id)
+        userInfo.backpacks = userInfo.backpacks.filterNot { it.id == userBackpack.id }
+        userInfo.backpackCount = userInfo.backpacks.size
+        userBackpack.propId.takeIf { it != 0L }?.let { PropsManager.destroyPros(it) }
     }
 
     /**
@@ -102,7 +109,7 @@ object BackpackManager {
      * @return 如果包含返回true，否则返回false
      */
     @JvmStatic
-    fun checkPropInUser(userInfo: UserInfo, id: Long): Boolean {
+    fun checkPropInUser(userInfo: UserInfoDto, id: Long): Boolean {
         return userInfo.backpacks.any { it.propId == id }
     }
 
@@ -114,9 +121,12 @@ object BackpackManager {
      * @return 如果包含返回true，否则返回false
      */
     @JvmStatic
-    fun checkPropInUser(userInfo: UserInfo, code: String): Boolean {
+    fun checkPropInUser(userInfo: UserInfoDto, code: String): Boolean {
         return userInfo.backpacks.any { it.propCode == code }
     }
+
+    private val backpackProxy
+        get() = EntityProxyRegistry.get<UserBackpackDto>("user_backpack") ?: error("背包代理器未初始化")
 }
 
 

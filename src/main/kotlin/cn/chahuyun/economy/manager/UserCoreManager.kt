@@ -1,14 +1,14 @@
 package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.constant.ImageDrawXY
-import cn.chahuyun.economy.entity.TitleInfo
-import cn.chahuyun.economy.entity.UserInfo
+import cn.chahuyun.economy.model.user.TitleInfoDto
+import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.plugin.ImageManager
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.ImageUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil.toMoneyFormat
-import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUtil
 import net.mamoe.mirai.contact.*
 import xyz.cssxsh.mirai.economy.service.EconomyAccount
@@ -29,49 +29,79 @@ import javax.imageio.ImageIO
  */
 object UserCoreManager {
 
-    @JvmStatic
-    fun getUserInfo(user: User): UserInfo {
-        val userId = user.id
-        val one = HibernateFactory.selectOne(UserInfo::class.java, "qq", userId)
+    /**
+     * 通过代理器获取用户信息DTO
+     *
+     * @param qq QQ号
+     * @return 用户信息DTO，不存在则返回null
+     */
+    fun getUserInfoDto(qq: Long): UserInfoDto? {
+        return userProxy.findByKey(qq.toString())
+    }
 
-        val group: Group? = (user as? Member)?.group
-
-        if (one == null) {
-            val info = UserInfo(userId, 0, user.nick, Date())
-            info.registerGroup = group?.id ?: 0
-            // merge 可能返回新的实体实例（transient 字段不会被带过去），必须回填运行时上下文
-            val merged = requireNotNull(HibernateFactory.merge(info))
-            merged.user = user
-            merged.group = group
-            return merged
-        }
-
-        one.user = user
-        one.group = group
-        return one
+    /**
+     * 通过代理器保存用户信息
+     *
+     * @param dto 用户信息DTO
+     * @return 保存后的DTO
+     */
+    fun saveUserInfoDto(dto: UserInfoDto): UserInfoDto {
+        return userProxy.save(dto)
     }
 
     @JvmStatic
-    fun getUserInfo(account: EconomyAccount): UserInfo {
+    fun getUserInfo(user: User): UserInfoDto {
+        val userId = user.id
+        val group: Group? = (user as? Member)?.group
+        val dto = getUserInfoDto(userId)
+
+        val existingOrCreated = if (dto == null) {
+            saveUserInfoDto(
+                UserInfoDto(
+                    id = net.mamoe.mirai.console.permission.AbstractPermitteeId.ExactUser(userId).asString(),
+                    qq = userId,
+                    name = user.nick,
+                    registerGroup = group?.id ?: 0,
+                    registerTime = Date().time
+                )
+            )
+        } else {
+            dto
+        }
+
+        existingOrCreated.user = user
+        existingOrCreated.group = group
+        return existingOrCreated
+    }
+
+    @JvmStatic
+    fun getUserInfo(account: EconomyAccount): UserInfoDto {
         val userId = account.uuid
-        return HibernateFactory.selectOneById(UserInfo::class.java, userId)
+        return userProxy.findWhere { it.id == userId }.firstOrNull()
             ?: throw RuntimeException("该经济账号不存在用户信息")
     }
 
     @JvmStatic
-    fun getUserInfo(userId: Long?): UserInfo? {
+    fun getUserInfo(userId: Long?): UserInfoDto? {
         if (userId == null) return null
-        return HibernateFactory.selectOne(UserInfo::class.java, "qq", userId)
+        return getUserInfoDto(userId)
     }
 
     @JvmStatic
-    fun getUserInfo(uuid: String?): UserInfo? {
+    fun getUserInfo(uuid: String?): UserInfoDto? {
         if (uuid.isNullOrBlank()) return null
-        return HibernateFactory.selectOne(UserInfo::class.java, "funding", uuid)
+        return userProxy.findWhere { it.funding == uuid }.firstOrNull()
+    }
+
+    private val userProxy
+        get() = EntityProxyRegistry.get<UserInfoDto>("user") ?: error("用户代理器未初始化")
+
+    fun saveUserInfo(userInfo: UserInfoDto): UserInfoDto {
+        return saveUserInfoDto(userInfo)
     }
 
     @JvmStatic
-    fun getUserInfoImageBase(userInfo: UserInfo): BufferedImage? {
+    fun getUserInfoImageBase(userInfo: UserInfoDto): BufferedImage? {
         return try {
             customBottom(userInfo)
         } catch (e: Exception) {
@@ -81,7 +111,7 @@ object UserCoreManager {
     }
 
     @Throws(IOException::class)
-    private fun customBottom(userInfo: UserInfo): BufferedImage {
+    private fun customBottom(userInfo: UserInfoDto): BufferedImage {
         val bottom = ImageManager.getNextBottom() ?: throw IOException("没有自定义底图，请检查data/bottom文件夹底图!")
 
         val user = requireNotNull(userInfo.user) { "用户信息中未附带 user 对象" }
@@ -106,7 +136,7 @@ object UserCoreManager {
         g2d.color = Color.BLACK
 
         val id = user.id.toString()
-        val title: TitleInfo = TitleManager.getDefaultTitle(userInfo)
+        val title: TitleInfoDto = TitleManager.getDefaultTitle(userInfo)
         val titleText = title.title ?: "[无]"
         val titleStartColor = runCatching { title.startColor }.getOrElse { Color.BLACK }
         val titleEndColor = runCatching { title.endColor }.getOrElse { titleStartColor }
@@ -183,7 +213,7 @@ object UserCoreManager {
             g2d.drawString(nick, ImageDrawXY.NICK_NAME.x, ImageDrawXY.NICK_NAME.y)
         }
 
-        val signTime = userInfo.signTime?.let { DateUtil.format(it, "yyyy-MM-dd HH:mm:ss") } ?: "暂未签到"
+        val signTime = userInfo.signTime.takeIf { it > 0 }?.let { DateUtil.format(Date(it), "yyyy-MM-dd HH:mm:ss") } ?: "暂未签到"
 
         g2d.font = font.deriveFont(Font.PLAIN, 24f)
         g2d.drawString(signTime, ImageDrawXY.SIGN_TIME.x, ImageDrawXY.SIGN_TIME.y)

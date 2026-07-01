@@ -1,9 +1,8 @@
 package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.HuYanEconomy
-import cn.chahuyun.economy.entity.LotteryInfo
+import cn.chahuyun.economy.model.LotteryInfoDto
 import cn.chahuyun.economy.scheduler.HuYanScheduler
-import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.util.RandomUtil
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.contact.Group
@@ -37,7 +36,7 @@ class LotteryMinutesTask(
 
         val groups = HashSet<Long>()
 
-        val lotteryInfoList = HibernateFactory.selectList(LotteryInfo::class.java, "type", 1)
+        val lotteryInfoList = LotteryManager.findByType(1)
         if (lotteryInfoList.isEmpty()) {
             return@runBlocking
         }
@@ -47,7 +46,7 @@ class LotteryMinutesTask(
             var location = 0
             var bonus = 0.0
 
-            val split = lotteryInfo.number!!.split(",")
+            val split = lotteryInfo.number.split(",")
             for (i in split.indices) {
                 if (split[i] == current[i]) {
                     location++
@@ -60,9 +59,7 @@ class LotteryMinutesTask(
                 1 -> bonus = lotteryInfo.money * 0.7
             }
 
-            lotteryInfo.bonus = bonus
-            lotteryInfo.current = currentString
-            val merged = HibernateFactory.merge(lotteryInfo)
+            val merged = LotteryManager.save(lotteryInfo.copy(bonus = bonus, current = currentString))
             LotteryManager.result(1, location, merged)
         }
 
@@ -98,7 +95,7 @@ class LotteryHoursTask(
 
         val groups = HashSet<Long>()
 
-        val lotteryInfos = HibernateFactory.selectList(LotteryInfo::class.java, "type", 2)
+        val lotteryInfos = LotteryManager.findByType(2)
         if (lotteryInfos.isEmpty()) {
             return@runBlocking
         }
@@ -108,7 +105,7 @@ class LotteryHoursTask(
             var location = 0
             var bonus = 0.0
 
-            val split = lotteryInfo.number!!.split(",")
+            val split = lotteryInfo.number.split(",")
             for (i in split.indices) {
                 if (split[i] == current[i]) {
                     location++
@@ -122,9 +119,7 @@ class LotteryHoursTask(
                 1 -> bonus = lotteryInfo.money * 0.5
             }
 
-            lotteryInfo.bonus = bonus
-            lotteryInfo.current = currentString
-            val merged = HibernateFactory.merge(lotteryInfo)
+            val merged = LotteryManager.save(lotteryInfo.copy(bonus = bonus, current = currentString))
             LotteryManager.result(2, location, merged)
         }
 
@@ -160,10 +155,10 @@ class LotteryDayTask(
         }
 
         val groups = HashSet<Long>()
-        val list = ArrayList<LotteryInfo>()
+        val list = ArrayList<LotteryInfoDto>()
 
         // NOTE: 这里沿用原实现（type=2），保持行为不变
-        val lotteryInfos = HibernateFactory.selectList(LotteryInfo::class.java, "type", 2)
+        val lotteryInfos = LotteryManager.findByType(2)
         if (lotteryInfos.isEmpty()) {
             return@runBlocking
         }
@@ -173,7 +168,7 @@ class LotteryDayTask(
             var location = 0
             var bonus = 0.0
 
-            val split = lotteryInfo.number!!.split(",")
+            val split = lotteryInfo.number.split(",")
             for (i in split.indices) {
                 if (split[i] == current[i]) {
                     location++
@@ -188,9 +183,7 @@ class LotteryDayTask(
                 1 -> bonus = lotteryInfo.money * 0.3
             }
 
-            lotteryInfo.bonus = bonus
-            lotteryInfo.current = currentString
-            val merged = HibernateFactory.merge(lotteryInfo)
+            val merged = LotteryManager.save(lotteryInfo.copy(bonus = bonus, current = currentString))
             LotteryManager.result(3, location, merged)
             if (location == 5) {
                 list.add(merged)

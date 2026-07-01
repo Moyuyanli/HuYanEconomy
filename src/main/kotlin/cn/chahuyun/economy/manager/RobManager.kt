@@ -1,8 +1,8 @@
 package cn.chahuyun.economy.manager
 
-import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.economy.entity.rob.RobInfo
-import cn.chahuyun.hibernateplus.HibernateFactory
+import cn.chahuyun.economy.model.rob.RobInfoDto
+import cn.chahuyun.economy.model.user.UserInfoDto
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import java.util.*
@@ -26,12 +26,13 @@ object RobManager {
      * 获取抢劫信息
      */
     @JvmStatic
-    fun getRobInfo(userInfo: UserInfo): RobInfo {
-        var one = HibernateFactory.selectOneById(RobInfo::class.java, userInfo.qq)
-        if (one == null) {
-            one = RobInfo(userInfo.qq, Date(), 0, 0, 0)
-            return HibernateFactory.merge(one)
-        }
-        return one
+    fun getRobInfo(userInfo: UserInfoDto): RobInfoDto {
+        return robProxy.findById(userInfo.qq)
+            ?: robProxy.save(RobInfoDto(userId = userInfo.qq, nowTime = Date().time))
     }
+
+    fun saveRobInfo(robInfo: RobInfoDto): RobInfoDto = robProxy.save(robInfo)
+
+    private val robProxy
+        get() = EntityProxyRegistry.get<RobInfoDto>("rob") ?: error("抢劫代理器未初始化")
 }

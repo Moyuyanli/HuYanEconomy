@@ -3,15 +3,15 @@
 package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.constant.TitleCode
-import cn.chahuyun.economy.entity.TitleInfo
-import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.economy.entity.fish.FishRanking
 import cn.chahuyun.economy.model.title.TitleTemplateSimpleImpl
+import cn.chahuyun.economy.model.user.TitleInfoDto
+import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.plugin.TitleTemplateManager
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
+import cn.chahuyun.economy.repository.FishRepository
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.ImageUtil
 import cn.chahuyun.economy.utils.MessageUtil
-import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import kotlinx.coroutines.runBlocking
@@ -90,26 +90,20 @@ object TitleManager {
         )
 
         // 修改版本迭代带来的错误数据
-        val titleInfos = HibernateFactory.selectList(TitleInfo::class.java)
+        val titleInfos = titleProxy.findAll()
         for (titleInfo in titleInfos) {
-            if (titleInfo.code == null) {
+            if (titleInfo.code.isBlank()) {
                 when (titleInfo.title) {
                     "[只是个传说]" -> {
-                        titleInfo.code = TitleCode.SIGN_15
-                        titleInfo.name = "签到狂人"
-                        HibernateFactory.merge(titleInfo)
+                        titleProxy.save(titleInfo.copy(code = TitleCode.SIGN_15, name = "签到狂人"))
                     }
 
                     "[大富翁]" -> {
-                        titleInfo.code = TitleCode.MONOPOLY
-                        titleInfo.name = "大富翁"
-                        HibernateFactory.merge(titleInfo)
+                        titleProxy.save(titleInfo.copy(code = TitleCode.MONOPOLY, name = "大富翁"))
                     }
 
                     "[小富翁]" -> {
-                        titleInfo.code = TitleCode.REGAL
-                        titleInfo.name = "小富翁"
-                        HibernateFactory.merge(titleInfo)
+                        titleProxy.save(titleInfo.copy(code = TitleCode.REGAL, name = "小富翁"))
                     }
                 }
             }
@@ -120,8 +114,8 @@ object TitleManager {
      * 获取默认称号（当前启用的称号，若无则退回群头衔/默认）
      */
     @JvmStatic
-    fun getDefaultTitle(userInfo: UserInfo): TitleInfo {
-        val titleList = HibernateFactory.selectList(TitleInfo::class.java, "userId", userInfo.qq)
+    fun getDefaultTitle(userInfo: UserInfoDto): TitleInfoDto {
+        val titleList = findByUser(userInfo.qq)
         if (titleList.isNotEmpty()) {
             for (info in titleList) {
                 if (checkTitleTime(info)) continue
@@ -131,11 +125,9 @@ object TitleManager {
         return getInfo(userInfo)
     }
 
-    private fun getInfo(userInfo: UserInfo): TitleInfo {
-        val titleInfo = TitleInfo()
-        titleInfo.gradient = false
+    private fun getInfo(userInfo: UserInfoDto): TitleInfoDto {
         val user = runCatching { userInfo.user }.getOrNull()
-        if (user is Member) {
+        return if (user is Member) {
             // 彻底避免读取 rankTitle（Overflow 环境下会触发群活跃信息查询并刷屏 Warning）
             val specialTitle = runCatching { user.specialTitle }.getOrDefault("")
             val (rawTitle, color) = if (specialTitle.isNotBlank()) {
@@ -144,60 +136,45 @@ object TitleManager {
                 "[无]" to "8a8886"
             }
 
-            titleInfo.title = "[${rawTitle}]"
-            titleInfo.sColor = color
+            TitleInfoDto(title = "[${rawTitle}]", sColor = color)
         } else {
-            titleInfo.title = "[无]"
-            titleInfo.sColor = "ff00ff"
+            TitleInfoDto(title = "[无]", sColor = "ff00ff")
         }
-        return titleInfo
     }
 
     /**
      * 添加称号
      */
     @JvmStatic
-    fun addTitleInfo(userInfo: UserInfo, titleTemplateCode: String): Boolean {
+    fun addTitleInfo(userInfo: UserInfoDto, titleTemplateCode: String): Boolean {
         val title = TitleTemplateManager.createTitle(titleTemplateCode, userInfo)
             ?: throw RuntimeException("称号code错误或该称号没有在称号模版管理中注册!")
 
-        val params = HashMap<String, Any?>()
-        params["code"] = title.code
-        params["userId"] = title.userId
-        val selectOne = HibernateFactory.selectOne(TitleInfo::class.java, params)
+        val selectOne = titleProxy.findWhere { it.code == title.code && it.userId == title.userId }.firstOrNull()
         if (selectOne != null) return false
 
-        return HibernateFactory.merge(title).id != 0
+        return titleProxy.save(title).id != 0
     }
 
     @JvmStatic
-    fun checkTitleIsExist(userInfo: UserInfo, titleCode: String): Boolean {
-        val params = HashMap<String, Any?>()
-        params["userId"] = userInfo.qq
-        params["code"] = titleCode
-        val titleInfo = HibernateFactory.selectOne(TitleInfo::class.java, params)
-        return titleInfo != null
+    fun checkTitleIsExist(userInfo: UserInfoDto, titleCode: String): Boolean {
+        return titleProxy.findWhere { it.userId == userInfo.qq && it.code == titleCode }.isNotEmpty()
     }
 
     @JvmStatic
-    fun checkTitleIsOnEnable(userInfo: UserInfo, titleCode: String): Boolean {
-        val params = HashMap<String, Any?>()
-        params["userId"] = userInfo.qq
-        params["code"] = titleCode
-        params["status"] = true
-        val titleInfo = HibernateFactory.selectOne(TitleInfo::class.java, params)
-        return titleInfo != null
+    fun checkTitleIsOnEnable(userInfo: UserInfoDto, titleCode: String): Boolean {
+        return titleProxy.findWhere { it.userId == userInfo.qq && it.code == titleCode && it.status }.isNotEmpty()
     }
 
     /**
      * 检查称号是否过期（过期则删除并返回 true）
      */
     @JvmStatic
-    fun checkTitleTime(titleInfo: TitleInfo): Boolean {
-        val due = titleInfo.dueTime
+    fun checkTitleTime(titleInfo: TitleInfoDto): Boolean {
+        val due = titleInfo.dueTime.takeIf { it > 0 }
         if (due != null) {
-            if (DateUtil.between(Date(), due, DateUnit.MINUTE, false) < 0) {
-                HibernateFactory.delete(titleInfo)
+            if (DateUtil.between(Date(), Date(due), DateUnit.MINUTE, false) < 0) {
+                titleProxy.delete(titleInfo.id.toLong())
                 return true
             }
         }
@@ -207,12 +184,12 @@ object TitleManager {
     // ============================ 外部称号检查 ============================
 
     @JvmStatic
-    fun checkMonopolyJava(userInfo: UserInfo, subject: Contact) = runBlocking { checkMonopoly(userInfo, subject) }
+    fun checkMonopolyJava(userInfo: UserInfoDto, subject: Contact) = runBlocking { checkMonopoly(userInfo, subject) }
 
     /**
      * 检查大富翁称号
      */
-    suspend fun checkMonopoly(userInfo: UserInfo, subject: Contact) {
+    suspend fun checkMonopoly(userInfo: UserInfoDto, subject: Contact) {
         val moneyByUser = EconomyUtil.getMoneyByUser(userInfo.user)
         if (moneyByUser > 100000) {
             if (checkTitleIsExist(userInfo, TitleCode.MONOPOLY)) return
@@ -225,12 +202,12 @@ object TitleManager {
     }
 
     @JvmStatic
-    fun checkSignTitleJava(userInfo: UserInfo, subject: Contact) = runBlocking { checkSignTitle(userInfo, subject) }
+    fun checkSignTitleJava(userInfo: UserInfoDto, subject: Contact) = runBlocking { checkSignTitle(userInfo, subject) }
 
     /**
      * 检查连续签到称号
      */
-    suspend fun checkSignTitle(userInfo: UserInfo, subject: Contact) {
+    suspend fun checkSignTitle(userInfo: UserInfoDto, subject: Contact) {
         val signNumber = userInfo.signNumber
         when {
             signNumber == 15 -> {
@@ -257,23 +234,26 @@ object TitleManager {
      * 检查钓鱼佬称号
      */
     @JvmStatic
-    suspend fun checkFishTitle(userInfo: UserInfo, subject: Contact) {
-        val fishRanking = HibernateFactory.selectOneByHql(
-            FishRanking::class.java,
-            "from FishRanking order by money desc limit 1",
-            HashMap()
-        ) ?: return
+    suspend fun checkFishTitle(userInfo: UserInfoDto, subject: Contact) {
+        val fishRanking = FishRepository.topRankingWinner() ?: return
 
         if (fishRanking.qq != userInfo.qq) return
 
-        val titleInfo = HibernateFactory.selectOne(TitleInfo::class.java, "code", TitleCode.FISHING)
+        val titleInfo = titleProxy.findWhere { it.code == TitleCode.FISHING }.firstOrNull()
         if (checkTitleIsExist(userInfo, TitleCode.FISHING)) return
 
         if (addTitleInfo(userInfo, TitleCode.FISHING)) {
             subject.sendMessage(MessageUtil.formatMessageChain(userInfo.qq, "恭喜你斩获钓鱼榜榜首!获得钓鱼佬称号!"))
             if (titleInfo != null) {
-                HibernateFactory.delete(titleInfo)
+                titleProxy.delete(titleInfo.id.toLong())
             }
         }
     }
+
+    fun findByUser(userId: Long): List<TitleInfoDto> = titleProxy.findWhere { it.userId == userId }
+
+    fun saveTitleInfo(titleInfo: TitleInfoDto): TitleInfoDto = titleProxy.save(titleInfo)
+
+    private val titleProxy
+        get() = EntityProxyRegistry.get<TitleInfoDto>("title") ?: error("称号代理器未初始化")
 }

@@ -2,9 +2,9 @@ package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.constant.FishPondLevelConstant
-import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.economy.entity.fish.FishInfo
+import cn.chahuyun.economy.model.fish.FishInfoDto
 import cn.chahuyun.economy.model.props.FunctionProps
+import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.plugin.FactorManager
 import cn.chahuyun.economy.repository.FishRepository
 import cn.chahuyun.economy.scheduler.HuYanScheduler
@@ -131,9 +131,9 @@ object GamesManager : CoroutineScope {
 
     @JvmStatic
     suspend fun checkAndProcessFishing(
-        userInfo: UserInfo,
+        userInfo: UserInfoDto,
         isFishingTitle: Boolean,
-        fishInfo: FishInfo,
+        fishInfo: FishInfoDto,
         subject: Contact,
         chain: net.mamoe.mirai.message.data.MessageChain,
     ): Boolean {
@@ -152,8 +152,7 @@ object GamesManager : CoroutineScope {
                     if (DateUtil.between(DateUtil.parse(buff), Date(), DateUnit.MINUTE) <= 60) {
                         expired -= (expired * 0.8).toInt()
                     } else {
-                        FactorManager.merge(
-                            FactorManager.getUserFactor(userInfo).apply { setBuffValue(FunctionProps.RED_EYES, null) })
+                        FactorManager.merge(FactorManager.getUserFactor(userInfo).setBuffValue(FunctionProps.RED_EYES, null))
                     }
                 }
 
@@ -175,7 +174,7 @@ object GamesManager : CoroutineScope {
     }
 
     @JvmStatic
-    suspend fun failedFishing(userInfo: UserInfo, user: User, subject: Contact, fishInfo: FishInfo): Boolean {
+    suspend fun failedFishing(userInfo: UserInfoDto, user: User, subject: Contact, fishInfo: FishInfoDto): Boolean {
         val errorMessages = arrayOf("风吹的...", "眼花了...", "走神了...", "呀！切线了...", "钓鱼佬绝不空军！")
         val randomed = RandomUtil.randomInt(0, 10001)
         return when {
@@ -234,7 +233,7 @@ object GamesManager : CoroutineScope {
 
         if (EconomyUtil.minusMoneyToUser(event.sender, 500.0)) {
             fishInfo.isFishRod = true
-            FishRepository.saveFishInfo(fishInfo)
+            fishInfo.save()
             subject.sendMessage(
                 MessageUtil.formatMessageChain(
                     event.message,

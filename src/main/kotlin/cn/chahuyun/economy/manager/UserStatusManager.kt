@@ -1,9 +1,9 @@
 package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.constant.UserLocation
-import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.economy.entity.UserStatus
-import cn.chahuyun.hibernateplus.HibernateFactory
+import cn.chahuyun.economy.model.user.UserInfoDto
+import cn.chahuyun.economy.model.user.UserStatusDto
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import java.util.*
@@ -13,113 +13,113 @@ import java.util.*
  */
 object UserStatusManager {
 
-    @JvmStatic
-    fun checkUserInHome(user: UserInfo): Boolean {
-        val userStatus = getUserStatus(user.qq)
-        return userStatus.place == UserLocation.HOME
+    /**
+     * 通过代理器获取用户状态DTO
+     */
+    fun getUserStatusDto(id: Long): UserStatusDto? {
+        return statusProxy.findById(id)
+    }
+
+    /**
+     * 通过代理器保存用户状态
+     */
+    fun saveUserStatusDto(dto: UserStatusDto): UserStatusDto {
+        return statusProxy.save(dto)
     }
 
     @JvmStatic
-    fun checkUserNotInHome(user: UserInfo): Boolean {
+    fun checkUserInHome(user: UserInfoDto): Boolean {
         val userStatus = getUserStatus(user.qq)
-        return userStatus.place != UserLocation.HOME
+        return userStatus.place == UserLocation.HOME.name
     }
 
     @JvmStatic
-    fun moveHome(user: UserInfo) {
+    fun checkUserNotInHome(user: UserInfoDto): Boolean {
         val userStatus = getUserStatus(user.qq)
-        userStatus.place = UserLocation.HOME
-        userStatus.recoveryTime = 0
-        userStatus.startTime = Date()
-        HibernateFactory.merge(userStatus)
+        return userStatus.place != UserLocation.HOME.name
     }
 
     @JvmStatic
-    fun checkUserInHospital(user: UserInfo): Boolean {
+    fun moveHome(user: UserInfoDto) {
         val userStatus = getUserStatus(user.qq)
-        return userStatus.place == UserLocation.HOSPITAL
+        saveUserStatusDto(userStatus.copy(place = UserLocation.HOME.name, recoveryTime = 0, startTime = Date().time))
     }
 
     @JvmStatic
-    fun moveHospital(user: UserInfo, recovery: Int) {
+    fun checkUserInHospital(user: UserInfoDto): Boolean {
         val userStatus = getUserStatus(user.qq)
-        userStatus.place = UserLocation.HOSPITAL
-        userStatus.recoveryTime = recovery
-        userStatus.startTime = Date()
-        HibernateFactory.merge(userStatus)
+        return userStatus.place == UserLocation.HOSPITAL.name
     }
 
     @JvmStatic
-    fun checkUserInPrison(user: UserInfo): Boolean {
+    fun moveHospital(user: UserInfoDto, recovery: Int) {
         val userStatus = getUserStatus(user.qq)
-        return userStatus.place == UserLocation.PRISON
+        saveUserStatusDto(userStatus.copy(place = UserLocation.HOSPITAL.name, recoveryTime = recovery, startTime = Date().time))
     }
 
     @JvmStatic
-    fun movePrison(user: UserInfo, recovery: Int) {
+    fun checkUserInPrison(user: UserInfoDto): Boolean {
         val userStatus = getUserStatus(user.qq)
-        userStatus.place = UserLocation.PRISON
-        userStatus.recoveryTime = recovery
-        userStatus.startTime = Date()
-        HibernateFactory.merge(userStatus)
+        return userStatus.place == UserLocation.PRISON.name
     }
 
     @JvmStatic
-    fun checkUserInFishpond(user: UserInfo): Boolean {
+    fun movePrison(user: UserInfoDto, recovery: Int) {
         val userStatus = getUserStatus(user.qq)
-        return userStatus.place == UserLocation.FISHPOND
+        saveUserStatusDto(userStatus.copy(place = UserLocation.PRISON.name, recoveryTime = recovery, startTime = Date().time))
     }
 
     @JvmStatic
-    fun moveFishpond(user: UserInfo, recovery: Int) {
+    fun checkUserInFishpond(user: UserInfoDto): Boolean {
         val userStatus = getUserStatus(user.qq)
-        userStatus.place = UserLocation.FISHPOND
-        userStatus.recoveryTime = recovery
-        userStatus.startTime = Date()
-        HibernateFactory.merge(userStatus)
+        return userStatus.place == UserLocation.FISHPOND.name
     }
 
     @JvmStatic
-    fun checkUserInFactory(user: UserInfo): Boolean {
+    fun moveFishpond(user: UserInfoDto, recovery: Int) {
         val userStatus = getUserStatus(user.qq)
-        return userStatus.place == UserLocation.HOME
+        saveUserStatusDto(userStatus.copy(place = UserLocation.FISHPOND.name, recoveryTime = recovery, startTime = Date().time))
     }
 
     @JvmStatic
-    fun moveFactory(user: UserInfo, recovery: Int) {
+    fun checkUserInFactory(user: UserInfoDto): Boolean {
         val userStatus = getUserStatus(user.qq)
-        userStatus.place = UserLocation.FACTORY
-        userStatus.recoveryTime = recovery
-        userStatus.startTime = Date()
-        HibernateFactory.merge(userStatus)
+        return userStatus.place == UserLocation.FACTORY.name
     }
 
     @JvmStatic
-    fun getUserStatus(user: UserInfo): UserStatus {
+    fun moveFactory(user: UserInfoDto, recovery: Int) {
+        val userStatus = getUserStatus(user.qq)
+        saveUserStatusDto(userStatus.copy(place = UserLocation.FACTORY.name, recoveryTime = recovery, startTime = Date().time))
+    }
+
+    @JvmStatic
+    fun getUserStatus(user: UserInfoDto): UserStatusDto {
         return getUserStatus(user.qq)
     }
 
     @JvmStatic
-    fun getUserStatus(qq: Long): UserStatus {
-        var one = HibernateFactory.selectOneById(UserStatus::class.java, qq)
+    fun getUserStatus(qq: Long): UserStatusDto {
+        var one = getUserStatusDto(qq)
 
         if (one == null) {
-            val status = UserStatus()
-            status.id = qq
-            return HibernateFactory.merge(status)
+            return saveUserStatusDto(UserStatusDto(id = qq, startTime = Date().time))
         }
 
         val time = one.recoveryTime
-        if (time != 0 && one.place != UserLocation.HOSPITAL) {
-            val startTime = one.startTime
+        if (time != 0 && one.place != UserLocation.HOSPITAL.name) {
+            val startTime = Date(one.startTime)
             val between = DateUtil.between(startTime, Date(), DateUnit.MINUTE, true)
             if (between > time) {
-                one.recoveryTime = 0
-                one.place = UserLocation.HOME
-                return HibernateFactory.merge(one)
+                one = one.copy(recoveryTime = 0, place = UserLocation.HOME.name)
+                return saveUserStatusDto(one)
             }
         }
 
         return one
     }
+
+    private val statusProxy
+        get() = EntityProxyRegistry.get<UserStatusDto>("user_status") ?: error("用户状态代理器未初始化")
+
 }

@@ -1,9 +1,9 @@
 package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.constant.TitleCode
-import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.model.props.PropsCard
 import cn.chahuyun.economy.model.props.UseEvent
+import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.sign.SignEvent
 import cn.chahuyun.economy.utils.MessageUtil
@@ -47,7 +47,7 @@ object SignManager {
      */
     @JvmStatic
     fun signProp(event: SignEvent) {
-        val userInfo: UserInfo = event.userInfo
+        val userInfo: UserInfoDto = event.userInfo
         var multiples = 1
 
         if (TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.SIGN_15)) {

@@ -1,12 +1,12 @@
 package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.HuYanEconomy
-import cn.chahuyun.economy.entity.LotteryInfo
+import cn.chahuyun.economy.model.LotteryInfoDto
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil
-import cn.chahuyun.hibernateplus.HibernateFactory
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.NormalMember
@@ -29,32 +29,32 @@ object LotteryManager {
     @JvmStatic
     fun init() {
         val lotteryInfos = try {
-            HibernateFactory.selectList(LotteryInfo::class.java)
+            findAll()
         } catch (e: Exception) {
             Log.error("彩票管理:彩票初始化失败!", e)
             return
         }
 
-        val minutesLottery = HashMap<String, LotteryInfo>()
-        val hoursLottery = HashMap<String, LotteryInfo>()
-        val dayLottery = HashMap<String, LotteryInfo>()
+        val minutesLottery = HashMap<String, LotteryInfoDto>()
+        val hoursLottery = HashMap<String, LotteryInfoDto>()
+        val dayLottery = HashMap<String, LotteryInfoDto>()
 
         for (lotteryInfo in lotteryInfos) {
             when (lotteryInfo.type) {
                 1 -> {
-                    val key = lotteryInfo.number ?: continue
+                    val key = lotteryInfo.number.takeIf { it.isNotBlank() } ?: continue
                     minutesLottery[key] = lotteryInfo
                     continue
                 }
 
                 2 -> {
-                    val key = lotteryInfo.number ?: continue
+                    val key = lotteryInfo.number.takeIf { it.isNotBlank() } ?: continue
                     hoursLottery[key] = lotteryInfo
                     continue
                 }
 
                 3 -> {
-                    val key = lotteryInfo.number ?: continue
+                    val key = lotteryInfo.number.takeIf { it.isNotBlank() } ?: continue
                     dayLottery[key] = lotteryInfo
                 }
             }
@@ -104,15 +104,15 @@ object LotteryManager {
      * 发送彩票结果信息。
      */
     @JvmStatic
-    fun result(type: Int, location: Int, lotteryInfo: LotteryInfo) {
+    fun result(type: Int, location: Int, lotteryInfo: LotteryInfoDto) {
         if (location == 0) {
-            lotteryInfo.remove()
+            delete(lotteryInfo)
             return
         }
         val bot: Bot = HuYanEconomy.bot ?: return
         val group = bot.getGroup(lotteryInfo.group) ?: return
         val member: NormalMember = group.get(lotteryInfo.qq) ?: return
-        lotteryInfo.remove()
+        delete(lotteryInfo)
 
         if (!EconomyUtil.plusMoneyToUser(member, lotteryInfo.bonus)) {
             runBlocking { member.sendMessage("奖金添加失败，请联系管理员!") }
@@ -154,4 +154,15 @@ object LotteryManager {
     fun close() {
         HuYanScheduler.stop()
     }
+
+    fun findByType(type: Int): List<LotteryInfoDto> = lotteryProxy.findWhere { it.type == type }
+
+    fun findAll(): List<LotteryInfoDto> = lotteryProxy.findAll()
+
+    fun save(lotteryInfo: LotteryInfoDto): LotteryInfoDto = lotteryProxy.save(lotteryInfo)
+
+    fun delete(lotteryInfo: LotteryInfoDto): Boolean = lotteryProxy.delete(lotteryInfo.id.toLong())
+
+    private val lotteryProxy
+        get() = EntityProxyRegistry.get<LotteryInfoDto>("lottery") ?: error("彩票代理器未初始化")
 }

@@ -1,10 +1,10 @@
 package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.HuYanEconomy
-import cn.chahuyun.economy.entity.bank.BankInfo
+import cn.chahuyun.economy.model.bank.BankInfoDto
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.Log
-import cn.chahuyun.hibernateplus.HibernateFactory
 
 /**
  * 主银行初始化与定时任务管理。
@@ -18,20 +18,24 @@ object BankManager {
      */
     @JvmStatic
     fun init() {
-        val one = HibernateFactory.selectOneById(BankInfo::class.java, 1)
+        val one = bankProxy.findById(1)
         if (one == null) {
-            val bankInfo = BankInfo(
-                "global",
-                "主银行",
-                "经济服务",
-                HuYanEconomy.config.owner,
-                0.0
+            bankProxy.save(
+                BankInfoDto(
+                    code = "global",
+                    name = "主银行",
+                    description = "经济服务",
+                    qq = HuYanEconomy.config.owner,
+                    regTime = System.currentTimeMillis(),
+                    regTotal = 0.0,
+                    interestSwitch = true,
+                    interest = BankInfoDto.randomInterest()
+                )
             )
-            HibernateFactory.merge(bankInfo)
         }
 
         val bankInfos = try {
-            HibernateFactory.selectList(BankInfo::class.java)
+            bankProxy.findAll()
         } catch (e: Exception) {
             Log.error("银行管理:利息加载出错!", e)
             emptyList()
@@ -40,4 +44,11 @@ object BankManager {
         val bankInterestTask = BankInterestTask("bank", bankInfos)
         HuYanScheduler.schedule("bank", "0 0 4 * * ?", bankInterestTask)
     }
+
+    private val bankProxy
+        get() = EntityProxyRegistry.get<BankInfoDto>("bank") ?: error("银行代理器未初始化")
+
+    fun getBankInfo(id: Long): BankInfoDto? = bankProxy.findById(id)
+
+    fun saveBankInfo(bankInfo: BankInfoDto): BankInfoDto = bankProxy.save(bankInfo)
 }

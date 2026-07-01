@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.manager
 
-import cn.chahuyun.economy.entity.UserRaffle
-import cn.chahuyun.economy.repository.UserRaffleRepository
+import cn.chahuyun.economy.model.user.UserRaffleDto
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -24,10 +24,8 @@ object LuckyDrawManager {
     private val tenCooldownMap = ConcurrentHashMap<Long, Long>()
 
     @JvmStatic
-    fun take(userId: Long): UserRaffle {
-        val userRaffle = UserRaffleRepository.findById(userId)
-        if (userRaffle != null) return userRaffle
-        return UserRaffleRepository.save(UserRaffle(userId))
+    fun take(userId: Long): UserRaffleDto {
+        return userRaffleProxy.findById(userId) ?: userRaffleProxy.save(UserRaffleDto(id = userId))
     }
 
     @JvmStatic
@@ -61,6 +59,9 @@ object LuckyDrawManager {
         val now = System.currentTimeMillis()
         if (isTen) tenCooldownMap[userId] = now else singleCooldownMap[userId] = now
     }
+
+    private val userRaffleProxy
+        get() = EntityProxyRegistry.get<UserRaffleDto>("user_raffle") ?: error("用户抽奖代理器未初始化")
 }
 
 

@@ -1,7 +1,8 @@
 package cn.chahuyun.economy.manager
 
-import cn.chahuyun.economy.entity.redpack.RedPack
-import cn.chahuyun.economy.repository.RedPackRepository
+import cn.chahuyun.economy.model.redpack.RedPackDto
+import cn.chahuyun.economy.model.redpack.RedPackKind
+import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.*
 import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.Bot
@@ -64,7 +65,7 @@ object RedPackManager {
     suspend fun viewRedPack(
         subject: Contact,
         bot: Bot,
-        redPacks: List<RedPack>,
+        redPacks: List<RedPackDto>,
         forwardMessage: ForwardMessageBuilder,
     ) {
         if (subject !is Group) return
@@ -89,17 +90,17 @@ object RedPackManager {
             }
 
             val typeStr = "【${type.description}】"
-            val passwordStr = if (type == cn.chahuyun.economy.entity.redpack.RedPackType.PASSWORD) "\n红包口令: $password" else ""
+            val passwordStr = if (type == RedPackKind.PASSWORD) "\n红包口令: $password" else ""
 
             val message = PlainText(
                 "红包信息 $typeStr: \n" +
                         "红包ID: $id" +
                         "\n红包名称: $name" +
                         "\n红包发送者: $senderId" +
-                        "\n红包总额: ${MoneyFormatUtil.format(money ?: 0.0)}" +
-                        "\n剩余金额: ${MoneyFormatUtil.format((money ?: 0.0) - redPack.takenMoneys)}" +
+                        "\n红包总额: ${MoneyFormatUtil.format(money)}" +
+                        "\n剩余金额: ${MoneyFormatUtil.format(money - redPack.takenMoneys)}" +
                         "\n红包人数: ${receivers.size}/$number" +
-                        "\n创建时间: ${TimeConvertUtil.timeConvert(createTime ?: Date())}" +
+                        "\n创建时间: ${TimeConvertUtil.timeConvert(Date(createTime))}" +
                         passwordStr +
                         "\n已领取者: $nickNames"
             )
@@ -130,17 +131,17 @@ object RedPackManager {
     suspend fun getRedPack(
         sender: User,
         subject: Contact,
-        redPack: RedPack,
+        redPack: RedPackDto,
         message: MessageChain? = null,
         skipMessage: Boolean = false,
         passwordOverride: String? = null
     ): GrabResult {
         val money = redPack.money
-        val number = redPack.number ?: 1
+        val number = redPack.number
         val type = redPack.type
 
         // 口令红包校验
-        if (type == cn.chahuyun.economy.entity.redpack.RedPackType.PASSWORD) {
+        if (type == RedPackKind.PASSWORD) {
             if (passwordOverride == null || passwordOverride != redPack.password) {
                 return GrabResult(false, message = "这是口令红包，需要正确的口令才能领取！")
             }
@@ -160,13 +161,16 @@ object RedPackManager {
         }
 
         // 领取措施
+        val remainingRandomPacks = redPack.randomPackList.toMutableList()
         val perMoney: Double = if (redPack.isRandomAllocation) {
-            redPack.getRandomPack()
+            if (remainingRandomPacks.isEmpty()) {
+                throw RuntimeException("红包已经被领干净了，但仍然在领取!")
+            }
+            val index = RandomUtil.randomInt(0, remainingRandomPacks.size)
+            remainingRandomPacks.removeAt(index)
         } else {
-            ShareUtils.rounding((money ?: 0.0) / number)
+            ShareUtils.rounding(money / number)
         }
-
-        redPack.takenMoneys = redPack.takenMoneys + perMoney
 
         if (!EconomyUtil.plusMoneyToUser(sender, perMoney)) {
             val msg = "红包领取失败!"
@@ -174,9 +178,13 @@ object RedPackManager {
             return GrabResult(false, message = msg)
         }
 
-        receivers.add(sender.id)
-        redPack.receiverList = receivers
-        RedPackRepository.save(redPack)
+        val savedRedPack = save(
+            redPack.copy(
+                takenMoneys = redPack.takenMoneys + perMoney,
+                receiverList = receivers + sender.id,
+                randomPackList = remainingRandomPacks
+            )
+        )
 
         if (!skipMessage && message != null) {
             subject.sendMessage(
@@ -188,16 +196,16 @@ object RedPackManager {
         }
 
         var finished = false
-        if (receivers.size >= number) {
+        if (savedRedPack.receiverList.size >= number) {
             val between = cn.hutool.core.date.DateUtil.formatBetween(
-                redPack.createTime,
+                Date(savedRedPack.createTime),
                 Date(),
                 cn.hutool.core.date.BetweenFormatter.Level.SECOND
             )
             if (!skipMessage) {
-                subject.sendMessage(MessageUtil.formatMessageChain("${redPack.name ?: ""}已被领完！共计花费${between}!"))
+                subject.sendMessage(MessageUtil.formatMessageChain("${savedRedPack.name}已被领完！共计花费${between}!"))
             }
-            RedPackRepository.delete(redPack)
+            delete(savedRedPack)
             finished = true
         }
 
@@ -207,9 +215,9 @@ object RedPackManager {
     /**
      * 红包过期处理（退还剩余金币）
      */
-    suspend fun expireRedPack(group: Group, redPack: RedPack) {
-        val ownerId = redPack.sender ?: return
-        val money = redPack.money ?: 0.0
+    suspend fun expireRedPack(group: Group, redPack: RedPackDto) {
+        val ownerId = redPack.sender
+        val money = redPack.money
 
         val owner = group[ownerId]
         val remainingMoney = money - redPack.takenMoneys
@@ -225,6 +233,19 @@ object RedPackManager {
             MessageUtil.formatMessageChain(ownerId, "你的红包过期啦！退还金币 ${MoneyFormatUtil.format(remainingMoney)} 个！")
         )
     }
+
+    fun findById(id: Int): RedPackDto? = redPackProxy.findById(id.toLong())
+
+    fun listByGroupId(groupId: Long): List<RedPackDto> = redPackProxy.findWhere { it.groupId == groupId }
+
+    fun listAll(): List<RedPackDto> = redPackProxy.findAll()
+
+    fun save(redPack: RedPackDto): RedPackDto = redPackProxy.save(redPack)
+
+    fun delete(redPack: RedPackDto): Boolean = redPackProxy.delete(redPack.id.toLong())
+
+    private val redPackProxy
+        get() = EntityProxyRegistry.get<RedPackDto>("redpack") ?: error("红包代理器未初始化")
 }
 
 

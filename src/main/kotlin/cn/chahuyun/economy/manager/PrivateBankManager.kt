@@ -37,7 +37,7 @@ object PrivateBankManager {
 
                 // 利息累积放到 Service 内部逐银行执行，避免 action 层混入
                 banks.forEach { bank ->
-                    val base = java.util.Date()
+                    val base = System.currentTimeMillis()
                     // 逐储户累积利息
                     val deposits = cn.chahuyun.economy.privatebank.PrivateBankRepository.listDeposits(bank.code)
                     if (deposits.isEmpty()) return@forEach
