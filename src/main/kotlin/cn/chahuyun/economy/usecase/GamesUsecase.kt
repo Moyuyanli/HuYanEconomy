@@ -6,7 +6,6 @@ import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.constant.FishPondLevelConstant
 import cn.chahuyun.economy.constant.TitleCode
-import cn.chahuyun.economy.entity.fish.FishRanking
 import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
 import cn.chahuyun.economy.manager.GamesManager
@@ -269,16 +268,14 @@ object GamesUsecase {
 
         fishInfo.switchStatus()
         FishRepository.saveRanking(
-            FishRanking(
-                userInfo.qq,
-                userInfo.name ?: "",
-                dimensions,
-                money,
-                fishInfo.rodLevel,
-                fish,
-                fishPond
+            userInfo.qq,
+            userInfo.name,
+            dimensions,
+            money,
+            fishInfo.rodLevel,
+            fish,
+            fishPond
             )
-        )
         cn.chahuyun.economy.manager.UserStatusManager.moveHome(userInfo)
         TitleManager.checkFishTitle(userInfo, subject)
     }

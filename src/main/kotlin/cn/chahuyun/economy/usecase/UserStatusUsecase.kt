@@ -1,8 +1,6 @@
 package cn.chahuyun.economy.usecase
 
 import cn.chahuyun.economy.constant.UserLocation
-import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.economy.entity.UserStatus
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.manager.UserStatusManager
 import cn.chahuyun.economy.utils.Log
@@ -26,35 +24,35 @@ object UserStatusUsecase {
         val message: MessageChain = event.message
         val group: Group = event.group
 
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(sender)
-        val userStatus: UserStatus = UserStatusManager.getUserStatus(userInfo)
+        val userInfo = UserCoreManager.getUserInfo(sender)
+        val userStatus = UserStatusManager.getUserStatus(userInfo)
 
         when (userStatus.place) {
-            UserLocation.HOME -> {
+            UserLocation.HOME.name -> {
                 group.sendMessage(MessageUtil.formatMessageChain(message, "你现在正在家里躺着哩~"))
                 return
             }
 
-            UserLocation.PRISON -> {
+            UserLocation.PRISON.name -> {
                 val time = userStatus.recoveryTime
-                val between = DateUtil.between(userStatus.startTime, Date(), DateUnit.MINUTE)
+                val between = DateUtil.between(Date(userStatus.startTime), Date(), DateUnit.MINUTE)
                 group.sendMessage(
                     MessageUtil.formatMessageChain(message, "你还在监狱，剩余拘禁时间:${time - between}分钟")
                 )
                 return
             }
 
-            UserLocation.HOSPITAL -> {
+            UserLocation.HOSPITAL.name -> {
                 group.sendMessage(MessageUtil.formatMessageChain(message, "你现在正在医院躺着，wifi速度还行."))
                 return
             }
 
-            UserLocation.FACTORY -> {
+            UserLocation.FACTORY.name -> {
                 group.sendMessage(MessageUtil.formatMessageChain(message, "你现在正在工厂，这里很吵闹!"))
                 return
             }
 
-            UserLocation.FISHPOND -> {
+            UserLocation.FISHPOND.name -> {
                 group.sendMessage(MessageUtil.formatMessageChain(message, "嘘，别把我的鱼吓跑了!"))
                 return
             }
@@ -68,7 +66,7 @@ object UserStatusUsecase {
         val message: MessageChain = event.message
         val sender: Member = event.sender
 
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(sender)
+        val userInfo = UserCoreManager.getUserInfo(sender)
 
         if (UserStatusManager.checkUserInHome(userInfo)) {
             group.sendMessage(MessageUtil.formatMessageChain(message, "你已经在家里了！"))
@@ -93,7 +91,7 @@ object UserStatusUsecase {
             return
         }
 
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(member)
+        val userInfo = UserCoreManager.getUserInfo(member)
         UserStatusManager.moveHome(userInfo)
         group.sendMessage(MessageUtil.formatMessageChain(message, "你让ta回家躺着去."))
     }

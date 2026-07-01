@@ -1,6 +1,5 @@
-package cn.chahuyun.economy.usecase
+﻿package cn.chahuyun.economy.usecase
 
-import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
@@ -22,7 +21,7 @@ object TransferUsecase {
         Log.info("转账指令")
 
         val subject: Contact = event.subject
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(event.sender)
+        val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
 
         val message: MessageChain = event.message
@@ -74,7 +73,7 @@ object TransferUsecase {
         Log.info("作弊指令")
 
         val subject: Contact = event.subject
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(event.sender)
+        val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
         val message: MessageChain = event.message
         val code = message.serializeToMiraiCode()
@@ -92,3 +91,4 @@ object TransferUsecase {
         }
     }
 }
+

@@ -1,8 +1,7 @@
-@file:Suppress("DuplicatedCode")
+﻿@file:Suppress("DuplicatedCode")
 
 package cn.chahuyun.economy.usecase
 
-import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.privatebank.PrivateBankFoxBondService
 import cn.chahuyun.economy.privatebank.PrivateBankRepository
@@ -10,7 +9,6 @@ import cn.chahuyun.economy.privatebank.PrivateBankService
 import cn.chahuyun.economy.utils.FormatUtil
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.chahuyun.economy.utils.MoneyFormatUtil
-import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -62,7 +60,7 @@ object PrivateBankUsecase {
                     "平均评分:${FormatUtil.fixed(bank.avgReview, 2)}\n" +
                     "存款总额:${MoneyFormatUtil.format(totalDeposit)}\n" +
                     "取款成功率:${FormatUtil.fixed(withdrawSuccessRate, 1)}%\n" +
-                    "失信至:${bank.defaulterUntil?.let { DateUtil.formatDateTime(it) } ?: "无"}"
+                    "失信至:${bank.defaulterUntil.takeIf { it != 0L }?.let { DateUtil.formatDateTime(java.util.Date(it)) } ?: "无"}"
         )
         subject.sendMessage(MessageUtil.quoteReply(event.message).append(msg).build())
     }
@@ -103,7 +101,7 @@ object PrivateBankUsecase {
         if (ok) {
             val userInfo = UserCoreManager.getUserInfo(sender)
             userInfo.defaultPrivateBankCode = code
-            HibernateFactory.merge(userInfo)
+            UserCoreManager.saveUserInfo(userInfo)
         }
     }
 
@@ -191,7 +189,7 @@ object PrivateBankUsecase {
                             b.baseRate,
                             2
                         )
-                    }%/day | 期限=${b.termDays}天 | 截止=${DateUtil.formatDateTime(b.bidEndAt)}\n"
+                    }%/day | 期限=${b.termDays}天 | 截止=${DateUtil.formatDateTime(java.util.Date(b.bidEndAt))}\n"
                 )
             }
             append("用法：狐卷竞标 <code> <溢价金额> <接受利息(%/day)>\n")
@@ -224,7 +222,7 @@ object PrivateBankUsecase {
     suspend fun pbInfo(event: MessageEvent) {
         val raw = event.message.contentToString().trim()
         val parts = raw.split(" ")
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(event.sender)
+        val userInfo= UserCoreManager.getUserInfo(event.sender)
 
         // 带参：展示指定银行详情
         val arg = parts.getOrNull(1)?.trim().takeIf { !it.isNullOrBlank() }
@@ -277,7 +275,7 @@ object PrivateBankUsecase {
         val bank = PrivateBankService.getBank(bankKey)
         if (bank != null) {
             userInfo.defaultPrivateBankCode = bank.code
-            HibernateFactory.merge(userInfo)
+            UserCoreManager.saveUserInfo(userInfo)
         }
     }
 
@@ -298,7 +296,7 @@ object PrivateBankUsecase {
             val bank = PrivateBankService.getBank(key)
             if (bank != null) {
                 userInfo.defaultPrivateBankCode = bank.code
-                HibernateFactory.merge(userInfo)
+                UserCoreManager.saveUserInfo(userInfo)
             }
         }
     }
@@ -319,3 +317,4 @@ object PrivateBankUsecase {
     }
 
 }
+

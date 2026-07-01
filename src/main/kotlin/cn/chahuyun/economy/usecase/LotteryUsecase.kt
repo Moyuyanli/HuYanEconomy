@@ -4,13 +4,12 @@ import cn.chahuyun.authorize.entity.PermGroup
 import cn.chahuyun.authorize.utils.PermUtil
 import cn.chahuyun.authorize.utils.UserUtil
 import cn.chahuyun.economy.constant.EconPerm
-import cn.chahuyun.economy.entity.LotteryInfo
 import cn.chahuyun.economy.manager.LotteryManager
+import cn.chahuyun.economy.model.LotteryInfoDto
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.chahuyun.economy.utils.MoneyFormatUtil
-import cn.chahuyun.hibernateplus.HibernateFactory
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.event.events.GroupMessageEvent
@@ -90,12 +89,18 @@ object LotteryUsecase {
             number.append(",").append(aByte)
         }
 
-        val lotteryInfo = LotteryInfo(user.id, subject.id, money, type, number.toString())
+        val lotteryInfo = LotteryInfoDto(
+            qq = user.id,
+            group = subject.id,
+            money = money,
+            type = type,
+            number = number.toString()
+        )
         if (!EconomyUtil.minusMoneyToUser(user, money)) {
             subject.sendMessage(MessageUtil.formatMessageChain(message, "猜签失败！"))
             return
         }
-        HibernateFactory.merge(lotteryInfo)
+        LotteryManager.save(lotteryInfo)
         subject.sendMessage(
             MessageUtil.formatMessageChain(
                 message,

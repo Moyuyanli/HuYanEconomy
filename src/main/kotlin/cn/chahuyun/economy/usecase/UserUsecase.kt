@@ -1,8 +1,6 @@
 package cn.chahuyun.economy.usecase
 
 import cn.chahuyun.economy.constant.ImageDrawXY
-import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.economy.entity.UserStatus
 import cn.chahuyun.economy.manager.BackpackManager
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.manager.UserCoreManager
@@ -136,14 +134,14 @@ object UserUsecase {
 
     suspend fun discharge(event: GroupMessageEvent) {
         val user: Member = event.sender
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(user)
+        val userInfo = UserCoreManager.getUserInfo(user)
 
         val builder = MessageChainBuilder()
         builder.add(QuoteReply(event.message))
 
         val group: Group = event.subject
         if (cn.chahuyun.economy.manager.UserStatusManager.checkUserInHospital(userInfo)) {
-            val userStatus: UserStatus = cn.chahuyun.economy.manager.UserStatusManager.getUserStatus(userInfo)
+            val userStatus = cn.chahuyun.economy.manager.UserStatusManager.getUserStatus(userInfo)
 
             val price = userStatus.recoveryTime.toDouble() * 3.0
             val real: Double

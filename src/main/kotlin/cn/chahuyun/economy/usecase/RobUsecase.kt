@@ -5,17 +5,12 @@ import cn.chahuyun.authorize.utils.PermUtil
 import cn.chahuyun.authorize.utils.UserUtil
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.constant.TitleCode
-import cn.chahuyun.economy.entity.UserBackpack
-import cn.chahuyun.economy.entity.UserFactor
-import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.economy.entity.UserStatus
 import cn.chahuyun.economy.manager.*
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.plugin.FactorManager
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.utils.*
-import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
@@ -34,7 +29,7 @@ object RobUsecase {
         val message: MessageChain = event.message
 
         val user: Member = event.sender
-        val thisUser: UserInfo = UserCoreManager.getUserInfo(user)
+        val thisUser = UserCoreManager.getUserInfo(user)
 
         val remaining = RobManager.getCoolingRemainingMinutes(user.id, COOLDOWN_MINUTES)
         if (remaining > 0) {
@@ -46,19 +41,19 @@ object RobUsecase {
         RobManager.markCooling(user.id)
 
         if (UserStatusManager.checkUserNotInHome(thisUser)) {
-            val userStatus: UserStatus = UserStatusManager.getUserStatus(user.id)
+            val userStatus = UserStatusManager.getUserStatus(user.id)
             when (userStatus.place) {
-                cn.chahuyun.economy.constant.UserLocation.HOSPITAL -> {
+                cn.chahuyun.economy.constant.UserLocation.HOSPITAL.name -> {
                     group.sendMessage(MessageUtil.formatMessageChain(message, "你还在医院嘞，你怎么抢劫？"))
                     return
                 }
 
-                cn.chahuyun.economy.constant.UserLocation.FISHPOND -> {
+                cn.chahuyun.economy.constant.UserLocation.FISHPOND.name -> {
                     group.sendMessage(MessageUtil.formatMessageChain(message, "钓鱼了，不要分心！"))
                     return
                 }
 
-                cn.chahuyun.economy.constant.UserLocation.PRISON -> {
+                cn.chahuyun.economy.constant.UserLocation.PRISON.name -> {
                     group.sendMessage(MessageUtil.formatMessageChain(message, "还在局子里面咧，不要幻想!"))
                     return
                 }
@@ -75,17 +70,17 @@ object RobUsecase {
             return
         }
 
-        val atUser: UserInfo = UserCoreManager.getUserInfo(member)
+        val atUser = UserCoreManager.getUserInfo(member)
 
         if (UserStatusManager.checkUserNotInHome(atUser)) {
-            val userStatus: UserStatus = UserStatusManager.getUserStatus(atUser)
+            val userStatus = UserStatusManager.getUserStatus(atUser)
             when (userStatus.place) {
-                cn.chahuyun.economy.constant.UserLocation.HOSPITAL -> {
+                cn.chahuyun.economy.constant.UserLocation.HOSPITAL.name -> {
                     group.sendMessage(MessageUtil.formatMessageChain(message, "医院禁止抢劫/打人！"))
                     return
                 }
 
-                cn.chahuyun.economy.constant.UserLocation.PRISON -> {
+                cn.chahuyun.economy.constant.UserLocation.PRISON.name -> {
                     group.sendMessage(MessageUtil.formatMessageChain(message, "他还在局子里面，抢不到了！"))
                     return
                 }
@@ -94,34 +89,33 @@ object RobUsecase {
             }
         }
 
-        val thisRobInfo = RobManager.getRobInfo(thisUser)
-        val atRobInfo = RobManager.getRobInfo(atUser)
+        var thisRobInfo = RobManager.getRobInfo(thisUser)
+        var atRobInfo = RobManager.getRobInfo(atUser)
 
-        var nowTime = atRobInfo.nowTime
+        var nowTime = atRobInfo.nowTime.takeIf { it > 0 }
         if (nowTime == null) {
-            nowTime = Date()
-            atRobInfo.nowTime = nowTime
+            nowTime = Date().time
+            atRobInfo = atRobInfo.copy(nowTime = nowTime)
         }
 
-        if (cn.hutool.core.date.DateUtil.isSameDay(Date(), nowTime)) {
-            val beRobNumber = atRobInfo.beRobNumber ?: 0
+        if (cn.hutool.core.date.DateUtil.isSameDay(Date(), Date(nowTime))) {
+            val beRobNumber = atRobInfo.beRobNumber
             if (beRobNumber >= 20) {
                 group.sendMessage(MessageUtil.formatMessageChain(message, "他今天已经被抢了20次了，上帝都觉得他可怜！"))
                 return
             }
         } else {
-            atRobInfo.nowTime = Date()
-            atRobInfo.beRobNumber = 0
+            atRobInfo = atRobInfo.copy(nowTime = Date().time, beRobNumber = 0)
         }
 
-        val userFactor: UserFactor = FactorManager.getUserFactor(thisUser)
-        val atUserFactor: UserFactor = FactorManager.getUserFactor(atUser)
+        var userFactor = FactorManager.getUserFactor(thisUser)
+        var atUserFactor = FactorManager.getUserFactor(atUser)
 
         if (BackpackManager.checkPropInUser(thisUser, FunctionProps.ELECTRIC_BATON)) {
-            val prop: UserBackpack = thisUser.getProp(FunctionProps.ELECTRIC_BATON)
+            val prop = thisUser.getProp(FunctionProps.ELECTRIC_BATON)
 
             if (PropsManager.usePropJava(prop, UseEvent(user, group, thisUser)).success) {
-                userFactor.force = userFactor.force + 0.3
+                userFactor = userFactor.copy(force = userFactor.force + 0.3)
                 group.sendMessage(MessageUtil.formatMessageChain(message, "你携带了便携电棒，攻击性变强了!"))
             } else {
                 group.sendMessage(MessageUtil.formatMessageChain(message, "你的电棒好像有点问题.."))
@@ -129,11 +123,13 @@ object RobUsecase {
         }
 
         if (BackpackManager.checkPropInUser(atUser, FunctionProps.ELECTRIC_BATON)) {
-            val prop: UserBackpack = atUser.getProp(FunctionProps.ELECTRIC_BATON)
+            val prop = atUser.getProp(FunctionProps.ELECTRIC_BATON)
 
             if (PropsManager.usePropJava(prop, UseEvent(user, group, atUser)).success) {
-                atUserFactor.dodge = atUserFactor.dodge + 0.2
-                atUserFactor.irritable = atUserFactor.irritable + 0.4
+                atUserFactor = atUserFactor.copy(
+                    dodge = atUserFactor.dodge + 0.2,
+                    irritable = atUserFactor.irritable + 0.4
+                )
                 group.sendMessage(MessageUtil.formatMessageChain(message, "对方掏出了便携电棒，局势变得紧张了起来!"))
             }
         }
@@ -150,7 +146,7 @@ object RobUsecase {
 
         if (TitleManager.checkTitleIsOnEnable(atUser, TitleCode.ROB)) {
             atDoge += 10
-            atUserFactor.irritable = atUserFactor.irritable + 0.2
+            atUserFactor = atUserFactor.copy(irritable = atUserFactor.irritable + 0.2)
         }
 
         if ((robRandom - force) <= (robFactor - atDoge)) {
@@ -200,16 +196,16 @@ object RobUsecase {
             EconomyUtil.plusMoneyToUser(user, moneyRandom)
             EconomyUtil.minusMoneyToUser(member, moneyRandom)
 
-            val success = thisRobInfo.robSuccess ?: 0
+            val success = thisRobInfo.robSuccess
             val robSuccess = success + 1
             if (robSuccess == 50 && !TitleManager.checkTitleIsExist(thisUser, TitleCode.ROB)) {
                 TitleManager.addTitleInfo(thisUser, TitleCode.ROB)
                 group.sendMessage(MessageUtil.formatMessageChain(user.id, "你成功抢劫50次，获得 街区传说 称号！"))
             }
-            thisRobInfo.robSuccess = robSuccess
-            atRobInfo.beRobNumber = success + 1
-            HibernateFactory.merge(thisRobInfo)
-            HibernateFactory.merge(atRobInfo)
+            thisRobInfo = thisRobInfo.copy(robSuccess = robSuccess)
+            atRobInfo = atRobInfo.copy(beRobNumber = success + 1)
+            RobManager.saveRobInfo(thisRobInfo)
+            RobManager.saveRobInfo(atRobInfo)
             return
         }
 

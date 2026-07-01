@@ -1,11 +1,9 @@
-package cn.chahuyun.economy.usecase
+﻿package cn.chahuyun.economy.usecase
 
-import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.economy.entity.bank.BankInfo
+import cn.chahuyun.economy.manager.BankManager
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.privatebank.PrivateBankService
 import cn.chahuyun.economy.utils.*
-import cn.chahuyun.hibernateplus.HibernateFactory
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.Group
@@ -22,7 +20,7 @@ import kotlin.math.floor
 object BankUsecase {
 
     suspend fun deposit(event: MessageEvent) {
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(event.sender)
+        val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
         val subject: Contact = event.subject
 
@@ -57,7 +55,7 @@ object BankUsecase {
     }
 
     suspend fun mainBankDeposit(event: MessageEvent) {
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(event.sender)
+        val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
         val subject: Contact = event.subject
         val message = event.message
@@ -83,7 +81,7 @@ object BankUsecase {
     }
 
     suspend fun privateBankDeposit(event: MessageEvent) {
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(event.sender)
+        val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
         val subject: Contact = event.subject
 
@@ -96,7 +94,7 @@ object BankUsecase {
             val bank = PrivateBankService.getBank(bankKey)
             if (bank != null) {
                 userInfo.defaultPrivateBankCode = bank.code
-                HibernateFactory.merge(userInfo)
+                UserCoreManager.saveUserInfo(userInfo)
             }
         }
     }
@@ -127,7 +125,7 @@ object BankUsecase {
     }
 
     suspend fun withdrawal(event: MessageEvent) {
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(event.sender)
+        val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
         val subject: Contact = event.subject
 
@@ -187,7 +185,7 @@ object BankUsecase {
     }
 
     suspend fun privateBankWithdraw(event: MessageEvent) {
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(event.sender)
+        val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
         val subject: Contact = event.subject
 
@@ -200,7 +198,7 @@ object BankUsecase {
             val bank = PrivateBankService.getBank(bankKey)
             if (bank != null) {
                 userInfo.defaultPrivateBankCode = bank.code
-                HibernateFactory.merge(userInfo)
+                UserCoreManager.saveUserInfo(userInfo)
             }
         }
     }
@@ -208,7 +206,7 @@ object BankUsecase {
     suspend fun viewBankInterest(event: MessageEvent) {
         Log.info("银行指令")
 
-        val bankInfo = HibernateFactory.selectOneById(BankInfo::class.java, 1)
+        val bankInfo = BankManager.getBankInfo(1)
         if (bankInfo == null) {
             event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "银行信息未初始化"))
             return
@@ -243,8 +241,7 @@ object BankUsecase {
 
         var index = 1
         for ((uuid, money) in userTotals) {
-            val userInfo = HibernateFactory.selectOneById(UserInfo::class.java, uuid)
-            if (userInfo == null) continue
+            val userInfo = UserCoreManager.getUserInfo(uuid) ?: continue
             val group: Group? = bot.getGroup(userInfo.registerGroup)
             val groupName = group?.name ?: "未找到群"
             val groupDisplay = "${userInfo.registerGroup} (${groupName})"
@@ -252,7 +249,7 @@ object BankUsecase {
 
             val plainText = MessageUtil.formatMessage(
                 "top:${index++}\n" +
-                    "用户:${userInfo.name ?: "未知"}\n" +
+                    "用户:${userInfo.name.ifBlank { "未知" }}\n" +
                     "注册群:${groupDisplay}\n" +
                     "存款:${MoneyFormatUtil.format(money)}\n" +
                     "占比:${FormatUtil.fixed(ratio, 1)}%"
@@ -263,3 +260,4 @@ object BankUsecase {
         subject.sendMessage(builder.build())
     }
 }
+

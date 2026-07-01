@@ -1,9 +1,7 @@
-package cn.chahuyun.economy.usecase
+﻿package cn.chahuyun.economy.usecase
 
-import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.utils.EconomyUtil
-import cn.chahuyun.hibernateplus.HibernateFactory
 import net.mamoe.mirai.event.events.FriendMessageEvent
 import net.mamoe.mirai.message.data.MessageChain
 import xyz.cssxsh.mirai.economy.EconomyService
@@ -17,7 +15,7 @@ object FundingUsecase {
         val content = message.contentToString()
 
         val qqId = content.split(" ")[2]
-        val user: UserInfo? = UserCoreManager.getUserInfo(qqId.toLong())
+        val user = UserCoreManager.getUserInfo(qqId.toLong())
 
         if (user == null) {
             event.sender.sendMessage("未找到该用户")
@@ -31,7 +29,7 @@ object FundingUsecase {
 
         val uuid = UUID.randomUUID().toString()
         user.funding = uuid
-        HibernateFactory.merge(user)
+        UserCoreManager.saveUserInfo(user)
 
         event.sender.sendMessage("fund bind $qqId $uuid")
     }
@@ -41,7 +39,7 @@ object FundingUsecase {
         val content = message.contentToString()
 
         val uuid = content.split(" ")[2]
-        val user: UserInfo? = UserCoreManager.getUserInfo(uuid)
+        val user = UserCoreManager.getUserInfo(uuid)
 
         if (user == null) {
             event.sender.sendMessage("未找到该用户")
@@ -63,3 +61,4 @@ object FundingUsecase {
         }
     }
 }
+

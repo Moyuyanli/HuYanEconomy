@@ -1,7 +1,5 @@
-package cn.chahuyun.economy.usecase
+﻿package cn.chahuyun.economy.usecase
 
-import cn.chahuyun.economy.entity.TitleInfo
-import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.title.TitleTemplate
@@ -10,7 +8,6 @@ import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.chahuyun.economy.utils.MoneyFormatUtil
-import cn.chahuyun.hibernateplus.HibernateFactory
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.event.events.MessageEvent
@@ -29,7 +26,7 @@ object TitleUsecase {
         val builder = MessageChainBuilder()
         builder.append(QuoteReply(event.source))
 
-        val titleList = HibernateFactory.selectList(TitleInfo::class.java, "userId", id)
+        val titleList = TitleManager.findByUser(id)
         if (titleList.isEmpty()) {
             subject.sendMessage(builder.append("你还没有称号!").build())
             return
@@ -101,7 +98,7 @@ object TitleUsecase {
                     )
                     return
                 } else {
-                    val userInfo: UserInfo = UserCoreManager.getUserInfo(sender)
+                    val userInfo= UserCoreManager.getUserInfo(sender)
                     if (TitleManager.checkTitleIsExist(userInfo, template.templateCode)) {
                         subject.sendMessage(
                             MessageUtil.formatMessageChain(
@@ -147,7 +144,7 @@ object TitleUsecase {
         val split = content.split(" +")
         val i = split[1].toInt()
 
-        val titleInfos = HibernateFactory.selectList(TitleInfo::class.java, "userId", user.id)
+        val titleInfos = TitleManager.findByUser(user.id)
         if (titleInfos.isEmpty()) {
             subject.sendMessage("你的称号为空!")
             return
@@ -156,12 +153,10 @@ object TitleUsecase {
         var index = 0
         for (titleInfo in titleInfos) {
             if (++index == i) {
-                titleInfo.status = true
-                HibernateFactory.merge(titleInfo)
+                TitleManager.saveTitleInfo(titleInfo.copy(status = true))
                 subject.sendMessage("已切换称号为 ${titleInfo.name} ")
             } else {
-                titleInfo.status = false
-                HibernateFactory.merge(titleInfo)
+                TitleManager.saveTitleInfo(titleInfo.copy(status = false))
             }
         }
 
@@ -170,3 +165,4 @@ object TitleUsecase {
         }
     }
 }
+

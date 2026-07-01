@@ -5,14 +5,13 @@ import cn.chahuyun.authorize.utils.PermUtil
 import cn.chahuyun.authorize.utils.UserUtil
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.constant.ImageDrawXY
-import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.manager.UserCoreManager
+import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.plugin.ImageManager
 import cn.chahuyun.economy.plugin.PluginManager
 import cn.chahuyun.economy.sign.SignEvent
 import cn.chahuyun.economy.utils.*
-import cn.chahuyun.hibernateplus.HibernateFactory
 import cn.hutool.core.date.DateTime
 import cn.hutool.core.date.DateUtil
 import cn.hutool.core.util.RandomUtil
@@ -32,6 +31,7 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 
@@ -44,7 +44,7 @@ object SignUsecase {
         val subject: Contact = event.subject
         val message: MessageChain = event.message
 
-        var userInfo: UserInfo = UserCoreManager.getUserInfo(user)
+        var userInfo: UserInfoDto = UserCoreManager.getUserInfo(user)
 
         val messages = MessageUtil.quoteReply(message)
 
@@ -75,7 +75,7 @@ object SignUsecase {
         }
 
         userInfo.signEarnings = goldNumber
-        HibernateFactory.merge(userInfo)
+        UserCoreManager.saveUserInfo(userInfo)
 
         val moneyByUser = EconomyUtil.getMoneyByUser(userInfo.user)
         messages.append(PlainText("签到成功!\n"))
@@ -133,15 +133,15 @@ object SignUsecase {
         val group: Group = event.group
         val sender: Member = event.sender
 
-        val userInfo: UserInfo = UserCoreManager.getUserInfo(sender)
-        val dateTime: DateTime = DateUtil.offsetDay(userInfo.signTime, -1)
-        userInfo.signTime = dateTime
+        val userInfo: UserInfoDto = UserCoreManager.getUserInfo(sender)
+        val dateTime: DateTime = DateUtil.offsetDay(Date(userInfo.signTime), -1)
+        userInfo.signTime = dateTime.time
 
-        HibernateFactory.merge(userInfo)
+        UserCoreManager.saveUserInfo(userInfo)
         group.sendMessage(MessageUtil.formatMessageChain(event.message, "签到刷新成功!"))
     }
 
-    private suspend fun sendSignImage(userInfo: UserInfo, subject: Contact, messages: MessageChain) {
+    private suspend fun sendSignImage(userInfo: UserInfoDto, subject: Contact, messages: MessageChain) {
         val userInfoImageBase: BufferedImage = UserCoreManager.getUserInfoImageBase(userInfo) ?: run {
             subject.sendMessage(messages)
             return

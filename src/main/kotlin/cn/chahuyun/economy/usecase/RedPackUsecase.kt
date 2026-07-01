@@ -6,10 +6,9 @@ import cn.chahuyun.authorize.utils.PermUtil
 import cn.chahuyun.authorize.utils.UserUtil
 import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.constant.EconPerm
-import cn.chahuyun.economy.entity.redpack.RedPack
-import cn.chahuyun.economy.entity.redpack.RedPackType
 import cn.chahuyun.economy.manager.RedPackManager
-import cn.chahuyun.economy.repository.RedPackRepository
+import cn.chahuyun.economy.model.redpack.RedPackDto
+import cn.chahuyun.economy.model.redpack.RedPackKind
 import cn.chahuyun.economy.utils.*
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
@@ -44,13 +43,13 @@ object RedPackUsecase {
         val money = info[1].toDoubleOrNull() ?: return
         val number = info[2].toIntOrNull() ?: return
 
-        var type = RedPackType.NORMAL
-        var password: String? = null
+        var type = RedPackKind.NORMAL
+        var password = ""
 
         if (info.size >= 4) {
             val typeStr = info[3]
             if (typeStr == "sj" || typeStr == "随机") {
-                type = RedPackType.RANDOM
+                type = RedPackKind.RANDOM
             } else if (typeStr == "kl" || typeStr == "口令") {
                 if (info.size < 5) {
                     @Suppress("SpellCheckingInspection")
@@ -61,7 +60,7 @@ object RedPackUsecase {
                     )
                     return
                 }
-                type = RedPackType.PASSWORD
+                type = RedPackKind.PASSWORD
                 password = info.subList(4, info.size).joinToString(" ")
 
                 // 校验口令：1~16个汉字及基本标点符号
@@ -92,7 +91,7 @@ object RedPackUsecase {
             return
         }
 
-        val pack = RedPack(
+        var pack = RedPackDto(
             name = "${sender.nick}的红包",
             groupId = group.id,
             sender = sender.id,
@@ -100,16 +99,16 @@ object RedPackUsecase {
             number = number,
             type = type,
             password = password,
-            createTime = Date()
+            createTime = Date().time
         )
 
         if (pack.isRandomAllocation) {
             val doubles = RedPackManager.generateRandomPack(money, number)
-            pack.randomPackList = doubles.toMutableList()
+            pack = pack.copy(randomPackList = doubles)
         }
 
-        val resultPack = RedPackRepository.saveInTransaction(pack)
-        val id = resultPack?.id ?: 0
+        val resultPack = RedPackManager.save(pack)
+        val id = resultPack.id
 
         if (id == 0) {
             subject.sendMessage(MessageUtil.formatMessageChain(message, "红包创建失败!"))
@@ -119,7 +118,7 @@ object RedPackUsecase {
         val prefix = HuYanEconomy.config.prefix
         val typeDesc = type.description
 
-        val claimMsg = if (type == RedPackType.PASSWORD) {
+        val claimMsg = if (type == RedPackKind.PASSWORD) {
             "领取方式: 直接发送口令 [ $password ] 即可领取"
         } else {
             "领取命令: ${prefix.ifBlank { "" }}领红包 $id"
@@ -131,7 +130,7 @@ object RedPackUsecase {
                     "红包ID: ${id}\n" +
                     "红包金额: ${MoneyFormatUtil.format(money)} 枚金币\n" +
                     "红包个数: ${number}\n" +
-                    "发送时间: ${TimeConvertUtil.timeConvert(pack.createTime ?: Date())}\n" +
+                    "发送时间: ${TimeConvertUtil.timeConvert(Date(pack.createTime))}\n" +
                     "${claimMsg}"
             )
         )
@@ -167,7 +166,7 @@ object RedPackUsecase {
 
             if (id != null) {
                 // 是数字ID，领取指定红包
-                val redPack = RedPackRepository.findById(id)
+                val redPack = RedPackManager.findById(id)
                 if (redPack == null) {
                     subject.sendMessage(MessageUtil.formatMessageChain(message, "红包不存在!"))
                     return
@@ -178,15 +177,15 @@ object RedPackUsecase {
                     return
                 }
 
-                if (DateUtil.between(redPack.createTime, Date(), DateUnit.DAY) >= 1) {
+                if (DateUtil.between(Date(redPack.createTime), Date(), DateUnit.DAY) >= 1) {
                     subject.sendMessage(MessageUtil.formatMessageChain(message, "这个红包已经过期了"))
                     RedPackManager.expireRedPack(group, redPack)
-                    RedPackRepository.delete(redPack)
+                    RedPackManager.delete(redPack)
                     return
                 }
 
                 // 如果是口令红包，不能通过ID领取
-                if (redPack.type == RedPackType.PASSWORD) {
+                if (redPack.type == RedPackKind.PASSWORD) {
                     subject.sendMessage(MessageUtil.formatMessageChain(message, "这是口令红包，请直接发送口令来领取！"))
                     return
                 }
@@ -213,8 +212,8 @@ object RedPackUsecase {
         val sender = event.sender
         val subject = event.subject
 
-        val redPacks = RedPackRepository.listByGroupId(group.id)
-            .filter { it.type == RedPackType.PASSWORD && it.password == password }
+        val redPacks = RedPackManager.listByGroupId(group.id)
+            .filter { it.type == RedPackKind.PASSWORD && it.password == password }
 
         if (redPacks.isEmpty()) {
             return // 没有匹配的口令红包，不做处理
@@ -226,18 +225,18 @@ object RedPackUsecase {
             // 检查是否领过
             if (redPack.receiverList.contains(sender.id)) continue
             // 检查是否领完
-            if ((redPack.number ?: 0) <= redPack.receiverList.size) continue
+            if (redPack.number <= redPack.receiverList.size) continue
             // 检查是否过期
-            if (DateUtil.between(redPack.createTime, Date(), DateUnit.DAY) >= 1) {
+            if (DateUtil.between(Date(redPack.createTime), Date(), DateUnit.DAY) >= 1) {
                 RedPackManager.expireRedPack(group, redPack)
-                RedPackRepository.delete(redPack)
+                RedPackManager.delete(redPack)
                 continue
             }
 
             val result =
                 RedPackManager.getRedPack(sender, subject, redPack, skipMessage = true, passwordOverride = password)
             if (result.success) {
-                results.add((redPack.name ?: "红包") to result.amount)
+                results.add((redPack.name.ifBlank { "红包" }) to result.amount)
             }
         }
 
@@ -273,7 +272,7 @@ object RedPackUsecase {
         try {
             val group = event.group
             val redPacks =
-                RedPackRepository.listByGroupId(group.id).filter { it.type != RedPackType.PASSWORD } // 默认不抢口令红包
+                RedPackManager.listByGroupId(group.id).filter { it.type != RedPackKind.PASSWORD } // 默认不抢口令红包
 
             if (redPacks.isEmpty()) {
                 subject.sendMessage("当前群没有可领取的红包哦!")
@@ -285,18 +284,18 @@ object RedPackUsecase {
             for (redPack in redPacks) {
                 // 检查是否领过或者领完
                 if (redPack.receiverList.contains(sender.id)) continue
-                if ((redPack.number ?: 0) <= redPack.receiverList.size) continue
+                if (redPack.number <= redPack.receiverList.size) continue
 
                 // 检查是否过期
-                if (DateUtil.between(redPack.createTime, Date(), DateUnit.DAY) >= 1) {
+                if (DateUtil.between(Date(redPack.createTime), Date(), DateUnit.DAY) >= 1) {
                     RedPackManager.expireRedPack(group, redPack)
-                    RedPackRepository.delete(redPack)
+                    RedPackManager.delete(redPack)
                     continue
                 }
 
                 val result = RedPackManager.getRedPack(sender, subject, redPack, skipMessage = true)
                 if (result.success) {
-                    results.add((redPack.name ?: "红包") to result.amount)
+                    results.add((redPack.name.ifBlank { "红包" }) to result.amount)
                 }
             }
 
@@ -330,7 +329,7 @@ object RedPackUsecase {
         try {
             val group = event.group
             val bot = event.bot
-            val redPacks = RedPackRepository.listByGroupId(group.id)
+            val redPacks = RedPackManager.listByGroupId(group.id)
 
             val forwardMessage = ForwardMessageBuilder(subject)
             if (redPacks.isEmpty()) {
@@ -354,7 +353,7 @@ object RedPackUsecase {
         val subject = event.subject
         try {
             val bot = event.bot
-            val redPacks = RedPackRepository.listAll()
+            val redPacks = RedPackManager.listAll()
 
             val forwardMessage = ForwardMessageBuilder(subject)
 
