@@ -48,7 +48,7 @@ object GamesUsecase {
                     )
                 } catch (e: Exception) {
                     if (e.message == "该道具数据不存在") {
-                        toRemove.add(backpack.propId ?: 0L)
+                        toRemove.add(backpack.propId)
                         continue
                     } else throw e
                 }
@@ -62,7 +62,7 @@ object GamesUsecase {
                     }
 
                     bait.num == 1 -> {
-                        toRemove.add(backpack.propId ?: 0L)
+                        toRemove.add(backpack.propId)
                         event.fishBait = bait.copyProp()
                     }
 
@@ -72,7 +72,7 @@ object GamesUsecase {
                             quality = 0.01f
                             name = "空钩"
                         }
-                        cn.chahuyun.economy.manager.BackpackManager.delPropToBackpack(userInfo, backpack.propId ?: 0L)
+                        cn.chahuyun.economy.manager.BackpackManager.delPropToBackpack(userInfo, backpack.propId)
                     }
                 }
             }
@@ -176,7 +176,7 @@ object GamesUsecase {
                     "鱼塘:${fishPond.name}\n" +
                     "等级:${fishPond.pondLevel}\n" +
                     "最低鱼竿等级:${fishPond.minLevel}\n" +
-                    (fishPond.description ?: "")
+                    fishPond.description
         )
         Log.info("${userInfo.name}开始钓鱼")
 
@@ -255,7 +255,7 @@ object GamesUsecase {
 
         if (
             EconomyUtil.plusMoneyToUser(sender, userMoney) &&
-            EconomyUtil.plusMoneyToPluginBankForId(fishPond.code, fishPond.description ?: "", pondMoney)
+            EconomyUtil.plusMoneyToPluginBankForId(fishPond.code, fishPond.description, pondMoney)
         ) {
             fishPond.addNumber()
             val format =
@@ -333,7 +333,7 @@ object GamesUsecase {
                 MessageUtil.formatMessageChain(
                     event.message,
                     "当前鱼塘信息:\n" +
-                        "鱼塘名称:${fishPond.name ?: ""}\n" +
+                        "鱼塘名称:${fishPond.name}\n" +
                         "鱼塘等级:${level} (已满级)\n" +
                         "鱼塘钓鱼次数:${fishPond.number}\n" +
                         "鱼塘最低鱼竿等级:${fishPond.minLevel}\n" +
@@ -349,7 +349,7 @@ object GamesUsecase {
             MessageUtil.formatMessageChain(
                 event.message,
                 "当前鱼塘信息:\n" +
-                    "鱼塘名称:${fishPond.name ?: ""}\n" +
+                    "鱼塘名称:${fishPond.name}\n" +
                     "鱼塘等级:${level}\n" +
                     "鱼塘钓鱼次数:${fishPond.number}\n" +
                     "鱼塘最低鱼竿等级:${fishPond.minLevel}\n" +

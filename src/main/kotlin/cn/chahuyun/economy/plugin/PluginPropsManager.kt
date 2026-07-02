@@ -6,6 +6,7 @@ import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.PropsCard
 import cn.chahuyun.economy.prop.Expirable
 import cn.chahuyun.economy.prop.PropsManager
+import cn.chahuyun.economy.prop.effect.*
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.Log
 
@@ -20,6 +21,13 @@ object PluginPropsManager {
         PropsManager.registerKindToPropClass(PropsKind.card, PropsCard::class.java)
         PropsManager.registerKindToPropClass(PropsKind.functionProp, FunctionProps::class.java)
         PropsManager.registerKindToPropClass(PropsKind.fishBait, FishBait::class.java)
+        PropEffectRegistry.registerAll(
+            RedEyesEffectHandler,
+            ElectricBatonEffectHandler,
+            MuteCardEffectHandler,
+            NameChangeCardEffectHandler,
+            CardActivationEffectHandler
+        )
 
         // 初始化签到卡
         initCards()

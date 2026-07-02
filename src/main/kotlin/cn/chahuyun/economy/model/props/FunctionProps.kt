@@ -1,23 +1,17 @@
 package cn.chahuyun.economy.model.props
 
-import cn.chahuyun.economy.config.EconomyConfig
-import cn.chahuyun.economy.constant.PropConstant
 import cn.chahuyun.economy.constant.PropConstant.RED_EYES_CD
-import cn.chahuyun.economy.plugin.FactorManager
 import cn.chahuyun.economy.prop.AbstractProp
 import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.economy.prop.Usable
 import cn.chahuyun.economy.prop.UseResult
-import cn.chahuyun.economy.utils.MessageUtil
-import cn.chahuyun.economy.utils.ShareUtils
-import cn.hutool.core.date.DateUnit
-import cn.hutool.core.date.DateUtil
-import net.mamoe.mirai.contact.Group
-import net.mamoe.mirai.contact.MemberPermission
+import cn.chahuyun.economy.prop.effect.PropEffectRegistry
 import java.util.*
 
 /**
- * 功能性道具 (Kotlin 重构版)
+ * 功能性道具。
+ *
+ * 该类只保留道具实例状态，具体使用效果交给 PropEffectRegistry 中注册的处理器。
  */
 class FunctionProps(
     kind: String = "function",
@@ -40,67 +34,10 @@ class FunctionProps(
     override var unit: String = "个"
     override var isStack: Boolean = true
 
-    /**
-     * 使用后是否消耗
-     */
     override var isConsumption: Boolean = false
 
     override suspend fun use(event: UseEvent): UseResult {
-        return when (code) {
-            RED_EYES -> {
-                val factor = FactorManager.getUserFactor(event.userInfo)
-                val buff = factor.getBuffValue(RED_EYES)
-                if (buff == null) {
-                    factor.setBuffValue(RED_EYES, DateUtil.now())
-                    FactorManager.merge(factor)
-                    UseResult.success("你猛猛炫了一瓶红牛!")
-                } else {
-                    val parse = DateUtil.parse(buff)
-                    val between = DateUtil.between(parse, Date(), DateUnit.MINUTE)
-                    if (between > PropConstant.RED_EYES_CD) {
-                        factor.setBuffValue(RED_EYES, DateUtil.now())
-                        FactorManager.merge(factor)
-                        UseResult.success("续上一瓶红牛!")
-                    } else {
-                        UseResult.fail("红牛喝多了可对肾不好!")
-                    }
-                }
-            }
-
-            ELECTRIC_BATON -> {
-                if (electricity >= 5) {
-                    electricity -= 5
-                    UseResult.success("使用了电棒，电量剩余 $electricity%")
-                } else {
-                    UseResult.fail("电棒没电了!")
-                }
-            }
-
-            MUTE_1, MUTE_30 -> {
-                val subject = event.subject
-                if (subject is Group) {
-                    if (subject.botPermission != MemberPermission.MEMBER) {
-                        if (EconomyConfig.unableToUseMuteGroup.contains(subject.id)) {
-                            return UseResult.fail("该群禁言功能被禁用!")
-                        }
-
-                        subject.sendMessage("请输入你想要禁言的人")
-                        val messageEvent =
-                            MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.id, event.sender.id, 180)
-                        if (messageEvent != null) {
-                            val member = ShareUtils.getAtMember(messageEvent)
-                            if (member != null) {
-                                member.mute(muteTime * 60)
-                                return UseResult.success("禁言卡使用成功！")
-                            }
-                        }
-                    }
-                }
-                UseResult.fail("使用失败!")
-            }
-
-            else -> UseResult.fail("该道具无法直接使用!")
-        }
+        return PropEffectRegistry.use(this, event) ?: UseResult.fail("该道具无法直接使用!")
     }
 
     override fun toShopInfo(): String {

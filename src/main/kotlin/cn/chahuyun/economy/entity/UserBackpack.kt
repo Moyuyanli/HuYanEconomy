@@ -60,14 +60,6 @@ class UserBackpack(
         return PropsManager.getProp(toDto(), tClass)
     }
 
-    /**
-     * 获取该背包道具 (兼容旧版 API)
-     */
-    @Deprecated("使用泛型版本 getProp(clazz)", ReplaceWith("getProp()"))
-    fun getPropLegacy(): BaseProp? {
-        return PropsManager.getProp(toDto())
-    }
-
     fun toDto(): UserBackpackDto = UserBackpackDto(
         id = id ?: 0,
         userId = userId ?: "",

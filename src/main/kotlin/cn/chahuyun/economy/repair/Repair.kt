@@ -227,13 +227,13 @@ class PropRepair : Repair {
                 val key = userId to propCode
                 if (userBackpackToBaseProp.containsKey(key)) {
                     val only = userBackpackToBaseProp[key]
-                    val one = (only?.getPropLegacy() ?: run {
+                    val one = (only?.let { PropsManager.getProp(it.toDto()) } ?: run {
                         only?.destroy()
                         userBackpackToBaseProp.remove(key)
                         null
                     }) ?: continue@for_backpack
 
-                    val prop = backpack.getPropLegacy()
+                    val prop = PropsManager.getProp(backpack.toDto())
                     if (prop !is Stackable) {
                         backpack.destroy()
                         continue@for_backpack

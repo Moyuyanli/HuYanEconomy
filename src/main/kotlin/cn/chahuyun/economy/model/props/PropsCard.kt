@@ -1,15 +1,15 @@
 package cn.chahuyun.economy.model.props
 
-import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.prop.CardProp
 import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.economy.prop.UseResult
-import cn.chahuyun.economy.prop.UseResult.Companion.success
+import cn.chahuyun.economy.prop.effect.PropEffectRegistry
 import cn.chahuyun.economy.utils.DateUtil.format
-import net.mamoe.mirai.contact.nameCardOrNick
 
 /**
- * 道具卡 (Kotlin 重构版)
+ * 道具卡。
+ *
+ * 该类只保留卡片状态，具体使用效果交给 PropEffectRegistry 中注册的处理器。
  */
 class PropsCard(
     kind: String = "card",
@@ -31,21 +31,7 @@ class PropsCard(
     override var isStack: Boolean = true
 
     override suspend fun use(event: UseEvent): UseResult {
-        return when (code) {
-            NAME_CHANGE -> {
-                val sender = event.sender
-                val userInfo = UserCoreManager.getUserInfo(sender)
-                userInfo.name = sender.nameCardOrNick
-                UserCoreManager.saveUserInfo(userInfo)
-
-                success("改名卡使用成功!")
-            }
-
-            else -> {
-                status = true
-                success("$name 使用成功")
-            }
-        }
+        return PropEffectRegistry.use(this, event) ?: UseResult.fail("该道具无法直接使用!")
     }
 
     override fun toShopInfo(): String {

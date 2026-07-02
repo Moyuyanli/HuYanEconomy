@@ -57,7 +57,8 @@ object BackpackManager {
      * @param id 道具ID
      */
     @JvmStatic
-    fun addPropToBackpack(userInfo: UserInfoDto, code: String, kind: String, id: Long) {
+    fun addPropToBackpack(userInfo: UserInfoDto, code: String, kind: String, id: Long): UserBackpackDto {
+        require(id != 0L) { "不能添加无效道具到背包: propId=$id, code=$code" }
         val userBackpack = UserBackpackDto(
             userId = userInfo.id,
             propCode = code,
@@ -65,8 +66,12 @@ object BackpackManager {
             propId = id
         )
         val saved = backpackProxy.save(userBackpack)
+        if (saved.id == 0L || backpackProxy.findById(saved.id) == null) {
+            error("保存背包记录失败: userId=${userInfo.id}, code=$code, propId=$id")
+        }
         userInfo.backpacks = userInfo.backpacks + saved
         userInfo.backpackCount = userInfo.backpacks.size
+        return saved
     }
 
     /**
