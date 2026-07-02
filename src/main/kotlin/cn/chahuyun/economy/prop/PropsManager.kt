@@ -116,6 +116,9 @@ object PropsManager {
     fun <T : BaseProp> getTemplate(code: String, clazz: Class<T>): T {
         val prop =
             propsTemplateMap[code] ?: throw IllegalArgumentException("鑾峰彇閬撳叿妯℃澘澶辫触, 閬撳叿 code: [$code] 涓嶅瓨鍦?")
+        if (!clazz.isInstance(prop)) {
+            throw IllegalArgumentException("道具模板类型不符: code=$code, expected=${clazz.name}, actual=${prop.javaClass.name}")
+        }
         return prop.copyProp()
     }
 
@@ -189,7 +192,13 @@ object PropsManager {
     @JvmStatic
     fun addProp(prop: BaseProp): Long {
         val data = serialization(prop)
-        return propsProxy.save(data).id
+        val saved = propsProxy.save(data)
+        val propId = saved.id.takeIf { it != 0L }
+            ?: error("保存道具失败: kind=${data.kind}, code=${data.code}")
+        if (propsProxy.findById(propId) == null) {
+            error("保存道具后读回失败: kind=${data.kind}, code=${data.code}, id=$propId")
+        }
+        return propId
     }
 
     /**
@@ -217,7 +226,20 @@ object PropsManager {
         }
 
         val data = serialization(prop)
-        propsProxy.save(data.copy(id = id))
+        val saved = propsProxy.save(data.copy(id = id))
+        val verified = propsProxy.findById(id)
+            ?: error("更新道具后读回失败: kind=${data.kind}, code=${data.code}, id=$id")
+        if (
+            saved.id == 0L ||
+            verified.kind != data.kind ||
+            verified.code != data.code ||
+            verified.num != data.num ||
+            verified.expiredTime != data.expiredTime ||
+            verified.status != data.status ||
+            verified.data != data.data
+        ) {
+            error("更新道具校验失败: kind=${data.kind}, code=${data.code}, id=$id")
+        }
     }
 
     /**
@@ -343,7 +365,7 @@ object PropsManager {
             ?: throw RuntimeException("璇ラ亾鍏锋暟鎹笉瀛樺湪, ID: $id")
 
         val jsonConfig = JSONConfig.create().setIgnoreError(true)
-        val data = propsData.data ?: throw RuntimeException("閬撳叿鏁版嵁鍐呭涓虹┖锛孖D: $id")
+        val data = propsData.data
 
         return try {
             val jsonObject = JSONUtil.parseObj(data)
@@ -377,7 +399,7 @@ object PropsManager {
     @JvmStatic
     fun <T : BaseProp> deserialization(one: PropsDataDto, clazz: Class<T>): T {
         val jsonConfig = JSONConfig.create().setIgnoreError(true)
-        val data = one.data ?: throw RuntimeException("閬撳叿鏁版嵁鍐呭涓虹┖锛孖D: ${one.id}")
+        val data = one.data
 
         return try {
             val jsonObject: JSONObject = JSONUtil.parseObj(data)
@@ -407,31 +429,6 @@ object PropsManager {
     @JvmStatic
     fun getPropClass(kind: String): Class<out BaseProp>? = propsClassMap[kind]
 
-
-    /**
-     * 澶嶅埗閬撳叿瀵硅薄
-     *
-     * @param baseProp 鍘熷閬撳叿瀹炰緥
-     * @return 澶嶅埗鍚庣殑閬撳叿瀹炰緥
-     */
-    @JvmStatic
-    @Suppress("UNCHECKED_CAST")
-    @Deprecated("鍑嗗寮冪敤,璇蜂娇鐢ㄩ亾鍏疯嚜宸辩殑clone鏂规硶")
-    fun <T : BaseProp> copyProp(baseProp: T): T {
-        val data = serialization(baseProp)
-        return deserialization(data, baseProp.javaClass)
-    }
-
-    /**
-     * 鑾峰彇鎸囧畾绫诲瀷鏍囪瘑绗﹀搴旂殑閬撳叿绫?
-     *
-     * todo 鏀规垚getPropClass
-     * @param kind 閬撳叿绫诲瀷鏍囪瘑绗?
-     * @return 瀵瑰簲鐨凜lass瀵硅薄锛屼笉瀛樺湪杩斿洖null
-     */
-    @JvmStatic
-    @Deprecated("鍑嗗寮冪敤", replaceWith = ReplaceWith("getPropClass(kind)"))
-    fun shopClass(kind: String): Class<out BaseProp>? = propsClassMap[kind]
 
     fun listPropsData(): List<PropsDataDto> = propsProxy.findAll()
 

@@ -49,18 +49,6 @@ object PropsShop {
     }
 
     /**
-     * 恢复道具（反序列化前的校验）
-     */
-    @JvmStatic
-    fun <T : BaseProp> restore(code: String, tClass: Class<T>): T {
-        val prop = shop[code] ?: throw RuntimeException("未找到对应code的道具: $code")
-        if (!tClass.isInstance(prop)) {
-            throw RuntimeException("道具类型不符: $code")
-        }
-        return tClass.cast(prop)
-    }
-
-    /**
      * 检查 code 是否存在
      */
     @JvmStatic
