@@ -24,6 +24,8 @@ class FunctionProps(
         const val RED_EYES = "red-eyes"
         const val MUTE_1 = "mute-1"
         const val MUTE_30 = "mute-30"
+        const val FARM_RAFFLE_BASIC = "farm-raffle-basic"
+        const val FARM_RAFFLE_ADVANCED = "farm-raffle-advanced"
     }
 
     var enableTime: Date? = null

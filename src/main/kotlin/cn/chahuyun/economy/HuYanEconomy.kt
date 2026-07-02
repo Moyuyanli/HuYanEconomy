@@ -119,11 +119,13 @@ object HuYanEconomy : KotlinPlugin(
         EconomyUtil.init()
         LotteryManager.init()
         FishManager.init()
+        FarmCropManager.init()
         BankManager.init()
         TitleManager.init()
         PrivateBankManager.init()
         YiYanManager.init()
         cn.chahuyun.economy.manager.GamesManager.init()
+        cn.chahuyun.economy.manager.FarmManager.init()
         FactorManager.init()
         PluginPropsManager.init()
 

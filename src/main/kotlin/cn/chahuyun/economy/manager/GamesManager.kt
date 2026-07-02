@@ -130,6 +130,22 @@ object GamesManager : CoroutineScope {
     }
 
     @JvmStatic
+    fun getFishingCooldownText(userInfo: UserInfoDto, isFishingTitle: Boolean, fishInfo: FishInfoDto): String {
+        val lastDate = playerCooling[userInfo.qq] ?: return "可钓鱼"
+        val between = DateUtil.between(lastDate, Date(), DateUnit.MINUTE, true)
+        var expired = if (isFishingTitle) 5 else (10 * 60 - fishInfo.rodLevel * 3) / 60
+
+        FactorManager.getUserFactor(userInfo).getBuffValue(FunctionProps.RED_EYES)?.let { buff ->
+            if (DateUtil.between(DateUtil.parse(buff), Date(), DateUnit.MINUTE) <= 60) {
+                expired -= (expired * 0.8).toInt()
+            }
+        }
+
+        val remaining = expired - between
+        return if (remaining > 0) "还需 ${remaining} 分钟" else "可钓鱼"
+    }
+
+    @JvmStatic
     suspend fun checkAndProcessFishing(
         userInfo: UserInfoDto,
         isFishingTitle: Boolean,

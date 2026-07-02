@@ -10,6 +10,7 @@ object EconPerm {
     const val RED_PACKET_PERM: String = "red-pack"
     const val SIGN_BLACK_PERM: String = "sign-black"
     const val RAFFLE_PERM: String = "raffle"
+    const val FARM_PERM: String = "farm"
 
     object GROUP {
         const val FISH_PERM_GROUP: String = "钓鱼组"
@@ -18,5 +19,6 @@ object EconPerm {
         const val RED_PACKET_PERM_GROUP: String = "红包组"
         const val SIGN_BLACK_GROUP: String = "签到黑名单"
         const val RAFFLE_PERM_GROUP: String = "抽奖组"
+        const val FARM_PERM_GROUP: String = "农场组"
     }
 }

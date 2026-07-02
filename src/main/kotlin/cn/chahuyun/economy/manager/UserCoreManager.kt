@@ -1,20 +1,19 @@
 package cn.chahuyun.economy.manager
 
-import cn.chahuyun.economy.constant.ImageDrawXY
+import cn.chahuyun.economy.constant.FarmConstants
+import cn.chahuyun.economy.constant.TitleCode
+import cn.chahuyun.economy.constant.UserLocation
 import cn.chahuyun.economy.model.user.TitleInfoDto
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.plugin.ImageManager
+import cn.chahuyun.economy.privatebank.PrivateBankRepository
 import cn.chahuyun.economy.proxy.EntityProxyRegistry
-import cn.chahuyun.economy.utils.EconomyUtil
-import cn.chahuyun.economy.utils.ImageUtil
-import cn.chahuyun.economy.utils.Log
+import cn.chahuyun.economy.utils.*
 import cn.chahuyun.economy.utils.MoneyFormatUtil.toMoneyFormat
 import cn.hutool.core.date.DateUtil
 import net.mamoe.mirai.contact.*
 import xyz.cssxsh.mirai.economy.service.EconomyAccount
 import java.awt.Color
-import java.awt.Font
-import java.awt.Graphics2D
 import java.awt.image.BufferedImage
 import java.io.IOException
 import java.net.URL
@@ -22,29 +21,14 @@ import java.util.*
 import javax.imageio.ImageIO
 
 /**
- * 从原 Java `UserManager` 中抽离出来的“非消息事件”逻辑（纯工具/数据层）。
- *
- * - 事件/指令处理应放在 action 包（如 `UserAction.java` 的 @MessageAuthorize 方法）。
- * - 这里仅保留：用户信息获取/创建、个人信息底图绘制等工具方法。
+ * 用户核心能力：用户资料获取、创建、保存，以及个人信息图片渲染。
  */
 object UserCoreManager {
 
-    /**
-     * 通过代理器获取用户信息DTO
-     *
-     * @param qq QQ号
-     * @return 用户信息DTO，不存在则返回null
-     */
     fun getUserInfoDto(qq: Long): UserInfoDto? {
         return userProxy.findByKey(qq.toString())
     }
 
-    /**
-     * 通过代理器保存用户信息
-     *
-     * @param dto 用户信息DTO
-     * @return 保存后的DTO
-     */
     fun saveUserInfoDto(dto: UserInfoDto): UserInfoDto {
         return userProxy.save(dto)
     }
@@ -101,138 +85,135 @@ object UserCoreManager {
     }
 
     @JvmStatic
-    fun getUserInfoImageBase(userInfo: UserInfoDto): BufferedImage? {
+    fun getUserInfoImageBase(
+        userInfo: UserInfoDto,
+        hitokoto: String = "愿你今日顺利，金币入账。",
+        signature: String = "-- HuYanEconomy",
+    ): BufferedImage? {
         return try {
-            customBottom(userInfo)
+            renderUserInfoImage(userInfo, hitokoto, signature)
         } catch (e: Exception) {
-            Log.error("用户管理:个人信息基础信息绘图错误!", e)
+            Log.error("用户管理:个人信息图片生成失败!", e)
             null
         }
     }
 
     @Throws(IOException::class)
-    private fun customBottom(userInfo: UserInfoDto): BufferedImage {
-        val bottom = ImageManager.getNextBottom() ?: throw IOException("没有自定义底图，请检查data/bottom文件夹底图!")
-
+    private fun renderUserInfoImage(userInfo: UserInfoDto, hitokoto: String, signature: String): BufferedImage {
         val user = requireNotNull(userInfo.user) { "用户信息中未附带 user 对象" }
-
-        // 使用 Java getter 形式，避免 Kotlin 侧对 avatarUrl 的属性/扩展函数解析差异导致不兼容
         val avatarUrl = user.avatarUrl(AvatarSpec.LARGE)
-        var avatar = ImageIO.read(URL(avatarUrl)) ?: throw IOException("头像读取失败: $avatarUrl")
-        avatar = ImageUtil.makeRoundedCorner(avatar, 50)
+        val avatar = ImageIO.read(URL(avatarUrl)) ?: throw IOException("头像读取失败: $avatarUrl")
+        val background = ImageManager.getNextBottom()
 
-        val g2d: Graphics2D = ImageUtil.getG2d(bottom)
-        g2d.drawImage(
-            avatar,
-            ImageDrawXY.AVATAR.x,
-            ImageDrawXY.AVATAR.y,
-            avatar.width,
-            avatar.height,
-            null
-        )
-
-        val font: Font = ImageManager.getCustomFont()
-        g2d.font = font
-        g2d.color = Color.BLACK
-
-        val id = user.id.toString()
         val title: TitleInfoDto = TitleManager.getDefaultTitle(userInfo)
-        val titleText = title.title ?: "[无]"
+        val titleText = title.title.ifBlank { "[无]" }
         val titleStartColor = runCatching { title.startColor }.getOrElse { Color.BLACK }
         val titleEndColor = runCatching { title.endColor }.getOrElse { titleStartColor }
 
-        g2d.font = font.deriveFont(32f)
-        if (title.gradient) {
-            ImageUtil.drawStringGradient(
-                titleText,
-                ImageDrawXY.TITLE.x,
-                ImageDrawXY.TITLE.y,
-                titleStartColor,
-                titleEndColor,
-                g2d
-            )
-            ImageUtil.drawStringGradient(
-                id,
-                ImageDrawXY.ID.x,
-                ImageDrawXY.ID.y,
-                titleStartColor,
-                titleEndColor,
-                g2d
-            )
-        } else {
-            g2d.color = titleStartColor
-            g2d.drawString(id, ImageDrawXY.ID.x, ImageDrawXY.ID.y)
-            g2d.drawString(titleText, ImageDrawXY.TITLE.x, ImageDrawXY.TITLE.y)
+        val nick = user.nick
+        val nicknameColors = resolveNicknameColors(user, title, titleStartColor, titleEndColor)
+        val signTime = userInfo.signTime
+            .takeIf { it > 0 }
+            ?.let { DateUtil.format(Date(it), "yyyy-MM-dd HH:mm:ss") }
+            ?: "暂未签到"
+
+        val fishInfo = userInfo.getFishInfo()
+        val fishTitle = TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.FISHING)
+
+        return EconomyImageRenderer.renderPersonalInfo(
+            PersonalInfoCard(
+                qq = user.id.toString(),
+                nickname = nick,
+                title = titleText,
+                titleStartColor = titleStartColor,
+                titleEndColor = titleEndColor,
+                titleGradient = title.gradient,
+                nicknameStartColor = nicknameColors.first,
+                nicknameEndColor = nicknameColors.second,
+                nicknameGradient = nicknameColors.third,
+                signTime = signTime,
+                signDays = "${userInfo.signNumber} 天",
+                wallet = EconomyUtil.getMoneyByUser(user).toMoneyFormat(),
+                signEarnings = userInfo.signEarnings.toMoneyFormat(),
+                bankEarnings = userInfo.bankEarnings.toMoneyFormat(),
+                location = getLocationText(userInfo),
+                fishingCooldown = GamesManager.getFishingCooldownText(userInfo, fishTitle, fishInfo),
+                farmStatus = getFarmStatusText(userInfo.qq),
+                bankDeposits = getBankDepositLines(user),
+                hitokoto = hitokoto,
+                signature = signature,
+            ),
+            avatar,
+            background,
+            ImageManager.getCustomFont()
+        )
+    }
+
+    private fun resolveNicknameColors(
+        user: User,
+        title: TitleInfoDto,
+        titleStartColor: Color,
+        titleEndColor: Color,
+    ): Triple<Color, Color, Boolean> {
+        if (title.impactName) {
+            return Triple(titleStartColor, titleEndColor, true)
         }
 
-        val nick = user.nick
-        var gradient = false
-        var sColor: Color? = null
-        var eColor: Color? = null
+        val member = user as? Member ?: return Triple(Color.BLACK, Color.BLACK, false)
+        return when (member.permission) {
+            MemberPermission.OWNER -> Triple(Color(68, 138, 255), Color(100, 255, 218), true)
+            MemberPermission.ADMINISTRATOR -> Triple(Color(72, 241, 155), Color(140, 241, 72), true)
+            else -> Triple(ImageUtil.hexColor("fce38a"), ImageUtil.hexColor("f38181"), true)
+        }
+    }
 
-        if (title.impactName) {
-            gradient = true
-            sColor = titleStartColor
-            eColor = titleEndColor
-        } else {
-            val member = user as? Member
-            if (member != null) {
-                gradient = true
-                when (member.permission) {
-                    MemberPermission.OWNER -> {
-                        sColor = Color(68, 138, 255)
-                        eColor = Color(100, 255, 218)
-                    }
+    private fun getLocationText(userInfo: UserInfoDto): String {
+        return try {
+            val status = UserStatusManager.getUserStatus(userInfo)
+            UserLocation.values().firstOrNull { it.name == status.place }?.displayName ?: status.place
+        } catch (e: Exception) {
+            Log.error("获取用户位置失败", e)
+            "未知"
+        }
+    }
 
-                    MemberPermission.ADMINISTRATOR -> {
-                        sColor = Color(72, 241, 155)
-                        eColor = Color(140, 241, 72)
-                    }
-
-                    else -> {
-                        sColor = ImageUtil.hexColor("fce38a")
-                        eColor = ImageUtil.hexColor("f38181")
-                    }
+    private fun getFarmStatusText(qq: Long): String {
+        return try {
+            val now = System.currentTimeMillis()
+            val plots = FarmManager.getOrCreateFarm(qq).plots.filter { it.status != FarmConstants.PLOT_LOCKED }
+            val planted = plots.filter { it.status == FarmConstants.PLOT_PLANTED }
+            if (planted.isEmpty()) {
+                "未种植"
+            } else {
+                val mature = planted.count { it.nextMatureAt <= now }
+                when {
+                    mature == 0 -> "成长中"
+                    mature == planted.size -> "全成熟"
+                    else -> "有成熟"
                 }
             }
+        } catch (e: Exception) {
+            Log.error("获取农场状态失败", e)
+            "未种植"
+        }
+    }
+
+    private fun getBankDepositLines(user: User): List<BankDepositLine> {
+        val lines = mutableListOf<BankDepositLine>()
+        lines += BankDepositLine("主银行", EconomyUtil.getMoneyByBank(user).toMoneyFormat())
+
+        try {
+            PrivateBankRepository.listBanks()
+                .mapNotNull { bank ->
+                    val deposit = PrivateBankRepository.findDeposit(bank.code, user.id) ?: return@mapNotNull null
+                    if (deposit.principal <= 0.0) return@mapNotNull null
+                    BankDepositLine(bank.name.ifBlank { bank.code }, deposit.principal.toMoneyFormat())
+                }
+                .forEach(lines::add)
+        } catch (e: Exception) {
+            Log.error("获取私人银行存款失败", e)
         }
 
-        g2d.font = if (nick.length > 16) font.deriveFont(Font.BOLD, 50f) else font.deriveFont(Font.BOLD, 60f)
-        if (gradient) {
-            ImageUtil.drawStringGradient(
-                nick,
-                ImageDrawXY.NICK_NAME.x,
-                ImageDrawXY.NICK_NAME.y,
-                sColor ?: Color.BLACK,
-                eColor ?: Color.BLACK,
-                g2d
-            )
-            g2d.color = Color.BLACK
-        } else {
-            g2d.color = Color.BLACK
-            g2d.drawString(nick, ImageDrawXY.NICK_NAME.x, ImageDrawXY.NICK_NAME.y)
-        }
-
-        val signTime = userInfo.signTime.takeIf { it > 0 }?.let { DateUtil.format(Date(it), "yyyy-MM-dd HH:mm:ss") } ?: "暂未签到"
-
-        g2d.font = font.deriveFont(Font.PLAIN, 24f)
-        g2d.drawString(signTime, ImageDrawXY.SIGN_TIME.x, ImageDrawXY.SIGN_TIME.y)
-        g2d.drawString(userInfo.signNumber.toString(), ImageDrawXY.SIGN_NUM.x, ImageDrawXY.SIGN_NUM.y)
-
-        val money = EconomyUtil.getMoneyByUser(user).toMoneyFormat()
-        val bank = EconomyUtil.getMoneyByBank(user).toMoneyFormat()
-        val signEarnings = userInfo.signEarnings.toMoneyFormat()
-        val bankEarnings = userInfo.bankEarnings.toMoneyFormat()
-
-        g2d.font = font.deriveFont(32f)
-        g2d.drawString(money, ImageDrawXY.MY_MONEY.x, ImageDrawXY.MY_MONEY.y)
-        g2d.drawString(signEarnings, ImageDrawXY.SIGN_OBTAIN.x, ImageDrawXY.SIGN_OBTAIN.y)
-        g2d.drawString(bank, ImageDrawXY.BANK_MONEY.x, ImageDrawXY.BANK_MONEY.y)
-        g2d.drawString(bankEarnings, ImageDrawXY.BANK_INTEREST.x, ImageDrawXY.BANK_INTEREST.y)
-
-        g2d.dispose()
-        return bottom
+        return lines
     }
 }
-
-

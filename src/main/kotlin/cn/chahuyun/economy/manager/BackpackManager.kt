@@ -2,7 +2,9 @@ package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.model.user.UserBackpackDto
 import cn.chahuyun.economy.model.user.UserInfoDto
+import cn.chahuyun.economy.prop.BaseProp
 import cn.chahuyun.economy.prop.PropsManager
+import cn.chahuyun.economy.prop.Stackable
 import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.MessageUtil
 import net.mamoe.mirai.Bot
@@ -72,6 +74,29 @@ object BackpackManager {
         userInfo.backpacks = userInfo.backpacks + saved
         userInfo.backpackCount = userInfo.backpacks.size
         return saved
+    }
+
+    /**
+     * 发放可堆叠道具。已有同 code 道具时合并数量，否则创建新实例并加入背包。
+     */
+    @JvmStatic
+    fun addStackablePropToBackpack(userInfo: UserInfoDto, code: String, kind: String, amount: Int): UserBackpackDto {
+        require(amount > 0) { "发放数量必须大于0: code=$code, amount=$amount" }
+
+        userInfo.backpacks.find { it.propCode == code }?.let { backpack ->
+            val prop = PropsManager.getProp(backpack)
+                ?: error("背包道具数据不存在: code=$code, propId=${backpack.propId}")
+            require(prop is Stackable && prop.isStack) { "背包道具不是可堆叠道具: code=$code" }
+            prop.num += amount
+            PropsManager.updateProp(backpack.propId, prop)
+            return backpack
+        }
+
+        val prop = PropsManager.getTemplate(code, BaseProp::class.java)
+        require(prop is Stackable && prop.isStack) { "道具模板不是可堆叠道具: code=$code" }
+        prop.num = amount
+        val propId = PropsManager.addProp(prop)
+        return addPropToBackpack(userInfo, code, kind, propId)
     }
 
     /**

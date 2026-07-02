@@ -26,7 +26,7 @@ class EconomyCommand : CompositeCommand(
         sendMessage(RepairManager.init())
     }
 
-    @SubCommand("migrate-v2")
+    @SubCommand("migrate v2")
     @Description("Migrate entity data from V1 tables to V2 tables and switch successful modules to V2")
     suspend fun CommandSender.migrateV2(module: String = "all") {
         if (module == "all") {
@@ -39,7 +39,7 @@ class EconomyCommand : CompositeCommand(
         sendMessage(formatMigrationResult("V2", mapOf(module to result)))
     }
 
-    @SubCommand("entity-switch")
+    @SubCommand("entity switch")
     @Description("Switch entity proxy module data version without copying data")
     suspend fun CommandSender.entitySwitch(module: String, version: String) {
         val dataVersion = parseDataVersion(version)
@@ -58,7 +58,7 @@ class EconomyCommand : CompositeCommand(
         sendMessage(if (switched) "Entity proxy module[$module] switched to $dataVersion" else "Unknown entity proxy module: $module")
     }
 
-    @SubCommand("rollback-v1")
+    @SubCommand("rollback v1")
     @Description("Switch entity proxy modules back to V1")
     suspend fun CommandSender.rollbackV1(module: String = "all") {
         if (module == "all") {
@@ -71,7 +71,7 @@ class EconomyCommand : CompositeCommand(
         sendMessage(if (switched) "Entity proxy module[$module] switched back to V1" else "Unknown entity proxy module: $module")
     }
 
-    @SubCommand("entity-version")
+    @SubCommand("entity version")
     @Description("Show current entity proxy data versions")
     suspend fun CommandSender.entityVersion() {
         val versions = EntityProxyRegistry.currentVersions()

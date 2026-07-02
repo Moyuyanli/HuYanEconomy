@@ -18,7 +18,8 @@ object PermCodeManager {
             Perm(EconPerm.ROB_PERM, "壶言经济的抢劫权限"),
             Perm(EconPerm.RED_PACKET_PERM, "壶言经济的红包权限"),
             Perm(EconPerm.SIGN_BLACK_PERM, "壶言经济的签到黑名单权限"),
-            Perm(EconPerm.RAFFLE_PERM, "壶言经济的抽奖权限")
+            Perm(EconPerm.RAFFLE_PERM, "壶言经济的抽奖权限"),
+            Perm(EconPerm.FARM_PERM, "壶言经济的农场权限")
         )
 
         val util = PermUtil
@@ -61,6 +62,13 @@ object PermCodeManager {
         if (group == null) {
             group = util.takePermGroupByName(EconPerm.GROUP.RAFFLE_PERM_GROUP)
             val perm = util.takePerm(EconPerm.RAFFLE_PERM)
+            util.addPermToPermGroupByPermGroup(perm, group)
+        }
+
+        group = util.selectPermGroupOneByName(EconPerm.GROUP.FARM_PERM_GROUP)
+        if (group == null) {
+            group = util.takePermGroupByName(EconPerm.GROUP.FARM_PERM_GROUP)
+            val perm = util.takePerm(EconPerm.FARM_PERM)
             util.addPermToPermGroupByPermGroup(perm, group)
         }
     }

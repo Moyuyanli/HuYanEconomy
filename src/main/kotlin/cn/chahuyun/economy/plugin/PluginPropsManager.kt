@@ -122,6 +122,20 @@ object PluginPropsManager {
                 muteTime = 30
                 unit = "张"
                 isConsumption = true
+            },
+            FunctionProps(PropsKind.functionProp, FunctionProps.FARM_RAFFLE_BASIC, "初级农场抽奖券").apply {
+                description = "农场系统的初级抽奖凭证，后续抽奖系统开放后可使用。"
+                canBuy = false
+                unit = "张"
+                isStack = true
+                isConsumption = false
+            },
+            FunctionProps(PropsKind.functionProp, FunctionProps.FARM_RAFFLE_ADVANCED, "高级农场抽奖券").apply {
+                description = "农场系统的高级抽奖凭证，后续抽奖系统开放后可使用。"
+                canBuy = false
+                unit = "张"
+                isStack = true
+                isConsumption = false
             }
         )
         props.forEach { PropsManager.registerCodeToProp(it) }

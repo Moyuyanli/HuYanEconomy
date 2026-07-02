@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.plugin
 
-import cn.chahuyun.economy.EconomyBuildConstants
 import cn.chahuyun.economy.HuYanEconomy
+import cn.chahuyun.economy.utils.EconomyImageRenderer
 import cn.chahuyun.economy.utils.FormatUtil
 import cn.chahuyun.economy.utils.ImageUtil
 import cn.chahuyun.economy.utils.Log
@@ -9,11 +9,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
-import java.awt.*
+import java.awt.BorderLayout
+import java.awt.Font
+import java.awt.FontFormatException
+import java.awt.Graphics2D
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
-import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 import javax.swing.ImageIcon
@@ -52,8 +54,6 @@ object ImageManager {
         val bottomDir = path.resolve("bottom").toFile()
         if (!bottomDir.exists()) return
 
-        val bottomPng = ImageIO.read(Objects.requireNonNull(instance.getResourceAsStream("bottom.png")))
-
         val files = bottomDir.listFiles()?.toList().orEmpty()
         val totalFiles = files.size
         if (totalFiles == 0) {
@@ -73,7 +73,7 @@ object ImageManager {
             files.map { file ->
                 async(Dispatchers.IO) {
                     try {
-                        loadOneBottomImage(file, bottomPng)
+                        loadOneBottomImage(file)
                     } finally {
                         val done = completed.incrementAndGet()
                         if (done % step == 0 || done == totalFiles) {
@@ -135,7 +135,7 @@ object ImageManager {
         }
     }
 
-    private fun loadOneBottomImage(file: File, bottomPng: BufferedImage): BufferedImage? {
+    private fun loadOneBottomImage(file: File): BufferedImage? {
         if (!file.isFile) return null
         val background = try {
             ImageIO.read(file)
@@ -144,44 +144,27 @@ object ImageManager {
             null
         }
         if (background == null) return null
-        return drawBottom(background, bottomPng)
+        return drawBottom(background)
     }
 
     /**
      * 生成一个“已合成底 + 圆角”的底图缓存项
      */
-    private fun drawBottom(background: BufferedImage, bottomPng: BufferedImage): BufferedImage {
-        val canvas = BufferedImage(1024, 576, BufferedImage.TYPE_INT_ARGB)
+    private fun drawBottom(background: BufferedImage): BufferedImage {
+        val canvas = BufferedImage(EconomyImageRenderer.PERSONAL_WIDTH, EconomyImageRenderer.PERSONAL_HEIGHT, BufferedImage.TYPE_INT_ARGB)
         val g2d: Graphics2D = ImageUtil.getG2d(canvas)
 
-        val scaleWidth = 1024.0 / background.width.toDouble()
-        val scaleHeight = 576.0 / background.height.toDouble()
+        val scaleWidth = EconomyImageRenderer.PERSONAL_WIDTH.toDouble() / background.width.toDouble()
+        val scaleHeight = EconomyImageRenderer.PERSONAL_HEIGHT.toDouble() / background.height.toDouble()
         val scale = maxOf(scaleWidth, scaleHeight)
 
         val scaledWidth = (background.width * scale).toInt()
         val scaledHeight = (background.height * scale).toInt()
 
-        val x = (1024 - scaledWidth) / 2
-        val y = (576 - scaledHeight) / 2
+        val x = (EconomyImageRenderer.PERSONAL_WIDTH - scaledWidth) / 2
+        val y = (EconomyImageRenderer.PERSONAL_HEIGHT - scaledHeight) / 2
 
         g2d.drawImage(background, x, y, scaledWidth, scaledHeight, null)
-        g2d.drawImage(bottomPng, 0, 0, null)
-
-        g2d.font = customFont
-        g2d.color = Color.BLACK
-
-        g2d.drawString("签到时间:", 70, 340)
-        g2d.drawString("连签次数:", 70, 385)
-
-        val infoY = 478
-        g2d.font = customFont.deriveFont(32f)
-        g2d.drawString("我的金币", 118, infoY)
-        g2d.drawString("签到获得", 358, infoY)
-        g2d.drawString("我的银行", 608, infoY)
-        g2d.drawString("今日收益", 858, infoY)
-
-        g2d.font = customFont.deriveFont(12f)
-        g2d.drawString("by Mirai & HuYanEconomy(壶言经济) v${EconomyBuildConstants.VERSION}", 730, 573)
 
         g2d.dispose()
         return ImageUtil.makeRoundedCorner(canvas, 30)
