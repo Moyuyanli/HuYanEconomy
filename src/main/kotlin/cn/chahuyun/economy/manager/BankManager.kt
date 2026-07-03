@@ -1,20 +1,19 @@
-package cn.chahuyun.economy.manager
+﻿package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.HuYanEconomy
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.bank.BankInfoDto
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.Log
 
 /**
- * 主银行初始化与定时任务管理。
- */
+ * 涓婚摱琛屽垵濮嬪寲涓庡畾鏃朵换鍔＄鐞嗐€? */
 object BankManager {
 
     /**
-     * 初始化主银行。
-     * - 确保全局主银行存在
-     * - 启动银行利息定时任务
+     * 鍒濆鍖栦富閾惰銆?
+     * - 纭繚鍏ㄥ眬涓婚摱琛屽瓨鍦?
+     * - 鍚姩閾惰鍒╂伅瀹氭椂浠诲姟
      */
     @JvmStatic
     fun init() {
@@ -24,7 +23,7 @@ object BankManager {
                 BankInfoDto(
                     code = "global",
                     name = "主银行",
-                    description = "经济服务",
+                    description = "缁忔祹鏈嶅姟",
                     qq = HuYanEconomy.config.owner,
                     regTime = System.currentTimeMillis(),
                     regTotal = 0.0,
@@ -37,7 +36,7 @@ object BankManager {
         val bankInfos = try {
             bankProxy.findAll()
         } catch (e: Exception) {
-            Log.error("银行管理:利息加载出错!", e)
+            Log.error("閾惰绠＄悊:鍒╂伅鍔犺浇鍑洪敊!", e)
             emptyList()
         }
 

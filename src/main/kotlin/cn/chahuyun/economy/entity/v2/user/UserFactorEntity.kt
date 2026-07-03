@@ -31,7 +31,7 @@ class UserFactorEntity(
 
     @Lob
     @Column(name = "buff", columnDefinition = "TEXT")
-    var buff: String = "[]",
+    var buff: String? = "[]",
 
     @Column(name = "created_at", nullable = false)
     var createdAt: Long = 0,

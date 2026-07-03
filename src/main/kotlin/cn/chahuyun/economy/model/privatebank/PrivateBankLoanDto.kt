@@ -1,36 +1,36 @@
-﻿package cn.chahuyun.economy.model.privatebank
+package cn.chahuyun.economy.model.privatebank
 
 import kotlinx.serialization.Serializable
 
 /**
- * 绉佷汉閾惰鍊熸璁板綍DTO
+ * 私人银行借款记录DTO
  */
 @Serializable
 data class PrivateBankLoanDto(
-    /** 璁板綍ID */
+    /** 记录ID */
     var id: Int = 0,
-    /** 璐锋浜у搧ID */
+    /** 贷款产品ID */
     var offerId: Int = 0,
-    /** 閾惰缂栫爜 */
+    /** 银行编码 */
     var bankCode: String = "",
-    /** 璐锋柟QQ */
+    /** 贷方QQ */
     var lenderQq: Long = 0,
-    /** 鍊熸柟QQ */
+    /** 借方QQ */
     var borrowerQq: Long = 0,
-    /** 鏈噾 */
+    /** 本金 */
     var principal: Double = 0.0,
-    /** 搴旇繕鎬婚 */
+    /** 应还总额 */
     var dueTotal: Double = 0.0,
-    /** 宸茶繕閲戦 */
+    /** 已还金额 */
     var repaidAmount: Double = 0.0,
-    /** 鍒╃巼锛堢櫨鍒嗘瘮锛?*/
+    /** 利率（内部单位 0.1%） */
     var interest: Int = 10,
-    /** 鍊熸澶╂暟 */
+    /** 借款天数 */
     var termDays: Int = 7,
-    /** 鍒涘缓鏃堕棿 */
+    /** 创建时间 */
     var createdAt: Long = 0,
-    /** 鍒版湡鏃堕棿 */
+    /** 到期时间 */
     var dueAt: Long = 0,
-    /** 杩樻竻鏃堕棿 */
+    /** 还清时间 */
     var repaidAt: Long = 0
 )

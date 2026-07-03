@@ -1,4 +1,4 @@
-﻿package cn.chahuyun.economy.usecase
+package cn.chahuyun.economy.usecase
 
 import cn.chahuyun.economy.privatebank.PrivateBankFoxBondService
 import cn.chahuyun.economy.privatebank.PrivateBankRepository
@@ -11,32 +11,32 @@ import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.event.events.MessageEvent
 
 /**
- * 鐙愬嵎/鍥藉嵎鐢ㄤ緥锛堝吋瀹逛袱涓叧閿瘝锛夈€?
+ * 国卷/狐卷债券相关用例。
  */
 object FoxBondUsecase {
 
     /**
-     * 鏌ョ湅褰撳墠鍙珵鏍囩殑鐙愬嵎鍒楄〃
+     * 查看当前可竞标的狐卷列表
      */
     suspend fun foxView(event: MessageEvent) {
         val subject: Contact = event.subject
         val bonds = PrivateBankFoxBondService.listActiveBonds()
         if (bonds.isEmpty()) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "褰撳墠娌℃湁鍙珵鏍囩殑鐙愬嵎"))
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "当前没有可竞标的狐卷"))
             return
         }
 
         val msg = buildString {
-            append("褰撳墠鍙珵鏍囩嫄鍗凤紙鏈€澶氬睍绀?10 鏉★級\n")
+            append("当前可竞标狐卷（最多展示 10 条）\n")
             bonds.take(10).forEach { b ->
                 append(
-                    "${b.code} | 闈㈤=${MoneyFormatUtil.format(b.faceValue)} | 鍘熷=${
+                    "${b.code} | 面额=${MoneyFormatUtil.format(b.faceValue)} | 原始=${
                         FormatUtil.fixed(b.baseRate, 2)
-                    }%/day | 鏈熼檺=${b.termDays}澶?| 鎴=${DateUtil.formatDateTime(java.util.Date(b.bidEndAt))}\n"
+                    }%/day | 期限=${b.termDays}天 | 截止=${DateUtil.formatDateTime(java.util.Date(b.bidEndAt))}\n"
                 )
             }
-            append("鐢ㄦ硶锛氱嫄鍗风珵鏍?<code> <婧环閲戦> <鎺ュ彈鍒╂伅(%/day)>\n")
-            append("绀轰緥锛氱嫄鍗风珵鏍?")
+            append("用法：狐卷竞标 <code> <溢价金额> <接受利息(%/day)>\n")
+            append("示例：狐卷竞标 ")
             append(bonds.first().code)
             append(" 5000000 3.2")
         }
@@ -44,7 +44,7 @@ object FoxBondUsecase {
     }
 
     /**
-     * 鎻愪氦鐙愬嵎绔炴爣
+     * 提交狐卷竞标
      */
     suspend fun foxBid(event: MessageEvent) {
         val subject: Contact = event.subject
@@ -53,7 +53,7 @@ object FoxBondUsecase {
             subject.sendMessage(
                 MessageUtil.formatMessageChain(
                     event.message,
-                    "鐢ㄦ硶锛氱嫄鍗风珵鏍?<code> <婧环閲戦> <鎺ュ彈鍒╂伅(%/day)>"
+                    "用法：狐卷竞标 <code> <溢价金额> <接受利息(%/day)>"
                 )
             )
             return
@@ -66,14 +66,14 @@ object FoxBondUsecase {
     }
 
     /**
-     * 璐拱鍥藉嵎锛氳闀跨敤娴佸姩閲戞睜璧勯噾璐拱鏈懆鍥藉嵎
+     * 购买国卷：行长用流动金池资金购买本周国卷
      */
     suspend fun buyBond(event: MessageEvent) {
         val subject: Contact = event.subject
         val parts = event.message.contentToString().trim().split(" ")
         val amount = parts.getOrNull(1)?.toDoubleOrNull() ?: 0.0
         if (amount <= 0) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "鐢ㄦ硶锛氬浗鍗疯喘涔?<閲戦>"))
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "用法：国卷购买 <金额>"))
             return
         }
 
@@ -83,12 +83,12 @@ object FoxBondUsecase {
             return
         }
 
-        val (ok, msg) = PrivateBankService.buyBond(event.sender, bank.code, amount)
+        val (_, msg) = PrivateBankService.buyBond(event.sender, bank.code, amount)
         subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
     }
 
     /**
-     * 璧庡洖鍥藉嵎锛氫笉甯D鍒欒祹鍥炲叏閮ㄥ埌鏈熸寔浠擄紝甯D鍒欒祹鍥炴寚瀹氭寔浠?
+     * 赎回国卷；带 ID 时赎回指定持仓，不带 ID 时尝试赎回全部持仓。
      */
     suspend fun redeemBond(event: MessageEvent) {
         val subject: Contact = event.subject
@@ -102,11 +102,11 @@ object FoxBondUsecase {
         }
 
         if (holdingId != null) {
-            // 璧庡洖鎸囧畾鎸佷粨
-            val (ok, msg) = PrivateBankService.redeemBond(event.sender, holdingId)
+            // 赎回指定持仓
+            val (_, msg) = PrivateBankService.redeemBond(event.sender, holdingId)
             subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
         } else {
-            // 璧庡洖鍏ㄩ儴鍒版湡鎸佷粨
+            // 赎回全部到期持仓
             val holdings = PrivateBankRepository.listBondHoldings(bank.code)
                 .filter { it.redeemedAt == 0L }
 
@@ -116,21 +116,20 @@ object FoxBondUsecase {
             }
 
             var successCount = 0
-            var totalPayout = 0.0
             val results = mutableListOf<String>()
 
             for (h in holdings) {
                 val (ok, msg) = PrivateBankService.redeemBond(event.sender, h.id)
                 if (ok) {
                     successCount++
-                    results.add("鎸佷粨#${h.id}: $msg")
+                    results.add("持仓#${h.id}: $msg")
                 } else {
-                    results.add("鎸佷粨#${h.id}: $msg")
+                    results.add("持仓#${h.id}: $msg")
                 }
             }
 
             val summary = buildString {
-                append("鍥藉嵎璧庡洖缁撴灉锛堝叡 ${holdings.size} 绗旓級\n")
+                append("国卷赎回结果（共 ${holdings.size} 笔）\n")
                 results.forEach { append("$it\n") }
             }
             subject.sendMessage(MessageUtil.formatMessageChain(event.message, summary.trimEnd()))
@@ -138,7 +137,7 @@ object FoxBondUsecase {
     }
 
     /**
-     * 鏌ョ湅鏈懆鍥藉嵎鍙戣淇℃伅 + 鏈鎸佷粨鍒楄〃
+     * 查看本周国卷发行信息 + 本行持仓列表
      */
     suspend fun bondList(event: MessageEvent) {
         val subject: Contact = event.subject
@@ -147,18 +146,18 @@ object FoxBondUsecase {
         val bank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == event.sender.id }
 
         val msg = buildString {
-            append("鏈懆鍥藉嵎淇℃伅\n")
-            append("鏈熷彿: ${issue.weekKey}\n")
-            append("鍒╃巼鍊嶆暟: ${FormatUtil.fixed(issue.rateMultiplier, 2)}x\n")
-            append("閿佷粨澶╂暟: ${issue.lockDays} 澶‐n")
-            append("鎬婚搴? ${MoneyFormatUtil.format(issue.totalLimit)}\n")
-            append("鍓╀綑棰濆害: ${MoneyFormatUtil.format(issue.remaining)}\n")
+            append("本周国卷信息\n")
+            append("期号: ${issue.weekKey}\n")
+            append("利率倍数: ${FormatUtil.fixed(issue.rateMultiplier, 2)}x\n")
+            append("锁仓天数: ${issue.lockDays} 天\n")
+            append("总额度: ${MoneyFormatUtil.format(issue.totalLimit)}\n")
+            append("剩余额度: ${MoneyFormatUtil.format(issue.remaining)}\n")
 
             if (bank != null) {
                 val holdings = PrivateBankRepository.listBondHoldings(bank.code)
                     .filter { it.redeemedAt == 0L }
                 if (holdings.isNotEmpty()) {
-                    append("\n浣犵殑閾惰鎸佷粨锛?{bank.name}锛塡n")
+                    append("\n你的银行持仓（${bank.name}）\n")
                     holdings.forEach { h ->
                         val dueAt = java.util.Date(h.boughtAt + h.lockDays * 86400000L)
                         val isExpired = dueAt.before(java.util.Date())
@@ -166,9 +165,9 @@ object FoxBondUsecase {
                         append("  #${h.id} | 金额=${MoneyFormatUtil.format(h.principal)} | ${h.rateMultiplier}x | $status\n")
                     }
                 } else {
-                    append("\n浣犵殑閾惰鏆傛棤鍥藉嵎鎸佷粨\n")
+                    append("\n你的银行暂无国卷持仓\n")
                 }
-                append("\n鐢ㄦ硶锛氬浗鍗疯喘涔?<閲戦> | 鍥藉嵎璧庡洖 [鎸佷粨ID]")
+                append("\n用法：国卷购买 <金额> | 国卷赎回 [持仓ID]")
             } else {
                 append("\n你还没有创建银行，无法购买国债")
             }

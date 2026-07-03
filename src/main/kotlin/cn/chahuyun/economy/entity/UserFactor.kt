@@ -46,7 +46,7 @@ class UserFactor(
     /**
      * json存储格式
      */
-    var buff: String = "[]"
+    var buff: String? = "[]"
 ) {
 
     /**
@@ -57,7 +57,7 @@ class UserFactor(
      * @return 当前对象实例，支持链式调用
      */
     fun setBuffValue(buffName: String, value: String?): UserFactor {
-        val array = JSONUtil.parseArray(this.buff)
+        val array = JSONUtil.parseArray(this.buff ?: "[]")
         var foundIndex = -1
 
         // 尝试找到现有的buff
@@ -95,7 +95,7 @@ class UserFactor(
      * @return buff的值, 如果不存在则返回null
      */
     fun getBuffValue(buffName: String): String? {
-        val array = JSONUtil.parseArray(this.buff)
+        val array = JSONUtil.parseArray(this.buff ?: "[]")
         for (obj in array.jsonIter()) {
             if (buffName == obj.getStr("name")) {
                 return obj.getStr("value")

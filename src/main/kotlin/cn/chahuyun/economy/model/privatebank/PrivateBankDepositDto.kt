@@ -1,22 +1,22 @@
-﻿package cn.chahuyun.economy.model.privatebank
+package cn.chahuyun.economy.model.privatebank
 
 import kotlinx.serialization.Serializable
 
 /**
- * 绉佷汉閾惰瀛樻DTO
+ * 私人银行存款DTO
  */
 @Serializable
 data class PrivateBankDepositDto(
-    /** 璁板綍ID */
+    /** 记录ID */
     var id: Int = 0,
-    /** 閾惰缂栫爜 */
+    /** 银行编码 */
     var bankCode: String = "",
-    /** 瀛樻浜篞Q */
+    /** 存款人QQ */
     var userQq: Long = 0,
-    /** 鏈噾 */
+    /** 本金 */
     var principal: Double = 0.0,
-    /** 瀛樺叆鏃堕棿 */
+    /** 存入时间 */
     var createdAt: Long = 0,
-    /** 鏇存柊鏃堕棿 */
+    /** 更新时间 */
     var updatedAt: Long = 0
 )

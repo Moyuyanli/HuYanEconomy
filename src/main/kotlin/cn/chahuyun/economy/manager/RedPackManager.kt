@@ -1,8 +1,8 @@
-package cn.chahuyun.economy.manager
+﻿package cn.chahuyun.economy.manager
 
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.redpack.RedPackDto
 import cn.chahuyun.economy.model.redpack.RedPackKind
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.*
 import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.Bot
@@ -16,20 +16,20 @@ import xyz.cssxsh.mirai.economy.EconomyService
 import java.util.*
 
 /**
- * 红包相关的“非事件监听”逻辑。
+ * 绾㈠寘鐩稿叧鐨勨€滈潪浜嬩欢鐩戝惉鈥濋€昏緫銆?
  *
- * 说明：
- * - `action.RedPackAction` 仅保留指令入口与参数解析。
- * - 这里负责：随机红包算法、红包领取与过期退还、红包列表渲染等可复用逻辑。
+ * 璇存槑锛?
+ * - `action.RedPackAction` 浠呬繚鐣欐寚浠ゅ叆鍙ｄ笌鍙傛暟瑙ｆ瀽銆?
+ * - 杩欓噷璐熻矗锛氶殢鏈虹孩鍖呯畻娉曘€佺孩鍖呴鍙栦笌杩囨湡閫€杩樸€佺孩鍖呭垪琛ㄦ覆鏌撶瓑鍙鐢ㄩ€昏緫銆?
  */
 object RedPackManager {
 
     /**
-     * 二倍均值法生成随机红包列表
+     * 浜屽€嶅潎鍊兼硶鐢熸垚闅忔満绾㈠寘鍒楄〃
      *
-     * @param totalAmount 红包总金额
-     * @param count 红包个数
-     * @return 生成的随机红包金额列表
+     * @param totalAmount 绾㈠寘鎬婚噾棰?
+     * @param count 绾㈠寘涓暟
+     * @return 鐢熸垚鐨勯殢鏈虹孩鍖呴噾棰濆垪琛?
      */
     @JvmStatic
     fun generateRandomPack(totalAmount: Double, count: Int): List<Double> {
@@ -37,7 +37,7 @@ object RedPackManager {
         var remainingAmount = totalAmount
         var remainingCount = count
 
-        // 逐个生成红包金额，最后一个红包单独处理
+        // 閫愪釜鐢熸垚绾㈠寘閲戦锛屾渶鍚庝竴涓孩鍖呭崟鐙鐞?
         for (i in 0 until count - 1) {
             val avg = remainingAmount / remainingCount
             val max = avg * 2
@@ -45,7 +45,7 @@ object RedPackManager {
             var amount = RandomUtil.randomDouble(0.1, max)
             amount = ShareUtils.rounding(amount)
 
-            // 计算剩余红包的最小预留金额，确保每个红包至少有0.1元
+            // 璁＄畻鍓╀綑绾㈠寘鐨勬渶灏忛鐣欓噾棰濓紝纭繚姣忎釜绾㈠寘鑷冲皯鏈?.1鍏?
             val minReserved = (remainingCount - 1) * 0.1
             if (remainingAmount - amount < minReserved) {
                 amount = ShareUtils.rounding(remainingAmount - minReserved)
@@ -90,19 +90,19 @@ object RedPackManager {
             }
 
             val typeStr = "【${type.description}】"
-            val passwordStr = if (type == RedPackKind.PASSWORD) "\n红包口令: $password" else ""
+            val passwordStr = if (type == RedPackKind.PASSWORD) "\n绾㈠寘鍙ｄ护: $password" else ""
 
             val message = PlainText(
-                "红包信息 $typeStr: \n" +
-                        "红包ID: $id" +
-                        "\n红包名称: $name" +
-                        "\n红包发送者: $senderId" +
-                        "\n红包总额: ${MoneyFormatUtil.format(money)}" +
-                        "\n剩余金额: ${MoneyFormatUtil.format(money - redPack.takenMoneys)}" +
-                        "\n红包人数: ${receivers.size}/$number" +
-                        "\n创建时间: ${TimeConvertUtil.timeConvert(Date(createTime))}" +
+                "绾㈠寘淇℃伅 $typeStr: \n" +
+                        "绾㈠寘ID: $id" +
+                        "\n绾㈠寘鍚嶇О: $name" +
+                        "\n绾㈠寘鍙戦€佽€? $senderId" +
+                        "\n绾㈠寘鎬婚: ${MoneyFormatUtil.format(money)}" +
+                        "\n鍓╀綑閲戦: ${MoneyFormatUtil.format(money - redPack.takenMoneys)}" +
+                        "\n绾㈠寘浜烘暟: ${receivers.size}/$number" +
+                        "\n鍒涘缓鏃堕棿: ${TimeConvertUtil.timeConvert(Date(createTime))}" +
                         passwordStr +
-                        "\n已领取者: $nickNames"
+                        "\n宸查鍙栬€? $nickNames"
             )
             forwardMessage.add(bot, message)
         }
@@ -110,7 +110,7 @@ object RedPackManager {
     }
 
     /**
-     * 红包领取结果
+     * 绾㈠寘棰嗗彇缁撴灉
      */
     data class GrabResult(
         val success: Boolean,
@@ -120,13 +120,13 @@ object RedPackManager {
     )
 
     /**
-     * 获取红包（领取逻辑）
+     * 鑾峰彇绾㈠寘锛堥鍙栭€昏緫锛?
      *
-     * @param sender 领取者
-     * @param redPack 红包对象
-     * @param skipMessage 是否跳过发送通知消息（用于批量领取）
-     * @param passwordOverride 口令（如果提供且匹配，则允许领取口令红包）
-     * @return 领取结果
+     * @param sender 棰嗗彇鑰?
+     * @param redPack 绾㈠寘瀵硅薄
+     * @param skipMessage 鏄惁璺宠繃鍙戦€侀€氱煡娑堟伅锛堢敤浜庢壒閲忛鍙栵級
+     * @param passwordOverride 鍙ｄ护锛堝鏋滄彁渚涗笖鍖归厤锛屽垯鍏佽棰嗗彇鍙ｄ护绾㈠寘锛?
+     * @return 棰嗗彇缁撴灉
      */
     suspend fun getRedPack(
         sender: User,
@@ -140,31 +140,31 @@ object RedPackManager {
         val number = redPack.number
         val type = redPack.type
 
-        // 口令红包校验
+        // 鍙ｄ护绾㈠寘鏍￠獙
         if (type == RedPackKind.PASSWORD) {
             if (passwordOverride == null || passwordOverride != redPack.password) {
-                return GrabResult(false, message = "这是口令红包，需要正确的口令才能领取！")
+                return GrabResult(false, message = "这是口令红包，需要正确的口令才能领取。")
             }
         }
 
         val receivers = redPack.receiverList
         if (receivers.isNotEmpty() && receivers.contains(sender.id)) {
-            val msg = "你已经领取过该红包了！"
+            val msg = "你已经领取过该红包了。"
             if (!skipMessage && message != null) subject.sendMessage(MessageUtil.formatMessageChain(message, msg))
             return GrabResult(false, message = msg)
         }
 
         if (receivers.size >= number) {
-            val msg = "你领取了已经领完的红包！"
+            val msg = "浣犻鍙栦簡宸茬粡棰嗗畬鐨勭孩鍖咃紒"
             if (!skipMessage && message != null) subject.sendMessage(MessageUtil.formatMessageChain(message, msg))
             return GrabResult(false, message = msg)
         }
 
-        // 领取措施
+        // 棰嗗彇鎺柦
         val remainingRandomPacks = redPack.randomPackList.toMutableList()
         val perMoney: Double = if (redPack.isRandomAllocation) {
             if (remainingRandomPacks.isEmpty()) {
-                throw RuntimeException("红包已经被领干净了，但仍然在领取!")
+                throw RuntimeException("绾㈠寘宸茬粡琚骞插噣浜嗭紝浣嗕粛鐒跺湪棰嗗彇!")
             }
             val index = RandomUtil.randomInt(0, remainingRandomPacks.size)
             remainingRandomPacks.removeAt(index)
@@ -173,7 +173,7 @@ object RedPackManager {
         }
 
         if (!EconomyUtil.plusMoneyToUser(sender, perMoney)) {
-            val msg = "红包领取失败!"
+            val msg = "绾㈠寘棰嗗彇澶辫触!"
             if (!skipMessage && message != null) subject.sendMessage(MessageUtil.formatMessageChain(message, msg))
             return GrabResult(false, message = msg)
         }
@@ -190,7 +190,7 @@ object RedPackManager {
             subject.sendMessage(
                 MessageUtil.formatMessageChain(
                     message,
-                    "恭喜你领取到了一个红包，你领取了 ${MoneyFormatUtil.format(perMoney)} 枚金币！"
+                    "鎭枩浣犻鍙栧埌浜嗕竴涓孩鍖咃紝浣犻鍙栦簡 ${MoneyFormatUtil.format(perMoney)} 鏋氶噾甯侊紒"
                 )
             )
         }
@@ -203,17 +203,17 @@ object RedPackManager {
                 cn.hutool.core.date.BetweenFormatter.Level.SECOND
             )
             if (!skipMessage) {
-                subject.sendMessage(MessageUtil.formatMessageChain("${savedRedPack.name}已被领完！共计花费${between}!"))
+                subject.sendMessage(MessageUtil.formatMessageChain("${savedRedPack.name}宸茶棰嗗畬锛佸叡璁¤姳璐?{between}!"))
             }
             delete(savedRedPack)
             finished = true
         }
 
-        return GrabResult(true, amount = perMoney, message = "领取成功", finished = finished)
+        return GrabResult(true, amount = perMoney, message = "棰嗗彇鎴愬姛", finished = finished)
     }
 
     /**
-     * 红包过期处理（退还剩余金币）
+     * 绾㈠寘杩囨湡澶勭悊锛堥€€杩樺墿浣欓噾甯侊級
      */
     suspend fun expireRedPack(group: Group, redPack: RedPackDto) {
         val ownerId = redPack.sender
@@ -225,12 +225,12 @@ object RedPackManager {
         if (owner != null) {
             EconomyUtil.plusMoneyToUser(owner, remainingMoney)
         } else {
-            // 群内找不到成员时，按账户直接退回钱包
+            // 缇ゅ唴鎵句笉鍒版垚鍛樻椂锛屾寜璐︽埛鐩存帴閫€鍥為挶鍖?
             val account = EconomyService.account(ownerId.toString(), null)
             EconomyUtil.plusMoneyToWalletForAccount(account, remainingMoney)
         }
         group.sendMessage(
-            MessageUtil.formatMessageChain(ownerId, "你的红包过期啦！退还金币 ${MoneyFormatUtil.format(remainingMoney)} 个！")
+            MessageUtil.formatMessageChain(ownerId, "浣犵殑绾㈠寘杩囨湡鍟︼紒閫€杩橀噾甯?${MoneyFormatUtil.format(remainingMoney)} 涓紒")
         )
     }
 

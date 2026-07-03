@@ -1,20 +1,17 @@
-package cn.chahuyun.economy.proxy
+﻿package cn.chahuyun.economy.data.proxy
 
-import cn.chahuyun.economy.proxy.module.*
+import cn.chahuyun.economy.data.proxy.module.*
 import cn.chahuyun.economy.utils.Log
 
 /**
- * 实体代理器注册表。
- *
- * Phase 1 仅提供统一注册与查询入口，业务层迁移到 DTO/proxy 在后续阶段逐步进行。
- */
+ * 瀹炰綋浠ｇ悊鍣ㄦ敞鍐岃〃銆? *
+ * Phase 1 浠呮彁渚涚粺涓€娉ㄥ唽涓庢煡璇㈠叆鍙ｏ紝涓氬姟灞傝縼绉诲埌 DTO/proxy 鍦ㄥ悗缁樁娈甸€愭杩涜銆? */
 object EntityProxyRegistry {
 
     private val proxies = linkedMapOf<String, EntityProxy<*>>()
 
     /**
-     * 初始化所有已经具备 V1 适配能力的代理器。
-     */
+     * 鍒濆鍖栨墍鏈夊凡缁忓叿澶?V1 閫傞厤鑳藉姏鐨勪唬鐞嗗櫒銆?     */
     fun init() {
         proxies.clear()
         register(UserEntityProxy())
@@ -38,7 +35,7 @@ object EntityProxyRegistry {
         DataSourceStrategyImpl.retainModules(proxies.keys)
         DataSourceStrategyImpl.persistToConfig()
 
-        Log.info("实体代理器注册完成: ${proxies.keys.joinToString()}")
+        Log.info("瀹炰綋浠ｇ悊鍣ㄦ敞鍐屽畬鎴? ${proxies.keys.joinToString()}")
     }
 
     fun register(proxy: EntityProxy<*>) {
@@ -51,7 +48,7 @@ object EntityProxyRegistry {
     }
 
     fun require(module: String): EntityProxy<*> {
-        return proxies[module] ?: error("实体代理器未注册: $module")
+        return proxies[module] ?: error("瀹炰綋浠ｇ悊鍣ㄦ湭娉ㄥ唽: $module")
     }
 
     fun modules(): Set<String> = proxies.keys
@@ -60,21 +57,21 @@ object EntityProxyRegistry {
         return proxies.mapValues { it.value.getCurrentVersion() }
     }
 
-    fun migrateAllTo(targetVersion: DataVersion): Map<String, MigrationResult> {
+    fun migrateAllTo(targetVersion: DataVersion, switchAfterSuccess: Boolean = false): Map<String, MigrationResult> {
         val results = proxies.mapValues { (module, proxy) ->
-            migrateProxy(module, proxy, targetVersion)
+            migrateProxy(module, proxy, targetVersion, switchAfterSuccess)
         }
         DataSourceStrategyImpl.persistToConfig()
         return results
     }
 
-    fun migrateModuleTo(module: String, targetVersion: DataVersion): MigrationResult {
+    fun migrateModuleTo(module: String, targetVersion: DataVersion, switchAfterSuccess: Boolean = false): MigrationResult {
         val proxy = proxies[module] ?: return MigrationResult.failure(
             migrated = 0,
             failed = 1,
-            errors = listOf("Entity proxy module is not registered: $module")
+            errors = listOf("瀹炰綋浠ｇ悊妯″潡鏈敞鍐? $module")
         )
-        val result = migrateProxy(module, proxy, targetVersion)
+        val result = migrateProxy(module, proxy, targetVersion, switchAfterSuccess)
         DataSourceStrategyImpl.persistToConfig()
         return result
     }
@@ -88,17 +85,23 @@ object EntityProxyRegistry {
 
     fun switchAll(version: DataVersion) {
         proxies.keys.forEach { module ->
-            setModuleVersion(module, version)
+            setModuleVersion(module, version, logChange = false)
         }
         DataSourceStrategyImpl.persistToConfig()
+        Log.info("瀹炰綋鏁版嵁婧愮増鏈凡鍒囨崲锛氬叏閮?${proxies.size} 涓ā鍧?-> $version")
     }
 
-    private fun migrateProxy(module: String, proxy: EntityProxy<*>, targetVersion: DataVersion): MigrationResult {
-        Log.info("Start migrating entity module[$module] to $targetVersion")
+    private fun migrateProxy(
+        module: String,
+        proxy: EntityProxy<*>,
+        targetVersion: DataVersion,
+        switchAfterSuccess: Boolean,
+    ): MigrationResult {
+        Log.info("寮€濮嬭縼绉诲疄浣撴ā鍧梉$module]鍒?$targetVersion")
         return runCatching { proxy.migrateTo(targetVersion) }
             .onSuccess { result ->
-                if (result.success) {
-                    setModuleVersion(module, targetVersion)
+                if (result.success && switchAfterSuccess) {
+                    setModuleVersion(module, targetVersion, logChange = false)
                 }
             }
             .getOrElse { e ->
@@ -110,11 +113,11 @@ object EntityProxyRegistry {
             }
     }
 
-    private fun setModuleVersion(module: String, version: DataVersion) {
+    private fun setModuleVersion(module: String, version: DataVersion, logChange: Boolean = true) {
         if (version == DataVersion.V1) {
-            DataSourceStrategyImpl.clearVersion(module)
+            DataSourceStrategyImpl.clearVersion(module, logChange)
         } else {
-            DataSourceStrategyImpl.setVersion(module, version)
+            DataSourceStrategyImpl.setVersion(module, version, logChange)
         }
     }
 }

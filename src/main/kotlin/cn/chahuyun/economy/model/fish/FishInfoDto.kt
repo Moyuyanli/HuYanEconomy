@@ -1,8 +1,8 @@
-package cn.chahuyun.economy.model.fish
+﻿package cn.chahuyun.economy.model.fish
 
 import cn.chahuyun.economy.HuYanEconomy
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.user.UserInfoDto
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 import kotlinx.serialization.Serializable
@@ -12,21 +12,21 @@ import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.SingleMessage
 
 /**
- * 用户钓鱼信息DTO
+ * 鐢ㄦ埛閽撻奔淇℃伅DTO
  */
 @Serializable
 data class FishInfoDto(
-    /** 记录ID（用户ID） */
+    /** 璁板綍ID锛堢敤鎴稩D锛?*/
     var id: Long = 0,
-    /** QQ号 */
+    /** QQ鍙?*/
     var qq: Long = 0,
-    /** 是否拥有鱼竿 */
+    /** 鏄惁鎷ユ湁楸肩 */
     var isFishRod: Boolean = false,
-    /** 是否正在钓鱼 */
+    /** 鏄惁姝ｅ湪閽撻奔 */
     var status: Boolean = false,
-    /** 鱼竿等级 */
+    /** 楸肩绛夌骇 */
     var rodLevel: Int = 0,
-    /** 默认鱼塘编码 */
+    /** 榛樿楸煎缂栫爜 */
     var defaultFishPond: String = ""
 ) {
     fun getFishPond(group: Group): FishPondDto {
@@ -37,8 +37,8 @@ data class FishInfoDto(
                     code = code,
                     admin = HuYanEconomy.config.owner,
                     pondType = 1,
-                    name = "${group.name}鱼塘",
-                    description = "一个天然形成的鱼塘，无人管理，鱼情良好，深受钓鱼佬喜爱！",
+                    name = "${group.name}楸煎",
+                    description = "一个天然形成的鱼塘，鱼情良好。",
                     pondLevel = 6
                 )
             )
@@ -73,7 +73,7 @@ data class FishInfoDto(
                 upMoney = 150000
                 isMoney(user, moneyByUser, upMoney)
             }
-            else -> PlainText("你的鱼竿已经满级拉！")
+            else -> PlainText("浣犵殑楸肩宸茬粡婊＄骇鎷夛紒")
         }
     }
 
@@ -98,13 +98,13 @@ data class FishInfoDto(
 
     private fun isMoney(user: User, userMoney: Double, upMoney: Int): SingleMessage {
         if (userMoney - upMoney < 0) {
-            return PlainText("你的金币不够${MoneyFormatUtil.format(upMoney.toDouble())}啦！")
+            return PlainText("浣犵殑閲戝竵涓嶅${MoneyFormatUtil.format(upMoney.toDouble())}鍟︼紒")
         }
         if (EconomyUtil.minusMoneyToUser(user, upMoney.toDouble())) {
             upFishRod()
-            return PlainText("升级成功,花费${MoneyFormatUtil.format(upMoney.toDouble())}金币!你的鱼竿更强了!\n${rodLevel - 1}->${rodLevel}")
+            return PlainText("鍗囩骇鎴愬姛,鑺辫垂${MoneyFormatUtil.format(upMoney.toDouble())}閲戝竵!浣犵殑楸肩鏇村己浜?\n${rodLevel - 1}->${rodLevel}")
         }
-        return PlainText("升级失败!")
+        return PlainText("鍗囩骇澶辫触!")
     }
 
     private val fishInfoProxy

@@ -22,10 +22,10 @@ object FundingUsecase {
             return
         }
 
-        if (user.funding != null) {
-            event.sender.sendMessage("该用户已绑定")
-            return
-        }
+//        if (user.funding != null) {
+//            event.sender.sendMessage("该用户已绑定")
+//            return
+//        }
 
         val uuid = UUID.randomUUID().toString()
         user.funding = uuid
@@ -48,10 +48,7 @@ object FundingUsecase {
 
         val amount = content.split(" ")[3].toInt()
 
-        val userId = user.id ?: run {
-            event.sender.sendMessage("用户信息异常：缺少账户id")
-            return
-        }
+        val userId = user.id
         val account: EconomyAccount = EconomyService.account(userId, null)
 
         if (EconomyUtil.plusMoneyToBankForAccount(account, -amount.toDouble())) {

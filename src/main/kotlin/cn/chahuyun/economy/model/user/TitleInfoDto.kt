@@ -1,6 +1,5 @@
 package cn.chahuyun.economy.model.user
 
-import cn.chahuyun.economy.utils.ImageUtil
 import kotlinx.serialization.Serializable
 import java.awt.Color
 
@@ -33,8 +32,18 @@ data class TitleInfoDto(
     val dueTime: Long = 0
 ) {
     val startColor: Color
-        get() = ImageUtil.hexColor(sColor.ifBlank { "8a8886" })
+        get() = parseColor(sColor.ifBlank { "8a8886" })
 
     val endColor: Color
-        get() = ImageUtil.hexColor(eColor.ifBlank { sColor.ifBlank { "8a8886" } })
+        get() = parseColor(eColor.ifBlank { sColor.ifBlank { "8a8886" } })
+
+    private fun parseColor(color: String): Color {
+        val hex = if (color.startsWith("#")) color.substring(1) else color
+        require(hex.length == 6) { "Invalid title color: $color" }
+        return Color(
+            hex.substring(0, 2).toInt(16),
+            hex.substring(2, 4).toInt(16),
+            hex.substring(4, 6).toInt(16)
+        )
+    }
 }

@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.proxy
+﻿package cn.chahuyun.economy.data.proxy
 
 /**
- * 迁移结果
+ * 杩佺Щ缁撴灉
  */
 data class MigrationResult(
     val success: Boolean,

@@ -1,14 +1,14 @@
-package cn.chahuyun.economy.proxy.module
+﻿package cn.chahuyun.economy.data.proxy.module
 
 import cn.chahuyun.economy.converter.v1.RaffleBatchV1Converter
 import cn.chahuyun.economy.converter.v2.RaffleBatchV2Converter
+import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
+import cn.chahuyun.economy.data.proxy.DataVersion
+import cn.chahuyun.economy.data.proxy.EntityProxy
+import cn.chahuyun.economy.data.proxy.MigrationResult
 import cn.chahuyun.economy.entity.raffle.RaffleBatch
 import cn.chahuyun.economy.entity.v2.raffle.RaffleBatchEntity
 import cn.chahuyun.economy.model.raffle.RaffleBatchDto
-import cn.chahuyun.economy.proxy.DataSourceStrategyImpl
-import cn.chahuyun.economy.proxy.DataVersion
-import cn.chahuyun.economy.proxy.EntityProxy
-import cn.chahuyun.economy.proxy.MigrationResult
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 

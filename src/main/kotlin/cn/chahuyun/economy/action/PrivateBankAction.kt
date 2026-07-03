@@ -30,7 +30,7 @@ class PrivateBankAction {
         PrivateBankUsecase.pbDesc(event)
     }
 
-    @MessageAuthorize(text = ["银行利率[变更|修改] \\S+"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(text = ["银行利率(变更|修改) \\S+"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbRate(event: MessageEvent) {
         PrivateBankUsecase.pbRate(event)
     }

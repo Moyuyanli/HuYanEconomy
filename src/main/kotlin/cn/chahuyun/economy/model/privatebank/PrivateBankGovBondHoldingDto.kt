@@ -1,26 +1,26 @@
-﻿package cn.chahuyun.economy.model.privatebank
+package cn.chahuyun.economy.model.privatebank
 
 import kotlinx.serialization.Serializable
 
 /**
- * 鍥藉€烘寔浠揇TO
+ * 国债持仓DTO
  */
 @Serializable
 data class PrivateBankGovBondHoldingDto(
-    /** 璁板綍ID */
+    /** 记录ID */
     var id: Int = 0,
-    /** 閾惰缂栫爜 */
+    /** 银行编码 */
     var bankCode: String = "",
-    /** 鍙戣ID */
+    /** 发行ID */
     var issueId: Int = 0,
-    /** 鏈噾 */
+    /** 本金 */
     var principal: Double = 0.0,
-    /** 鏀剁泭鍊嶇巼 */
+    /** 收益倍率 */
     var rateMultiplier: Double = 2.0,
-    /** 閿佸畾澶╂暟 */
+    /** 锁定天数 */
     var lockDays: Int = 3,
-    /** 涔板叆鏃堕棿 */
+    /** 买入时间 */
     var boughtAt: Long = 0,
-    /** 璧庡洖鏃堕棿 */
+    /** 赎回时间 */
     var redeemedAt: Long = 0
 )

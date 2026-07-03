@@ -1,14 +1,14 @@
-package cn.chahuyun.economy.proxy.module
+﻿package cn.chahuyun.economy.data.proxy.module
 
 import cn.chahuyun.economy.converter.v1.TitleInfoV1Converter
 import cn.chahuyun.economy.converter.v2.TitleInfoV2Converter
+import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
+import cn.chahuyun.economy.data.proxy.DataVersion
+import cn.chahuyun.economy.data.proxy.EntityProxy
+import cn.chahuyun.economy.data.proxy.MigrationResult
 import cn.chahuyun.economy.entity.TitleInfo
 import cn.chahuyun.economy.entity.v2.title.TitleInfoEntity
 import cn.chahuyun.economy.model.user.TitleInfoDto
-import cn.chahuyun.economy.proxy.DataSourceStrategyImpl
-import cn.chahuyun.economy.proxy.DataVersion
-import cn.chahuyun.economy.proxy.EntityProxy
-import cn.chahuyun.economy.proxy.MigrationResult
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 

@@ -1,12 +1,12 @@
-package cn.chahuyun.economy.proxy.module
+﻿package cn.chahuyun.economy.data.proxy.module
 
 import cn.chahuyun.economy.converter.v1.UserInfoV1Converter
 import cn.chahuyun.economy.converter.v2.UserInfoV2Converter
+import cn.chahuyun.economy.data.proxy.*
 import cn.chahuyun.economy.entity.UserInfo
 import cn.chahuyun.economy.entity.v2.user.UserEntity
 import cn.chahuyun.economy.model.user.UserBackpackDto
 import cn.chahuyun.economy.model.user.UserInfoDto
-import cn.chahuyun.economy.proxy.*
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 

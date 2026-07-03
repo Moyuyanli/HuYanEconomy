@@ -1,34 +1,34 @@
-﻿package cn.chahuyun.economy.model.privatebank
+package cn.chahuyun.economy.model.privatebank
 
 import kotlinx.serialization.Serializable
 
 /**
- * 鐙愮嫺鍊哄埜DTO
+ * 狐狸债券DTO
  */
 @Serializable
 data class PrivateBankFoxBondDto(
-    /** 璁板綍ID */
+    /** 记录ID */
     var id: Int = 0,
-    /** 鍊哄埜缂栫爜锛堝敮涓€锛?*/
+    /** 债券编码（唯一） */
     var code: String = "",
-    /** 闈㈠€?*/
+    /** 面额 */
     var faceValue: Double = 0.0,
-    /** 鍩虹鍒╃巼 */
+    /** 基础利率 */
     var baseRate: Double = 0.0,
-    /** 鏈熼檺澶╂暟 */
+    /** 期限天数 */
     var termDays: Int = 14,
-    /** 绔炴爣寮€濮嬫椂闂?*/
+    /** 竞标开始时间 */
     var bidStartAt: Long = 0,
-    /** 绔炴爣缁撴潫鏃堕棿 */
+    /** 竞标结束时间 */
     var bidEndAt: Long = 0,
-    /** 鐘舵€侊紙BIDDING/COMPLETED/CANCELLED锛?*/
+    /** 状态（BIDDING/HOLDING/FINISHED/CANCELLED） */
     var status: String = "BIDDING",
-    /** 涓爣閾惰缂栫爜 */
+    /** 中标银行编码 */
     var winnerBankCode: String = "",
-    /** 涓爣鍒╃巼 */
+    /** 中标利率 */
     var winnerBidRate: Double = 0.0,
-    /** 涓爣婧环 */
+    /** 中标溢价 */
     var winnerPremium: Double = 0.0,
-    /** 鍒涘缓鏃堕棿 */
+    /** 创建时间 */
     var createdAt: Long = 0
 )

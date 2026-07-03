@@ -1,18 +1,17 @@
-package cn.chahuyun.economy.proxy
+﻿package cn.chahuyun.economy.data.proxy
 
-import cn.chahuyun.economy.config.EconomyPluginConfig
-import cn.chahuyun.economy.proxy.DataSourceStrategyImpl.setVersion
 import cn.chahuyun.economy.utils.Log
 
 /**
- * 数据源策略实现（单例）
+ * Data source version strategy.
  *
- * 通过配置文件控制各模块的数据源版本。
- * 默认所有模块使用V1，可通过 [setVersion] 动态切换。
+ * The strategy belongs to economy-data, so configuration persistence is injected
+ * by economy-main instead of reading Mirai config directly.
  */
 object DataSourceStrategyImpl : DataSourceStrategy {
 
     private val moduleVersions = mutableMapOf<String, DataVersion>()
+    private var persistVersions: ((MutableMap<String, String>) -> Unit)? = null
 
     override fun getVersion(module: String): DataVersion {
         return moduleVersions[module] ?: DataVersion.V1
@@ -27,42 +26,19 @@ object DataSourceStrategyImpl : DataSourceStrategy {
         return listOf(primary, DataVersion.V1).distinct()
     }
 
-    /**
-     * 设置模块的数据源版本
-     */
-    fun setVersion(module: String, version: DataVersion) {
-        val old = moduleVersions[module]
-        moduleVersions[module] = version
-        Log.info("模块[$module]数据源版本: ${old ?: "V1(默认)"} -> $version")
+    fun configurePersistence(
+        initialVersions: Map<String, String>,
+        persistVersions: (MutableMap<String, String>) -> Unit,
+    ) {
+        this.persistVersions = persistVersions
+        loadVersions(initialVersions)
     }
 
-    /**
-     * 批量设置模块版本
-     */
-    fun setVersions(versions: Map<String, DataVersion>) {
-        versions.forEach { (module, version) ->
-            setVersion(module, version)
-        }
-    }
-
-    fun clearVersion(module: String) {
-        val old = moduleVersions.remove(module)
-        Log.info("妯″潡[$module]鏁版嵁婧愮増鏈? ${old ?: "V1(榛樿)"} -> V1(榛樿)")
-    }
-
-    fun retainModules(modules: Set<String>) {
-        val unknownModules = moduleVersions.keys - modules
-        unknownModules.forEach { module ->
-            Log.warning("Remove unknown entity data version config: $module=${moduleVersions[module]}")
-            moduleVersions.remove(module)
-        }
-    }
-
-    fun loadFromConfig() {
-        val configuredVersions = EconomyPluginConfig.entityDataVersions.mapNotNull { (module, versionName) ->
+    fun loadVersions(configuredVersions: Map<String, String>) {
+        val parsedVersions = configuredVersions.mapNotNull { (module, versionName) ->
             val version = runCatching { DataVersion.valueOf(versionName.uppercase()) }.getOrNull()
             if (version == null) {
-                Log.warning("Ignore invalid entity data version config: $module=$versionName")
+                Log.warning("蹇界暐鏃犳晥瀹炰綋鏁版嵁鐗堟湰閰嶇疆: $module=$versionName")
                 null
             } else {
                 module to version
@@ -70,18 +46,46 @@ object DataSourceStrategyImpl : DataSourceStrategy {
         }.toMap()
 
         moduleVersions.clear()
-        setVersions(configuredVersions)
+        moduleVersions.putAll(parsedVersions)
+    }
+
+    fun setVersion(module: String, version: DataVersion, logChange: Boolean = true) {
+        val old = moduleVersions[module]
+        moduleVersions[module] = version
+        if (logChange) {
+            Log.info("妯″潡[$module]鏁版嵁婧愮増鏈?${old ?: "V1(榛樿)"} -> $version")
+        }
+    }
+
+    fun setVersions(versions: Map<String, DataVersion>) {
+        moduleVersions.putAll(versions)
+    }
+
+    fun clearVersion(module: String, logChange: Boolean = true) {
+        val old = moduleVersions.remove(module)
+        if (logChange) {
+            Log.info("妯″潡[$module]鏁版嵁婧愮増鏈?${old ?: "V1(榛樿)"} -> V1(榛樿)")
+        }
+    }
+
+    fun retainModules(modules: Set<String>) {
+        val unknownModules = moduleVersions.keys - modules
+        unknownModules.forEach { module ->
+            Log.warning("绉婚櫎鏈煡瀹炰綋鏁版嵁鐗堟湰閰嶇疆: $module=${moduleVersions[module]}")
+            moduleVersions.remove(module)
+        }
     }
 
     fun persistToConfig() {
-        EconomyPluginConfig.entityDataVersions = moduleVersions
+        persistVersions?.invoke(exportVersions())
+    }
+
+    fun exportVersions(): MutableMap<String, String> {
+        return moduleVersions
             .filterValues { it != DataVersion.V1 }
             .mapValues { it.value.name }
             .toMutableMap()
     }
 
-    /**
-     * 获取所有模块的版本配置
-     */
     fun getAllVersions(): Map<String, DataVersion> = moduleVersions.toMap()
 }

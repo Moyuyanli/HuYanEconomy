@@ -1,27 +1,27 @@
-package cn.chahuyun.economy.manager
+﻿package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.constant.UserLocation
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.model.user.UserStatusDto
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import java.util.*
 
 /**
- * 用户状态对外 API（从 UserStatusAction 迁移）。
+ * 鐢ㄦ埛鐘舵€佸澶?API锛堜粠 UserStatusAction 杩佺Щ锛夈€?
  */
 object UserStatusManager {
 
     /**
-     * 通过代理器获取用户状态DTO
+     * 閫氳繃浠ｇ悊鍣ㄨ幏鍙栫敤鎴风姸鎬丏TO
      */
     fun getUserStatusDto(id: Long): UserStatusDto? {
         return statusProxy.findById(id)
     }
 
     /**
-     * 通过代理器保存用户状态
+     * 閫氳繃浠ｇ悊鍣ㄤ繚瀛樼敤鎴风姸鎬?
      */
     fun saveUserStatusDto(dto: UserStatusDto): UserStatusDto {
         return statusProxy.save(dto)
@@ -120,6 +120,6 @@ object UserStatusManager {
     }
 
     private val statusProxy
-        get() = EntityProxyRegistry.get<UserStatusDto>("user_status") ?: error("用户状态代理器未初始化")
+        get() = EntityProxyRegistry.get<UserStatusDto>("user_status") ?: error("鐢ㄦ埛鐘舵€佷唬鐞嗗櫒鏈垵濮嬪寲")
 
 }

@@ -1,13 +1,13 @@
-package cn.chahuyun.economy.privatebank
+﻿package cn.chahuyun.economy.privatebank
 
 import cn.chahuyun.economy.converter.v1.*
 import cn.chahuyun.economy.converter.v2.*
+import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
+import cn.chahuyun.economy.data.proxy.DataVersion
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.entity.privatebank.*
 import cn.chahuyun.economy.entity.v2.privatebank.*
 import cn.chahuyun.economy.model.privatebank.*
-import cn.chahuyun.economy.proxy.DataSourceStrategyImpl
-import cn.chahuyun.economy.proxy.DataVersion
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.hibernateplus.HibernateFactory
 
 object PrivateBankRepository {
@@ -166,6 +166,13 @@ object PrivateBankRepository {
             loanConverter.toDtoList(HibernateFactory.selectList(PrivateBankLoan::class.java, "borrowerQq", borrowerQq))
         }
 
+    fun listLoansByBank(bankCode: String): List<PrivateBankLoanDto> =
+        if (isV2) {
+            loanV2Converter.toDtoList(HibernateFactory.selectList(PrivateBankLoanEntity::class.java, "bankCode", bankCode))
+        } else {
+            loanConverter.toDtoList(HibernateFactory.selectList(PrivateBankLoan::class.java, "bankCode", bankCode))
+        }
+
     fun listUnrepaidLoans(): List<PrivateBankLoanDto> {
         return if (isV2) {
             loanV2Converter.toDtoList(HibernateFactory.selectList(PrivateBankLoanEntity::class.java).filter { it.repaidAt == 0L })
@@ -189,7 +196,7 @@ object PrivateBankRepository {
             loanConverter.toDto(HibernateFactory.merge(loanConverter.toEntity(loan)))
         }
 
-    // ===== 狐卷 =====
+    // ===== 鐙愬嵎 =====
 
     fun findFoxBondByCode(code: String): PrivateBankFoxBondDto? =
         if (isV2) {

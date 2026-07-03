@@ -1,51 +1,92 @@
 package cn.chahuyun.economy.utils
 
-import cn.chahuyun.economy.HuYanEconomy
-import net.mamoe.mirai.utils.MiraiLogger
-
 /**
- * 日志
- * 使用此类日志做统一处理
+ * Common logger facade.
+ *
+ * Modules outside economy-main must not know about the Mirai plugin instance.
+ * The plugin entry wires the real Mirai logger during startup.
  */
 object Log {
-    private val log: MiraiLogger = HuYanEconomy.logger
+    private var sink: Sink = ConsoleSink
 
     @JvmField
     var name: String = "壶言经济--"
 
+    interface Sink {
+        fun info(message: String)
+        fun warning(message: String)
+        fun error(message: String)
+        fun error(message: String, throwable: Throwable)
+        fun debug(message: String)
+    }
+
+    private object ConsoleSink : Sink {
+        override fun info(message: String) = println(message)
+        override fun warning(message: String) = println(message)
+        override fun error(message: String) = System.err.println(message)
+        override fun error(message: String, throwable: Throwable) {
+            System.err.println(message)
+            throwable.printStackTrace()
+        }
+
+        override fun debug(message: String) = println(message)
+    }
+
+    @JvmStatic
+    fun configure(sink: Sink) {
+        this.sink = sink
+    }
+
+    @JvmStatic
+    fun configure(
+        info: (String) -> Unit,
+        warning: (String) -> Unit,
+        error: (String) -> Unit,
+        errorWithThrowable: (String, Throwable) -> Unit,
+        debug: (String) -> Unit,
+    ) {
+        sink = object : Sink {
+            override fun info(message: String) = info(message)
+            override fun warning(message: String) = warning(message)
+            override fun error(message: String) = error(message)
+            override fun error(message: String, throwable: Throwable) = errorWithThrowable(message, throwable)
+            override fun debug(message: String) = debug(message)
+        }
+    }
+
     @JvmStatic
     fun info(msg: String) {
-        log.info(name + msg)
+        sink.info(name + msg)
     }
 
     @JvmStatic
     fun warning(msg: String) {
-        log.warning(name + msg)
+        sink.warning(name + msg)
     }
 
     @JvmStatic
     fun error(msg: String) {
-        log.error(name + msg)
+        sink.error(name + msg)
     }
 
     @JvmStatic
     fun error(e: Throwable) {
-        log.error(name + (e.message ?: "unknown error"), e)
+        sink.error(name + (e.message ?: "unknown error"), e)
     }
 
     @JvmStatic
     fun error(msg: String, e: Throwable) {
-        log.error(name + msg)
-        log.error(name + (e.message ?: "unknown error"), e)
+        sink.error(name + msg)
+        sink.error(name + (e.message ?: "unknown error"), e)
     }
 
     @JvmStatic
     fun debug(msg: String) {
-        log.debug(name + msg)
+        sink.debug(name + msg)
     }
 
     @JvmStatic
     fun debug(exception: Exception) {
-        log.debug(name + exception)
+        sink.debug(name + exception)
     }
 }

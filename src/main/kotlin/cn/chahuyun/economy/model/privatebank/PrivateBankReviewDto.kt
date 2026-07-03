@@ -1,22 +1,22 @@
-﻿package cn.chahuyun.economy.model.privatebank
+package cn.chahuyun.economy.model.privatebank
 
 import kotlinx.serialization.Serializable
 
 /**
- * 绉佷汉閾惰璇勪环DTO
+ * 私人银行评价DTO
  */
 @Serializable
 data class PrivateBankReviewDto(
-    /** 璁板綍ID */
+    /** 记录ID */
     var id: Int = 0,
-    /** 閾惰缂栫爜 */
+    /** 银行编码 */
     var bankCode: String = "",
-    /** 璇勪环浜篞Q */
+    /** 评价人QQ */
     var userQq: Long = 0,
-    /** 璇勫垎锛?-5锛?*/
+    /** 评分（1-5） */
     var rating: Int = 5,
-    /** 璇勪环鍐呭 */
+    /** 评价内容 */
     var content: String = "",
-    /** 鍒涘缓鏃堕棿 */
+    /** 创建时间 */
     var createdAt: Long = 0
 )

@@ -9,118 +9,76 @@ import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.ForwardMessageBuilder
-import net.mamoe.mirai.message.data.MessageChainBuilder
 import net.mamoe.mirai.message.data.PlainText
 import xyz.cssxsh.mirai.economy.service.EconomyAccount
-import kotlin.math.floor
 
 /**
  * 银行相关用例（主银行 + 默认私银路由）。
  */
 object BankUsecase {
 
+    private enum class BankRoute {
+        DEFAULT,
+        MAIN,
+        PRIVATE
+    }
+
+    private data class BankTransferRequest(
+        val amount: Double?,
+        val route: BankRoute,
+        val bankKey: String? = null
+    )
+
     suspend fun deposit(event: MessageEvent) {
         val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
         val subject: Contact = event.subject
-
-        val message = event.message
-        val singleMessages: MessageChainBuilder = MessageUtil.quoteReply(message)
-        val code = message.serializeToMiraiCode()
-
-        val money = code.split(" ")[1].toInt()
-
-        // 若用户设置了默认私银，则无参“存款”优先存入私银
-        val defaultPb = userInfo.defaultPrivateBankCode?.trim().takeIf { !it.isNullOrBlank() }
-        if (!defaultPb.isNullOrBlank()) {
-            val (_, msg) = PrivateBankService.deposit(user, defaultPb, money.toDouble())
-            subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
-            return
-        }
-        val moneyByUser = EconomyUtil.getMoneyByUser(user)
-        if (moneyByUser - money < 0) {
-            singleMessages.append("你的金币不够${MoneyFormatUtil.format(money.toDouble())}了")
-            subject.sendMessage(singleMessages.build())
+        val request = parseBankTransfer(event.message.contentToString(), "存款", "deposit")
+        if (request == null) {
+            subject.sendMessage(
+                MessageUtil.formatMessageChain(
+                    event.message,
+                    "用法：存款! / 存款!! / 存款 <金额> [!/银行]"
+                )
+            )
             return
         }
 
-        if (EconomyUtil.turnUserToBank(user, money.toDouble())) {
-            singleMessages.append("存款成功!")
-            subject.sendMessage(singleMessages.build())
-        } else {
-            singleMessages.append("存款失败!")
-            subject.sendMessage(singleMessages.build())
-            Log.error("银行管理:存款失败!")
-        }
-    }
-
-    suspend fun mainBankDeposit(event: MessageEvent) {
-        val userInfo= UserCoreManager.getUserInfo(event.sender)
-        val user = userInfo.user
-        val subject: Contact = event.subject
-        val message = event.message
-        val singleMessages: MessageChainBuilder = MessageUtil.quoteReply(message)
-        val code = message.serializeToMiraiCode()
-
-        val money = code.split(" ")[1].toInt()
-        val moneyByUser = EconomyUtil.getMoneyByUser(user)
-        if (moneyByUser - money < 0) {
-            singleMessages.append("你的金币不够${MoneyFormatUtil.format(money.toDouble())}了")
-            subject.sendMessage(singleMessages.build())
+        val amount = request.amount ?: EconomyUtil.getMoneyByUser(user)
+        if (amount <= 0) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你的钱包没有可存入的金币"))
             return
         }
-
-        if (EconomyUtil.turnUserToBank(user, money.toDouble())) {
-            singleMessages.append("存款成功!")
-            subject.sendMessage(singleMessages.build())
-        } else {
-            singleMessages.append("存款失败!")
-            subject.sendMessage(singleMessages.build())
-            Log.error("银行管理:存款失败!")
-        }
-    }
-
-    suspend fun privateBankDeposit(event: MessageEvent) {
-        val userInfo= UserCoreManager.getUserInfo(event.sender)
-        val user = userInfo.user
-        val subject: Contact = event.subject
-
-        val parts = event.message.contentToString().trim().split(" ")
-        val amount = parts.getOrNull(1)?.toDoubleOrNull() ?: 0.0
-        val bankKey = parts.getOrNull(2) ?: ""
-        val (ok, msg) = PrivateBankService.deposit(user, bankKey, amount)
-        subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
-        if (ok) {
-            val bank = PrivateBankService.getBank(bankKey)
-            if (bank != null) {
-                userInfo.defaultPrivateBankCode = bank.code
-                UserCoreManager.saveUserInfo(userInfo)
-            }
-        }
-    }
-
-    suspend fun depositAllInteger(event: MessageEvent) {
-        val user = event.sender
-        val subject: Contact = event.subject
-
-        val message = event.message
-        val singleMessages: MessageChainBuilder = MessageUtil.quoteReply(message)
 
         val wallet = EconomyUtil.getMoneyByUser(user)
-        val amount = floor(wallet).toInt()
-        if (amount <= 0) {
-            singleMessages.append("你的钱包没有可存入的整数金币")
-            subject.sendMessage(singleMessages.build())
+        if (wallet + 1e-6 < amount) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你的金币不够 ${MoneyFormatUtil.format(amount)}"))
             return
         }
 
-        if (EconomyUtil.turnUserToBank(user, amount.toDouble())) {
-            singleMessages.append("已一键存入 ${amount} 金币")
-            subject.sendMessage(singleMessages.build())
-        } else {
-            singleMessages.append("一键存款失败!")
-            subject.sendMessage(singleMessages.build())
-            Log.error("银行管理:一键存款失败")
+        when (request.route) {
+            BankRoute.MAIN -> {
+                if (EconomyUtil.turnUserToBank(user, amount)) {
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.message, "存款成功：${MoneyFormatUtil.format(amount)} 已存入主银行"))
+                } else {
+                    subject.sendMessage(MessageUtil.formatMessageChain(event.message, "存款失败!"))
+                    Log.error("银行管理:主银行存款失败")
+                }
+            }
+            BankRoute.PRIVATE -> depositPrivateBank(event, userInfo, request.bankKey.orEmpty(), amount)
+            BankRoute.DEFAULT -> {
+                val defaultPb = userInfo.defaultPrivateBankCode.trim().takeIf { it.isNotBlank() }
+                if (defaultPb.isNullOrBlank()) {
+                    if (EconomyUtil.turnUserToBank(user, amount)) {
+                        subject.sendMessage(MessageUtil.formatMessageChain(event.message, "存款成功：${MoneyFormatUtil.format(amount)} 已存入主银行"))
+                    } else {
+                        subject.sendMessage(MessageUtil.formatMessageChain(event.message, "存款失败!"))
+                        Log.error("银行管理:默认主银行存款失败")
+                    }
+                } else {
+                    depositPrivateBank(event, userInfo, defaultPb, amount)
+                }
+            }
         }
     }
 
@@ -128,72 +86,34 @@ object BankUsecase {
         val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
         val subject: Contact = event.subject
-
-        val message = event.message
-        val singleMessages: MessageChainBuilder = MessageUtil.quoteReply(message)
-        val code = message.serializeToMiraiCode()
-
-        val money = code.split(" ")[1].toInt()
-
-        // 若用户设置了默认私银，则无参“取款”优先从私银取出
-        val defaultPb = userInfo.defaultPrivateBankCode?.trim().takeIf { !it.isNullOrBlank() }
-        if (!defaultPb.isNullOrBlank()) {
-            val (_, msg) = PrivateBankService.withdraw(user, defaultPb, money.toDouble())
-            subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
-            return
-        }
-        val moneyByBank = EconomyUtil.getMoneyByBank(user)
-        if (moneyByBank - money < 0) {
-            singleMessages.append("你的银行余额不够${MoneyFormatUtil.format(money.toDouble())}枚金币了")
-            subject.sendMessage(singleMessages.build())
+        val request = parseBankTransfer(event.message.contentToString(), "取款", "withdraw")
+        if (request == null) {
+            subject.sendMessage(
+                MessageUtil.formatMessageChain(
+                    event.message,
+                    "用法：取款! / 取款!! / 取款 <金额> [!/银行]"
+                )
+            )
             return
         }
 
-        if (EconomyUtil.turnBankToUser(user, money.toDouble())) {
-            singleMessages.append("取款成功!")
-            subject.sendMessage(singleMessages.build())
-        } else {
-            singleMessages.append("取款失败!")
-            subject.sendMessage(singleMessages.build())
-            Log.error("银行管理:取款失败!")
+        when (request.route) {
+            BankRoute.MAIN -> withdrawMainBank(event, request.amount ?: EconomyUtil.getMoneyByBank(user))
+            BankRoute.PRIVATE -> withdrawPrivateBank(event, userInfo, request.bankKey.orEmpty(), request.amount)
+            BankRoute.DEFAULT -> {
+                val defaultPb = userInfo.defaultPrivateBankCode.trim().takeIf { it.isNotBlank() }
+                if (defaultPb.isNullOrBlank()) {
+                    withdrawMainBank(event, request.amount ?: EconomyUtil.getMoneyByBank(user))
+                } else {
+                    withdrawPrivateBank(event, userInfo, defaultPb, request.amount)
+                }
+            }
         }
     }
 
-    suspend fun mainBankWithdraw(event: MessageEvent) {
-        val user = event.sender
-        val subject: Contact = event.subject
-        val message = event.message
-        val singleMessages: MessageChainBuilder = MessageUtil.quoteReply(message)
-        val code = message.serializeToMiraiCode()
-
-        val money = code.split(" ")[1].toInt()
-        val moneyByBank = EconomyUtil.getMoneyByBank(user)
-        if (moneyByBank - money < 0) {
-            singleMessages.append("你的银行余额不够${MoneyFormatUtil.format(money.toDouble())}枚金币了")
-            subject.sendMessage(singleMessages.build())
-            return
-        }
-
-        if (EconomyUtil.turnBankToUser(user, money.toDouble())) {
-            singleMessages.append("取款成功!")
-            subject.sendMessage(singleMessages.build())
-        } else {
-            singleMessages.append("取款失败!")
-            subject.sendMessage(singleMessages.build())
-            Log.error("银行管理:取款失败!")
-        }
-    }
-
-    suspend fun privateBankWithdraw(event: MessageEvent) {
-        val userInfo= UserCoreManager.getUserInfo(event.sender)
-        val user = userInfo.user
-        val subject: Contact = event.subject
-
-        val parts = event.message.contentToString().trim().split(" ")
-        val amount = parts.getOrNull(1)?.toDoubleOrNull() ?: 0.0
-        val bankKey = parts.getOrNull(2) ?: ""
-        val (ok, msg) = PrivateBankService.withdraw(user, bankKey, amount)
-        subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
+    private suspend fun depositPrivateBank(event: MessageEvent, userInfo: cn.chahuyun.economy.model.user.UserInfoDto, bankKey: String, amount: Double) {
+        val (ok, msg) = PrivateBankService.deposit(userInfo.user, bankKey, amount)
+        event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
         if (ok) {
             val bank = PrivateBankService.getBank(bankKey)
             if (bank != null) {
@@ -201,6 +121,94 @@ object BankUsecase {
                 UserCoreManager.saveUserInfo(userInfo)
             }
         }
+    }
+
+    private suspend fun withdrawPrivateBank(event: MessageEvent, userInfo: cn.chahuyun.economy.model.user.UserInfoDto, bankKey: String, requestedAmount: Double?) {
+        val bank = PrivateBankService.getBank(bankKey)
+        if (bank == null) {
+            event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "未找到该银行：$bankKey"))
+            return
+        }
+        val amount = requestedAmount ?: (PrivateBankService.getDeposit(bank.code, event.sender.id)?.principal ?: 0.0)
+        if (amount <= 0) {
+            event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你在该银行没有可取出的存款"))
+            return
+        }
+
+        val (ok, msg) = PrivateBankService.withdraw(event.sender, bank.code, amount)
+        event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
+        if (ok) {
+            userInfo.defaultPrivateBankCode = bank.code
+            UserCoreManager.saveUserInfo(userInfo)
+        }
+    }
+
+    private suspend fun withdrawMainBank(event: MessageEvent, amount: Double) {
+        val user = event.sender
+        val subject: Contact = event.subject
+        if (amount <= 0) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你的主银行没有可取出的金币"))
+            return
+        }
+
+        val moneyByBank = EconomyUtil.getMoneyByBank(user)
+        if (moneyByBank + 1e-6 < amount) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你的银行余额不够 ${MoneyFormatUtil.format(amount)} 枚金币"))
+            return
+        }
+
+        if (EconomyUtil.turnBankToUser(user, amount)) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "取款成功：${MoneyFormatUtil.format(amount)} 已从主银行取出"))
+        } else {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "取款失败!"))
+            Log.error("银行管理:主银行取款失败")
+        }
+    }
+
+    private fun parseBankTransfer(raw: String, chineseCommand: String, englishCommand: String): BankTransferRequest? {
+        val text = raw.trim()
+        if (text.isBlank()) return null
+        val parts = text.split(Regex("\\s+"))
+        val command = parts.firstOrNull() ?: return null
+        val suffix = when {
+            command.startsWith(chineseCommand) -> command.removePrefix(chineseCommand)
+            command.startsWith(englishCommand) -> command.removePrefix(englishCommand)
+            else -> return null
+        }
+
+        if (suffix == "!") return BankTransferRequest(null, BankRoute.DEFAULT)
+        if (suffix == "!!") return BankTransferRequest(null, BankRoute.MAIN)
+        if (suffix.isNotBlank()) return null
+
+        val amountToken = parts.getOrNull(1) ?: return null
+        if (amountToken == "!") return BankTransferRequest(null, BankRoute.DEFAULT)
+        if (amountToken == "!!") return BankTransferRequest(null, BankRoute.MAIN)
+
+        val amount = parseMoney(amountToken) ?: return null
+        val target = parts.getOrNull(2)?.trim()?.takeIf { it.isNotBlank() }
+        return when {
+            target == null -> BankTransferRequest(amount, BankRoute.DEFAULT)
+            target == "!" || target == "!!" || target == "主银行" || target.equals("main", ignoreCase = true) ->
+                BankTransferRequest(amount, BankRoute.MAIN)
+            else -> BankTransferRequest(amount, BankRoute.PRIVATE, target)
+        }
+    }
+
+    private fun parseMoney(text: String): Double? {
+        val normalized = text.trim()
+        if (normalized.isBlank()) return null
+        val match = Regex("""^(\d+(?:\.\d+)?)([kKmMgGtTpPwW万亿]?)$""").matchEntire(normalized) ?: return null
+        val number = match.groupValues[1].toDoubleOrNull() ?: return null
+        val multiplier = when (match.groupValues[2]) {
+            "k", "K" -> 1_000.0
+            "w", "W", "万" -> 10_000.0
+            "m", "M" -> 1_000_000.0
+            "g", "G", "亿" -> 100_000_000.0
+            "t", "T" -> 1_000_000_000_000.0
+            "p", "P" -> 1_000_000_000_000_000.0
+            else -> 1.0
+        }
+        return number * multiplier
     }
 
     suspend fun viewBankInterest(event: MessageEvent) {

@@ -1,33 +1,33 @@
-package cn.chahuyun.economy.cache
+﻿package cn.chahuyun.economy.cache
 
-import cn.chahuyun.economy.proxy.DataSourceStrategy
+import cn.chahuyun.economy.data.proxy.DataSourceStrategy
 import cn.chahuyun.economy.utils.Log
 
 /**
- * 缓存预热服务
+ * 缂撳瓨棰勭儹鏈嶅姟
  *
- * 服务启动时自动加载热点数据到Redis。
- * 预热失败不影响服务正常启动。
+ * 鏈嶅姟鍚姩鏃惰嚜鍔ㄥ姞杞界儹鐐规暟鎹埌Redis銆?
+ * 棰勭儹澶辫触涓嶅奖鍝嶆湇鍔℃甯稿惎鍔ㄣ€?
  */
 class CacheWarmUpService(
     private val cacheManager: CacheManager,
     private val strategy: DataSourceStrategy
 ) {
     /**
-     * 执行缓存预热，在插件onEnable阶段异步调用
+     * 鎵ц缂撳瓨棰勭儹锛屽湪鎻掍欢onEnable闃舵寮傛璋冪敤
      */
     suspend fun warmUp() {
         if (!strategy.isRedisEnabled()) {
-            Log.info("Redis未启用，跳过缓存预热")
+            Log.info("Redis鏈惎鐢紝璺宠繃缂撳瓨棰勭儹")
             return
         }
 
-        Log.info("========== 开始缓存预热 ==========")
+        Log.info("========== 寮€濮嬬紦瀛橀鐑?==========")
         try {
-            // TODO: Phase 3 - 实现各模块的缓存预热逻辑
-            Log.info("========== 缓存预热全部完成 ==========")
+            // TODO: Phase 3 - 瀹炵幇鍚勬ā鍧楃殑缂撳瓨棰勭儹閫昏緫
+            Log.info("========== 缂撳瓨棰勭儹鍏ㄩ儴瀹屾垚 ==========")
         } catch (e: Exception) {
-            Log.error("缓存预热过程发生异常，服务降级为纯DB模式", e)
+            Log.error("缂撳瓨棰勭儹杩囩▼鍙戠敓寮傚父锛屾湇鍔￠檷绾т负绾疍B妯″紡", e)
         }
     }
 }

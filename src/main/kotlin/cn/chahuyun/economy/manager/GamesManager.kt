@@ -131,6 +131,7 @@ object GamesManager : CoroutineScope {
 
     @JvmStatic
     fun getFishingCooldownText(userInfo: UserInfoDto, isFishingTitle: Boolean, fishInfo: FishInfoDto): String {
+        // 个人信息图只需要展示冷却剩余时间，所以这里复用钓鱼判定里的同一套冷却规则但不修改状态。
         val lastDate = playerCooling[userInfo.qq] ?: return "可钓鱼"
         val between = DateUtil.between(lastDate, Date(), DateUnit.MINUTE, true)
         var expired = if (isFishingTitle) 5 else (10 * 60 - fishInfo.rodLevel * 3) / 60

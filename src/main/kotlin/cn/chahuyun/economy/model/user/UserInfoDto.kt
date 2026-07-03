@@ -1,55 +1,52 @@
-package cn.chahuyun.economy.model.user
+﻿package cn.chahuyun.economy.model.user
 
 import cn.chahuyun.economy.HuYanEconomy.config
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.fish.FishInfoDto
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.Log
 import cn.hutool.core.date.CalendarUtil
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.User
 import java.util.*
 
 /**
- * 用户信息DTO
+ * 鐢ㄦ埛淇℃伅DTO
  *
- * 业务层唯一使用的用户数据对象。
- * 屏蔽V1/V2实体差异，业务层只依赖此DTO。
- */
+ * 涓氬姟灞傚敮涓€浣跨敤鐨勭敤鎴锋暟鎹璞°€? * 灞忚斀V1/V2瀹炰綋宸紓锛屼笟鍔″眰鍙緷璧栨DTO銆? */
 @Serializable
 data class UserInfoDto(
-    /** 用户ID（实体主键） */
+    /** 鐢ㄦ埛ID锛堝疄浣撲富閿級 */
     var id: String = "",
-    /** QQ号 */
+    /** QQ鍙?*/
     var qq: Long = 0,
-    /** 昵称 */
+    /** 鏄电О */
     var name: String = "",
-    /** 注册群号 */
+    /** 娉ㄥ唽缇ゅ彿 */
     var registerGroup: Long = 0,
-    /** 注册时间 */
+    /** 娉ㄥ唽鏃堕棿 */
     var registerTime: Long = 0,
-    /** 是否已签到 */
+    /** 鏄惁宸茬鍒?*/
     var sign: Boolean = false,
-    /** 上次签到时间 */
+    /** 涓婃绛惧埌鏃堕棿 */
     var signTime: Long = 0,
-    /** 连续签到天数 */
+    /** 杩炵画绛惧埌澶╂暟 */
     var signNumber: Int = 0,
-    /** 历史连续签到天数 */
+    /** 鍘嗗彶杩炵画绛惧埌澶╂暟 */
     var oldSignNumber: Int = 0,
-    /** 签到累计收益 */
+    /** 绛惧埌绱鏀剁泭 */
     var signEarnings: Double = 0.0,
-    /** 银行利息收益 */
+    /** 閾惰鍒╂伅鏀剁泭 */
     var bankEarnings: Double = 0.0,
-    /** 默认私人银行编码 */
+    /** 榛樿绉佷汉閾惰缂栫爜 */
     var defaultPrivateBankCode: String = "",
-    /** 资助UUID */
+    /** 璧勫姪UUID */
     var funding: String = "",
-    /** 背包物品数量 */
+    /** 鑳屽寘鐗╁搧鏁伴噺 */
     var backpackCount: Int = 0,
-    /** 背包条目 */
+    /** 鑳屽寘鏉＄洰 */
     var backpacks: List<UserBackpackDto> = emptyList()
 ) {
     @Transient
@@ -72,7 +69,7 @@ data class UserInfoDto(
         calendar.set(java.util.Calendar.SECOND, 0)
         val time = calendar.time
         val between = DateUtil.between(time, Date(), DateUnit.MINUTE, false)
-        Log.debug("账户:($qq)签到时差->$between")
+        Log.debug("璐︽埛:($qq)绛惧埌鏃跺樊->$between")
         if (between < 0) {
             return false
         } else if (between <= 1440) {
@@ -101,12 +98,12 @@ data class UserInfoDto(
     }
 
     fun getString(): String {
-        return "用户名称:$name\n用户qq:$qq\n连续签到:${signNumber}天\n"
+        return "鐢ㄦ埛鍚嶇О:$name\n鐢ㄦ埛qq:$qq\n杩炵画绛惧埌:${signNumber}澶‐n"
     }
 
     fun getProp(code: String): UserBackpackDto {
         return backpacks.find { it.propCode == code }
-            ?: error("获取用户的第一个对应code道具错误:道具code不存在!")
+            ?: error("鑾峰彇鐢ㄦ埛鐨勭涓€涓搴攃ode閬撳叿閿欒:閬撳叿code涓嶅瓨鍦?")
     }
 
     fun getPropOrNull(code: String): UserBackpackDto? {

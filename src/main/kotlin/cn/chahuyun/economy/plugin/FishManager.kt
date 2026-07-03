@@ -1,19 +1,18 @@
-package cn.chahuyun.economy.plugin
+﻿package cn.chahuyun.economy.plugin
 
 import cn.chahuyun.economy.HuYanEconomy
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.fish.FishDto
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.repository.FishRepository
 import cn.hutool.poi.excel.ExcelReader
 import cn.hutool.poi.excel.ExcelUtil
 import java.io.InputStream
 
 /**
- * 鱼管理
- */
+ * 楸肩鐞? */
 object FishManager {
     /**
-     * 归类整理的鱼
+     * 褰掔被鏁寸悊鐨勯奔
      */
     private val fishMap: MutableMap<Int, MutableList<FishDto>> = HashMap()
 
@@ -30,7 +29,7 @@ object FishManager {
     }
 
     /**
-     * 获取对应的鱼等级
+     * 鑾峰彇瀵瑰簲鐨勯奔绛夌骇
      */
     @JvmStatic
     fun getLevelFishList(fishLevel: Int): List<FishDto> {
@@ -38,24 +37,23 @@ object FishManager {
     }
 
     /**
-     * 从 resources 里面读取鱼数据
-     */
+     * 浠?resources 閲岄潰璇诲彇楸兼暟鎹?     */
     private fun reloadFish() {
         val instance = HuYanEconomy
         val resourceAsStream: InputStream = instance.getResourceAsStream("fish.xls") ?: return
         val map = hashMapOf(
-            "等级" to "level",
-            "名称" to "name",
-            "描述" to "description",
-            "单价" to "price",
+            "绛夌骇" to "level",
+            "鍚嶇О" to "name",
+            "鎻忚堪" to "description",
+            "鍗曚环" to "price",
             "最小尺寸" to "dimensionsMin",
             "最大尺寸" to "dimensionsMax",
-            "尺寸1阶" to "dimensions1",
-            "尺寸2阶" to "dimensions2",
-            "尺寸3阶" to "dimensions3",
-            "尺寸4阶" to "dimensions4",
-            "难度" to "difficulty",
-            "特殊标记" to "special"
+            "尺寸1阈值" to "dimensions1",
+            "尺寸2阈值" to "dimensions2",
+            "尺寸3阈值" to "dimensions3",
+            "尺寸4阈值" to "dimensions4",
+            "闅惧害" to "difficulty",
+            "鐗规畩鏍囪" to "special"
         )
         val reader: ExcelReader = ExcelUtil.getReader(resourceAsStream)
         val fishList: List<FishDto> = reader.setHeaderAlias(map).readAll(FishDto::class.java)

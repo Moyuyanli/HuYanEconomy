@@ -1,37 +1,37 @@
-package cn.chahuyun.economy.model.fish
+﻿package cn.chahuyun.economy.model.fish
 
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.plugin.FishManager
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.EconomyUtil
 import kotlinx.serialization.Serializable
 import java.util.regex.Pattern
 
 /**
- * 鱼塘DTO
+ * 楸煎DTO
  */
 @Serializable
 data class FishPondDto(
-    /** 记录ID */
+    /** 璁板綍ID */
     var id: Int = 0,
-    /** 鱼塘编码 */
+    /** 楸煎缂栫爜 */
     var code: String = "",
-    /** 管理员QQ */
+    /** 绠＄悊鍛楺Q */
     var admin: Long = 0,
-    /** 鱼塘类型 */
+    /** 楸煎绫诲瀷 */
     var pondType: Int = 0,
-    /** 鱼塘名称 */
+    /** 楸煎鍚嶇О */
     var name: String = "",
-    /** 鱼塘描述 */
+    /** 楸煎鎻忚堪 */
     var description: String = "",
-    /** 鱼塘等级 */
+    /** 楸煎绛夌骇 */
     var pondLevel: Int = 0,
-    /** 最低钓鱼等级要求 */
+    /** 鏈€浣庨挀楸肩瓑绾ц姹?*/
     var minLevel: Int = 0,
-    /** 返利率 */
+    /** 杩斿埄鐜?*/
     var rebate: Double = 0.05,
-    /** 鱼塘容量 */
+    /** 楸煎瀹归噺 */
     var number: Int = 0,
-    /** 鱼种数量 */
+    /** 楸肩鏁伴噺 */
     var fishCount: Int = 0
 ) {
     val group: Long

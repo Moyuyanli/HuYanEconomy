@@ -1,12 +1,12 @@
-package cn.chahuyun.economy.prizes
+﻿package cn.chahuyun.economy.prizes
 
 import cn.chahuyun.economy.constant.PrizeType
 import cn.chahuyun.economy.constant.RaffleType
 import cn.chahuyun.economy.data.PrizesData
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.exception.RaffleException
 import cn.chahuyun.economy.model.raffle.RaffleBatchDto
 import cn.chahuyun.economy.model.user.UserRaffleDto
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import kotlinx.serialization.Serializable
 import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 import net.mamoe.mirai.contact.Group
@@ -15,62 +15,62 @@ import kotlin.random.Random
 
 
 /**
- * 奖品
+ * 濂栧搧
  */
 @Serializable
 data class Prize(
     /**
-     * 奖品id
+     * 濂栧搧id
      */
     val id: String,
     /**
-     * 奖品名称
+     * 濂栧搧鍚嶇О
      */
     val name: String,
     /**
-     * 奖品描述
+     * 濂栧搧鎻忚堪
      */
     val description: String,
     /**
-     * 奖品图片
+     * 濂栧搧鍥剧墖
      */
     val imageUrl: String? = null,
     /**
-     * 奖品类型
+     * 濂栧搧绫诲瀷
      */
     val type: PrizeType = PrizeType.ORDINARY,
     /**
-     * 奖品元数据
-     * 如: propsId=123, count=5
+     * 濂栧搧鍏冩暟鎹?
+     * 濡? propsId=123, count=5
      */
     val metadata: Map<String, Int> = emptyMap(),
     /**
-     * 奖品库存
-     * -1 表示无限库存
+     * 濂栧搧搴撳瓨
+     * -1 琛ㄧず鏃犻檺搴撳瓨
      */
     var stock: Int = -1,
 ) {
     companion object {
         /**
-         * 尝试根据id获取奖品
+         * 灏濊瘯鏍规嵁id鑾峰彇濂栧搧
          */
         fun take(id: String): Prize {
             return PrizesData.prizes.find { it.id == id } ?: throw RaffleException("奖品不存在")
         }
     }
 
-    // ✅ @Transient：不参与序列化，仅运行时存在
+    // 鉁?@Transient锛氫笉鍙備笌搴忓垪鍖栵紝浠呰繍琛屾椂瀛樺湪
     @delegate:Transient
     val runtimeStock: AtomicInteger by lazy {
         AtomicInteger(stock)
     }
 
     /**
-     * 原子性：尝试领取一次
-     * @return true 成功，false 失败（无库存或无限库存也返回 true）
+     * 鍘熷瓙鎬э細灏濊瘯棰嗗彇涓€娆?
+     * @return true 鎴愬姛锛宖alse 澶辫触锛堟棤搴撳瓨鎴栨棤闄愬簱瀛樹篃杩斿洖 true锛?
      */
     fun tryTake(): Boolean {
-        val stock = runtimeStock // 无限库存永远成功
+        val stock = runtimeStock // 鏃犻檺搴撳瓨姘歌繙鎴愬姛
         while (true) {
             val current = stock.get()
             if (current <= 0) return false
@@ -78,12 +78,12 @@ data class Prize(
                 this.stock -= 1
                 return true
             }
-            // CAS 失败，重试
+            // CAS 澶辫触锛岄噸璇?
         }
     }
 
     /**
-     * 获取当前库存
+     * 鑾峰彇褰撳墠搴撳瓨
      */
     @JvmName("getRuntimeStock")
     fun getStock(): Int {
@@ -91,7 +91,7 @@ data class Prize(
     }
 
     /**
-     * 补货（增加库存）
+     * 琛ヨ揣锛堝鍔犲簱瀛橈級
      */
     fun replenish(amount: Int) {
         val stock = runtimeStock
@@ -101,33 +101,33 @@ data class Prize(
 }
 
 /**
- * 奖品组
+ * 濂栧搧缁?
  */
 @Serializable
 data class PrizeGroup(
     /**
-     * 奖品编号
+     * 濂栧搧缂栧彿
      */
     val prizesCodes: List<String>,
     /**
-     * 奖品组名称
+     * 濂栧搧缁勫悕绉?
      */
     val name: String = "default",
     /**
-     * 奖品组描述
+     * 濂栧搧缁勬弿杩?
      */
     val description: String = "default",
     /**
-     * 该组在所属层级中的权重
+     * 璇ョ粍鍦ㄦ墍灞炲眰绾т腑鐨勬潈閲?
      */
     val weight: Int = 100,
     /**
-     * 是否为“up”？
+     * 鏄惁涓衡€渦p鈥濓紵
      */
     val guaranteed: Boolean = false,
 ) {
     /**
-     * 奖品组内奖品
+     * 濂栧搧缁勫唴濂栧搧
      */
     @delegate:Transient
     val prizes by lazy { prizesCodes.map { Prize.take(it) } }
@@ -146,20 +146,20 @@ data class PrizeGroup(
 }
 
 /**
- * 奖品等级
+ * 濂栧搧绛夌骇
  */
 @Serializable
 data class PrizeLevel(
     /**
-     * 奖品等级
+     * 濂栧搧绛夌骇
      */
     val level: Int,
     /**
-     * 该等级被抽中的权重（用于跨等级选择）
+     * 璇ョ瓑绾ц鎶戒腑鐨勬潈閲嶏紙鐢ㄤ簬璺ㄧ瓑绾ч€夋嫨锛?
      */
     val weight: Int,
     /**
-     * 所有组
+     * 鎵€鏈夌粍
      */
     val groups: List<PrizeGroup>,
 ) {
@@ -167,33 +167,33 @@ data class PrizeLevel(
     constructor(level: Int, weight: Int, vararg groups: PrizeGroup) : this(level, weight, groups.toList())
 
     /**
-     * up池
+     * up姹?
      */
     val guaranteedGroups by lazy { groups.filter { it.guaranteed } }
 
     /**
-     * 普通池
+     * 鏅€氭睜
      */
     val sharedGroups by lazy { groups.filter { !it.guaranteed } }
 
     /**
-     * 是否 up 池
+     * 鏄惁 up 姹?
      */
     val isUpPrizePool by lazy { guaranteedGroups.isNotEmpty() }
 
     /**
-     * up部分总权重
+     * up閮ㄥ垎鎬绘潈閲?
      */
     val guaranteedWeight by lazy { guaranteedGroups.sumOf { it.weight } }
 
     /**
-     * 共享部分总权重
+     * 鍏变韩閮ㄥ垎鎬绘潈閲?
      */
     val sharedWeight by lazy { sharedGroups.sumOf { it.weight } }
 }
 
 /**
- * 奖池
+ * 濂栨睜
  */
 @Serializable
 data class PrizePool(
@@ -202,38 +202,38 @@ data class PrizePool(
      */
     val id: String,
     /**
-     * 奖池名称
+     * 濂栨睜鍚嶇О
      */
     val name: String,
     /**
-     * 奖池描述
+     * 濂栨睜鎻忚堪
      */
     val description: String,
     /**
-     * 抽奖价格
+     * 鎶藉浠锋牸
      */
     val price: Int,
     /**
-     * 奖池物品
+     * 濂栨睜鐗╁搧
      */
     val levels: List<PrizeLevel>,
     /**
-     * 保底次数
+     * 淇濆簳娆℃暟
      */
     val endTime: Int = 0,
 
     /**
-     * 是否共享保底
+     * 鏄惁鍏变韩淇濆簳
      */
     val shareEnd: Boolean = false,
 
     /**
-     * 当前卡池抽奖次数
+     * 褰撳墠鍗℃睜鎶藉娆℃暟
      */
     val shareEndTime: Int = 0,
 
     /**
-     * 保底奖品
+     * 淇濆簳濂栧搧
      */
     val endPrize: PrizeLevel? = null,
 ) {
@@ -261,7 +261,7 @@ data class PrizePool(
 }
 
 /**
- * 抽奖结果
+ * 鎶藉缁撴灉
  */
 @Serializable
 data class RaffleResult(
@@ -274,77 +274,77 @@ data class RaffleResult(
 )
 
 /**
- * 抽奖上下文
+ * 鎶藉涓婁笅鏂?
  */
 data class RaffleContext(
     /**
-     * 奖池
+     * 濂栨睜
      */
     val pool: PrizePool,
     /**
-     * 用户抽奖信息
+     * 鐢ㄦ埛鎶藉淇℃伅
      */
     val userRaffle: UserRaffleDto,
     /**
-     * 抽奖群
+     * 鎶藉缇?
      */
     val group: Group,
 )
 
 
 /**
- * 对任意 List<T> 扩展一个 weightedRandom 方法
- * @param weightSelector: 函数，用于提取每个元素的权重
- * @param random: 随机数生成器（可选，便于测试）
- * @return 随机选中的元素，或 null（如果列表为空）
+ * 瀵逛换鎰?List<T> 鎵╁睍涓€涓?weightedRandom 鏂规硶
+ * @param weightSelector: 鍑芥暟锛岀敤浜庢彁鍙栨瘡涓厓绱犵殑鏉冮噸
+ * @param random: 闅忔満鏁扮敓鎴愬櫒锛堝彲閫夛紝渚夸簬娴嬭瘯锛?
+ * @return 闅忔満閫変腑鐨勫厓绱狅紝鎴?null锛堝鏋滃垪琛ㄤ负绌猴級
  */
 private fun <T> List<T>.weightedRandom(
     random: Random = Random,
     weightSelector: (T) -> Int,
 ): T {
-    if (isEmpty()) throw RaffleException("奖池错误,随机抽奖错误!")
+    if (isEmpty()) throw RaffleException("濂栨睜閿欒,闅忔満鎶藉閿欒!")
 
     if (size == 1) return first()
 
-    // 1. 计算总权重
+    // 1. 璁＄畻鎬绘潈閲?
     val totalWeight = sumOf { weightSelector(it).toLong() }
 
-    // 2. 如果总权重 <= 0，退化为普通随机
+    // 2. 濡傛灉鎬绘潈閲?<= 0锛岄€€鍖栦负鏅€氶殢鏈?
     if (totalWeight <= 0) return this.random(random)
 
-    // 3. 生成 [0, totalWeight) 的随机数
+    // 3. 鐢熸垚 [0, totalWeight) 鐨勯殢鏈烘暟
     var accumulatedWeight = random.nextLong(totalWeight)
 
-    // 4. 遍历列表，减去权重，直到“命中”
+    // 4. 閬嶅巻鍒楄〃锛屽噺鍘绘潈閲嶏紝鐩村埌鈥滃懡涓€?
     for (item in this) {
-        //当前元素权重
+        //褰撳墠鍏冪礌鏉冮噸
         val weight = weightSelector(item).toLong()
-        //命中数是否小于当前元素权重
+        //鍛戒腑鏁版槸鍚﹀皬浜庡綋鍓嶅厓绱犳潈閲?
         if (accumulatedWeight < weight) {
             return item
         }
-        //减去权重
+        //鍑忓幓鏉冮噸
         accumulatedWeight -= weight
     }
 
-    // 5. 理论上不会走到这里，但防止浮点/整数误差
+    // 5. 鐞嗚涓婁笉浼氳蛋鍒拌繖閲岋紝浣嗛槻姝㈡诞鐐?鏁存暟璇樊
     return last()
 }
 
 /**
- * 奖品工具类
+ * 濂栧搧宸ュ叿绫?
  */
 @OptIn(ConsoleExperimentalApi::class)
 object PrizesUtil {
     /**
-     * 单抽
+     * 鍗曟娊
      */
     fun PrizePool.draw(context: RaffleContext): RaffleResult {
         return drawing(context)
     }
 
     /**
-     * 十连
+     * 鍗佽繛
      */
     fun PrizePool.drawTen(context: RaffleContext): List<RaffleResult> {
         val result = mutableListOf<RaffleResult>()
@@ -355,21 +355,21 @@ object PrizesUtil {
     }
 
     /**
-     * 抽奖操作
+     * 鎶藉鎿嶄綔
      */
     private fun drawing(context: RaffleContext): RaffleResult {
         val rafflePool = context.pool
         val userRaffle = context.userRaffle
-        val userId = userRaffle.id.takeIf { it != 0L } ?: error("错误,抽奖人id不存在!")
+        val userId = userRaffle.id.takeIf { it != 0L } ?: error("閿欒,鎶藉浜篿d涓嶅瓨鍦?")
 
-        //检查保底
+        //妫€鏌ヤ繚搴?
         if (rafflePool.endTime != 0) {
 
             val shareEndHit = rafflePool.shareEnd && rafflePool.shareEndTime + 1 == rafflePool.endTime
             val userEndHit = userRaffle.poolTimes[rafflePool.id]?.let { it + 1 == rafflePool.endTime } ?: false
 
             if (shareEndHit || userEndHit) {
-                val level = rafflePool.endPrize ?: throw RaffleException("奖池配置保底，但奖池无保底奖品!")
+                val level = rafflePool.endPrize ?: throw RaffleException("濂栨睜閰嶇疆淇濆簳锛屼絾濂栨睜鏃犱繚搴曞鍝?")
 
                 val groups = if (level.isUpPrizePool) {
                     level.guaranteedGroups
@@ -383,7 +383,7 @@ object PrizesUtil {
                 val prize = group.getPrize()
 
                 if (prize.getStock() != -1 && prize.tryTake()) {
-                    throw RaffleException("限量奖没货了!")
+                    throw RaffleException("闄愰噺濂栨病璐т簡!")
                 }
 
                 val raffleResult = RaffleResult(prize, level.level, context.group.id, userId, rafflePool)

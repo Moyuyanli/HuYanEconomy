@@ -1,16 +1,15 @@
-package cn.chahuyun.economy.manager
+﻿package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.constant.FarmConstants
 import cn.chahuyun.economy.constant.TitleCode
 import cn.chahuyun.economy.constant.UserLocation
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.user.TitleInfoDto
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.plugin.ImageManager
 import cn.chahuyun.economy.privatebank.PrivateBankRepository
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.*
 import cn.chahuyun.economy.utils.MoneyFormatUtil.toMoneyFormat
-import cn.hutool.core.date.DateUtil
 import net.mamoe.mirai.contact.*
 import xyz.cssxsh.mirai.economy.service.EconomyAccount
 import java.awt.Color
@@ -21,8 +20,7 @@ import java.util.*
 import javax.imageio.ImageIO
 
 /**
- * 用户核心能力：用户资料获取、创建、保存，以及个人信息图片渲染。
- */
+ * 鐢ㄦ埛鏍稿績鑳藉姏锛氱敤鎴疯祫鏂欒幏鍙栥€佸垱寤恒€佷繚瀛橈紝浠ュ強涓汉淇℃伅鍥剧墖娓叉煋銆? */
 object UserCoreManager {
 
     fun getUserInfoDto(qq: Long): UserInfoDto? {
@@ -62,7 +60,7 @@ object UserCoreManager {
     fun getUserInfo(account: EconomyAccount): UserInfoDto {
         val userId = account.uuid
         return userProxy.findWhere { it.id == userId }.firstOrNull()
-            ?: throw RuntimeException("该经济账号不存在用户信息")
+            ?: throw RuntimeException("璇ョ粡娴庤处鍙蜂笉瀛樺湪鐢ㄦ埛淇℃伅")
     }
 
     @JvmStatic
@@ -87,22 +85,30 @@ object UserCoreManager {
     @JvmStatic
     fun getUserInfoImageBase(
         userInfo: UserInfoDto,
-        hitokoto: String = "愿你今日顺利，金币入账。",
-        signature: String = "-- HuYanEconomy",
+        infoText: String = "愿你今日顺利，金币入账。",
+        infoSignature: String = "-- HuYanEconomy",
+        infoTitle: String = "今日一句",
     ): BufferedImage? {
         return try {
-            renderUserInfoImage(userInfo, hitokoto, signature)
+            renderUserInfoImage(userInfo, infoTitle, infoText, infoSignature)
         } catch (e: Exception) {
-            Log.error("用户管理:个人信息图片生成失败!", e)
+            Log.error("鐢ㄦ埛绠＄悊:涓汉淇℃伅鍥剧墖鐢熸垚澶辫触!", e)
             null
         }
     }
 
     @Throws(IOException::class)
-    private fun renderUserInfoImage(userInfo: UserInfoDto, hitokoto: String, signature: String): BufferedImage {
-        val user = requireNotNull(userInfo.user) { "用户信息中未附带 user 对象" }
+    private fun renderUserInfoImage(
+        userInfo: UserInfoDto,
+        infoTitle: String,
+        infoText: String,
+        infoSignature: String,
+    ): BufferedImage {
+        val user = requireNotNull(userInfo.user) { "用户信息未附带 user 对象" }
+
         val avatarUrl = user.avatarUrl(AvatarSpec.LARGE)
         val avatar = ImageIO.read(URL(avatarUrl)) ?: throw IOException("头像读取失败: $avatarUrl")
+
         val background = ImageManager.getNextBottom()
 
         val title: TitleInfoDto = TitleManager.getDefaultTitle(userInfo)
@@ -115,11 +121,12 @@ object UserCoreManager {
         val signTime = userInfo.signTime
             .takeIf { it > 0 }
             ?.let { DateUtil.format(Date(it), "yyyy-MM-dd HH:mm:ss") }
-            ?: "暂未签到"
+            ?: "鏆傛湭绛惧埌"
 
         val fishInfo = userInfo.getFishInfo()
         val fishTitle = TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.FISHING)
 
+        // PersonalInfoCard 鏄€滅粯鍥句笓鐢?DTO鈥濓細閲岄潰鍙斁宸茬粡鏍煎紡鍖栧ソ鐨勫瓧绗︿覆鍜岄鑹诧紝
         return EconomyImageRenderer.renderPersonalInfo(
             PersonalInfoCard(
                 qq = user.id.toString(),
@@ -140,8 +147,9 @@ object UserCoreManager {
                 fishingCooldown = GamesManager.getFishingCooldownText(userInfo, fishTitle, fishInfo),
                 farmStatus = getFarmStatusText(userInfo.qq),
                 bankDeposits = getBankDepositLines(user),
-                hitokoto = hitokoto,
-                signature = signature,
+                infoTitle = infoTitle,
+                infoText = infoText,
+                infoSignature = infoSignature,
             ),
             avatar,
             background,
@@ -172,8 +180,8 @@ object UserCoreManager {
             val status = UserStatusManager.getUserStatus(userInfo)
             UserLocation.values().firstOrNull { it.name == status.place }?.displayName ?: status.place
         } catch (e: Exception) {
-            Log.error("获取用户位置失败", e)
-            "未知"
+            Log.error("鑾峰彇鐢ㄦ埛浣嶇疆澶辫触", e)
+            "鏈煡"
         }
     }
 
@@ -200,20 +208,22 @@ object UserCoreManager {
 
     private fun getBankDepositLines(user: User): List<BankDepositLine> {
         val lines = mutableListOf<BankDepositLine>()
-        lines += BankDepositLine("主银行", EconomyUtil.getMoneyByBank(user).toMoneyFormat())
+
+        val mainBankMoney = EconomyUtil.getMoneyByBank(user)
+        lines += BankDepositLine("主银行", mainBankMoney.toMoneyFormat(), mainBankMoney)
 
         try {
             PrivateBankRepository.listBanks()
                 .mapNotNull { bank ->
                     val deposit = PrivateBankRepository.findDeposit(bank.code, user.id) ?: return@mapNotNull null
                     if (deposit.principal <= 0.0) return@mapNotNull null
-                    BankDepositLine(bank.name.ifBlank { bank.code }, deposit.principal.toMoneyFormat())
+                    BankDepositLine(bank.name.ifBlank { bank.code }, deposit.principal.toMoneyFormat(), deposit.principal)
                 }
                 .forEach(lines::add)
         } catch (e: Exception) {
-            Log.error("获取私人银行存款失败", e)
+            Log.error("鑾峰彇绉佷汉閾惰瀛樻澶辫触", e)
         }
 
-        return lines
+        return lines.sortedByDescending { it.amountValue }
     }
 }

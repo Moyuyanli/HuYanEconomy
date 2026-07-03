@@ -41,7 +41,6 @@ internal class ScheduledExecutorEngine : SchedulerEngine {
         if (running.compareAndSet(false, true)) {
             // 触发 lazy 初始化
             executor
-            Log.info("HuYanScheduler 已启动")
         }
     }
 
@@ -97,7 +96,6 @@ internal class ScheduledExecutorEngine : SchedulerEngine {
         val future = executor.schedule(selfScheduling, initialDelay, TimeUnit.MILLISECONDS)
         scheduledTask.updateFuture(future)
 
-        Log.info("HuYanScheduler: 注册 cron 任务 [$id] expr='$cron'")
         return scheduledTask
     }
 
@@ -151,7 +149,6 @@ internal class ScheduledExecutorEngine : SchedulerEngine {
         val scheduledTask = ExecutorScheduledTask(id, null, future)
         tasks[id] = scheduledTask
 
-        Log.info("HuYanScheduler: 注册 fixed-rate 任务 [$id] period=${period}${unit.name.lowercase()}")
         return scheduledTask
     }
 
@@ -169,7 +166,6 @@ internal class ScheduledExecutorEngine : SchedulerEngine {
         val scheduledTask = ExecutorScheduledTask(id, null, future)
         tasks[id] = scheduledTask
 
-        Log.info("HuYanScheduler: 注册 fixed-delay 任务 [$id] delay=${delay}${unit.name.lowercase()}")
         return scheduledTask
     }
 

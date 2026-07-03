@@ -1,14 +1,14 @@
-package cn.chahuyun.economy.proxy.module
+﻿package cn.chahuyun.economy.data.proxy.module
 
 import cn.chahuyun.economy.converter.v1.UserFactorV1Converter
 import cn.chahuyun.economy.converter.v2.UserFactorV2Converter
+import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
+import cn.chahuyun.economy.data.proxy.DataVersion
+import cn.chahuyun.economy.data.proxy.EntityProxy
+import cn.chahuyun.economy.data.proxy.MigrationResult
 import cn.chahuyun.economy.entity.UserFactor
 import cn.chahuyun.economy.entity.v2.user.UserFactorEntity
 import cn.chahuyun.economy.model.user.UserFactorDto
-import cn.chahuyun.economy.proxy.DataSourceStrategyImpl
-import cn.chahuyun.economy.proxy.DataVersion
-import cn.chahuyun.economy.proxy.EntityProxy
-import cn.chahuyun.economy.proxy.MigrationResult
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 

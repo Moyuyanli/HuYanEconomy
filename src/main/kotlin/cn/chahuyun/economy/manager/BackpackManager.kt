@@ -1,11 +1,11 @@
-package cn.chahuyun.economy.manager
+﻿package cn.chahuyun.economy.manager
 
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.user.UserBackpackDto
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.prop.BaseProp
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.prop.Stackable
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.MessageUtil
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Group
@@ -13,23 +13,23 @@ import net.mamoe.mirai.message.data.ForwardMessageBuilder
 import net.mamoe.mirai.message.data.PlainText
 
 /**
- * 背包管理器
- * 背包相关的"非事件监听"逻辑。
+ * 鑳屽寘绠＄悊鍣?
+ * 鑳屽寘鐩稿叧鐨?闈炰簨浠剁洃鍚?閫昏緫銆?
  *
- * 说明：
- * - `action.BackpackAction` 仅保留指令入口与参数解析。
- * - 道具增删查、背包内容渲染等可复用逻辑下沉到这里。
+ * 璇存槑锛?
+ * - `action.BackpackAction` 浠呬繚鐣欐寚浠ゅ叆鍙ｄ笌鍙傛暟瑙ｆ瀽銆?
+ * - 閬撳叿澧炲垹鏌ャ€佽儗鍖呭唴瀹规覆鏌撶瓑鍙鐢ㄩ€昏緫涓嬫矇鍒拌繖閲屻€?
  */
 object BackpackManager {
 
     /**
-     * 显示用户背包内容
+     * 鏄剧ず鐢ㄦ埛鑳屽寘鍐呭
      *
-     * @param bot 机器人实例
-     * @param backpacks 用户背包道具列表
-     * @param group 群组实例
-     * @param currentPage 当前页码
-     * @param maxPage 最大页码
+     * @param bot 鏈哄櫒浜哄疄渚?
+     * @param backpacks 鐢ㄦ埛鑳屽寘閬撳叿鍒楄〃
+     * @param group 缇ょ粍瀹炰緥
+     * @param currentPage 褰撳墠椤电爜
+     * @param maxPage 鏈€澶ч〉鐮?
      */
     suspend fun showBackpack(
         bot: Bot,
@@ -39,28 +39,28 @@ object BackpackManager {
         maxPage: Int,
     ) {
         val nodes = ForwardMessageBuilder(group)
-        nodes.add(bot, PlainText("以下是你的背包↓:"))
+        nodes.add(bot, PlainText("浠ヤ笅鏄綘鐨勮儗鍖呪啌:"))
 
-        // 遍历背包中的道具并添加到消息节点中
+        // 閬嶅巻鑳屽寘涓殑閬撳叿骞舵坊鍔犲埌娑堟伅鑺傜偣涓?
         for (backpack in backpacks) {
             val prop = PropsManager.getProp(backpack) ?: continue
-            nodes.add(bot, PlainText("物品id:${backpack.propId}\n$prop"))
+            nodes.add(bot, PlainText("鐗╁搧id:${backpack.propId}\n$prop"))
         }
-        nodes.add(bot, MessageUtil.formatMessage("--- 当前页数: ${currentPage} / 最大页数: ${maxPage} ---"))
+        nodes.add(bot, MessageUtil.formatMessage("--- 褰撳墠椤垫暟: ${currentPage} / 鏈€澶ч〉鏁? ${maxPage} ---"))
         group.sendMessage(nodes.build())
     }
 
     /**
-     * 添加一个道具到背包
+     * 娣诲姞涓€涓亾鍏峰埌鑳屽寘
      *
-     * @param userInfo 用户信息
-     * @param code 道具编码
-     * @param kind 道具类型
-     * @param id 道具ID
+     * @param userInfo 鐢ㄦ埛淇℃伅
+     * @param code 閬撳叿缂栫爜
+     * @param kind 閬撳叿绫诲瀷
+     * @param id 閬撳叿ID
      */
     @JvmStatic
     fun addPropToBackpack(userInfo: UserInfoDto, code: String, kind: String, id: Long): UserBackpackDto {
-        require(id != 0L) { "不能添加无效道具到背包: propId=$id, code=$code" }
+        require(id != 0L) { "涓嶈兘娣诲姞鏃犳晥閬撳叿鍒拌儗鍖? propId=$id, code=$code" }
         val userBackpack = UserBackpackDto(
             userId = userInfo.id,
             propCode = code,
@@ -69,7 +69,7 @@ object BackpackManager {
         )
         val saved = backpackProxy.save(userBackpack)
         if (saved.id == 0L || backpackProxy.findById(saved.id) == null) {
-            error("保存背包记录失败: userId=${userInfo.id}, code=$code, propId=$id")
+            error("淇濆瓨鑳屽寘璁板綍澶辫触: userId=${userInfo.id}, code=$code, propId=$id")
         }
         userInfo.backpacks = userInfo.backpacks + saved
         userInfo.backpackCount = userInfo.backpacks.size
@@ -77,33 +77,32 @@ object BackpackManager {
     }
 
     /**
-     * 发放可堆叠道具。已有同 code 道具时合并数量，否则创建新实例并加入背包。
-     */
+     * 鍙戞斁鍙爢鍙犻亾鍏枫€傚凡鏈夊悓 code 閬撳叿鏃跺悎骞舵暟閲忥紝鍚﹀垯鍒涘缓鏂板疄渚嬪苟鍔犲叆鑳屽寘銆?     */
     @JvmStatic
     fun addStackablePropToBackpack(userInfo: UserInfoDto, code: String, kind: String, amount: Int): UserBackpackDto {
-        require(amount > 0) { "发放数量必须大于0: code=$code, amount=$amount" }
+        require(amount > 0) { "鍙戞斁鏁伴噺蹇呴』澶т簬0: code=$code, amount=$amount" }
 
         userInfo.backpacks.find { it.propCode == code }?.let { backpack ->
             val prop = PropsManager.getProp(backpack)
-                ?: error("背包道具数据不存在: code=$code, propId=${backpack.propId}")
-            require(prop is Stackable && prop.isStack) { "背包道具不是可堆叠道具: code=$code" }
+                ?: error("鑳屽寘閬撳叿鏁版嵁涓嶅瓨鍦? code=$code, propId=${backpack.propId}")
+            require(prop is Stackable && prop.isStack) { "鑳屽寘閬撳叿涓嶆槸鍙爢鍙犻亾鍏? code=$code" }
             prop.num += amount
             PropsManager.updateProp(backpack.propId, prop)
             return backpack
         }
 
         val prop = PropsManager.getTemplate(code, BaseProp::class.java)
-        require(prop is Stackable && prop.isStack) { "道具模板不是可堆叠道具: code=$code" }
+        require(prop is Stackable && prop.isStack) { "閬撳叿妯℃澘涓嶆槸鍙爢鍙犻亾鍏? code=$code" }
         prop.num = amount
         val propId = PropsManager.addProp(prop)
         return addPropToBackpack(userInfo, code, kind, propId)
     }
 
     /**
-     * 根据道具ID删除用户背包中的道具
+     * 鏍规嵁閬撳叿ID鍒犻櫎鐢ㄦ埛鑳屽寘涓殑閬撳叿
      *
-     * @param userInfo 用户信息
-     * @param id 道具ID
+     * @param userInfo 鐢ㄦ埛淇℃伅
+     * @param id 閬撳叿ID
      */
     @JvmStatic
     fun delPropToBackpack(userInfo: UserInfoDto, id: Long) {
@@ -118,10 +117,10 @@ object BackpackManager {
     }
 
     /**
-     * 根据UserBackpack对象删除用户背包中的道具
+     * 鏍规嵁UserBackpack瀵硅薄鍒犻櫎鐢ㄦ埛鑳屽寘涓殑閬撳叿
      *
-     * @param userInfo 用户信息
-     * @param userBackpack 用户背包对象
+     * @param userInfo 鐢ㄦ埛淇℃伅
+     * @param userBackpack 鐢ㄦ埛鑳屽寘瀵硅薄
      */
     @JvmStatic
     fun delPropToBackpack(userInfo: UserInfoDto, userBackpack: UserBackpackDto) {
@@ -132,11 +131,11 @@ object BackpackManager {
     }
 
     /**
-     * 检查用户背包中是否包含指定ID的道具
+     * 妫€鏌ョ敤鎴疯儗鍖呬腑鏄惁鍖呭惈鎸囧畾ID鐨勯亾鍏?
      *
-     * @param userInfo 用户信息
-     * @param id 道具ID
-     * @return 如果包含返回true，否则返回false
+     * @param userInfo 鐢ㄦ埛淇℃伅
+     * @param id 閬撳叿ID
+     * @return 濡傛灉鍖呭惈杩斿洖true锛屽惁鍒欒繑鍥瀎alse
      */
     @JvmStatic
     fun checkPropInUser(userInfo: UserInfoDto, id: Long): Boolean {
@@ -144,11 +143,11 @@ object BackpackManager {
     }
 
     /**
-     * 检查用户背包中是否包含指定编码的道具
+     * 妫€鏌ョ敤鎴疯儗鍖呬腑鏄惁鍖呭惈鎸囧畾缂栫爜鐨勯亾鍏?
      *
-     * @param userInfo 用户信息
-     * @param code 道具编码
-     * @return 如果包含返回true，否则返回false
+     * @param userInfo 鐢ㄦ埛淇℃伅
+     * @param code 閬撳叿缂栫爜
+     * @return 濡傛灉鍖呭惈杩斿洖true锛屽惁鍒欒繑鍥瀎alse
      */
     @JvmStatic
     fun checkPropInUser(userInfo: UserInfoDto, code: String): Boolean {

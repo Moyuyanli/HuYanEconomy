@@ -1,12 +1,12 @@
-package cn.chahuyun.economy.plugin
+﻿package cn.chahuyun.economy.plugin
 
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.GlobalFactorDto
 import cn.chahuyun.economy.model.user.UserFactorDto
 import cn.chahuyun.economy.model.user.UserInfoDto
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 
 /**
- * 因子管理
+ * 鍥犲瓙绠＄悊
  */
 object FactorManager {
 

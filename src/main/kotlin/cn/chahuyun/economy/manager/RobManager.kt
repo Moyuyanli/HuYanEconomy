@@ -1,8 +1,8 @@
-package cn.chahuyun.economy.manager
+﻿package cn.chahuyun.economy.manager
 
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.rob.RobInfoDto
 import cn.chahuyun.economy.model.user.UserInfoDto
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import java.util.*
@@ -23,7 +23,7 @@ object RobManager {
     }
 
     /**
-     * 获取抢劫信息
+     * 鑾峰彇鎶㈠姭淇℃伅
      */
     @JvmStatic
     fun getRobInfo(userInfo: UserInfoDto): RobInfoDto {

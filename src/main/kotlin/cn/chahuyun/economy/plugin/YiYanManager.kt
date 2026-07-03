@@ -19,6 +19,7 @@ object YiYanManager {
 
     @JvmStatic
     fun init() {
+        isShutdown.set(false)
         requestOneYiYan()
     }
 

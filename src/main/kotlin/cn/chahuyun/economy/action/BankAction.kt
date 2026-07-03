@@ -14,59 +14,25 @@ import net.mamoe.mirai.event.events.MessageEvent
 class BankAction {
 
     /**
-     * 存款
+     * 存款：统一处理默认银行、主银行和指定私银。
      */
-    @MessageAuthorize(text = ["存款 \\d+", "deposit \\d+"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(
+        text = ["存款(!{1,2}| \\S+( \\S+)?)", "deposit(!{1,2}| \\S+( \\S+)?)"],
+        messageMatching = MessageMatchingEnum.REGULAR
+    )
     suspend fun deposit(event: MessageEvent) {
         BankUsecase.deposit(event)
     }
 
     /**
-     * 主银行存款（兼容：当用户设置了默认私银后仍可直达主行）
+     * 取款：统一处理默认银行、主银行和指定私银。
      */
-    @MessageAuthorize(text = ["主存款 \\d+", "main-deposit \\d+"], messageMatching = MessageMatchingEnum.REGULAR)
-    suspend fun mainBankDeposit(event: MessageEvent) {
-        BankUsecase.mainBankDeposit(event)
-    }
-
-    /**
-     * 私银存款：存款 <金额> <code/name>
-     */
-    @MessageAuthorize(text = ["存款 \\d+(\\.\\d+)? \\S+"], messageMatching = MessageMatchingEnum.REGULAR)
-    suspend fun privateBankDeposit(event: MessageEvent) {
-        BankUsecase.privateBankDeposit(event)
-    }
-
-    /**
-     * 一键存款：把钱包余额的整数部分全部存入主银行
-     */
-    @MessageAuthorize(text = ["存款!", "deposit!"])
-    suspend fun depositAllInteger(event: MessageEvent) {
-        BankUsecase.depositAllInteger(event)
-    }
-
-    /**
-     * 取款
-     */
-    @MessageAuthorize(text = ["取款 \\d+", "withdraw \\d+"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(
+        text = ["取款(!{1,2}| \\S+( \\S+)?)", "withdraw(!{1,2}| \\S+( \\S+)?)"],
+        messageMatching = MessageMatchingEnum.REGULAR
+    )
     suspend fun withdrawal(event: MessageEvent) {
         BankUsecase.withdrawal(event)
-    }
-
-    /**
-     * 主银行取款（兼容：当用户设置了默认私银后仍可直达主行）
-     */
-    @MessageAuthorize(text = ["主取款 \\d+", "main-withdraw \\d+"], messageMatching = MessageMatchingEnum.REGULAR)
-    suspend fun mainBankWithdraw(event: MessageEvent) {
-        BankUsecase.mainBankWithdraw(event)
-    }
-
-    /**
-     * 私银取款：取款 <金额> <code/name>
-     */
-    @MessageAuthorize(text = ["取款 \\d+(\\.\\d+)? \\S+"], messageMatching = MessageMatchingEnum.REGULAR)
-    suspend fun privateBankWithdraw(event: MessageEvent) {
-        BankUsecase.privateBankWithdraw(event)
     }
 
     /**

@@ -3,12 +3,20 @@
 package cn.chahuyun.economy.usecase
 
 import cn.chahuyun.economy.manager.UserCoreManager
+import cn.chahuyun.economy.plugin.ImageManager
 import cn.chahuyun.economy.privatebank.PrivateBankFoxBondService
+import cn.chahuyun.economy.privatebank.PrivateBankLedger
 import cn.chahuyun.economy.privatebank.PrivateBankRepository
 import cn.chahuyun.economy.privatebank.PrivateBankService
+import cn.chahuyun.economy.utils.BankInfoFundLine
+import cn.chahuyun.economy.utils.BankInfoLoanLine
+import cn.chahuyun.economy.utils.EconomyImageRenderer
+import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.FormatUtil
+import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.chahuyun.economy.utils.MoneyFormatUtil
+import cn.chahuyun.economy.utils.PrivateBankInfoCard
 import cn.hutool.core.date.DateUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,6 +24,10 @@ import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.MessageEvent
+import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import javax.imageio.ImageIO
 
 /**
  * 银行用例（代码层模块名仍为 PrivateBank；用户侧统一称为“银行”）。
@@ -42,6 +54,24 @@ object PrivateBankUsecase {
 
         val deposits = PrivateBankRepository.listDeposits(bank.code)
         val totalDeposit = deposits.sumOf { it.principal }
+        val reserve = EconomyUtil.getMoneyByBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC)
+        val liquidity = EconomyUtil.getMoneyFromPluginBankForId(bank.code, PrivateBankLedger.LIQUIDITY_DESC)
+        val inventory = EconomyUtil.getMoneyFromPluginBankForId(bank.code, PrivateBankLedger.INVENTORY_DESC)
+        val guarantee = EconomyUtil.getMoneyFromPluginBankForId(bank.code, PrivateBankLedger.GUARANTEE_DESC)
+        val govBondPrincipal = PrivateBankRepository.listBondHoldings(bank.code)
+            .filter { it.redeemedAt == 0L }
+            .sumOf { it.principal }
+        val foxBondPrincipal = PrivateBankRepository.listFoxBondHoldings(bank.code)
+            .filter { it.redeemedAt == 0L }
+            .sumOf { it.principal }
+        val activeOffers = PrivateBankRepository.listLoanOffers(bank.code)
+            .filter { it.enabled && it.remaining > 0.0001 }
+            .sortedByDescending { it.remaining }
+        val activeLoans = PrivateBankRepository.listLoansByBank(bank.code)
+            .filter { it.repaidAt == 0L }
+        val totalLoanLimit = activeOffers.sumOf { it.total }
+        val remainingLoanLimit = activeOffers.sumOf { it.remaining }
+        val outstandingLoan = activeLoans.sumOf { (it.dueTotal - it.repaidAmount).coerceAtLeast(0.0) }
 
         val withdrawSuccessRate = if (bank.withdrawRequests <= 0) {
             100.0
@@ -49,20 +79,57 @@ object PrivateBankUsecase {
             100.0 * (bank.withdrawRequests - bank.withdrawFailures) / bank.withdrawRequests.toDouble()
         }
 
-        val msg = MessageUtil.formatMessage(
-            "银行信息\n" +
-                    "名称:${bank.name}\n" +
-                    "code:${bank.code}\n" +
-                    "描述:${bank.slogan ?: "无"}\n" +
-                    "行长:${displayUser(subject, bank.ownerQq)}\n" +
-                    "星级:${bank.star}\n" +
-                    "利率:${FormatUtil.fixed(bank.depositorInterest / 10.0, 1)}%\n" +
-                    "平均评分:${FormatUtil.fixed(bank.avgReview, 2)}\n" +
-                    "存款总额:${MoneyFormatUtil.format(totalDeposit)}\n" +
-                    "取款成功率:${FormatUtil.fixed(withdrawSuccessRate, 1)}%\n" +
-                    "失信至:${bank.defaulterUntil.takeIf { it != 0L }?.let { DateUtil.formatDateTime(java.util.Date(it)) } ?: "无"}"
+        val card = PrivateBankInfoCard(
+            name = bank.name,
+            code = bank.code,
+            slogan = bank.slogan,
+            owner = displayUser(subject, bank.ownerQq),
+            star = bank.star,
+            interest = "${FormatUtil.fixed(bank.depositorInterest / 10.0, 1)}%",
+            avgReview = FormatUtil.fixed(bank.avgReview, 2),
+            totalDeposit = MoneyFormatUtil.format(totalDeposit),
+            withdrawSuccessRate = "${FormatUtil.fixed(withdrawSuccessRate, 1)}%",
+            defaulterUntil = bank.defaulterUntil.takeIf { it != 0L }?.let { DateUtil.formatDateTime(java.util.Date(it)) } ?: "无",
+            fundLines = listOf(
+                BankInfoFundLine("准备金池", MoneyFormatUtil.format(reserve), "主银行账户"),
+                BankInfoFundLine("流动金池", MoneyFormatUtil.format(liquidity), "可周转资金"),
+                BankInfoFundLine("放贷库存", MoneyFormatUtil.format(inventory), "冻结额度"),
+                BankInfoFundLine("风险保证金", MoneyFormatUtil.format(guarantee), "兑付兜底"),
+                BankInfoFundLine("国卷持仓", MoneyFormatUtil.format(govBondPrincipal), "未赎回"),
+                BankInfoFundLine("狐卷锁仓", MoneyFormatUtil.format(foxBondPrincipal), "未到期")
+            ),
+            loanLines = buildList {
+                add(BankInfoLoanLine("可借额度", MoneyFormatUtil.format(remainingLoanLimit), "${activeOffers.size} 个启用标的"))
+                add(BankInfoLoanLine("发布总额", MoneyFormatUtil.format(totalLoanLimit), "当前启用额度"))
+                add(BankInfoLoanLine("待收本息", MoneyFormatUtil.format(outstandingLoan), "${activeLoans.size} 笔未结清"))
+                activeOffers.take(1).forEach {
+                    add(
+                        BankInfoLoanLine(
+                            "标的 #${it.id}",
+                            MoneyFormatUtil.format(it.remaining),
+                            "日利率 ${FormatUtil.fixed(it.interest / 10.0, 1)}% / ${it.termDays} 天"
+                        )
+                    )
+                }
+            }
         )
-        subject.sendMessage(MessageUtil.quoteReply(event.message).append(msg).build())
+
+        try {
+            val image = EconomyImageRenderer.renderPrivateBankInfo(card, ImageManager.getCustomFont())
+            val stream = ByteArrayOutputStream()
+            ImageIO.write(image, "png", stream)
+            ByteArrayInputStream(stream.toByteArray()).toExternalResource().use { resource ->
+                subject.sendMessage(MessageUtil.quoteReply(event.message).append(subject.uploadImage(resource)).build())
+            }
+        } catch (e: Exception) {
+            Log.error("银行信息图片生成或发送失败", e)
+            subject.sendMessage(
+                MessageUtil.formatMessageChain(
+                    event.message,
+                    "银行信息生成失败：${bank.name}(code=${bank.code})"
+                )
+            )
+        }
     }
 
     suspend fun listBanks(event: MessageEvent) {
@@ -233,7 +300,7 @@ object PrivateBankUsecase {
 
         // 不带参：优先展示自己拥有的私银；否则展示默认私银；都没有则跳过
         val ownerBank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == event.sender.id }
-        val key = ownerBank?.code ?: userInfo.defaultPrivateBankCode ?: return
+        val key = ownerBank?.code ?: userInfo.defaultPrivateBankCode
         sendBankInfo(event, key)
     }
 

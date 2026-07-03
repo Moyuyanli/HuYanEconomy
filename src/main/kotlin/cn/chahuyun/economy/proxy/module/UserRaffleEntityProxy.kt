@@ -1,14 +1,14 @@
-package cn.chahuyun.economy.proxy.module
+﻿package cn.chahuyun.economy.data.proxy.module
 
 import cn.chahuyun.economy.converter.v1.UserRaffleV1Converter
 import cn.chahuyun.economy.converter.v2.UserRaffleV2Converter
+import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
+import cn.chahuyun.economy.data.proxy.DataVersion
+import cn.chahuyun.economy.data.proxy.EntityProxy
+import cn.chahuyun.economy.data.proxy.MigrationResult
 import cn.chahuyun.economy.entity.UserRaffle
 import cn.chahuyun.economy.entity.v2.user.UserRaffleEntity
 import cn.chahuyun.economy.model.user.UserRaffleDto
-import cn.chahuyun.economy.proxy.DataSourceStrategyImpl
-import cn.chahuyun.economy.proxy.DataVersion
-import cn.chahuyun.economy.proxy.EntityProxy
-import cn.chahuyun.economy.proxy.MigrationResult
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 
@@ -54,14 +54,21 @@ class UserRaffleEntityProxy : EntityProxy<UserRaffleDto> {
     }
 
     private fun findV1ById(id: Long): UserRaffleDto? = try {
-        HibernateFactory.selectOneById(UserRaffle::class.java, id)?.let { v1Converter.toDto(it) }
+        val entity = HibernateFactory.getSessionFactory().fromTransaction { session ->
+            session.find(UserRaffle::class.java, id)?.also { it.poolTimes.size }
+        }
+        entity?.let { v1Converter.toDto(it) }
     } catch (e: Exception) {
         Log.error("UserRaffleEntityProxy query V1 raffle user failed: id=$id", e)
         null
     }
 
     private fun findAllV1(): List<UserRaffleDto> = try {
-        v1Converter.toDtoList(HibernateFactory.selectList(UserRaffle::class.java))
+        val entities = HibernateFactory.getSessionFactory().fromTransaction { session ->
+            session.createQuery("from UserRaffle", UserRaffle::class.java).resultList
+                .onEach { it.poolTimes.size }
+        }
+        v1Converter.toDtoList(entities)
     } catch (e: Exception) {
         Log.error("UserRaffleEntityProxy query all V1 raffle users failed", e)
         emptyList()

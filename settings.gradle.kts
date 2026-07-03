@@ -22,3 +22,12 @@ pluginManagement{
 }
 
 rootProject.name = "HuYanEconomy"
+
+include(
+    "economy-common",
+    "economy-data",
+    "economy-image",
+    "economy-core",
+    "economy-game",
+    "economy-main"
+)

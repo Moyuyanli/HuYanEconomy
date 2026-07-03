@@ -1,8 +1,8 @@
-package cn.chahuyun.economy.manager
+﻿package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.HuYanEconomy
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.LotteryInfoDto
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
@@ -13,7 +13,7 @@ import net.mamoe.mirai.contact.NormalMember
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * 彩票模块初始化与定时调度管理。
+ * 褰╃エ妯″潡鍒濆鍖栦笌瀹氭椂璋冨害绠＄悊銆?
  */
 object LotteryManager {
 
@@ -24,14 +24,14 @@ object LotteryManager {
     val hoursTiming = AtomicBoolean(false)
 
     /**
-     * 初始化彩票：检查存量记录并按需启动定时任务。
+     * 鍒濆鍖栧僵绁細妫€鏌ュ瓨閲忚褰曞苟鎸夐渶鍚姩瀹氭椂浠诲姟銆?
      */
     @JvmStatic
     fun init() {
         val lotteryInfos = try {
             findAll()
         } catch (e: Exception) {
-            Log.error("彩票管理:彩票初始化失败!", e)
+            Log.error("褰╃エ绠＄悊:褰╃エ鍒濆鍖栧け璐?", e)
             return
         }
 
@@ -101,8 +101,7 @@ object LotteryManager {
     }
 
     /**
-     * 发送彩票结果信息。
-     */
+     * 鍙戦€佸僵绁ㄧ粨鏋滀俊鎭€?     */
     @JvmStatic
     fun result(type: Int, location: Int, lotteryInfo: LotteryInfoDto) {
         if (location == 0) {
@@ -115,7 +114,7 @@ object LotteryManager {
         delete(lotteryInfo)
 
         if (!EconomyUtil.plusMoneyToUser(member, lotteryInfo.bonus)) {
-            runBlocking { member.sendMessage("奖金添加失败，请联系管理员!") }
+            runBlocking { member.sendMessage("濂栭噾娣诲姞澶辫触锛岃鑱旂郴绠＄悊鍛?") }
             return
         }
 
@@ -124,7 +123,7 @@ object LotteryManager {
             1 -> if (location == 3) {
                 runBlocking {
                     group.sendMessage(
-                        "得签着:${member.nick}(${member.id}),奖励${MoneyFormatUtil.format(lotteryInfo.bonus)}金币"
+                        "寰楃鐫€:${member.nick}(${member.id}),濂栧姳${MoneyFormatUtil.format(lotteryInfo.bonus)}閲戝竵"
                     )
                 }
             }
@@ -132,7 +131,7 @@ object LotteryManager {
             2 -> if (location == 4) {
                 runBlocking {
                     group.sendMessage(
-                        "得签着:${member.nick}(${member.id}),奖励${MoneyFormatUtil.format(lotteryInfo.bonus)}金币"
+                        "寰楃鐫€:${member.nick}(${member.id}),濂栧姳${MoneyFormatUtil.format(lotteryInfo.bonus)}閲戝竵"
                     )
                 }
             }
@@ -140,7 +139,7 @@ object LotteryManager {
             3 -> if (location == 5) {
                 runBlocking {
                     group.sendMessage(
-                        "得签着:${member.nick}(${member.id}),奖励${MoneyFormatUtil.format(lotteryInfo.bonus)}金币"
+                        "寰楃鐫€:${member.nick}(${member.id}),濂栧姳${MoneyFormatUtil.format(lotteryInfo.bonus)}閲戝竵"
                     )
                 }
             }
@@ -148,11 +147,15 @@ object LotteryManager {
     }
 
     /**
-     * 关闭定时器。
+     * 鍏抽棴瀹氭椂鍣ㄣ€?
      */
     @JvmStatic
     fun close() {
-        HuYanScheduler.stop()
+        HuYanScheduler.cancel("dayTask")
+        HuYanScheduler.cancel("hoursTask")
+        HuYanScheduler.cancel("minutesTask")
+        minuteTiming.set(false)
+        hoursTiming.set(false)
     }
 
     fun findByType(type: Int): List<LotteryInfoDto> = lotteryProxy.findWhere { it.type == type }

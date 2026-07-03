@@ -4,19 +4,15 @@ import cn.chahuyun.authorize.entity.PermGroup
 import cn.chahuyun.authorize.utils.PermUtil
 import cn.chahuyun.authorize.utils.UserUtil
 import cn.chahuyun.economy.constant.EconPerm
-import cn.chahuyun.economy.constant.ImageDrawXY
 import cn.chahuyun.economy.manager.BackpackManager
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.user.UserInfoDto
-import cn.chahuyun.economy.plugin.ImageManager
-import cn.chahuyun.economy.plugin.PluginManager
 import cn.chahuyun.economy.sign.BeforeSignEvent
 import cn.chahuyun.economy.sign.SignCommittedEvent
 import cn.chahuyun.economy.sign.SignRewardEvent
 import cn.chahuyun.economy.utils.*
 import cn.hutool.core.date.DateTime
-import cn.hutool.core.date.DateUtil
 import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.Group
@@ -27,15 +23,11 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.MessageChain
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
-import java.awt.Color
-import java.awt.Font
-import java.awt.Graphics2D
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 
 object SignUsecase {
@@ -74,10 +66,13 @@ object SignUsecase {
         val reply = broadcast.reply
         userInfo = broadcast.userInfo
 
-        val eventReply = signEvent.eventReply
-        if (eventReply != null && eventReply.size != 2) {
-            subject.sendMessage(eventReply.build())
-        }
+        // 触发事件原本会单独发送一条文字消息；现在它是签到图右下角信息区的一部分。
+        // 只保留真正触发的事件，避免没有事件时把“本次签到触发事件:”空标题画进图片。
+        val eventReplyLines = signEvent.eventReply
+            ?.build()
+            ?.let(::extractPlainTextLines)
+            ?.takeIf { it.size > 1 }
+            .orEmpty()
 
         if (!EconomyUtil.plusMoneyToUser(userInfo.user, goldNumber)) {
             subject.sendMessage("签到失败!")
@@ -91,21 +86,32 @@ object SignUsecase {
         UserCoreManager.saveUserInfo(userInfo)
 
         val moneyByUser = EconomyUtil.getMoneyByUser(userInfo.user)
+        val signInfoLines = mutableListOf<String>()
+
         messages.append(PlainText("签到成功!\n"))
-        messages.append(PlainText("金币:${MoneyFormatUtil.format(moneyByUser)}(+${MoneyFormatUtil.format(goldNumber)})\n"))
+        signInfoLines += "签到成功!"
+
+        val moneyLine = "金币:${MoneyFormatUtil.format(moneyByUser)}(+${MoneyFormatUtil.format(goldNumber)})"
+        messages.append(PlainText("$moneyLine\n"))
+        signInfoLines += moneyLine
+
         if (reply != null) {
             messages.add(reply as net.mamoe.mirai.message.data.Message)
+            signInfoLines += extractPlainTextLines(reply)
         }
         if (userInfo.oldSignNumber != 0) {
-            messages.append("你的连签线断在了${userInfo.oldSignNumber}天,可惜~")
+            val oldSignLine = "你的连签线断在了${userInfo.oldSignNumber}天,可惜~"
+            messages.append(oldSignLine)
+            signInfoLines += oldSignLine
         }
+        signInfoLines += eventReplyLines
 
         TitleManager.checkSignTitleJava(userInfo, subject)
         TitleManager.checkMonopolyJava(userInfo, subject)
 
         val resultMessages = messages.build()
         SignCommittedEvent(userInfo, event, goldNumber, resultMessages).broadcast()
-        sendSignImage(userInfo, subject, resultMessages)
+        sendSignImage(userInfo, subject, resultMessages, signInfoLines.joinToString("\n"))
     }
 
     suspend fun offSign(event: GroupMessageEvent) {
@@ -156,40 +162,30 @@ object SignUsecase {
         group.sendMessage(MessageUtil.formatMessageChain(event.message, "签到刷新成功!"))
     }
 
-    private suspend fun sendSignImage(userInfo: UserInfoDto, subject: Contact, messages: MessageChain) {
-        val userInfoImageBase: BufferedImage = UserCoreManager.getUserInfoImageBase(userInfo) ?: run {
-            subject.sendMessage(messages)
+    private suspend fun sendSignImage(
+        userInfo: UserInfoDto,
+        subject: Contact,
+        messages: MessageChain,
+        signInfoText: String,
+    ) {
+        // 签到图复用个人信息底图，但右下角信息区改成显示本次签到详情。
+        // 这样“签到成功/金币/随机事件/道具事件”都由统一的卡片绘制流程负责排版。
+        val userInfoImageBase: BufferedImage = UserCoreManager.getUserInfoImageBase(
+            userInfo = userInfo,
+            infoTitle = "签到信息",
+            infoText = signInfoText,
+            infoSignature = "",
+        ) ?: run {
+            sendSignFallback(subject, messages, signInfoText)
             return
         }
-        val graphics: Graphics2D = ImageUtil.getG2d(userInfoImageBase)
-        if (PluginManager.isCustomImage) {
-            graphics.color = Color.BLACK
-            graphics.font = ImageManager.getCustomFont()
-            ImageUtil.drawString(
-                messages.contentToString(),
-                ImageDrawXY.A_WORD.x,
-                ImageDrawXY.A_WORD.y,
-                440,
-                graphics
-            )
-        } else {
-            val fontSize = 20
-            graphics.color = Color.black
-            val x = AtomicInteger(210)
-            graphics.font = Font("黑体", Font.PLAIN, fontSize)
-            messages.forEach { v ->
-                graphics.drawString(v.contentToString(), 520, x.get())
-                x.addAndGet(28)
-            }
-        }
-        graphics.dispose()
 
         val stream = ByteArrayOutputStream()
         try {
             ImageIO.write(userInfoImageBase, "png", stream)
         } catch (e: IOException) {
             Log.error("签到管理:签到图片发送错误!", e)
-            subject.sendMessage(messages)
+            sendSignFallback(subject, messages, signInfoText)
             return
         }
 
@@ -197,5 +193,24 @@ object SignUsecase {
             val image = subject.uploadImage(resource)
             subject.sendMessage(image)
         }
+    }
+
+    private suspend fun sendSignFallback(subject: Contact, messages: MessageChain, signInfoText: String) {
+        // 图片生成失败时也优先发送同一份面板文本，保证触发事件不会因为回退路径丢失。
+        if (signInfoText.isBlank()) {
+            subject.sendMessage(messages)
+        } else {
+            subject.sendMessage(MessageUtil.formatMessageChain(signInfoText))
+        }
+    }
+
+    private fun extractPlainTextLines(messages: MessageChain): List<String> {
+        // MessageChain 里可能带 QuoteReply、图片或其他消息类型；右下角面板只需要纯文本。
+        // 这里按换行拆开，便于渲染器逐行折行，也避免把被回复的原指令画进图片。
+        return messages
+            .filterIsInstance<PlainText>()
+            .flatMap { it.content.split('\n') }
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
     }
 }

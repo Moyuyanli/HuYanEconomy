@@ -1,26 +1,26 @@
-﻿package cn.chahuyun.economy.model.privatebank
+package cn.chahuyun.economy.model.privatebank
 
 import kotlinx.serialization.Serializable
 
 /**
- * 鐙愮嫺鍊哄埜鎸佷粨DTO
+ * 狐狸债券持仓DTO
  */
 @Serializable
 data class PrivateBankFoxBondHoldingDto(
-    /** 璁板綍ID */
+    /** 记录ID */
     var id: Int = 0,
-    /** 鍊哄埜缂栫爜 */
+    /** 债券编码 */
     var bondCode: String = "",
-    /** 閾惰缂栫爜 */
+    /** 银行编码 */
     var bankCode: String = "",
-    /** 鏈噾 */
+    /** 本金 */
     var principal: Double = 0.0,
-    /** 鍒╃巼 */
+    /** 利率 */
     var rate: Double = 0.0,
-    /** 寮€濮嬫椂闂?*/
+    /** 开始时间 */
     var startedAt: Long = 0,
-    /** 鍒版湡鏃堕棿 */
+    /** 到期时间 */
     var dueAt: Long = 0,
-    /** 璧庡洖鏃堕棿 */
+    /** 赎回时间 */
     var redeemedAt: Long = 0
 )

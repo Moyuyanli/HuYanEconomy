@@ -8,6 +8,9 @@ import java.io.File;
 
 /**
  * Manual image preview tool.
+ *
+ * This class is intentionally not a JUnit test. Run main() from the IDE or java command
+ * to regenerate build/image-preview/*.png while tuning AWT coordinates.
  */
 public class Test {
 
@@ -16,11 +19,14 @@ public class Test {
     }
 
     public static void imageTest() throws Exception {
+        // Keep generated previews out of src/ so design checks do not dirty resource files.
         File outputDir = new File("build/image-preview");
         if (!outputDir.exists() && !outputDir.mkdirs()) {
             throw new IllegalStateException("Cannot create preview dir: " + outputDir.getAbsolutePath());
         }
 
+        // Use the same renderer as production commands. The preview output should match bot output
+        // except for mock data/avatar values in previewPersonalInfo().
         Font font = loadPreviewFont();
         BufferedImage personal = EconomyImageRenderer.previewPersonalInfo(font);
         BufferedImage help = EconomyImageRenderer.renderMainHelp(font);
@@ -37,6 +43,7 @@ public class Test {
     }
 
     private static Font loadPreviewFont() {
+        // Prefer the bundled test font so local previews look close to plugin custom-font output.
         File fontFile = new File("src/test/java/Maple UI.ttf");
         try {
             if (fontFile.exists()) {

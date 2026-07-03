@@ -2,10 +2,10 @@
 
 package cn.chahuyun.economy.prop
 
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.props.PropsDataDto
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.model.user.UserBackpackDto
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.utils.Log
 import cn.hutool.core.date.DateUtil
 import cn.hutool.json.JSONConfig
@@ -16,9 +16,8 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 閬撳叿绠＄悊鍣?(Kotlin 鐜颁唬閲嶆瀯鐗?
- * 瀹炵幇寮€闂師鍒欙紝鍩轰簬鎺ュ彛澶勭悊閬撳叿琛屼负
- */
+ * 閬撳叿绠＄悊鍣?Kotlin 瀹炵幇銆? *
+ * 璐熻矗閬撳叿妯℃澘娉ㄥ唽銆佸疄渚嬪簭鍒楀寲/鍙嶅簭鍒楀寲銆佽儗鍖呴亾鍏疯鍙栧拰浣跨敤鍚庣殑鏇存柊銆? */
 object PropsManager {
 
     private fun isInvalidCode(code: String?): Boolean {
@@ -40,7 +39,7 @@ object PropsManager {
     /**
      * 娉ㄥ唽閬撳叿绫诲瀷鍒扮鐞嗗櫒
      *
-     * @param kind 閬撳叿绫诲瀷鏍囪瘑绗?
+     * @param kind 閬撳叿绫诲瀷鏍囪瘑
      * @param propClass 閬撳叿绫荤殑Class瀵硅薄
      * @return 娉ㄥ唽鎴愬姛杩斿洖true锛屽鏋滆绫诲瀷宸插瓨鍦ㄥ垯杩斿洖false
      */
@@ -53,12 +52,10 @@ object PropsManager {
 
 
     /**
-     * 娉ㄥ唽浠ｇ爜鍒伴亾鍏锋槧灏勮〃涓?
-     *
-     * 濡傛灉璇ラ亾鍏峰彲浠ヨ喘涔?鍚屾娉ㄥ唽鍒板晢搴?
-     *
+     * 娉ㄥ唽閬撳叿妯℃澘鍒?code 鏄犲皠琛ㄣ€?     *
+     * 鍙湁绫诲瀷宸叉敞鍐岀殑閬撳叿鎵嶅厑璁告敞鍐屾ā鏉裤€?     *
      * @param prop 瑕佹敞鍐岀殑鍩虹閬撳叿瀵硅薄
-     * @param code 瑕佹敞鍐岀殑閬撳叿浠ｇ爜锛屽鏋滀负null鍒欎娇鐢╬rop.code浣滀负榛樿鍊?
+     * @param code 鍙€夋ā鏉?code锛屼负 null 鏃朵娇鐢?prop.code
      * @return 娉ㄥ唽鎴愬姛杩斿洖true锛屽鏋滆浠ｇ爜宸插瓨鍦ㄥ垯杩斿洖false
      */
     @JvmStatic
@@ -68,56 +65,48 @@ object PropsManager {
             return false
         }
         val onlyCode = code ?: prop.code
-        // 妫€鏌ラ亾鍏蜂唬鐮佹槸鍚﹀凡瀛樺湪锛屽瓨鍦ㄥ垯杩斿洖false
-        if (propsTemplateMap.containsKey(onlyCode)) return false
+        // code 宸插瓨鍦ㄦ椂娉ㄥ唽澶辫触銆?        if (propsTemplateMap.containsKey(onlyCode)) return false
         // 灏嗛亾鍏锋坊鍔犲埌妯℃澘鏄犲皠琛ㄤ腑
         propsTemplateMap[onlyCode] = prop
-        // 濡傛灉閬撳叿鍙喘涔帮紝鍒欐坊鍔犲埌鍟嗗簵涓?
-        if (prop.canBuy) PropsShop.addShop(onlyCode, prop)
+        // 鍙喘涔伴亾鍏峰悓姝ュ姞鍏ュ晢搴椼€?        if (prop.canBuy) PropsShop.addShop(onlyCode, prop)
         return true
     }
 
 
     /**
-     * 妫€鏌ユ寚瀹氱殑閬撳叿绫诲瀷浠ｇ爜鏄惁瀛樺湪
-     *
-     * @param kind 閬撳叿绫诲瀷鏍囪瘑绗?
+     * 妫€鏌ラ亾鍏风被鍨嬫槸鍚﹀凡娉ㄥ唽銆?     *
+     * @param kind 閬撳叿绫诲瀷鏍囪瘑
      * @return 瀛樺湪杩斿洖true锛屼笉瀛樺湪杩斿洖false
      */
     @JvmStatic
     fun checkKindExist(kind: String): Boolean = propsClassMap.containsKey(kind)
 
     /**
-     * 妫€鏌ユ寚瀹氱殑閬撳叿code鏄惁瀛樺湪
-     *
-     * @param code 閬撳叿code鏍囪瘑绗?
+     * 妫€鏌ユ寚瀹?code 鏄惁宸叉敞鍐屾ā鏉裤€?     *
+     * @param code 閬撳叿 code
      * @return 瀛樺湪杩斿洖true锛屼笉瀛樺湪杩斿洖false
      */
     @JvmStatic
     fun checkCodeExist(code: String): Boolean = propsTemplateMap.containsKey(code)
 
     /**
-     * 銆怟otlin 涓撶敤銆戣幏鍙栭亾鍏锋ā鏉垮壇鏈?
-     * 鍒╃敤 reified 鍏抽敭瀛楀疄鍖栨硾鍨嬶紝鏀寔杩愯鏃剁被鍨嬫鏌?
-     * * 璋冪敤绀轰緥锛歷al weapon = PropManager.getTemplate<WeaponProp>("W001")
+     * Kotlin 涓撶敤妯℃澘鑾峰彇鏂规硶銆?     * 浣跨敤 reified 鑷姩鎺ㄦ柇杩斿洖绫诲瀷銆?     * * 璋冪敤绀轰緥锛歷al weapon = PropManager.getTemplate<WeaponProp>("W001")
      */
     inline fun <reified T : BaseProp> getTemplate(code: String): T {
-        val prop = propsTemplateMap[code] ?: error("鑾峰彇閬撳叿妯℃澘澶辫触, 閬撳叿 code: [$code] 涓嶅瓨鍦?")
+        val prop = propsTemplateMap[code] ?: error("鏈壘鍒伴亾鍏锋ā鏉?code: [$code]")
         return prop.copyProp()
     }
 
     /**
-     * 銆怞ava 涓撶敤銆戣幏鍙栭亾鍏锋ā鏉垮壇鏈?
-     * 閫氳繃 Class 鏄惧紡浼犻€掔被鍨嬩俊鎭?
-     * * 璋冪敤绀轰緥锛歐eaponProp w = PropManager.getTemplate("W001", WeaponProp.class)
+     * Java 涓撶敤妯℃澘鑾峰彇鏂规硶銆?     * 閫氳繃 Class 鍙傛暟鎸囧畾杩斿洖绫诲瀷銆?     * * 璋冪敤绀轰緥锛歐eaponProp w = PropManager.getTemplate("W001", WeaponProp.class)
      */
     @JvmStatic
-    @JvmName("getTemplate") // 纭繚 Java 绔湅鍒扮殑鍚嶇О鏄?getTemplate
+    @JvmName("getTemplate") // 璁?Java 璋冪敤鍚嶄繚鎸佷负 getTemplate
     fun <T : BaseProp> getTemplate(code: String, clazz: Class<T>): T {
         val prop =
-            propsTemplateMap[code] ?: throw IllegalArgumentException("鑾峰彇閬撳叿妯℃澘澶辫触, 閬撳叿 code: [$code] 涓嶅瓨鍦?")
+            propsTemplateMap[code] ?: throw IllegalArgumentException("鏈壘鍒伴亾鍏锋ā鏉?code: [$code]")
         if (!clazz.isInstance(prop)) {
-            throw IllegalArgumentException("道具模板类型不符: code=$code, expected=${clazz.name}, actual=${prop.javaClass.name}")
+            throw IllegalArgumentException("閬撳叿妯℃澘绫诲瀷涓嶇: code=$code, expected=${clazz.name}, actual=${prop.javaClass.name}")
         }
         return prop.copyProp()
     }
@@ -133,39 +122,34 @@ object PropsManager {
     fun getProp(backpack: UserBackpackDto): BaseProp? {
         return try {
             val clazz = propsClassMap[backpack.propKind] ?: return null
-            val propId = backpack.propId.takeIf { it != 0L } ?: error("閿欒,鑳屽寘涓亾鍏穒d涓虹┖!")
+            val propId = backpack.propId.takeIf { it != 0L } ?: error("鑳屽寘閬撳叿 id 缂哄け!")
             deserialization(propId, clazz)
         } catch (e: Exception) {
-            Log.error("鑾峰彇鑳屽寘閬撳叿澶辫触(ID: ${backpack.id}), 鍙兘鏁版嵁宸叉崯鍧? ${e.message}")
+            Log.error("璇诲彇鑳屽寘閬撳叿(ID: ${backpack.id})澶辫触: ${e.message}")
             null
         }
     }
 
     /**
-     * 鏍规嵁鐢ㄦ埛鑳屽寘淇℃伅鍜屾寚瀹氱被鍨嬭幏鍙栭亾鍏峰疄渚?
-     *
+     * 鏍规嵁鑳屽寘淇℃伅鑾峰彇鎸囧畾绫诲瀷鐨勯亾鍏峰疄渚嬨€?     *
      * @param backpack 鐢ㄦ埛鑳屽寘瀵硅薄
-     * @return 杩斿洖鎸囧畾绫诲瀷鐨勯亾鍏峰疄渚?
-     */
+     * @return 鎸囧畾绫诲瀷鐨勯亾鍏峰疄渚?     */
     @JvmName("getPropWithType")
     inline fun <reified T : BaseProp> getProp(backpack: UserBackpackDto): T {
         return getProp(backpack, T::class.java)
     }
 
     /**
-     * 鏍规嵁鐢ㄦ埛鑳屽寘淇℃伅鍜屾寚瀹氱被鍨嬭幏鍙栭亾鍏峰疄渚?
-     *
+     * 鏍规嵁鑳屽寘淇℃伅鑾峰彇鎸囧畾绫诲瀷鐨勯亾鍏峰疄渚嬨€?     *
      * java 涓撶敤
      *
      * @param backpack 鐢ㄦ埛鑳屽寘瀵硅薄
      * @param clazz 閬撳叿绫诲瀷鐨凜lass瀵硅薄
-     * @return 杩斿洖鎸囧畾绫诲瀷鐨勯亾鍏峰疄渚?
-     */
+     * @return 鎸囧畾绫诲瀷鐨勯亾鍏峰疄渚?     */
     @JvmStatic
     fun <T : BaseProp> getProp(backpack: UserBackpackDto, clazz: Class<T>): T {
-        // 妫€鏌ヨ儗鍖呬腑閬撳叿id鏄惁涓虹┖锛屼负绌哄垯鎶涘嚭寮傚父
-        val propId = backpack.propId.takeIf { it != 0L } ?: throw IllegalArgumentException("鑳屽寘涓亾鍏穒d涓虹┖!")
-        // 閫氳繃閬撳叿id鍜岀被鍨嬭繘琛屽弽搴忓垪鍖栬幏鍙栭亾鍏峰疄渚?
+        val propId = backpack.propId.takeIf { it != 0L }
+            ?: throw IllegalArgumentException("背包道具 id 缺失!")
         return deserialization(propId, clazz)
     }
 
@@ -173,7 +157,7 @@ object PropsManager {
     /**
      * 鏍规嵁閬撳叿绫诲瀷鍜孖D鑾峰彇閬撳叿瀹炰緥
      *
-     * @param kind 閬撳叿绫诲瀷鏍囪瘑绗?
+     * @param kind 閬撳叿绫诲瀷鏍囪瘑
      * @param id 閬撳叿ID
      * @return 鎴愬姛杩斿洖閬撳叿瀹炰緥锛屽け璐ヨ繑鍥瀗ull
      */
@@ -194,16 +178,15 @@ object PropsManager {
         val data = serialization(prop)
         val saved = propsProxy.save(data)
         val propId = saved.id.takeIf { it != 0L }
-            ?: error("保存道具失败: kind=${data.kind}, code=${data.code}")
+            ?: error("淇濆瓨閬撳叿澶辫触: kind=${data.kind}, code=${data.code}")
         if (propsProxy.findById(propId) == null) {
-            error("保存道具后读回失败: kind=${data.kind}, code=${data.code}, id=$propId")
+            error("淇濆瓨閬撳叿鍚庤鍥炲け璐? kind=${data.kind}, code=${data.code}, id=$propId")
         }
         return propId
     }
 
     /**
-     * 鏇存柊鏁版嵁搴撲腑鐨勯亾鍏蜂俊鎭?
-     *
+     * 鏇存柊宸叉湁閬撳叿瀹炰緥銆?     *
      * @param id 閬撳叿ID
      * @param prop 閬撳叿瀹炰緥
      */
@@ -228,7 +211,7 @@ object PropsManager {
         val data = serialization(prop)
         val saved = propsProxy.save(data.copy(id = id))
         val verified = propsProxy.findById(id)
-            ?: error("更新道具后读回失败: kind=${data.kind}, code=${data.code}, id=$id")
+            ?: error("鏇存柊閬撳叿鍚庤鍥炲け璐? kind=${data.kind}, code=${data.code}, id=$id")
         if (
             saved.id == 0L ||
             verified.kind != data.kind ||
@@ -238,13 +221,12 @@ object PropsManager {
             verified.status != data.status ||
             verified.data != data.data
         ) {
-            error("更新道具校验失败: kind=${data.kind}, code=${data.code}, id=$id")
+            error("鏇存柊閬撳叿鏍￠獙澶辫触: kind=${data.kind}, code=${data.code}, id=$id")
         }
     }
 
     /**
-     * Java鍏煎鐨勯亾鍏蜂娇鐢ㄦ柟娉曪紙鍚屾璋冪敤锛?
-     *
+     * Java 璋冪敤鐨勫悓姝ラ亾鍏蜂娇鐢ㄥ叆鍙ｃ€?     *
      * @param backpack 鐢ㄦ埛鑳屽寘瀵硅薄
      * @param event 浣跨敤浜嬩欢瀵硅薄
      * @return 浣跨敤缁撴灉
@@ -269,7 +251,7 @@ object PropsManager {
         val result = prop.use(event)
 
         if (result.success) {
-            val propId = backpack.propId.takeIf { it != 0L } ?: error("閿欒,鑳屽寘涓亾鍏穒d涓虹┖!")
+            val propId = backpack.propId.takeIf { it != 0L } ?: error("鑳屽寘閬撳叿 id 缂哄け!")
             if (result.shouldRemove) {
                 destroyProsAndBackpack(propId)
             } else if (result.shouldUpdate) {
@@ -290,8 +272,7 @@ object PropsManager {
     }
 
     /**
-     * 鏍规嵁ID閿€姣侀亾鍏锋暟鎹?
-     *
+     * 鎸?ID 閿€姣侀亾鍏枫€?     *
      * @param id 閬撳叿ID
      */
     @JvmStatic
@@ -300,8 +281,7 @@ object PropsManager {
     }
 
     /**
-     * 閿€姣佽儗鍖呬腑鐨勯亾鍏凤紙鍚屾椂鍒犻櫎閬撳叿鏁版嵁鍜岃儗鍖呰褰曪級
-     *
+     * 閿€姣侀亾鍏凤紝骞舵竻鐞嗘墍鏈夊紩鐢ㄨ閬撳叿鐨勮儗鍖呰褰曘€?     *
      * @param propId 閬撳叿ID
      */
     @JvmStatic
@@ -311,11 +291,10 @@ object PropsManager {
     }
 
     /**
-     * 鏍稿績瀛楁鍚屾搴忓垪鍖?
-     * 灏嗛亾鍏峰璞″簭鍒楀寲涓烘暟鎹簱瀛樺偍鏍煎紡
+     * 搴忓垪鍖栭亾鍏峰疄渚嬨€?     * 灏嗛亾鍏峰璞″簭鍒楀寲涓烘暟鎹簱瀛樺偍鏍煎紡
      *
      * @param prop 閬撳叿瀹炰緥
-     * @return 搴忓垪鍖栧悗鐨勯亾鍏锋暟鎹璞?
+     * @return 閬撳叿鏁版嵁 DTO
      */
     @JvmStatic
     fun serialization(prop: BaseProp): PropsDataDto {
@@ -337,7 +316,6 @@ object PropsManager {
         }
 
         var status = false
-        // 澶勭悊鐘舵€佸瓧娈靛悓姝?(閽堝鍗＄墖绛?
         if (prop is cn.chahuyun.economy.model.props.PropsCard) {
             status = prop.status
         }
@@ -370,7 +348,6 @@ object PropsManager {
         return try {
             val jsonObject = JSONUtil.parseObj(data)
 
-            // 浼樺厛浠モ€滃垪->JSON鈥濈殑鏂瑰紡琛ラ綈 code锛岄伩鍏?Kotlin val/鐖剁被瀛楁瀵艰嚧 toBean 涓㈠け code銆?
             if (isInvalidCode(jsonObject.getStr("code")) && !isInvalidCode(propsData.code)) {
                 jsonObject["code"] = propsData.code
             }
@@ -381,7 +358,6 @@ object PropsManager {
             val prop = JSONUtil.toBean(jsonObject.toString(), jsonConfig, clazz)
                 ?: throw RuntimeException("閬撳叿鍙嶅簭鍒楀寲缁撴灉涓虹┖")
 
-            // 鏈€缁堝厹搴曪細濡傛灉 toBean 浠嶇劧鏈兘姝ｇ‘娉ㄥ叆 code锛屽垯浠?JSON/鍒楀洖濉埌瀵硅薄銆?
             applyCodeIfPossible(prop, jsonObject.getStr("code") ?: propsData.code)
             prop
         } catch (e: Exception) {
@@ -421,10 +397,8 @@ object PropsManager {
     }
 
     /**
-     * 鑾峰彇鎸囧畾绫诲瀷鏍囪瘑绗﹀搴旂殑閬撳叿绫?
-     *
-     * @param kind 閬撳叿绫诲瀷鏍囪瘑绗?
-     * @return 瀵瑰簲鐨凜lass瀵硅薄锛屼笉瀛樺湪杩斿洖null
+     * 鑾峰彇鎸囧畾绫诲瀷鏍囪瘑绗﹀搴旂殑閬撳叿绫汇€?     *
+     * @param kind 閬撳叿绫诲瀷鏍囪瘑绗?     * @return 瀵瑰簲鐨凜lass瀵硅薄锛屼笉瀛樺湪杩斿洖null
      */
     @JvmStatic
     fun getPropClass(kind: String): Class<out BaseProp>? = propsClassMap[kind]

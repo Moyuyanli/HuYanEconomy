@@ -1,39 +1,39 @@
-﻿package cn.chahuyun.economy.model.privatebank
+package cn.chahuyun.economy.model.privatebank
 
 import kotlinx.serialization.Serializable
 
 /**
- * 绉佷汉閾惰DTO
+ * 私人银行DTO
  */
 @Serializable
 data class PrivateBankDto(
-    /** 璁板綍ID */
+    /** 记录ID */
     var id: Int = 0,
-    /** 閾惰缂栫爜锛堝敮涓€锛?*/
+    /** 银行编码（唯一） */
     var code: String = "",
-    /** 閾惰鍚嶇О */
+    /** 银行名称 */
     var name: String = "",
-    /** 閾惰鍙ｅ彿 */
+    /** 银行口号 */
     var slogan: String = "",
-    /** 鎵€鏈夎€匭Q */
+    /** 所有者QQ */
     var ownerQq: Long = 0,
-    /** 鏄惁浠匳IP鍙瓨 */
+    /** 是否仅VIP可存 */
     var vipOnly: Boolean = false,
-    /** VIP鐧藉悕鍗曪紙JSON鏁扮粍锛?*/
+    /** VIP白名单（JSON数组） */
     var vipWhitelist: String = "",
-    /** 瀛樻鍒╃巼锛堢櫨鍒嗘瘮锛?*/
+    /** 存款利率（百分比） */
     var depositorInterest: Int = 5,
-    /** 鍒涘缓鏃堕棿 */
+    /** 创建时间 */
     var createdAt: Long = 0,
-    /** 澶变俊瑙ｉ櫎鏃堕棿 */
+    /** 失信解除时间 */
     var defaulterUntil: Long = 0,
-    /** 鎻愮幇鐢宠娆℃暟 */
+    /** 提现申请次数 */
     var withdrawRequests: Int = 0,
-    /** 鎻愮幇澶辫触娆℃暟 */
+    /** 提现失败次数 */
     var withdrawFailures: Int = 0,
-    /** 璇勫垎鏄熺骇 */
+    /** 评分星级 */
     var star: Int = 1,
-    /** 骞冲潎璇勫垎 */
+    /** 平均评分 */
     var avgReview: Double = 0.0
 ) {
     fun isDefaulter(now: Long = System.currentTimeMillis()): Boolean = defaulterUntil != 0L && defaulterUntil > now

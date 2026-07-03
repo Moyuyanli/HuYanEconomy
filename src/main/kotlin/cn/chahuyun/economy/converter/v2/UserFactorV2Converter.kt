@@ -13,7 +13,7 @@ class UserFactorV2Converter : Converter<UserFactorEntity, UserFactorDto> {
             force = entity.force,
             dodge = entity.dodge,
             resistance = entity.resistance,
-            buff = entity.buff
+            buff = entity.buff?.takeIf { it.isNotBlank() } ?: "[]"
         )
     }
 

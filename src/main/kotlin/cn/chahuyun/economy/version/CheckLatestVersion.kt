@@ -24,10 +24,8 @@ object CheckLatestVersion {
             Log.error("无法获取最新版本号！")
             return
         }
-        if (newVersion.substring(1) != EconomyBuildConstants.VERSION) {
-            Log.warning("发现最新版本！版本：$newVersion")
-            Log.warning("发现最新版本！版本：$newVersion")
-            Log.warning("发现最新版本！版本：$newVersion")
+        if (isRemoteNewer(newVersion, EconomyBuildConstants.VERSION)) {
+            Log.warning("发现新版本：$newVersion")
             if (updateMsg != null) {
                 updateMsg = updateMsg
                     .replace("#", "")
@@ -43,6 +41,25 @@ object CheckLatestVersion {
             }
             return
         }
-        Log.info("已是最新版本！版本: ${EconomyBuildConstants.VERSION}")
+        Log.info("当前版本 ${EconomyBuildConstants.VERSION} 不低于远端版本 $newVersion")
+    }
+
+    private fun isRemoteNewer(remoteTag: String, currentVersion: String): Boolean {
+        val remote = parseVersion(remoteTag.removePrefix("v").removePrefix("V"))
+        val current = parseVersion(currentVersion.removePrefix("v").removePrefix("V"))
+        val size = maxOf(remote.size, current.size)
+        for (index in 0 until size) {
+            val remotePart = remote.getOrElse(index) { 0 }
+            val currentPart = current.getOrElse(index) { 0 }
+            if (remotePart != currentPart) return remotePart > currentPart
+        }
+        return false
+    }
+
+    private fun parseVersion(version: String): List<Int> {
+        return version
+            .substringBefore('-')
+            .split('.')
+            .map { part -> part.takeWhile(Char::isDigit).toIntOrNull() ?: 0 }
     }
 }

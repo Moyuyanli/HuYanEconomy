@@ -1,15 +1,15 @@
-package cn.chahuyun.economy.proxy
+﻿package cn.chahuyun.economy.data.proxy
 
 /**
- * 数据源版本枚举
+ * 鏁版嵁婧愮増鏈灇涓?
  */
 enum class DataVersion {
-    /** 现有实体（V1） */
+    /** 鐜版湁瀹炰綋锛圴1锛?*/
     V1,
-    /** 新设计实体（V2） */
+    /** 鏂拌璁″疄浣擄紙V2锛?*/
     V2,
-    /** 未来预留 */
+    /** 鏈潵棰勭暀 */
     V3,
-    /** Redis缓存 */
+    /** Redis缂撳瓨 */
     REDIS
 }

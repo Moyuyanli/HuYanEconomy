@@ -4,7 +4,6 @@ import cn.chahuyun.economy.model.privatebank.PrivateBankFoxBondBidDto
 import cn.chahuyun.economy.model.privatebank.PrivateBankFoxBondDto
 import cn.chahuyun.economy.model.privatebank.PrivateBankFoxBondHoldingDto
 import cn.chahuyun.economy.utils.*
-import cn.hutool.core.date.DateUtil
 import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.contact.User
 import java.util.*
@@ -29,7 +28,7 @@ object PrivateBankFoxBondService {
         val day = DateUtil.dayOfMonth(now)
         if (day != 1 && day != 15) return emptyList()
 
-        // 閬垮厤閲嶅鍙戣锛氳嫢褰撳ぉ宸茬粡鏈?FB-yyyyMMdd-xxx 鍒欒涓哄凡鍙戣
+        // 每个发行日只生成一次，按 FB-yyyyMMdd-xxx 前缀去重。
         val prefix = "FB-${DateUtil.format(now, "yyyyMMdd")}-"
         val existing = PrivateBankRepository.listFoxBonds().any { it.code.startsWith(prefix) }
         if (existing) return emptyList()
@@ -52,12 +51,12 @@ object PrivateBankFoxBondService {
             )
         }
 
-        // 3 鍩虹鍗凤細100M-300M锛?-14d
+        // 3 张小额狐卷：100M-300M，7-14 天。
         var seq = 1
         repeat(3) { addBond(seq++, 100_000_000.0, 300_000_000.0, 7, 14) }
-        // 6 鏍囧噯鍗凤細500M-900M锛?4-21d
+        // 6 张中额狐卷：500M-900M，14-21 天。
         repeat(6) { addBond(seq++, 500_000_000.0, 900_000_000.0, 14, 21) }
-        // 1 澶ч硠鍗凤細1G-5G锛?1-30d
+        // 1 张大额狐卷：1G-5G，21-30 天。
         addBond(seq, 1_000_000_000.0, 5_000_000_000.0, 21, 30)
 
         bonds.forEach { PrivateBankRepository.saveFoxBond(it) }
@@ -71,10 +70,10 @@ object PrivateBankFoxBondService {
     }
 
     fun submitBid(owner: User, bondCode: String, premium: Double, bidRate: Double): Pair<Boolean, String> {
-        if (premium < 0) return false to "婧环閲戦蹇呴』 >= 0"
-        if (bidRate <= 0) return false to "鍒╃巼蹇呴』 > 0"
+        if (premium < 0) return false to "溢价金额必须 >= 0"
+        if (bidRate <= 0) return false to "竞标利率必须大于 0"
 
-        val bond = PrivateBankRepository.findFoxBondByCode(bondCode.trim()) ?: return false to "鏈壘鍒拌鐙愬嵎锛?bondCode"
+        val bond = PrivateBankRepository.findFoxBondByCode(bondCode.trim()) ?: return false to "未找到狐卷：$bondCode"
         val now = Date()
         if (bond.status != "BIDDING" || now.time < bond.bidStartAt || now.time > bond.bidEndAt) {
             return false to "当前不在竞标时间内"
@@ -82,7 +81,7 @@ object PrivateBankFoxBondService {
 
         val bank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == owner.id }
             ?: return false to "你还没有创建自己的银行"
-        if (bank.isDefaulter()) return false to "澶变俊鏈熼棿绂佹鍙備笌绔炴爣"
+        if (bank.isDefaulter()) return false to "失信期间禁止竞标狐卷"
 
         if (bidRate > bond.baseRate + 1e-9) {
             return false to "竞标利率不得高于原始利率（原始 ${FormatUtil.fixed(bond.baseRate, 2)}%/day）"
@@ -96,10 +95,10 @@ object PrivateBankFoxBondService {
         val reserve = EconomyUtil.getMoneyByBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC)
         if (reserve + 1e-6 < bond.faceValue + premium) {
             val need = ShareUtils.rounding(bond.faceValue + premium)
-            return false to "鍑嗗閲戜笉瓒筹細闇€ ${MoneyFormatUtil.format(need)}锛堥潰棰?${MoneyFormatUtil.format(bond.faceValue)} + 婧环 ${MoneyFormatUtil.format(premium)}锛夛紝褰撳墠 ${MoneyFormatUtil.format(reserve)}"
+            return false to "准备金不足：需要 ${MoneyFormatUtil.format(need)}（面额 ${MoneyFormatUtil.format(bond.faceValue)} + 溢价 ${MoneyFormatUtil.format(premium)}），当前 ${MoneyFormatUtil.format(reserve)}"
         }
 
-        // 鍚屼竴閾惰瀵瑰悓涓€鐙愬嵎浠呬繚鐣欎竴鏉＄珵鏍囷紙merge 浼氭寜 id 宸ヤ綔锛屽洜姝よ繖閲屾墜鍔ㄥ鐢ㄥ凡鏈夎褰曪級
+        // 同一家银行重复竞标同一狐卷时覆盖旧报价。
         val existing = PrivateBankRepository.listFoxBondBids(bond.code).firstOrNull { it.bankCode == bank.code }
         val bid = existing ?: PrivateBankFoxBondBidDto(
             bondCode = bond.code,
@@ -111,7 +110,7 @@ object PrivateBankFoxBondService {
         bid.createdAt = now.time
         PrivateBankRepository.saveFoxBondBid(bid)
 
-        return true to "绔炴爣宸叉彁浜わ細鐙愬嵎 ${bond.code} 闈㈤=${MoneyFormatUtil.format(bond.faceValue)} 鍘熷=${FormatUtil.fixed(bond.baseRate, 2)}%/day 浣犵殑婧环=${MoneyFormatUtil.format(premium)} 浣犵殑鍒╃巼=${FormatUtil.fixed(bidRate, 2)}%/day"
+        return true to "竞标已提交：狐卷 ${bond.code} 面额=${MoneyFormatUtil.format(bond.faceValue)} 原始=${FormatUtil.fixed(bond.baseRate, 2)}%/day 你的溢价=${MoneyFormatUtil.format(premium)} 你的利率=${FormatUtil.fixed(bidRate, 2)}%/day"
     }
 
     fun settleExpiredBids(now: Date = Date()): Int {
@@ -169,15 +168,15 @@ object PrivateBankFoxBondService {
 
             val bank = PrivateBankRepository.findBankByCode(winner.bankCode) ?: continue
 
-            // 1) 鎵ｉ櫎婧环锛堥攢姣侊級
+            // 1) 扣除溢价（销毁）
             if (winner.premium > 0) {
                 if (!EconomyUtil.plusMoneyToBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC, -winner.premium)) {
-                    Log.error("鐙愬嵎缁撶畻:鎵ｉ櫎婧环澶辫触 bank=${bank.code} bond=${bond.code}")
+                    Log.error("狐卷结算:扣除溢价失败 bank=${bank.code} bond=${bond.code}")
                     continue
                 }
             }
 
-            // 2) 閿佸畾闈㈤璧勯噾锛氫粠绉侀摱鍑嗗閲?global) -> 鐙愬嵎閿佷粨(custom)
+            // 2) 从准备金池(global)锁定狐卷面额到狐卷锁仓池(custom)。
             val locked = EconomyUtil.turnGlobalBankAccountToPluginBankForId(
                 fromUserId = bank.code,
                 fromDescription = PrivateBankLedger.RESERVE_DESC,
@@ -186,11 +185,11 @@ object PrivateBankFoxBondService {
                 quantity = bond.faceValue
             )
             if (!locked) {
-                // 鍥炴粴婧环锛堝敖鍔涳級
+                // 回滚溢价（尽力）
                 if (winner.premium > 0) {
                     EconomyUtil.plusMoneyToBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC, winner.premium)
                 }
-                Log.error("鐙愬嵎缁撶畻:閿佸畾璧勯噾澶辫触 bank=${bank.code} bond=${bond.code}")
+                Log.error("狐卷结算:锁定本金失败 bank=${bank.code} bond=${bond.code}")
                 continue
             }
 
@@ -227,7 +226,7 @@ object PrivateBankFoxBondService {
             val bond = PrivateBankRepository.findFoxBondByCode(h.bondCode) ?: continue
             val bank = PrivateBankRepository.findBankByCode(h.bankCode) ?: continue
 
-            // 瑙ｉ攣鏈噾锛堜粠閿佷粨姹犳墸鍑忥級锛屽啀鎶娾€滄湰閲?鏀剁泭鈥濇墦鍥炲噯澶囬噾
+            // 解锁本金（从锁仓池扣减），再把“本金 + 收益”打回准备金池。
             val okUnlock = EconomyUtil.plusMoneyToPluginBankForId(bond.code, PrivateBankLedger.FOX_BOND_LOCK_DESC, -h.principal)
             if (!okUnlock) continue
 

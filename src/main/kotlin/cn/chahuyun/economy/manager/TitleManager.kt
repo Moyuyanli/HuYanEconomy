@@ -1,13 +1,13 @@
-@file:Suppress("BooleanLiteralArgument")
+﻿@file:Suppress("BooleanLiteralArgument")
 
 package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.constant.TitleCode
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.model.title.TitleTemplateSimpleImpl
 import cn.chahuyun.economy.model.user.TitleInfoDto
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.plugin.TitleTemplateManager
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.repository.FishRepository
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.ImageUtil
@@ -25,17 +25,17 @@ import java.util.*
 object TitleManager {
 
     /**
-     * 初始化加载称号模板与历史数据修正。
-     * （从 `TitleAction` 的历史实现迁移，避免 action 层混入业务逻辑）
+     * 鍒濆鍖栧姞杞界О鍙锋ā鏉夸笌鍘嗗彶鏁版嵁淇銆?
+     * 锛堜粠 `TitleAction` 鐨勫巻鍙插疄鐜拌縼绉伙紝閬垮厤 action 灞傛贩鍏ヤ笟鍔￠€昏緫锛?
      */
     @JvmStatic
     fun init() {
         TitleTemplateManager.registerTitleTemplate(
             TitleTemplateSimpleImpl(
-                TitleCode.SIGN_15, TitleCode.SIGN_15_EXPIRED, "签到狂人",
+                TitleCode.SIGN_15, TitleCode.SIGN_15_EXPIRED, "绛惧埌鐙備汉",
                 false, null,
                 true, false,
-                "[只是个传说]",
+                "[鍙槸涓紶璇碷",
                 ImageUtil.colorHex(Color(0xff7f50)),
                 ImageUtil.colorHex(Color(0xff6348))
             ),
@@ -43,7 +43,7 @@ object TitleManager {
                 TitleCode.MONOPOLY, TitleCode.MONOPOLY_EXPIRED, "大富翁",
                 false, null,
                 true, true,
-                "[大富翁]",
+                "[澶у瘜缈乚",
                 ImageUtil.colorHex(Color(0xff4757)),
                 ImageUtil.colorHex(Color(0xffa502))
             ),
@@ -51,7 +51,7 @@ object TitleManager {
                 TitleCode.REGAL, TitleCode.REGAL_EXPIRED, "小富翁",
                 true, 10000.0,
                 true, false,
-                "[小富翁]",
+                "[灏忓瘜缈乚",
                 ImageUtil.colorHex(Color(0xECCC68)),
                 ImageUtil.colorHex(Color(0xffa502))
             ),
@@ -59,7 +59,7 @@ object TitleManager {
                 TitleCode.FISHING, TitleCode.FISHING_EXPIRED, "钓鱼佬",
                 false, null,
                 true, true,
-                "[邓刚]",
+                "[閭撳垰]",
                 ImageUtil.colorHex(Color(0xf02fc2)),
                 ImageUtil.colorHex(Color(0x6094ea))
             ),
@@ -67,42 +67,42 @@ object TitleManager {
                 TitleCode.BET_MONSTER, TitleCode.BET_MONSTER_EXPIRED, "赌怪",
                 false, null,
                 true, true,
-                "[17张牌能秒我?]",
+                "[17寮犵墝鑳界鎴?]",
                 ImageUtil.colorHex(Color(0xFF0000)),
                 ImageUtil.colorHex(Color(0x730000))
             ),
             TitleTemplateSimpleImpl(
-                TitleCode.ROB, TitleCode.ROB_EXPIRED, "街区传说",
+                TitleCode.ROB, TitleCode.ROB_EXPIRED, "琛楀尯浼犺",
                 false, null,
                 false, true,
-                "[师承窃格瓦拉]",
+                "[甯堟壙绐冩牸鐡︽媺]",
                 ImageUtil.colorHex(Color(0x2261DC)),
                 ImageUtil.colorHex(Color(0x2261DC))
             ),
             TitleTemplateSimpleImpl(
-                TitleCode.SIGN_90, TitleCode.SIGN_90_EXPIRED, "签到大王",
+                TitleCode.SIGN_90, TitleCode.SIGN_90_EXPIRED, "绛惧埌澶х帇",
                 false, null,
                 true, true,
-                "[无敌超级签到大王•神]",
+                "[鏃犳晫瓒呯骇绛惧埌澶х帇鈥㈢]",
                 ImageUtil.colorHex(Color(0x622774)),
                 ImageUtil.colorHex(Color(0xc53364))
             )
         )
 
-        // 修改版本迭代带来的错误数据
+        // 淇敼鐗堟湰杩唬甯︽潵鐨勯敊璇暟鎹?
         val titleInfos = titleProxy.findAll()
         for (titleInfo in titleInfos) {
             if (titleInfo.code.isBlank()) {
                 when (titleInfo.title) {
-                    "[只是个传说]" -> {
-                        titleProxy.save(titleInfo.copy(code = TitleCode.SIGN_15, name = "签到狂人"))
+                    "[鍙槸涓紶璇碷" -> {
+                        titleProxy.save(titleInfo.copy(code = TitleCode.SIGN_15, name = "绛惧埌鐙備汉"))
                     }
 
-                    "[大富翁]" -> {
+                    "[澶у瘜缈乚" -> {
                         titleProxy.save(titleInfo.copy(code = TitleCode.MONOPOLY, name = "大富翁"))
                     }
 
-                    "[小富翁]" -> {
+                    "[灏忓瘜缈乚" -> {
                         titleProxy.save(titleInfo.copy(code = TitleCode.REGAL, name = "小富翁"))
                     }
                 }
@@ -111,7 +111,7 @@ object TitleManager {
     }
 
     /**
-     * 获取默认称号（当前启用的称号，若无则退回群头衔/默认）
+     * 鑾峰彇榛樿绉板彿锛堝綋鍓嶅惎鐢ㄧ殑绉板彿锛岃嫢鏃犲垯閫€鍥炵兢澶磋/榛樿锛?
      */
     @JvmStatic
     fun getDefaultTitle(userInfo: UserInfoDto): TitleInfoDto {
@@ -128,27 +128,27 @@ object TitleManager {
     private fun getInfo(userInfo: UserInfoDto): TitleInfoDto {
         val user = runCatching { userInfo.user }.getOrNull()
         return if (user is Member) {
-            // 彻底避免读取 rankTitle（Overflow 环境下会触发群活跃信息查询并刷屏 Warning）
+            // 褰诲簳閬垮厤璇诲彇 rankTitle锛圤verflow 鐜涓嬩細瑙﹀彂缇ゆ椿璺冧俊鎭煡璇㈠苟鍒峰睆 Warning锛?
             val specialTitle = runCatching { user.specialTitle }.getOrDefault("")
             val (rawTitle, color) = if (specialTitle.isNotBlank()) {
                 specialTitle to "ff00ff"
             } else {
-                "[无]" to "8a8886"
+                "[鏃燷" to "8a8886"
             }
 
             TitleInfoDto(title = "[${rawTitle}]", sColor = color)
         } else {
-            TitleInfoDto(title = "[无]", sColor = "ff00ff")
+            TitleInfoDto(title = "[鏃燷", sColor = "ff00ff")
         }
     }
 
     /**
-     * 添加称号
+     * 娣诲姞绉板彿
      */
     @JvmStatic
     fun addTitleInfo(userInfo: UserInfoDto, titleTemplateCode: String): Boolean {
         val title = TitleTemplateManager.createTitle(titleTemplateCode, userInfo)
-            ?: throw RuntimeException("称号code错误或该称号没有在称号模版管理中注册!")
+            ?: throw RuntimeException("绉板彿code閿欒鎴栬绉板彿娌℃湁鍦ㄧО鍙锋ā鐗堢鐞嗕腑娉ㄥ唽!")
 
         val selectOne = titleProxy.findWhere { it.code == title.code && it.userId == title.userId }.firstOrNull()
         if (selectOne != null) return false
@@ -167,7 +167,7 @@ object TitleManager {
     }
 
     /**
-     * 检查称号是否过期（过期则删除并返回 true）
+     * 妫€鏌ョО鍙锋槸鍚﹁繃鏈燂紙杩囨湡鍒欏垹闄ゅ苟杩斿洖 true锛?
      */
     @JvmStatic
     fun checkTitleTime(titleInfo: TitleInfoDto): Boolean {
@@ -181,13 +181,13 @@ object TitleManager {
         return false
     }
 
-    // ============================ 外部称号检查 ============================
+    // ============================ 澶栭儴绉板彿妫€鏌?============================
 
     @JvmStatic
     fun checkMonopolyJava(userInfo: UserInfoDto, subject: Contact) = runBlocking { checkMonopoly(userInfo, subject) }
 
     /**
-     * 检查大富翁称号
+     * 妫€鏌ュぇ瀵岀縼绉板彿
      */
     suspend fun checkMonopoly(userInfo: UserInfoDto, subject: Contact) {
         val moneyByUser = EconomyUtil.getMoneyByUser(userInfo.user)
@@ -196,7 +196,7 @@ object TitleManager {
             addTitleInfo(userInfo, TitleCode.MONOPOLY)
             val builder = MessageChainBuilder()
             builder.append(At(userInfo.qq))
-            builder.append("恭喜!你的金币数量大于 100000 ,获得永久称号 [大富翁] !")
+            builder.append("鎭枩!浣犵殑閲戝竵鏁伴噺澶т簬 100000 ,鑾峰緱姘镐箙绉板彿 [澶у瘜缈乚 !")
             subject.sendMessage(builder.build())
         }
     }
@@ -205,7 +205,7 @@ object TitleManager {
     fun checkSignTitleJava(userInfo: UserInfoDto, subject: Contact) = runBlocking { checkSignTitle(userInfo, subject) }
 
     /**
-     * 检查连续签到称号
+     * 妫€鏌ヨ繛缁鍒扮О鍙?
      */
     suspend fun checkSignTitle(userInfo: UserInfoDto, subject: Contact) {
         val signNumber = userInfo.signNumber
@@ -215,7 +215,7 @@ object TitleManager {
                 addTitleInfo(userInfo, TitleCode.SIGN_15)
                 val builder = MessageChainBuilder()
                 builder.append(At(userInfo.qq))
-                builder.append("恭喜!你已经连续签到 15 天,获得15天称号 签到狂人 !")
+                builder.append("鎭枩!浣犲凡缁忚繛缁鍒?15 澶?鑾峰緱15澶╃О鍙?绛惧埌鐙備汉 !")
                 subject.sendMessage(builder.build())
             }
 
@@ -224,14 +224,14 @@ object TitleManager {
                 addTitleInfo(userInfo, TitleCode.SIGN_90)
                 val builder = MessageChainBuilder()
                 builder.append(At(userInfo.qq))
-                builder.append("恭喜!你已经连续签到 90 天,获得 365 天称号 签到大王 !")
+                builder.append("鎭枩!浣犲凡缁忚繛缁鍒?90 澶?鑾峰緱 365 澶╃О鍙?绛惧埌澶х帇 !")
                 subject.sendMessage(builder.build())
             }
         }
     }
 
     /**
-     * 检查钓鱼佬称号
+     * 妫€鏌ラ挀楸间浆绉板彿
      */
     @JvmStatic
     suspend fun checkFishTitle(userInfo: UserInfoDto, subject: Contact) {
@@ -243,7 +243,7 @@ object TitleManager {
         if (checkTitleIsExist(userInfo, TitleCode.FISHING)) return
 
         if (addTitleInfo(userInfo, TitleCode.FISHING)) {
-            subject.sendMessage(MessageUtil.formatMessageChain(userInfo.qq, "恭喜你斩获钓鱼榜榜首!获得钓鱼佬称号!"))
+            subject.sendMessage(MessageUtil.formatMessageChain(userInfo.qq, "鎭枩浣犳柀鑾烽挀楸兼姒滈!鑾峰緱閽撻奔浣О鍙?"))
             if (titleInfo != null) {
                 titleProxy.delete(titleInfo.id.toLong())
             }

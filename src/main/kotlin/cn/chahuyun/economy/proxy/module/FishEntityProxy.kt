@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.proxy.module
+﻿package cn.chahuyun.economy.data.proxy.module
 
 import cn.chahuyun.economy.converter.v1.FishInfoV1Converter
 import cn.chahuyun.economy.converter.v1.FishPondV1Converter
@@ -6,6 +6,10 @@ import cn.chahuyun.economy.converter.v1.FishV1Converter
 import cn.chahuyun.economy.converter.v2.FishInfoV2Converter
 import cn.chahuyun.economy.converter.v2.FishPondV2Converter
 import cn.chahuyun.economy.converter.v2.FishV2Converter
+import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
+import cn.chahuyun.economy.data.proxy.DataVersion
+import cn.chahuyun.economy.data.proxy.EntityProxy
+import cn.chahuyun.economy.data.proxy.MigrationResult
 import cn.chahuyun.economy.entity.fish.Fish
 import cn.chahuyun.economy.entity.fish.FishInfo
 import cn.chahuyun.economy.entity.fish.FishPond
@@ -15,10 +19,6 @@ import cn.chahuyun.economy.entity.v2.fish.FishPondEntity
 import cn.chahuyun.economy.model.fish.FishDto
 import cn.chahuyun.economy.model.fish.FishInfoDto
 import cn.chahuyun.economy.model.fish.FishPondDto
-import cn.chahuyun.economy.proxy.DataSourceStrategyImpl
-import cn.chahuyun.economy.proxy.DataVersion
-import cn.chahuyun.economy.proxy.EntityProxy
-import cn.chahuyun.economy.proxy.MigrationResult
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.hibernateplus.HibernateFactory
 
@@ -380,11 +380,7 @@ class FishPondEntityProxy : EntityProxy<FishPondDto> {
 
     private fun saveV2(dto: FishPondDto): FishPondDto = try {
         val entity = v2Converter.toEntity(dto)
-        val existing = if (dto.id != 0) {
-            HibernateFactory.selectOneById(FishPondEntity::class.java, dto.id.toLong())
-        } else {
-            HibernateFactory.selectOne(FishPondEntity::class.java, "code", dto.code)
-        }
+        val existing = findExistingV2Pond(dto)
         val now = System.currentTimeMillis()
         if (existing != null) {
             entity.id = existing.id
@@ -396,6 +392,20 @@ class FishPondEntityProxy : EntityProxy<FishPondDto> {
     } catch (e: Exception) {
         Log.error("FishPondEntityProxy save V2 fish pond failed: code=${dto.code}", e)
         dto
+    }
+
+    private fun findExistingV2Pond(dto: FishPondDto): FishPondEntity? {
+        if (dto.id != 0) {
+            runCatching { HibernateFactory.selectOneById(FishPondEntity::class.java, dto.id.toLong()) }
+                .onFailure { Log.error("FishPondEntityProxy query V2 fish pond failed: id=${dto.id}", it) }
+                .getOrNull()
+                ?.let { return it }
+        }
+
+        if (dto.code.isBlank()) return null
+        return runCatching { HibernateFactory.selectOne(FishPondEntity::class.java, "code", dto.code) }
+            .onFailure { Log.error("FishPondEntityProxy query V2 fish pond failed: code=${dto.code}", it) }
+            .getOrNull()
     }
 
     private fun deleteV2(id: Long): Boolean = try {

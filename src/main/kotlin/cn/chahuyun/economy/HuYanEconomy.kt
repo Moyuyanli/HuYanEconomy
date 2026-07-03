@@ -1,4 +1,4 @@
-package cn.chahuyun.economy
+﻿package cn.chahuyun.economy
 
 import cn.chahuyun.authorize.AuthorizeServer
 import cn.chahuyun.authorize.exception.ExceptionHandle
@@ -10,6 +10,8 @@ import cn.chahuyun.economy.config.FishingMsgConfig
 import cn.chahuyun.economy.config.RobMsgConfig
 import cn.chahuyun.economy.constant.Icon
 import cn.chahuyun.economy.data.PrizesData
+import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
 import cn.chahuyun.economy.manager.BankManager
@@ -17,8 +19,6 @@ import cn.chahuyun.economy.manager.LotteryManager
 import cn.chahuyun.economy.manager.PrivateBankManager
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.plugin.*
-import cn.chahuyun.economy.proxy.DataSourceStrategyImpl
-import cn.chahuyun.economy.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.sign.SignRewardEvent
 import cn.chahuyun.economy.utils.EconomyUtil
@@ -35,7 +35,7 @@ import net.mamoe.mirai.event.GlobalEventChannel
 
 
 /**
- * 壶言经济插件主类 (Kotlin Object)
+ * 澹惰█缁忔祹鎻掍欢涓荤被 (Kotlin Object)
  */
 object HuYanEconomy : KotlinPlugin(
     JvmPluginDescription(
@@ -44,78 +44,90 @@ object HuYanEconomy : KotlinPlugin(
         name = "HuYanEconomy"
     ) {
         author("Moyuyanli")
-        info("壶言经济")
+        info("澹惰█缁忔祹")
         dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", ">=1.0.6", false)
         dependsOn("cn.chahuyun.HuYanAuthorize", ">=1.3.6", false)
     }
 ) {
 
     /**
-     * 插件运行状态
+     * 鎻掍欢杩愯鐘舵€?
      */
     @JvmField
     var PLUGIN_STATUS: Boolean = false
 
     /**
-     * 配置
+     * 閰嶇疆
      */
     lateinit var config: EconomyConfig
 
     /**
-     * 钓鱼消息配置
+     * 閽撻奔娑堟伅閰嶇疆
      */
     @JvmField
     var msgConfig: FishingMsgConfig? = null
 
     /**
-     * 抢劫消息配置
+     * 鎶㈠姭娑堟伅閰嶇疆
      */
     @JvmField
     var robConfig: RobMsgConfig? = null
 
     /**
-     * 插件所属bot
+     * 鎻掍欢鎵€灞瀊ot
      */
     @JvmField
     var bot: Bot? = null
 
     override fun PluginComponentStorage.onLoad() {
+        Log.configure(
+            info = { logger.info(it) },
+            warning = { logger.warning(it) },
+            error = { logger.error(it) },
+            errorWithThrowable = { message, throwable -> logger.error(message, throwable) },
+            debug = { logger.debug(it) },
+        )
+        System.setProperty("log4j2.StatusLogger.level", "OFF")
+        System.setProperty("org.apache.logging.log4j.simplelog.StatusLogger.level", "OFF")
         PLUGIN_STATUS = true
     }
 
     override fun onEnable() {
+        HuYanScheduler.prepareStartup()
         Icon.init(logger)
 
-        // 加载配置
+        // 鍔犺浇閰嶇疆
         EconomyConfig.reload()
         EconomyPluginConfig.reload()
         FishingMsgConfig.reload()
         RobMsgConfig.reload()
         PrizesData.reload()
 
-        // 注册指令
+        // 娉ㄥ唽鎸囦护
         CommandManager.registerCommand(EconomyCommand(), false)
 
         config = EconomyConfig
         msgConfig = FishingMsgConfig
         robConfig = RobMsgConfig
 
-        // 插件功能初始化
+        // 鎻掍欢鍔熻兘鍒濆鍖?
         MessageUtil.init(this)
         PluginManager.init()
 
-        // 插件权限code注册
+        // 鎻掍欢鏉冮檺code娉ㄥ唽
         PermCodeManager.init(this)
 
-        // 初始化插件数据库
+        // 鍒濆鍖栨彃浠舵暟鎹簱
         HibernateUtil.init(this)
 
-        // 实体代理器框架初始化（Phase 1-2）
-        DataSourceStrategyImpl.loadFromConfig()
+        // Initialize entity data proxy framework.
+        DataSourceStrategyImpl.configurePersistence(EconomyPluginConfig.entityDataVersions) {
+            EconomyPluginConfig.entityDataVersions = it
+        }
         EntityProxyRegistry.init()
-        Log.info("实体代理器模块版本: ${EntityProxyRegistry.currentVersions()}")
+        Log.info(formatEntityVersionSummary())
 
-        // 功能加载
+        // 鍔熻兘鍔犺浇
         EconomyUtil.init()
         LotteryManager.init()
         FishManager.init()
@@ -128,12 +140,13 @@ object HuYanEconomy : KotlinPlugin(
         cn.chahuyun.economy.manager.FarmManager.init()
         FactorManager.init()
         PluginPropsManager.init()
+        HuYanScheduler.registerSubmittedTasks()
 
-        // 注册自定义称号
+        // Load custom title templates.
         TitleTemplateManager.loadingCustomTitle()
 
-        // 注册消息
-        // 注册消息（统一扫描 action 包）
+        // 娉ㄥ唽娑堟伅
+        // 娉ㄥ唽娑堟伅锛堢粺涓€鎵弿 action 鍖咃級
         AuthorizeServer.registerEvents(
             plugin = this,
             packageName = "cn.chahuyun.economy.action",
@@ -144,16 +157,31 @@ object HuYanEconomy : KotlinPlugin(
 
         val eventChannel = GlobalEventChannel.parentScope(this)
 
-        // 监听自定义签到事件
+        // 鐩戝惉鑷畾涔夌鍒颁簨浠?
         eventChannel.subscribeAlways<SignRewardEvent>(priority = EventPriority.HIGH) { cn.chahuyun.economy.manager.SignManager.randomSignGold(it) }
         eventChannel.subscribeAlways<SignRewardEvent> { cn.chahuyun.economy.manager.SignManager.signProp(it) }
         eventChannel.subscribeAlways<FishStartEvent> { GamesAction.fishStart(it) }
         eventChannel.subscribeAlways<FishRollEvent> { GamesAction.fishRoll(it) }
 
-        Log.info("事件已监听!")
+        Log.info("浜嬩欢宸茬洃鍚?")
 
         EconomyPluginConfig.firstStart = false
-        Log.info("HuYanEconomy已加载！当前版本 ${description.version} !")
+        Log.info("HuYanEconomy宸插姞杞斤紒褰撳墠鐗堟湰 ${description.version} !")
+    }
+
+    private fun formatEntityVersionSummary(): String {
+        val versions = EntityProxyRegistry.currentVersions()
+        val v2Modules = versions
+            .filterValues { it.name == "V2" }
+            .keys
+            .sorted()
+
+        if (v2Modules.isEmpty()) {
+            return "瀹炰綋鏁版嵁婧愮増鏈姞杞藉畬鎴愶細鍏ㄩ儴 ${versions.size} 涓ā鍧椾娇鐢?V1(榛樿)"
+        }
+
+        val v1Count = versions.size - v2Modules.size
+        return "实体数据源版本加载完成：V2 ${v2Modules.size} 个[${v2Modules.joinToString(", ")}]，V1(默认) ${v1Count} 个"
     }
 
     override fun onDisable() {
@@ -163,7 +191,7 @@ object HuYanEconomy : KotlinPlugin(
         LotteryManager.close()
         YiYanManager.shutdown()
         HuYanScheduler.stop()
-        Log.info("插件已卸载!")
+        Log.info("鎻掍欢宸插嵏杞?")
     }
 }
 
