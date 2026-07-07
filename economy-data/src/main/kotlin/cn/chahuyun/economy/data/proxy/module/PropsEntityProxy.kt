@@ -1,0 +1,138 @@
+package cn.chahuyun.economy.data.proxy.module
+
+import cn.chahuyun.economy.converter.v1.PropsDataV1Converter
+import cn.chahuyun.economy.converter.v2.PropsDataV2Converter
+import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
+import cn.chahuyun.economy.data.proxy.DataVersion
+import cn.chahuyun.economy.data.proxy.EntityProxy
+import cn.chahuyun.economy.data.proxy.MigrationResult
+import cn.chahuyun.economy.data.repository.PropsDataRepository
+import cn.chahuyun.economy.model.props.PropsDataDto
+import cn.chahuyun.economy.utils.Log
+
+class PropsEntityProxy : EntityProxy<PropsDataDto> {
+
+    private val v1Converter = PropsDataV1Converter()
+    private val v2Converter = PropsDataV2Converter()
+
+    override fun getModuleName(): String = MODULE_NAME
+
+    override fun getCurrentVersion(): DataVersion = DataSourceStrategyImpl.getVersion(MODULE_NAME)
+
+    override fun findById(id: Long): PropsDataDto? = when (getCurrentVersion()) {
+        DataVersion.V2 -> findV2ById(id)
+        else -> findV1ById(id)
+    }
+
+    override fun findAll(): List<PropsDataDto> = when (getCurrentVersion()) {
+        DataVersion.V2 -> findAllV2()
+        else -> findAllV1()
+    }
+
+    override fun findWhere(predicate: (PropsDataDto) -> Boolean): List<PropsDataDto> = findAll().filter(predicate)
+
+    override fun save(dto: PropsDataDto): PropsDataDto = when (getCurrentVersion()) {
+        DataVersion.V2 -> saveV2(dto)
+        else -> saveV1(dto)
+    }
+
+    override fun saveAll(dtos: List<PropsDataDto>): List<PropsDataDto> = dtos.map { save(it) }
+
+    override fun delete(id: Long): Boolean = when (getCurrentVersion()) {
+        DataVersion.V2 -> deleteV2(id)
+        else -> deleteV1(id)
+    }
+
+    override fun migrateTo(targetVersion: DataVersion): MigrationResult {
+        return when (targetVersion) {
+            DataVersion.V2 -> migrateV1ToV2()
+            DataVersion.V1 -> MigrationResult.success(0)
+            else -> MigrationResult.failure(0, 0, listOf("PropsEntityProxy does not support migration to $targetVersion yet"))
+        }
+    }
+
+    private fun findV1ById(id: Long): PropsDataDto? = try {
+        PropsDataRepository.findById(id)?.let { v1Converter.toDto(it) }
+    } catch (e: Exception) {
+        Log.error("PropsEntityProxy query V1 props failed: id=$id", e)
+        null
+    }
+
+    private fun findAllV1(): List<PropsDataDto> = try {
+        v1Converter.toDtoList(PropsDataRepository.listAll())
+    } catch (e: Exception) {
+        Log.error("PropsEntityProxy query all V1 props failed", e)
+        emptyList()
+    }
+
+    private fun saveV1(dto: PropsDataDto): PropsDataDto = try {
+        v1Converter.toDto(PropsDataRepository.save(v1Converter.toEntity(dto)))
+    } catch (e: Exception) {
+        Log.error("PropsEntityProxy save V1 props failed: id=${dto.id}", e)
+        dto
+    }
+
+    private fun deleteV1(id: Long): Boolean = try {
+        PropsDataRepository.deleteById(id)
+    } catch (e: Exception) {
+        Log.error("PropsEntityProxy delete V1 props failed: id=$id", e)
+        false
+    }
+
+    private fun findV2ById(id: Long): PropsDataDto? = try {
+        PropsDataRepository.findV2ById(id)?.let { v2Converter.toDto(it) }
+    } catch (e: Exception) {
+        Log.error("PropsEntityProxy query V2 props failed: id=$id", e)
+        null
+    }
+
+    private fun findAllV2(): List<PropsDataDto> = try {
+        v2Converter.toDtoList(PropsDataRepository.listAllV2())
+    } catch (e: Exception) {
+        Log.error("PropsEntityProxy query all V2 props failed", e)
+        emptyList()
+    }
+
+    private fun saveV2(dto: PropsDataDto): PropsDataDto = try {
+        val entity = v2Converter.toEntity(dto)
+        val existing = if (dto.id != 0L) PropsDataRepository.findV2ById(dto.id) else null
+        val now = System.currentTimeMillis()
+        if (existing != null) {
+            entity.id = existing.id
+            entity.createdAt = existing.createdAt
+        }
+        if (entity.createdAt == 0L) entity.createdAt = now
+        entity.updatedAt = now
+        v2Converter.toDto(PropsDataRepository.saveV2(entity))
+    } catch (e: Exception) {
+        Log.error("PropsEntityProxy save V2 props failed: id=${dto.id}", e)
+        dto
+    }
+
+    private fun deleteV2(id: Long): Boolean = try {
+        PropsDataRepository.deleteV2ById(id)
+    } catch (e: Exception) {
+        Log.error("PropsEntityProxy delete V2 props failed: id=$id", e)
+        false
+    }
+
+    private fun migrateV1ToV2(): MigrationResult {
+        var migrated = 0
+        var failed = 0
+        val errors = mutableListOf<String>()
+        findAllV1().forEach { dto ->
+            try {
+                saveV2(dto)
+                migrated += 1
+            } catch (e: Exception) {
+                failed += 1
+                errors += "id=${dto.id}: ${e.message ?: e::class.simpleName}"
+            }
+        }
+        return if (failed == 0) MigrationResult.success(migrated) else MigrationResult.failure(migrated, failed, errors)
+    }
+
+    companion object {
+        private const val MODULE_NAME = "props"
+    }
+}
