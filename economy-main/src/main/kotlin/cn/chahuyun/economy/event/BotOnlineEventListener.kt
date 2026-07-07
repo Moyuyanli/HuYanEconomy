@@ -1,6 +1,7 @@
 package cn.chahuyun.economy.event
 
 import cn.chahuyun.economy.HuYanEconomy
+import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.utils.Log
 import net.mamoe.mirai.event.EventHandler
 import net.mamoe.mirai.event.SimpleListenerHost
@@ -14,6 +15,7 @@ class BotOnlineEventListener : SimpleListenerHost() {
     @EventHandler
     fun onMessage(event: BotOnlineEvent) {
         HuYanEconomy.bot = event.bot
+        EconomyRuntime.bot = event.bot
         Log.info("bot 已上线!")
     }
 }

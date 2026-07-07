@@ -1,8 +1,7 @@
-﻿package cn.chahuyun.economy
+package cn.chahuyun.economy
 
 import cn.chahuyun.authorize.AuthorizeServer
 import cn.chahuyun.authorize.exception.ExceptionHandle
-import cn.chahuyun.economy.action.GamesAction
 import cn.chahuyun.economy.command.EconomyCommand
 import cn.chahuyun.economy.config.EconomyConfig
 import cn.chahuyun.economy.config.EconomyPluginConfig
@@ -14,12 +13,16 @@ import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
+import cn.chahuyun.economy.game.DefaultGameOverviewProvider
+import cn.chahuyun.economy.game.GameOverviewBridge
 import cn.chahuyun.economy.manager.BankManager
 import cn.chahuyun.economy.manager.LotteryManager
 import cn.chahuyun.economy.manager.PrivateBankManager
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.plugin.*
+import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.scheduler.HuYanScheduler
+import cn.chahuyun.economy.service.GameEventService
 import cn.chahuyun.economy.sign.SignRewardEvent
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.HibernateUtil
@@ -33,9 +36,8 @@ import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.event.EventPriority
 import net.mamoe.mirai.event.GlobalEventChannel
 
-
 /**
- * 澹惰█缁忔祹鎻掍欢涓荤被 (Kotlin Object)
+ * 壶言经济插件主类。
  */
 object HuYanEconomy : KotlinPlugin(
     JvmPluginDescription(
@@ -44,37 +46,37 @@ object HuYanEconomy : KotlinPlugin(
         name = "HuYanEconomy"
     ) {
         author("Moyuyanli")
-        info("澹惰█缁忔祹")
+        info("壶言经济-一款娱乐插件")
         dependsOn("xyz.cssxsh.mirai.plugin.mirai-economy-core", ">=1.0.6", false)
         dependsOn("cn.chahuyun.HuYanAuthorize", ">=1.3.6", false)
     }
 ) {
 
     /**
-     * 鎻掍欢杩愯鐘舵€?
+     * 插件运行状态。
      */
     @JvmField
     var PLUGIN_STATUS: Boolean = false
 
     /**
-     * 閰嶇疆
+     * 插件配置。
      */
     lateinit var config: EconomyConfig
 
     /**
-     * 閽撻奔娑堟伅閰嶇疆
+     * 钓鱼消息配置。
      */
     @JvmField
     var msgConfig: FishingMsgConfig? = null
 
     /**
-     * 鎶㈠姭娑堟伅閰嶇疆
+     * 抢劫消息配置。
      */
     @JvmField
     var robConfig: RobMsgConfig? = null
 
     /**
-     * 鎻掍欢鎵€灞瀊ot
+     * 插件所属 bot。
      */
     @JvmField
     var bot: Bot? = null
@@ -90,34 +92,39 @@ object HuYanEconomy : KotlinPlugin(
         System.setProperty("log4j2.StatusLogger.level", "OFF")
         System.setProperty("org.apache.logging.log4j.simplelog.StatusLogger.level", "OFF")
         PLUGIN_STATUS = true
+        EconomyRuntime.bind(HuYanEconomy)
+        EconomyRuntime.pluginStatus = true
     }
 
     override fun onEnable() {
+        EconomyRuntime.bind(this)
+        EconomyRuntime.pluginStatus = true
         HuYanScheduler.prepareStartup()
         Icon.init(logger)
 
-        // 鍔犺浇閰嶇疆
+        // 加载配置。
         EconomyConfig.reload()
         EconomyPluginConfig.reload()
         FishingMsgConfig.reload()
         RobMsgConfig.reload()
         PrizesData.reload()
 
-        // 娉ㄥ唽鎸囦护
+        // 注册指令。
         CommandManager.registerCommand(EconomyCommand(), false)
 
         config = EconomyConfig
         msgConfig = FishingMsgConfig
         robConfig = RobMsgConfig
+        GameOverviewBridge.register(DefaultGameOverviewProvider)
 
-        // 鎻掍欢鍔熻兘鍒濆鍖?
+        // 初始化插件功能。
         MessageUtil.init(this)
         PluginManager.init()
 
-        // 鎻掍欢鏉冮檺code娉ㄥ唽
+        // 注册插件权限 code。
         PermCodeManager.init(this)
 
-        // 鍒濆鍖栨彃浠舵暟鎹簱
+        // 初始化插件数据库。
         HibernateUtil.init(this)
 
         // Initialize entity data proxy framework.
@@ -127,7 +134,7 @@ object HuYanEconomy : KotlinPlugin(
         EntityProxyRegistry.init()
         Log.info(formatEntityVersionSummary())
 
-        // 鍔熻兘鍔犺浇
+        // 加载功能模块。
         EconomyUtil.init()
         LotteryManager.init()
         FishManager.init()
@@ -145,8 +152,7 @@ object HuYanEconomy : KotlinPlugin(
         // Load custom title templates.
         TitleTemplateManager.loadingCustomTitle()
 
-        // 娉ㄥ唽娑堟伅
-        // 娉ㄥ唽娑堟伅锛堢粺涓€鎵弿 action 鍖咃級
+        // 注册消息事件，统一扫描 action 包。
         AuthorizeServer.registerEvents(
             plugin = this,
             packageName = "cn.chahuyun.economy.action",
@@ -157,16 +163,16 @@ object HuYanEconomy : KotlinPlugin(
 
         val eventChannel = GlobalEventChannel.parentScope(this)
 
-        // 鐩戝惉鑷畾涔夌鍒颁簨浠?
+        // 监听自定义事件。
         eventChannel.subscribeAlways<SignRewardEvent>(priority = EventPriority.HIGH) { cn.chahuyun.economy.manager.SignManager.randomSignGold(it) }
         eventChannel.subscribeAlways<SignRewardEvent> { cn.chahuyun.economy.manager.SignManager.signProp(it) }
-        eventChannel.subscribeAlways<FishStartEvent> { GamesAction.fishStart(it) }
-        eventChannel.subscribeAlways<FishRollEvent> { GamesAction.fishRoll(it) }
+        eventChannel.subscribeAlways<FishStartEvent> { GameEventService.handleFishStart(it) }
+        eventChannel.subscribeAlways<FishRollEvent> { GameEventService.handleFishRoll(it) }
 
-        Log.info("浜嬩欢宸茬洃鍚?")
+        Log.info("事件已监听")
 
         EconomyPluginConfig.firstStart = false
-        Log.info("HuYanEconomy宸插姞杞斤紒褰撳墠鐗堟湰 ${description.version} !")
+        Log.info("HuYanEconomy 已加载！当前版本 ${description.version} !")
     }
 
     private fun formatEntityVersionSummary(): String {
@@ -177,7 +183,7 @@ object HuYanEconomy : KotlinPlugin(
             .sorted()
 
         if (v2Modules.isEmpty()) {
-            return "瀹炰綋鏁版嵁婧愮増鏈姞杞藉畬鎴愶細鍏ㄩ儴 ${versions.size} 涓ā鍧椾娇鐢?V1(榛樿)"
+            return "实体数据源版本加载完成：全部 ${versions.size} 个模块使用 V1(默认)"
         }
 
         val v1Count = versions.size - v2Modules.size
@@ -186,12 +192,12 @@ object HuYanEconomy : KotlinPlugin(
 
     override fun onDisable() {
         PLUGIN_STATUS = false
+        EconomyRuntime.pluginStatus = false
 
         cn.chahuyun.economy.manager.GamesManager.shutdown()
         LotteryManager.close()
         YiYanManager.shutdown()
         HuYanScheduler.stop()
-        Log.info("鎻掍欢宸插嵏杞?")
+        Log.info("插件已卸载")
     }
 }
-

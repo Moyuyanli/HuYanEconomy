@@ -1,4 +1,4 @@
-﻿package cn.chahuyun.economy.command
+package cn.chahuyun.economy.command
 
 import cn.chahuyun.economy.EconomyBuildConstants
 import cn.chahuyun.economy.HuYanEconomy
@@ -11,32 +11,32 @@ import net.mamoe.mirai.console.command.CompositeCommand
 
 class EconomyCommand : CompositeCommand(
     HuYanEconomy, "hye",
-    description = "HuYanEconomy Command"
+    description = "壶言经济 Console 命令"
 ) {
 
     @SubCommand("v")
-    @Description("鏌ヨ褰撳墠澹惰█缁忔祹鐗堟湰")
+    @Description("查询当前壶言经济版本")
     suspend fun CommandSender.version() {
-        sendMessage("褰撳墠澹惰█缁忔祹鐗堟湰 ${EconomyBuildConstants.VERSION}")
+        sendMessage("当前壶言经济版本 ${EconomyBuildConstants.VERSION}")
     }
 
     @SubCommand("repair")
-    @Description("修复版本迭代带来的错误")
+    @Description("修复版本迭代带来的错误数据")
     suspend fun CommandSender.repair() {
         sendMessage(RepairManager.init())
     }
 
     @SubCommand("entity switch")
-    @Description("鍒囨崲鍏ㄩ儴瀹炰綋鏁版嵁浣跨敤鐗堟湰锛屼笉澶嶅埗鏁版嵁")
+    @Description("切换全部实体数据使用版本，不复制数据")
     suspend fun CommandSender.entitySwitch(version: String) {
         val dataVersion = parseDataVersion(version)
         if (dataVersion == null) {
-            sendMessage("不支持的数据版本: ${version}，可用版本: V1, V2")
+            sendMessage("不支持的数据版本: $version，可用版本: V1, V2")
             return
         }
 
         EntityProxyRegistry.switchAll(dataVersion)
-        sendMessage("宸插垏鎹㈠叏閮ㄥ疄浣撴暟鎹娇鐢ㄧ増鏈负 $dataVersion")
+        sendMessage("已切换全部实体数据使用版本为 $dataVersion")
     }
 
     @SubCommand("entity migration")
@@ -44,7 +44,7 @@ class EconomyCommand : CompositeCommand(
     suspend fun CommandSender.entityMigration(version: String) {
         val dataVersion = parseDataVersion(version)
         if (dataVersion == null) {
-            sendMessage("不支持的数据版本: ${version}，可用版本: V1, V2")
+            sendMessage("不支持的数据版本: $version，可用版本: V1, V2")
             return
         }
 
@@ -53,12 +53,12 @@ class EconomyCommand : CompositeCommand(
     }
 
     @SubCommand("entity version")
-    @Description("鏄剧ず褰撳墠瀹炰綋浠ｇ悊鏁版嵁鐗堟湰")
+    @Description("显示当前实体代理数据版本")
     suspend fun CommandSender.entityVersion() {
         val versions = EntityProxyRegistry.currentVersions()
         sendMessage(
             buildString {
-                appendLine("褰撳墠瀹炰綋鏁版嵁浣跨敤鐗堟湰:")
+                appendLine("当前实体数据使用版本:")
                 versions.forEach { (module, version) ->
                     appendLine("$module=$version")
                 }
@@ -67,7 +67,7 @@ class EconomyCommand : CompositeCommand(
     }
 
     @SubCommand("entity verison")
-    @Description("鏄剧ず褰撳墠瀹炰綋浠ｇ悊鏁版嵁鐗堟湰")
+    @Description("显示当前实体代理数据版本，兼容历史拼写")
     suspend fun CommandSender.entityVerisonAlias() {
         entityVersion()
     }
@@ -88,8 +88,8 @@ class EconomyCommand : CompositeCommand(
         lines += "成功迁移的模块已自动切换到 $targetVersion。"
         lines += "迁移行数=$totalMigrated，失败行数=$totalFailedRows"
         results.forEach { (module, result) ->
-            val status = if (result.success) "鎴愬姛" else "澶辫触"
-            lines += "[$status] $module 杩佺Щ=${result.migratedCount}锛屽け璐?${result.failedCount}"
+            val status = if (result.success) "成功" else "失败"
+            lines += "[$status] $module 迁移=${result.migratedCount}，失败=${result.failedCount}"
             result.errors.take(3).forEach { error ->
                 lines += "  - $error"
             }
@@ -100,5 +100,4 @@ class EconomyCommand : CompositeCommand(
 
         return lines.joinToString("\n")
     }
-
 }

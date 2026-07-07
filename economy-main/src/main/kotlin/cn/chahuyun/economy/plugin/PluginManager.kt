@@ -1,6 +1,7 @@
 package cn.chahuyun.economy.plugin
 
 import cn.chahuyun.economy.HuYanEconomy
+import cn.chahuyun.economy.image.ImageManager
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.version.CheckLatestVersion
 import cn.hutool.core.io.FileUtil
@@ -54,7 +55,7 @@ object PluginManager {
         }
 
         try {
-            ImageManager.init(instance)
+            ImageManager.init(path)
             isCustomImage = true
         } catch (e: IOException) {
             instance.logger.error("自定义图片加载失败!")

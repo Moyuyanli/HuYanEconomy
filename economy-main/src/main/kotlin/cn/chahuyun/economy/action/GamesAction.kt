@@ -6,14 +6,10 @@ import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
 import cn.chahuyun.authorize.constant.AuthPerm
 import cn.chahuyun.economy.constant.EconPerm
-import cn.chahuyun.economy.fish.FishRollEvent
-import cn.chahuyun.economy.fish.FishStartEvent
-import cn.chahuyun.economy.manager.GamesManager
+import cn.chahuyun.economy.service.GameCoroutineService
 import cn.chahuyun.economy.usecase.GamesUsecase
-import kotlinx.coroutines.CoroutineScope
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MessageEvent
-import kotlin.coroutines.CoroutineContext
 
 /**
  * 游戏管理
@@ -23,30 +19,14 @@ import kotlin.coroutines.CoroutineContext
  * @date 2025/12/22
  */
 @EventComponent
-class GamesAction : CoroutineScope {
-
-    override val coroutineContext: CoroutineContext
-        get() = GamesManager.coroutineContext
-
-    companion object {
-
-        @JvmStatic
-        suspend fun fishStart(event: FishStartEvent) {
-            GamesUsecase.fishStart(event)
-        }
-
-        @JvmStatic
-        fun fishRoll(event: FishRollEvent) {
-            GamesUsecase.fishRoll(event)
-        }
-    }
+class GamesAction {
 
     @MessageAuthorize(
         text = ["钓鱼", "抛竿"],
         groupPermissions = [EconPerm.FISH_PERM]
     )
     suspend fun fishing(event: GroupMessageEvent) {
-        GamesUsecase.fishing(this, event)
+        GamesUsecase.fishing(GameCoroutineService, event)
     }
 
     @MessageAuthorize(

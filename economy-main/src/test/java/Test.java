@@ -1,4 +1,4 @@
-import cn.chahuyun.economy.utils.EconomyImageRenderer;
+import cn.chahuyun.economy.image.EconomyImageRenderer;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
