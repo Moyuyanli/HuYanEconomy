@@ -194,12 +194,14 @@ hye repair
 
 **A**：按照以下步骤：
 
-1. **entity/** — 创建实体类（`@Entity`）
-2. **repository/** — 创建数据访问层
-3. **manager/** — 创建模块管理器（`init()`/`shutdown()`）
-4. **usecase/** — 创建业务逻辑层
-5. **action/** — 创建指令入口（`@EventComponent` + `@MessageAuthorize`）
-6. **主类** — 在 `onEnable()` 中初始化 Manager
+1. **economy-data** — 创建实体、DTO、Converter、Repository 或 EntityProxy。
+2. **economy-core** — 创建核心业务 Manager / Usecase / Service。
+3. **economy-game** — 如果是钓鱼、抢劫、抽奖、农场等玩法功能，把玩法流程放在这里。
+4. **economy-image** — 如果需要图片输出，把渲染器和绘制模型放在这里，保持输出为图片对象或字节。
+5. **economy-main** — 创建 Action 指令入口（`@EventComponent` + `@MessageAuthorize`），并在插件启动流程中注册必要的 Manager 或事件。
+6. **economy-common** — 只有平台弱相关、可复用的基础能力才放入 common。
+
+注意：当前阶段不创建 `economy-api` / `economy-proxy` 模块，`proxy` 只表示 data 内的数据代理。
 
 详细步骤请参阅 [项目开发说明](项目开发说明.md#4-如何添加新功能)。
 

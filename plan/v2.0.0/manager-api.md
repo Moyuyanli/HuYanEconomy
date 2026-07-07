@@ -1,8 +1,13 @@
 # Manager API 列表（v2.0.0）
 
-更新时间：2026-01-17
+更新时间：2026-07-06
 
-本文用于汇总 `src/main/kotlin/cn/chahuyun/economy/manager` 下各 Manager 对外提供的主要 API。
+本文用于汇总当前 2.0.0 多模块结构下各 Manager 对外提供的主要 API。
+
+当前物理位置：
+- 核心经济 Manager 主要位于 `economy-core/src/main/kotlin/cn/chahuyun/economy/manager`。
+- 玩法 Manager 主要位于 `economy-game/src/main/kotlin/cn/chahuyun/economy/manager`。
+- `economy-main` 只保留 Action、命令、事件监听、启动注册和打包入口，不承载业务 Manager。
 
 约定：
 - Action 层只做“指令入口/参数解析/权限校验/分发”。
