@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.constant
 
 /**
- * 用户位置
+ * 用户位置。
  */
 enum class UserLocation(val displayName: String) {
     HOME("家"),
