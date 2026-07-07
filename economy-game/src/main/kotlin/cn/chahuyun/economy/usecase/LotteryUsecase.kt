@@ -4,11 +4,10 @@ import cn.chahuyun.authorize.entity.PermGroup
 import cn.chahuyun.authorize.utils.PermUtil
 import cn.chahuyun.authorize.utils.UserUtil
 import cn.chahuyun.economy.constant.EconPerm
-import cn.chahuyun.economy.manager.LotteryManager
 import cn.chahuyun.economy.model.LotteryInfoDto
-import cn.chahuyun.economy.utils.EconomyUtil
+import cn.chahuyun.economy.service.EconomyAccountService
+import cn.chahuyun.economy.service.LotteryService
 import cn.chahuyun.economy.utils.Log
-import cn.chahuyun.economy.utils.MessageUtil
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.User
@@ -34,9 +33,9 @@ object LotteryUsecase {
 
         val money = split[2].toDouble()
 
-        val moneyByUser = EconomyUtil.getMoneyByUser(user)
+        val moneyByUser = EconomyAccountService.walletBalance(user)
         if (moneyByUser - money <= 0) {
-            subject.sendMessage(MessageUtil.formatMessageChain(message, "你都穷的叮当响了，还来猜签？"))
+            GameUsecaseReplySupport.reply(subject, message, "你都穷的叮当响了，还来猜签？")
             return
         }
 
@@ -59,24 +58,24 @@ object LotteryUsecase {
             }
 
             else -> {
-                subject.sendMessage(MessageUtil.formatMessageChain(message, "猜签类型错误!"))
+                GameUsecaseReplySupport.reply(subject, message, "猜签类型错误!")
                 return
             }
         }
 
         if (type == 1) {
             if (!(0 < money && money <= 1000)) {
-                subject.sendMessage(MessageUtil.formatMessageChain(message, "你投注的金额不属于这个签!"))
+                GameUsecaseReplySupport.reply(subject, message, "你投注的金额不属于这个签!")
                 return
             }
         } else if (type == 2) {
             if (!(0 < money && money <= 10000)) {
-                subject.sendMessage(MessageUtil.formatMessageChain(message, "你投注的金额不属于这个签!"))
+                GameUsecaseReplySupport.reply(subject, message, "你投注的金额不属于这个签!")
                 return
             }
         } else {
             if (!(0 < money && money <= 1000000)) {
-                subject.sendMessage(MessageUtil.formatMessageChain(message, "你投注的金额不属于这个签!"))
+                GameUsecaseReplySupport.reply(subject, message, "你投注的金额不属于这个签!")
                 return
             }
         }
@@ -96,26 +95,21 @@ object LotteryUsecase {
             type = type,
             number = number.toString()
         )
-        if (!EconomyUtil.minusMoneyToUser(user, money)) {
-            subject.sendMessage(MessageUtil.formatMessageChain(message, "猜签失败！"))
+        if (!EconomyAccountService.subtractWallet(user, money)) {
+            GameUsecaseReplySupport.reply(subject, message, "猜签失败！")
             return
         }
-        LotteryManager.save(lotteryInfo)
-        subject.sendMessage(
-            MessageUtil.formatMessageChain(
-                message,
-                "猜签成功:\n" +
-                    "猜签类型:${typeString}\n" +
-                    "猜签号码:${number}\n" +
-                    "猜签金币:${MoneyFormatUtil.format(money)}"
-            )
+        LotteryService.save(lotteryInfo)
+        GameUsecaseReplySupport.reply(
+            subject,
+            message,
+            "猜签成功:\n" +
+                "猜签类型:${typeString}\n" +
+                "猜签号码:${number}\n" +
+                "猜签金币:${MoneyFormatUtil.format(money)}"
         )
 
-        if (type == 1) {
-            LotteryManager.ensureMinutesSchedule()
-        } else if (type == 2) {
-            LotteryManager.ensureHoursSchedule()
-        }
+        LotteryService.ensureSchedule(type)
     }
 
     suspend fun startLottery(event: GroupMessageEvent) {
@@ -124,14 +118,14 @@ object LotteryUsecase {
         val user = UserUtil.group(group.id)
 
         if (util.checkUserHasPerm(user, EconPerm.LOTTERY_PERM)) {
-            group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的猜签已经开启了!"))
+            GameUsecaseReplySupport.reply(event, "本群的猜签已经开启了!")
             return
         }
 
         if (util.addUserToPermGroupByName(user, EconPerm.GROUP.LOTTERY_PERM_GROUP)) {
-            group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的猜签开启成功!"))
+            GameUsecaseReplySupport.reply(event, "本群的猜签开启成功!")
         } else {
-            group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的猜签开启失败!"))
+            GameUsecaseReplySupport.reply(event, "本群的猜签开启失败!")
         }
     }
 
@@ -141,7 +135,7 @@ object LotteryUsecase {
         val user = UserUtil.group(group.id)
 
         if (!util.checkUserHasPerm(user, EconPerm.LOTTERY_PERM)) {
-            group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的猜签已经关闭!"))
+            GameUsecaseReplySupport.reply(event, "本群的猜签已经关闭!")
             return
         }
 
@@ -149,6 +143,6 @@ object LotteryUsecase {
         permGroup.users.remove(user)
         permGroup.save()
 
-        group.sendMessage(MessageUtil.formatMessageChain(event.message, "本群的猜签关闭成功!"))
+        GameUsecaseReplySupport.reply(event, "本群的猜签关闭成功!")
     }
 }

@@ -9,18 +9,24 @@ dependencies {
     api(project(":economy-data"))
     api(project(":economy-image"))
     api(project(":economy-core"))
-}
 
-kotlin {
-    sourceSets {
-        named("main") {
-            kotlin.srcDir("../src/main/kotlin")
-            kotlin.include(
-                "cn/chahuyun/economy/constant/FarmConstants.kt",
-                "cn/chahuyun/economy/constant/FishPondLevelConstant.kt",
-                "cn/chahuyun/economy/constant/PrizeType.kt",
-                "cn/chahuyun/economy/constant/RaffleType.kt"
-            )
-        }
+    val ofVersion = "1.0.8"
+    compileOnly("net.mamoe:mirai-console:2.16.0")
+    compileOnly("net.mamoe:mirai-core-api:2.16.0")
+    compileOnly("top.mrxiaom.mirai:overflow-core-api:$ofVersion")
+    compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
+
+    val auth = "1.3.7"
+    compileOnly("cn.chahuyun:HuYanAuthorize:$auth")
+
+    implementation("cn.hutool:hutool-all:5.8.40") {
+        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
     }
+    implementation("org.apache.poi:poi-ooxml:5.4.0") {
+        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
+    }
+
+    compileOnly("cn.chahuyun:hibernate-plus:2.1.1")
+
+    testImplementation(kotlin("test"))
 }

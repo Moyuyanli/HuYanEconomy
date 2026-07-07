@@ -2,6 +2,7 @@ package cn.chahuyun.economy.fish
 
 import cn.chahuyun.economy.model.fish.FishBait
 import cn.chahuyun.economy.model.fish.FishInfoDto
+import cn.chahuyun.economy.model.fish.level
 import cn.chahuyun.economy.model.user.UserInfoDto
 import net.mamoe.mirai.event.AbstractEvent
 
@@ -64,4 +65,3 @@ class FishStartEvent(
         return Math.round(fishInfo.rodLevel * baitQuality)
     }
 }
-
