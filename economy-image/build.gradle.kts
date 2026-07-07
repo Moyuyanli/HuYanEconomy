@@ -6,16 +6,8 @@ plugins {
 
 dependencies {
     api(project(":economy-common"))
-}
 
-kotlin {
-    sourceSets {
-        named("main") {
-            kotlin.srcDir("../src/main/kotlin")
-            kotlin.include(
-                "cn/chahuyun/economy/utils/EconomyImageRenderer.kt",
-                "cn/chahuyun/economy/utils/ImageUtil.kt"
-            )
-        }
-    }
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+
+    testImplementation(kotlin("test"))
 }
