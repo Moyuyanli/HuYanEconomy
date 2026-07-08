@@ -35,7 +35,7 @@ class FarmAction {
     }
 
     @MessageAuthorize(
-        text = ["播种 .+"],
+        text = ["(播种|种植) .+"],
         messageMatching = MessageMatchingEnum.REGULAR,
         groupPermissions = [EconPerm.FARM_PERM]
     )

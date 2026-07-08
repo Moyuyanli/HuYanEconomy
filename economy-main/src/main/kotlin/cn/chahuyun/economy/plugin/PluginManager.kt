@@ -13,24 +13,29 @@ import java.net.URL
 import java.nio.file.Path
 
 /**
- * 插件管理
+ * 插件资源管理器。
+ *
+ * 负责准备 data 目录下的字体、底图等运行资源，并初始化图片管理器。
+ * 这里不注册指令和业务模块，避免插件启动流程职责混在一起。
  */
 object PluginManager {
+    /** 当前是否成功加载自定义图片/字体资源。 */
     @JvmField
     var isCustomImage: Boolean = false
 
     /**
-     * 初始化插件道具系统
+     * 初始化插件运行资源。
      */
     @JvmStatic
     fun init() {
-        // 检查插件版本
+        // 版本检查不影响后续初始化；失败会在 CheckLatestVersion 内部处理日志。
         CheckLatestVersion.init()
 
         val instance = HuYanEconomy
         val path: Path = instance.dataFolderPath
         val font = File(path.resolve("font").toUri())
         if (!font.exists()) {
+            // 首次启动时补齐默认字体。下载失败时保留目录，用户可手动放入字体文件。
             font.mkdir()
             try {
                 URL("https://data.chahuyun.cn/file/bot/Maple%20UI.ttf").openStream().use { input: InputStream ->
@@ -43,6 +48,7 @@ object PluginManager {
 
         val bottom = File(path.resolve("bottom").toUri())
         if (!bottom.exists()) {
+            // 底图来自插件资源包，复制到 data 目录后允许用户自行替换。
             bottom.mkdir()
             FileUtil.writeFromStream(instance.getResourceAsStream("bottom1.png"), path.resolve("bottom/bottom1.png").toFile())
             FileUtil.writeFromStream(instance.getResourceAsStream("bottom2.png"), path.resolve("bottom/bottom2.png").toFile())
@@ -55,6 +61,7 @@ object PluginManager {
         }
 
         try {
+            // ImageManager 会读取字体和底图；失败时让启动中断，避免后续图片命令产生半初始化状态。
             ImageManager.init(path)
             isCustomImage = true
         } catch (e: IOException) {

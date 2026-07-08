@@ -4,6 +4,7 @@ import cn.chahuyun.economy.EconomyBuildConstants
 import net.mamoe.mirai.utils.MiraiLogger
 
 object Icon {
+    // 插件启动横幅，每行保持等宽字符宽度，避免日志输出错位。
     private const val ICON_1 = "  _    _    __     __         ______                                      "
     private const val ICON_2 = " | |  | |   \\ \\   / /        |  ____|                                     "
     private const val ICON_3 = " | |__| |_   \\ \\_/ /_ _ _ __ | |__   ___ ___  _ __   ___  _ __ ___  _   _ "
@@ -15,7 +16,7 @@ object Icon {
     private val ICON_9 = "                                                              v ${EconomyBuildConstants.VERSION}"
 
     /**
-     * 打印log
+     * 打印插件启动横幅。
      */
     @JvmStatic
     fun init(logger: MiraiLogger) {

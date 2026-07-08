@@ -82,6 +82,8 @@ object HuYanEconomy : KotlinPlugin(
     var bot: Bot? = null
 
     override fun PluginComponentStorage.onLoad() {
+        // onLoad 阶段 mirai logger 已可用，但配置、数据库和 bot 还未绑定。
+        // 这里只做全局日志桥接和运行时对象绑定，避免提前触发业务初始化。
         Log.configure(
             info = { logger.info(it) },
             warning = { logger.warning(it) },
@@ -97,6 +99,7 @@ object HuYanEconomy : KotlinPlugin(
     }
 
     override fun onEnable() {
+        // onEnable 是完整启动入口：先准备运行时与配置，再初始化数据层和业务模块，最后注册事件。
         EconomyRuntime.bind(this)
         EconomyRuntime.pluginStatus = true
         HuYanScheduler.prepareStartup()
@@ -127,7 +130,7 @@ object HuYanEconomy : KotlinPlugin(
         // 初始化插件数据库。
         HibernateUtil.init(this)
 
-        // Initialize entity data proxy framework.
+        // 初始化实体代理框架：先把配置中的版本策略注入 data 层，再注册各模块代理。
         DataSourceStrategyImpl.configurePersistence(EconomyPluginConfig.entityDataVersions) {
             EconomyPluginConfig.entityDataVersions = it
         }
@@ -149,7 +152,7 @@ object HuYanEconomy : KotlinPlugin(
         PluginPropsManager.init()
         HuYanScheduler.registerSubmittedTasks()
 
-        // Load custom title templates.
+        // 自定义称号模板依赖 TitleTemplateManager 初始化完成后再加载。
         TitleTemplateManager.loadingCustomTitle()
 
         // 注册消息事件，统一扫描 action 包。
@@ -163,7 +166,7 @@ object HuYanEconomy : KotlinPlugin(
 
         val eventChannel = GlobalEventChannel.parentScope(this)
 
-        // 监听自定义事件。
+        // 监听自定义事件：指令只负责发布事件，具体奖励、钓鱼推进等逻辑在 manager/usecase 中处理。
         eventChannel.subscribeAlways<SignRewardEvent>(priority = EventPriority.HIGH) { cn.chahuyun.economy.manager.SignManager.randomSignGold(it) }
         eventChannel.subscribeAlways<SignRewardEvent> { cn.chahuyun.economy.manager.SignManager.signProp(it) }
         eventChannel.subscribeAlways<FishStartEvent> { GameEventService.handleFishStart(it) }
@@ -191,6 +194,7 @@ object HuYanEconomy : KotlinPlugin(
     }
 
     override fun onDisable() {
+        // 停机按“停止新任务 -> 关闭长生命周期模块”的方向收敛，避免卸载后仍有定时任务访问插件状态。
         PLUGIN_STATUS = false
         EconomyRuntime.pluginStatus = false
 
