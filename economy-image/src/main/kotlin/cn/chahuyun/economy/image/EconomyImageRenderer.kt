@@ -18,9 +18,11 @@ object EconomyImageRenderer {
     /** 个人信息图高度。 */
     const val PERSONAL_HEIGHT = 720
 
-    // 帮助图是正方形，适合容纳两列指令分组。
+    // 帮助图是 1280x1280 正方形，适合容纳两列指令分组。
     private const val HELP_WIDTH = 1280
     private const val HELP_HEIGHT = 1280
+
+    // 私人银行信息图沿用 1280x720 横版尺寸，便于和个人信息图保持发送体验一致。
     private const val BANK_INFO_WIDTH = 1280
     private const val BANK_INFO_HEIGHT = 720
 
