@@ -11,6 +11,7 @@ import cn.chahuyun.economy.utils.Log
  */
 object EntityProxyRegistry {
 
+    /** 保持注册顺序稳定，日志和批量迁移结果会按该顺序输出。 */
     private val proxies = linkedMapOf<String, EntityProxy<*>>()
 
     /**
@@ -43,6 +44,7 @@ object EntityProxyRegistry {
     }
 
     fun register(proxy: EntityProxy<*>) {
+        // 同名模块后注册会覆盖旧代理，方便测试或未来替换实现，但生产启动应避免重复模块名。
         proxies[proxy.getModuleName()] = proxy
     }
 
@@ -62,6 +64,7 @@ object EntityProxyRegistry {
     }
 
     fun migrateAllTo(targetVersion: DataVersion, switchAfterSuccess: Boolean = false): Map<String, MigrationResult> {
+        // 批量迁移逐模块独立捕获异常，避免单个模块失败中断其它模块的迁移报告。
         val results = proxies.mapValues { (module, proxy) ->
             migrateProxy(module, proxy, targetVersion, switchAfterSuccess)
         }
@@ -118,6 +121,7 @@ object EntityProxyRegistry {
     }
 
     private fun setModuleVersion(module: String, version: DataVersion, logChange: Boolean = true) {
+        // V1 是默认版本，不写入配置；只有非默认版本才持久化，保持配置文件简洁。
         if (version == DataVersion.V1) {
             DataSourceStrategyImpl.clearVersion(module, logChange)
         } else {

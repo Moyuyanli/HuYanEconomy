@@ -5,6 +5,7 @@ package cn.chahuyun.economy.data.proxy
  *
  * 业务层通过该接口访问数据，无需关心底层数据源版本。
  * 代理内部根据 [DataSourceStrategy] 选择数据源，并通过 Converter 完成 DTO 转换。
+ * 实现类通常只暴露 DTO，不把 Hibernate Entity 泄漏到 core/game/main 模块。
  *
  * @param D DTO 类型
  */
@@ -29,6 +30,9 @@ interface EntityProxy<D> {
 
     /**
      * 条件查询。
+     *
+     * 默认语义是在代理层返回 DTO 后再按内存 predicate 过滤；如果实现类需要数据库侧过滤，
+     * 应在具体代理或 repository 中显式封装对应方法，避免调用方误以为 predicate 会下推到 SQL。
      */
     fun findWhere(predicate: (D) -> Boolean): List<D>
 
@@ -68,6 +72,8 @@ interface EntityProxy<D> {
 
     /**
      * 将数据从当前版本迁移到目标版本。
+     *
+     * 迁移只负责复制/转换数据，是否切换当前模块版本由 [EntityProxyRegistry] 根据参数决定。
      */
     fun migrateTo(targetVersion: DataVersion): MigrationResult
 }

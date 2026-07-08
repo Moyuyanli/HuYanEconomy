@@ -52,9 +52,9 @@ class DataModuleBoundaryTest {
     @Test
     fun `data proxy and repository text does not contain common mojibake fragments`() {
         val mojibakeFragments = listOf(
-            "閽", "鎶", "鍒", "寮", "鍏", "楸", "甯", "惰",
-            "绋", "鏁", "鏃", "鐢", "鍙", "鐨", "缁", "瑙",
-            "杩", "澶", "瘜", "缈", "灏", "锟", "�"
+            "\u9583", "\u93B6", "\u9352", "\u5BEE", "\u934F", "\u6978", "\u752F", "\u60F0",
+            "\u7ECB", "\u93C1", "\u93C3", "\u9422", "\u9359", "\u9428", "\u7F01", "\u7441",
+            "\u6769", "\u6FB6", "\u761C", "\u7F08", "\u704F", "\u951F", "\uFFFD"
         )
 
         val hits = listOf(
