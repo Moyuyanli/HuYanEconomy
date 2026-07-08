@@ -28,22 +28,15 @@ class CoreModuleBoundaryTest {
             Path.of("src/main/kotlin/cn/chahuyun/economy/manager"),
             Path.of("src/main/kotlin/cn/chahuyun/economy/usecase")
         )
-        val allowedLegacyDatabaseTexts = listOf(
-            "[鍙槸涓紶璇碷",
-            "[澶у瘜缈乚",
-            "[灏忓瘜缈乚"
-        )
         val mojibakeFragments = listOf(
-            "閽", "鎶", "鍒", "寮", "鍏", "楸", "甯", "惰",
-            "绋", "鏁", "鏃", "鐢", "鍙", "鐨", "缁", "瑙",
-            "杩", "澶", "瘜", "缈", "灏", "锟", "�"
+            "\u9583", "\u93B6", "\u9352", "\u5BEE", "\u934F", "\u6978", "\u752F", "\u60F0",
+            "\u7ECB", "\u93C1", "\u93C3", "\u9422", "\u9359", "\u9428", "\u7F01", "\u7441",
+            "\u6769", "\u6FB6", "\u761C", "\u7F08", "\u704F", "\u951F", "\uFFFD"
         )
 
         val hits = roots.flatMap(::sourceFiles).flatMap { file ->
-            val sanitizedText = allowedLegacyDatabaseTexts.fold(file.readText()) { text, allowed ->
-                text.replace(allowed, "")
-            }
-            mojibakeFragments.filter { it in sanitizedText }.map { "${file}: $it" }
+            val text = file.readText()
+            mojibakeFragments.filter { it in text }.map { "${file}: $it" }
         }
 
         assertTrue(

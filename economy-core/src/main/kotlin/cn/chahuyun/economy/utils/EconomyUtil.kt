@@ -11,15 +11,19 @@ import java.text.DecimalFormat
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 经济工具
- * 使用前请先初始化 调用 [init] 方法
+ * 经济账户工具。
+ *
+ * 使用前必须先调用 [init] 注册货币。mirai-economy 区分 custom/global 两类上下文：
+ * - custom(EconomyRuntime.plugin)：插件私有账户，主要对应用户钱包和插件内部资金池。
+ * - global()：全局银行账户，主要对应用户银行存款和全局账户。
  */
 object EconomyUtil {
 
-    // 获取经济账户实例
+    /** mirai-economy 服务入口，所有账户读写最终都从这里进入。 */
     @JvmField
     val economyService: IEconomyService = EconomyService
 
+    /** 全局银行余额快照，避免频繁遍历账户导致指令响应变慢。 */
     private data class BankTotalSnapshot(
         val total: Double,
         val updatedAt: Long,
@@ -31,7 +35,7 @@ object EconomyUtil {
     private var bankTotalTaskRegistered = false
 
     /**
-     * 初始化经济
+     * 初始化默认金币货币。
      */
     @JvmStatic
     fun init() {
@@ -39,8 +43,9 @@ object EconomyUtil {
     }
 
     /**
-     * 初始化经济
-     * 自定义加载货币
+     * 初始化经济系统并注册货币。
+     *
+     * 注册完成后会立即刷新银行总额缓存，并注册后台刷新任务。
      */
     @JvmStatic
     fun init(vararg currencies: EconomyCurrency) {
@@ -57,8 +62,7 @@ object EconomyUtil {
     }
 
     /**
-     * 从用户 [钱包] 获取余额
-     * 默认货币 [金币]
+     * 从用户 [钱包] 获取默认金币余额。
      */
     @JvmStatic
     fun getMoneyByUser(user: User): Double {
@@ -66,7 +70,9 @@ object EconomyUtil {
     }
 
     /**
-     * 从用户 [钱包] 获取 [货币] 余额
+     * 从用户 [钱包] 获取指定 [货币] 余额。
+     *
+     * 钱包余额存放在插件 custom 上下文，和 global 银行余额分开。
      */
     @JvmStatic
     fun getMoneyByUser(user: User, currency: EconomyCurrency): Double {
@@ -86,8 +92,7 @@ object EconomyUtil {
     }
 
     /**
-     * 从 [银行] 获取余额
-     * 默认货币 [金币]
+     * 从用户 [银行] 获取默认金币余额。
      */
     @JvmStatic
     fun getMoneyByBank(user: User): Double {
@@ -95,7 +100,9 @@ object EconomyUtil {
     }
 
     /**
-     * 从 [银行] 获取 [货币] 余额
+     * 从用户 [银行] 获取指定 [货币] 余额。
+     *
+     * 银行余额走 global 上下文，因此和钱包账户不是同一资金池。
      */
     @JvmStatic
     fun getMoneyByBank(user: User, currency: EconomyCurrency): Double {
@@ -115,8 +122,7 @@ object EconomyUtil {
     }
 
     /**
-     * 从 [银行] 获取余额
-     * 默认货币 [金币]
+     * 从全局银行账户中按业务 id 和描述获取默认金币余额。
      */
     @JvmStatic
     fun getMoneyByBankFromId(userId: String, description: String): Double {
@@ -124,7 +130,9 @@ object EconomyUtil {
     }
 
     /**
-     * 从 [银行] 获取 [货币] 余额
+     * 从全局银行账户中按业务 id 和描述获取指定 [货币] 余额。
+     *
+     * 私人银行准备金等需要全局可追踪的资金使用该路径。
      */
     @JvmStatic
     fun getMoneyByBankFromId(userId: String, description: String, currency: EconomyCurrency): Double {
@@ -144,7 +152,7 @@ object EconomyUtil {
     }
 
     /**
-     * 从 [自定义银行] 获取 [金币] 余额
+     * 从插件自定义账户中按业务 id 和描述获取金币余额。
      */
     @JvmStatic
     fun getMoneyFromPluginBankForId(userId: String, description: String): Double {
@@ -152,7 +160,9 @@ object EconomyUtil {
     }
 
     /**
-     * 从 [自定义银行] 获取 [货币] 余额
+     * 从插件自定义账户中按业务 id 和描述获取指定 [货币] 余额。
+     *
+     * 私人银行流动金、库存池等插件内部资金使用该路径。
      */
     @JvmStatic
     fun getMoneyFromPluginBankForId(

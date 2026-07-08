@@ -46,6 +46,7 @@ object HuYanScheduler {
     @JvmStatic
     fun prepareStartup() {
         synchronized(lock) {
+            // 插件重载时清空上次尚未注册的任务快照，避免旧任务在新生命周期中重复提交。
             submittedTasks.clear()
             submittedTasksRegistered = false
             acceptingTasks = true
@@ -184,6 +185,7 @@ object HuYanScheduler {
         val tasks = synchronized(lock) {
             if (submittedTasksRegistered) return
             submittedTasksRegistered = true
+            // 业务模块 init 阶段提交的任务会先暂存，等所有模块完成初始化后统一绑定到底层引擎。
             submittedTasks.values.toList().also { submittedTasks.clear() }
         }
 

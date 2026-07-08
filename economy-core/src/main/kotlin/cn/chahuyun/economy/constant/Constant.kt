@@ -8,12 +8,12 @@ import xyz.cssxsh.mirai.economy.service.EconomyCurrency
  */
 object Constant {
     /**
-     * 壶言日志
+     * 壶言经济日志主题名。
      */
     const val TOPIC: String = "HuYanEconomy"
 
     /**
-     * 货币 [金币]
+     * 插件默认货币：金币。
      */
     @JvmField
     val CURRENCY_GOLD: EconomyCurrency = GoldEconomyCurrency()

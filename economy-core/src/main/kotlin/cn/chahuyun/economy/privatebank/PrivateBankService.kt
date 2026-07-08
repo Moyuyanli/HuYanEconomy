@@ -19,8 +19,13 @@ object PrivateBankService {
     /** 创建时扣除并沉淀到私银资产的启动资金 */
     const val CREATE_STARTUP_AMOUNT = 100_000_000.0
 
+    /** 存款/启动资金进入准备金池的比例，剩余部分进入流动金池。 */
     private const val RESERVE_RATIO = 0.8
+
+    /** 新建私人银行默认星级。 */
     private const val DEFAULT_STAR = 3
+
+    /** 默认贷款期限，单位：天。 */
     private const val LOAN_TERM_DAYS = 14
 
     private fun baseInterest(): Int {

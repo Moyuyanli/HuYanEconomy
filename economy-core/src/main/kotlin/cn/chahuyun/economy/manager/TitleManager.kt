@@ -89,20 +89,20 @@ object TitleManager {
             )
         )
 
-        // 修正历史版本迭代带来的错误数据，乱码分支用于匹配旧版本已落库的 mojibake 文本。
+        // 修正历史版本迭代带来的错误数据，历史乱码标题用 Unicode 转义保留匹配能力。
         val titleInfos = titleProxy.findAll()
         for (titleInfo in titleInfos) {
             if (titleInfo.code.isBlank()) {
                 when (titleInfo.title) {
-                    "[鍙槸涓紶璇碷", "[只是个传说]" -> {
+                    LEGACY_SIGN_15_TITLE, "[只是个传说]" -> {
                         titleProxy.save(titleInfo.copy(code = TitleCode.SIGN_15, name = "签到狂人", title = "[只是个传说]"))
                     }
 
-                    "[澶у瘜缈乚", "[大富翁]" -> {
+                    LEGACY_MONOPOLY_TITLE, "[大富翁]" -> {
                         titleProxy.save(titleInfo.copy(code = TitleCode.MONOPOLY, name = "大富翁", title = "[大富翁]"))
                     }
 
-                    "[灏忓瘜缈乚", "[小富翁]" -> {
+                    LEGACY_REGAL_TITLE, "[小富翁]" -> {
                         titleProxy.save(titleInfo.copy(code = TitleCode.REGAL, name = "小富翁", title = "[小富翁]"))
                     }
                 }
@@ -256,6 +256,11 @@ object TitleManager {
 
     private val titleProxy
         get() = EntityProxyRegistry.get<TitleInfoDto>("title") ?: error("称号代理器未初始化")
+
+    // 旧版本已落库的 UTF-8/GBK 错读标题，用转义避免源码再次出现可见乱码。
+    private const val LEGACY_SIGN_15_TITLE = "\u005B\u9359\uE045\u69F8\u6D93\uE043\u7D36\u7487\u78B7"
+    private const val LEGACY_MONOPOLY_TITLE = "\u005B\u6FB6\u0443\u761C\u7F08\u4E5A"
+    private const val LEGACY_REGAL_TITLE = "\u005B\u704F\u5FD3\u761C\u7F08\u4E5A"
 
     private fun colorHex(color: Color): String {
         return Integer.toHexString(color.rgb).substring(2)
