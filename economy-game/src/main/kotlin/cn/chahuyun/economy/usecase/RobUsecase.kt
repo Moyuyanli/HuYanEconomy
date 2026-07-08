@@ -21,6 +21,7 @@ import java.util.*
 
 object RobUsecase {
 
+    /** 单个用户两次抢劫之间的冷却时间，单位：分钟。 */
     private const val COOLDOWN_MINUTES = 10L
 
     suspend fun rob(event: GroupMessageEvent) {

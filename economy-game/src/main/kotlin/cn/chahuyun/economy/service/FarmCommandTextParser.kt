@@ -7,6 +7,12 @@ object FarmCommandTextParser {
     fun payload(rawMessage: String, command: String): String =
         commandText(rawMessage).removePrefix(command).trim()
 
+    fun payload(rawMessage: String, commands: List<String>): String {
+        val text = commandText(rawMessage)
+        val command = commands.firstOrNull { text.startsWith(it) }.orEmpty()
+        return text.removePrefix(command).trim()
+    }
+
     fun commandText(rawMessage: String): String {
         val text = rawMessage.trim()
         val prefixes = listOf(EconomyConfig.prefix, "#").filter { it.isNotBlank() }.distinct()

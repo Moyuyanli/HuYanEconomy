@@ -14,7 +14,7 @@ object FarmOperationUsecase {
     }
 
     suspend fun plant(event: GroupMessageEvent) {
-        val raw = FarmUsecaseSupport.commandPayload(event, "播种")
+        val raw = FarmUsecaseSupport.commandPayload(event, listOf("播种", "种植"))
         val result = FarmCommandService.plant(event.sender, raw)
         FarmUsecaseSupport.reply(event, result.message)
     }

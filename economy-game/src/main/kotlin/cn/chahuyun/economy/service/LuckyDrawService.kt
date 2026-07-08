@@ -6,7 +6,10 @@ import java.util.concurrent.ConcurrentHashMap
 
 object LuckyDrawService {
 
+    /** 单抽冷却时间，单位：毫秒。 */
     private const val SINGLE_COOLDOWN = 60_000L
+
+    /** 十连抽冷却时间，单位：毫秒。 */
     private const val TEN_COOLDOWN = 600_000L
 
     private val singleCooldownMap = ConcurrentHashMap<Long, Long>()

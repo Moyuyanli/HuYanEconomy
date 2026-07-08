@@ -8,8 +8,13 @@ import cn.chahuyun.economy.model.farm.FarmState
 import net.mamoe.mirai.contact.User
 
 object FarmOperationService {
+    /** 一分钟的毫秒数，用于作物成熟与守护时长换算。 */
     private const val MINUTE = 60_000L
+
+    /** 开放农场守护功能的最低等级。 */
     private const val SHIELD_REQUIRED_LEVEL = 17
+
+    /** 单次守护持续时间：12 小时。 */
     private const val SHIELD_DURATION_MILLIS = 12 * 60 * MINUTE
 
     fun upgradeFarm(user: User, state: FarmState): FarmOperationResult {
@@ -79,9 +84,38 @@ object FarmOperationService {
             return FarmOperationResult(false, "没有可播种的空闲土地")
         }
         val seedAmount = FarmInventoryStorageService.inventoryAmount(user.id, FarmConstants.ITEM_SEED, crop.code)
-        val selected = plantable.take(seedAmount)
+        val requiredSeedAmount = plantable.size
+        val seedShortage = (requiredSeedAmount - seedAmount).coerceAtLeast(0)
+        var autoBought = 0
+        var autoBuyCost = 0.0
+        if (seedShortage > 0) {
+            val walletBalance = EconomyAccountService.walletBalance(user)
+            val buyableAmount = if (crop.seedPrice <= 0) {
+                seedShortage
+            } else {
+                (walletBalance / crop.seedPrice).toInt().coerceAtMost(seedShortage)
+            }
+            if (buyableAmount > 0) {
+                val cost = crop.seedPrice.toDouble() * buyableAmount
+                if (cost > 0 && !EconomyAccountService.subtractWallet(user, cost)) {
+                    return FarmOperationResult(false, "自动购买种子扣款失败")
+                }
+                runCatching {
+                    FarmInventoryStorageService.addInventory(user.id, FarmConstants.ITEM_SEED, crop.code, buyableAmount)
+                }.onFailure {
+                    if (cost > 0) {
+                        EconomyAccountService.addWallet(user, cost)
+                    }
+                    return FarmOperationResult(false, "自动购买种子入库失败，已退款")
+                }
+                autoBought = buyableAmount
+                autoBuyCost = cost
+            }
+        }
+
+        val selected = plantable.take(seedAmount + autoBought)
         if (selected.isEmpty()) {
-            return FarmOperationResult(false, "${crop.name} 种子不足")
+            return FarmOperationResult(false, "${crop.name} 种子不足，自动购买还需要${crop.seedPrice.toLong()}金币")
         }
         FarmInventoryStorageService.removeInventory(user.id, FarmConstants.ITEM_SEED, crop.code, selected.size)
         val now = System.currentTimeMillis()
@@ -93,8 +127,15 @@ object FarmOperationService {
             plot.nextMatureAt = now + crop.firstMatureMinutes * MINUTE
             FarmPlotService.savePlot(plot)
         }
+        val details = mutableListOf<String>()
+        if (autoBought > 0) {
+            details += "自动购买种子${autoBought}个，花费${autoBuyCost.toLong()}金币"
+        }
         val skipped = plantable.size - selected.size
-        val suffix = if (skipped > 0) "，种子不足跳过${skipped}块" else ""
+        if (skipped > 0) {
+            details += "种子不足跳过${skipped}块"
+        }
+        val suffix = if (details.isEmpty()) "" else "，${details.joinToString("，")}"
         return FarmOperationResult(true, "播种 ${crop.name} x${selected.size} 成功$suffix")
     }
 

@@ -13,10 +13,19 @@ import java.time.LocalDate
 import kotlin.math.roundToLong
 
 object FarmWaterService {
+    /** 一分钟的毫秒数，用于成熟时间换算。 */
     private const val MINUTE = 60_000L
+
+    /** 开放帮他人浇水的最低农场等级。 */
     private const val WATER_REQUIRED_LEVEL = 13
+
+    /** 提升每日浇水次数上限的农场等级。 */
     private const val ADVANCED_WATER_LEVEL = 18
+
+    /** 默认每日帮浇水次数上限。 */
     private const val DEFAULT_DAILY_WATER_LIMIT = 5
+
+    /** 高级农场每日帮浇水次数上限。 */
     private const val ADVANCED_DAILY_WATER_LIMIT = 10
 
     fun water(waterer: UserInfoDto, watererState: FarmState, targetState: FarmState): FarmOperationResult {
