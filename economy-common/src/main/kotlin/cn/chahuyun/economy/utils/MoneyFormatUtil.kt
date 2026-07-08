@@ -14,10 +14,10 @@ import java.math.RoundingMode
  */
 object MoneyFormatUtil {
 
-    /** 触发缩写显示的阈值 */
+    /** 触发缩写显示的阈值：低于 9,999,999 时直接显示原数。 */
     private const val THRESHOLD = 9_999_999.0
 
-    /** 缩写进位基数（千进制） */
+    /** 缩写进位基数：M/G/T/P 之间按 1000 进位。 */
     private const val CARRY = 1000.0
 
     /** 缩写单位后缀 */

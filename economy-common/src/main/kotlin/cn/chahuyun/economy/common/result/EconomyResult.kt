@@ -1,10 +1,10 @@
 package cn.chahuyun.economy.common.result
 
 /**
- * Lightweight result type for cross-module workflows.
+ * 跨模块业务结果类型。
  *
- * Domain modules can use this when they need to return a value plus a user-facing
- * message without throwing exceptions for normal business failure.
+ * 适用于“业务失败是正常分支”的场景，例如余额不足、权限不满足、目标不存在。
+ * 这类失败应通过 [Failure] 携带用户可读 message 返回，而不是抛异常穿过 action/usecase 边界。
  */
 sealed class EconomyResult<out T> {
     abstract val message: String
