@@ -5,6 +5,7 @@ import cn.chahuyun.economy.image.model.*
 import java.awt.*
 import java.awt.geom.RoundRectangle2D
 import java.awt.image.BufferedImage
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 统一的图片渲染器。
@@ -51,6 +52,11 @@ object EconomyImageRenderer {
     private val blue = Color(65, 111, 160)
     private val red = Color(190, 83, 83)
 
+    private val privateBankFrameCache = ConcurrentHashMap<String, BufferedImage>()
+
+    @Volatile
+    private var personalDefaultBackgroundCache: BufferedImage? = null
+
     /**
      * 生成主帮助图。
      *
@@ -78,9 +84,8 @@ object EconomyImageRenderer {
      */
     @JvmStatic
     fun renderPrivateBankInfo(card: PrivateBankInfoCard, font: Font = defaultFont()): BufferedImage {
-        val image = BufferedImage(BANK_INFO_WIDTH, BANK_INFO_HEIGHT, BufferedImage.TYPE_INT_ARGB)
+        val image = copyImage(privateBankFrame(font))
         val g = ImageUtil.getG2d(image)
-        drawFlatBackground(g, BANK_INFO_WIDTH, BANK_INFO_HEIGHT)
 
         g.font = font.deriveFont(Font.BOLD, fitFontSize(g, card.name, 640, 48f))
         g.color = ink
@@ -89,16 +94,12 @@ object EconomyImageRenderer {
         g.color = muted
         g.drawString("code ${card.code}", 68, 124)
 
-        drawPanel(g, 56, 160, 410, 458)
         drawPrivateBankSummary(g, card, font)
 
-        drawPanel(g, 494, 74, 730, 294)
         drawPrivateBankFunds(g, card, font)
 
-        drawPanel(g, 494, 396, 730, 222)
         drawPrivateBankLoans(g, card, font)
 
-        drawFooter(g, font, BANK_INFO_WIDTH - 32, BANK_INFO_HEIGHT - 24)
         g.dispose()
         return image
     }
@@ -115,11 +116,17 @@ object EconomyImageRenderer {
     fun renderPersonalInfo(card: PersonalInfoCard, avatar: BufferedImage?, background: BufferedImage?, font: Font = defaultFont()): BufferedImage {
         // 个人信息图的主流程只做编排：创建画布、按视觉层级绘制、释放 Graphics2D。
         // 所有具体坐标都收束在各个 drawPersonal... 方法里，避免后续调版时互相牵连。
-        val image = BufferedImage(PERSONAL_WIDTH, PERSONAL_HEIGHT, BufferedImage.TYPE_INT_ARGB)
+        val image = if (background == null) {
+            copyImage(personalDefaultBackground())
+        } else {
+            BufferedImage(PERSONAL_WIDTH, PERSONAL_HEIGHT, BufferedImage.TYPE_INT_ARGB)
+        }
         val g = ImageUtil.getG2d(image)
 
         // 1. 背景层：先放用户自定义背景或默认柔和底色，再叠加低透明装饰形状。
-        drawPersonalBackground(g, background)
+        if (background != null) {
+            drawPersonalBackground(g, background)
+        }
 
         // 2. 内容层：左上身份卡、左下资产卡、右上银行卡、右下信息卡。
         drawPersonalHeader(g, card, avatar, font)
@@ -251,6 +258,41 @@ object EconomyImageRenderer {
         return image
     }
 
+    private fun privateBankFrame(font: Font): BufferedImage {
+        val key = "${font.family}-${font.style}-${font.size}"
+        return privateBankFrameCache.computeIfAbsent(key) {
+            val image = BufferedImage(BANK_INFO_WIDTH, BANK_INFO_HEIGHT, BufferedImage.TYPE_INT_ARGB)
+            val g = ImageUtil.getG2d(image)
+            drawFlatBackground(g, BANK_INFO_WIDTH, BANK_INFO_HEIGHT)
+            drawPanel(g, 56, 160, 410, 478)
+            drawPanel(g, 494, 74, 730, 306)
+            drawPanel(g, 494, 416, 730, 222)
+            drawFooter(g, font, BANK_INFO_WIDTH - 32, BANK_INFO_HEIGHT - 24)
+            g.dispose()
+            image
+        }
+    }
+
+    private fun personalDefaultBackground(): BufferedImage {
+        personalDefaultBackgroundCache?.let { return it }
+        return synchronized(this) {
+            personalDefaultBackgroundCache ?: BufferedImage(PERSONAL_WIDTH, PERSONAL_HEIGHT, BufferedImage.TYPE_INT_ARGB).also { image ->
+                val g = ImageUtil.getG2d(image)
+                drawPersonalBackground(g, null)
+                g.dispose()
+                personalDefaultBackgroundCache = image
+            }
+        }
+    }
+
+    private fun copyImage(source: BufferedImage): BufferedImage {
+        val output = BufferedImage(source.width, source.height, BufferedImage.TYPE_INT_ARGB)
+        val g = output.createGraphics()
+        g.drawImage(source, 0, 0, null)
+        g.dispose()
+        return output
+    }
+
     private fun drawPrivateBankSummary(g: Graphics2D, card: PrivateBankInfoCard, font: Font) {
         g.font = font.deriveFont(Font.BOLD, 28f)
         g.color = ink
@@ -289,12 +331,12 @@ object EconomyImageRenderer {
             val col = index % 2
             val row = index / 2
             val x = 526 + col * 350
-            val y = 174 + row * 68
+            val y = 174 + row * 74
             val color = colors[index % colors.size]
             g.color = Color(color.red, color.green, color.blue, 34)
-            g.fillRoundRect(x, y - 30, 306, 54, 14, 14)
+            g.fillRoundRect(x, y - 30, 306, 62, 14, 14)
             g.color = color
-            g.fillRoundRect(x + 14, y - 18, 8, 32, 8, 8)
+            g.fillRoundRect(x + 14, y - 16, 8, 32, 8, 8)
             g.font = font.deriveFont(Font.PLAIN, 17f)
             g.color = muted
             g.drawString(line.label, x + 34, y - 8)
@@ -304,7 +346,7 @@ object EconomyImageRenderer {
             if (line.description.isNotBlank()) {
                 g.font = font.deriveFont(Font.PLAIN, 15f)
                 g.color = muted
-                g.drawString(line.description.take(18), x + 176, y + 20)
+                g.drawString(line.description.take(18), x + 196, y + 17)
             }
         }
     }
@@ -312,14 +354,14 @@ object EconomyImageRenderer {
     private fun drawPrivateBankLoans(g: Graphics2D, card: PrivateBankInfoCard, font: Font) {
         g.font = font.deriveFont(Font.BOLD, 28f)
         g.color = ink
-        g.drawString("额度与放贷", 526, 446)
+        g.drawString("额度与放贷", 526, 466)
 
         val lines = if (card.loanLines.isEmpty()) {
             listOf(BankInfoLoanLine("暂无放贷", "0", "未发布贷款额度"))
         } else {
             card.loanLines
         }
-        var y = 494
+        var y = 514
         lines.take(4).forEach { line ->
             g.font = font.deriveFont(Font.PLAIN, 18f)
             g.color = muted

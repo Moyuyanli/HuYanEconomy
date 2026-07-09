@@ -47,10 +47,16 @@ object HelpImageCatalog {
                 listOf(
                     HelpCommandItem("银行列表", "查看可用银行"),
                     HelpCommandItem("银行创建 code 名称", "创建自己的银行"),
-                    HelpCommandItem("银行信息 [code]", "查看银行详情"),
-                    HelpCommandItem("银行评分 1-5 [内容]", "给银行评分"),
+                    HelpCommandItem("默认银行 / 设置", "查询或切换默认银行"),
+                    HelpCommandItem("银行信息 [银行]", "查看银行详情"),
+                    HelpCommandItem("银行描述修改", "修改本行描述"),
+                    HelpCommandItem("银行利率变更 rate", "调整储户利率"),
+                    HelpCommandItem("放贷 金额 [利率]", "发布贷款标的"),
                     HelpCommandItem("贷款 金额 [银行]", "申请银行贷款"),
                     HelpCommandItem("还款 金额 [银行]", "偿还贷款"),
+                    HelpCommandItem("银行评分 1-5 [内容]", "给银行评分"),
+                    HelpCommandItem("国卷 / 国卷购买", "查看和购买国卷"),
+                    HelpCommandItem("国卷赎回 [ID]", "赎回国卷持仓"),
                     HelpCommandItem("狐卷 / 狐卷竞标", "查看和竞标狐卷")
                 )
             ),

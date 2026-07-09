@@ -1,8 +1,6 @@
 package cn.chahuyun.economy.image
 
-import cn.chahuyun.economy.image.model.BankInfoFundLine
-import cn.chahuyun.economy.image.model.BankInfoLoanLine
-import cn.chahuyun.economy.image.model.PrivateBankInfoCard
+import cn.chahuyun.economy.image.model.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -65,6 +63,60 @@ class EconomyImageRendererSmokeTest {
 
         assertEquals(1280, image.width)
         assertEquals(720, image.height)
+        assertNonBlank(image)
+    }
+
+    @Test
+    fun `farm detail image renders as non blank canvas`() {
+        val plots = (1..18).map { index ->
+            when {
+                index <= 3 -> FarmPlotDetailLine(
+                    plotNo = index,
+                    title = "🥕 胡萝卜",
+                    subtitle = "第1/2季",
+                    statusText = if (index == 1) "可收获" else "成长中",
+                    progressText = if (index == 1) "已成熟" else "${index * 8}分",
+                    status = if (index == 1) FarmPlotDetailStatus.READY else FarmPlotDetailStatus.GROWING,
+                )
+
+                index <= 8 -> FarmPlotDetailLine(
+                    plotNo = index,
+                    title = "空闲土地",
+                    subtitle = "可播种",
+                    statusText = "空闲",
+                    progressText = "等待种植",
+                    status = FarmPlotDetailStatus.EMPTY,
+                )
+
+                else -> FarmPlotDetailLine(
+                    plotNo = index,
+                    title = "未开拓",
+                    subtitle = "升级农场解锁",
+                    statusText = "锁定",
+                    progressText = "待开拓",
+                    status = FarmPlotDetailStatus.LOCKED,
+                )
+            }
+        }
+
+        val image = FarmDetailImageRenderer.render(
+            FarmDetailCard(
+                owner = "572490972",
+                level = 4,
+                unlockedPlots = 9,
+                totalPlots = 18,
+                plantedPlots = 3,
+                readyPlots = 1,
+                emptyPlots = 5,
+                shieldText = "未激活",
+                waterText = "13级开放",
+                waterHint = "今日帮浇水次数每日自动重置",
+                plots = plots,
+            )
+        )
+
+        assertEquals(1280, image.width)
+        assertEquals(960, image.height)
         assertNonBlank(image)
     }
 

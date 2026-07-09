@@ -102,17 +102,27 @@ object ImageManager {
      */
     @JvmStatic
     fun getNextBottom(): BufferedImage? {
-        val list = bufferedImages
-        if (list.isEmpty()) return null
-
-        val idx = (next.getAndIncrement() % list.size).let { if (it < 0) -it else it }
-        val bufferedImage = list[idx]
+        val bufferedImage = getNextBottomShared() ?: return null
         return BufferedImage(
             bufferedImage.colorModel,
             bufferedImage.copyData(null),
             bufferedImage.colorModel.isAlphaPremultiplied,
             null
         )
+    }
+
+    /**
+     * 获取下一个底图缓存项，不做深拷贝。
+     *
+     * 只适合渲染器内部按只读方式 drawImage 使用；调用方不得修改返回的 BufferedImage。
+     */
+    @JvmStatic
+    fun getNextBottomShared(): BufferedImage? {
+        val list = bufferedImages
+        if (list.isEmpty()) return null
+
+        val idx = (next.getAndIncrement() % list.size).let { if (it < 0) -it else it }
+        return list[idx]
     }
 
     private fun loadFontOrDefault(fontDir: File): Font {
