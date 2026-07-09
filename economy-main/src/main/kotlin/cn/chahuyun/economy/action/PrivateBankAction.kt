@@ -20,6 +20,16 @@ class PrivateBankAction {
         PrivateBankUsecase.listBanks(event)
     }
 
+    @MessageAuthorize(text = ["默认银行"])
+    suspend fun defaultBank(event: MessageEvent) {
+        PrivateBankUsecase.defaultBank(event)
+    }
+
+    @MessageAuthorize(text = ["默认银行设置 .+"], messageMatching = MessageMatchingEnum.REGULAR)
+    suspend fun setDefaultBank(event: MessageEvent) {
+        PrivateBankUsecase.setDefaultBank(event)
+    }
+
     @MessageAuthorize(text = ["银行创建 \\S+ .+"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbCreate(event: MessageEvent) {
         PrivateBankUsecase.pbCreate(event)
@@ -35,7 +45,10 @@ class PrivateBankAction {
         PrivateBankUsecase.pbRate(event)
     }
 
-    @MessageAuthorize(text = ["银行放贷 \\d+(\\.\\d+)? \\d+(\\.\\d+)?"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(
+        text = ["(银行)?放贷 \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?( \\d+(\\.\\d+)?)?"],
+        messageMatching = MessageMatchingEnum.REGULAR
+    )
     suspend fun pbLoanOffer(event: MessageEvent) {
         PrivateBankUsecase.pbLoanOffer(event)
     }
@@ -46,7 +59,7 @@ class PrivateBankAction {
     }
 
     @MessageAuthorize(
-        text = ["狐卷竞标 \\S+ \\d+(\\.\\d+)? \\d+(\\.\\d+)?"], messageMatching = MessageMatchingEnum.REGULAR
+        text = ["狐卷竞标 \\S+ \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]? \\d+(\\.\\d+)?"], messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun foxBid(event: MessageEvent) {
         PrivateBankUsecase.foxBid(event)
@@ -62,12 +75,12 @@ class PrivateBankAction {
         PrivateBankUsecase.pbReview(event)
     }
 
-    @MessageAuthorize(text = ["(贷款|借款) \\d+(\\.\\d+)?( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(text = ["(贷款|借款) \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbBorrow(event: MessageEvent) {
         PrivateBankUsecase.pbBorrow(event)
     }
 
-    @MessageAuthorize(text = ["还款 \\d+(\\.\\d+)?( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(text = ["还款 \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbRepay(event: MessageEvent) {
         PrivateBankUsecase.pbRepay(event)
     }

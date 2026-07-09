@@ -14,7 +14,7 @@ class FundingAction {
         FundingUsecase.fundBind(event)
     }
 
-    @MessageAuthorize(text = ["#fund get \\S+ \\d+"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(text = ["#fund get \\S+ \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun fundGet(event: FriendMessageEvent) {
         FundingUsecase.fundGet(event)
     }

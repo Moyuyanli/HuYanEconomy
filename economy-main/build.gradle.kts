@@ -68,3 +68,35 @@ tasks.matching { it.name == "buildPlugin" }.configureEach {
         ":economy-game:jar"
     )
 }
+
+afterEvaluate {
+    tasks.named<JavaExec>("runConsole").configure {
+        fun pluginJarCandidates(pluginsDir: File) = pluginsDir.listFiles { file ->
+            file.isFile &&
+                file.name.endsWith(".mirai2.jar") &&
+                (file.name.startsWith("${project.name}-") || file.name.startsWith("${rootProject.name}-"))
+        }.orEmpty()
+
+        val cleanDevPluginJars = org.gradle.api.Action<org.gradle.api.Task> {
+            val pluginsDir = workingDir.resolve("plugins")
+            pluginJarCandidates(pluginsDir).forEach { it.delete() }
+        }
+
+        val syncDevPluginJar = org.gradle.api.Action<org.gradle.api.Task> {
+            val pluginsDir = workingDir.resolve("plugins")
+            val generatedJar = pluginsDir.resolve("${project.name}-dev.mirai2.jar")
+            val expectedJar = pluginsDir.resolve("${rootProject.name}-dev.mirai2.jar")
+
+            if (generatedJar.exists()) {
+                generatedJar.copyTo(expectedJar, overwrite = true)
+            }
+
+            pluginJarCandidates(pluginsDir)
+                .filterNot { it.name == expectedJar.name }
+                .forEach { it.delete() }
+        }
+
+        actions.add(0, cleanDevPluginJars)
+        actions.add(actions.lastIndex, syncDevPluginJar)
+    }
+}

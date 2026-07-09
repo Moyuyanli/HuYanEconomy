@@ -15,6 +15,11 @@ class FarmAction {
         FarmUsecase.viewFarm(event)
     }
 
+    @MessageAuthorize(text = ["农场详情"], groupPermissions = [EconPerm.FARM_PERM])
+    suspend fun viewFarmDetail(event: GroupMessageEvent) {
+        FarmUsecase.viewFarmDetail(event)
+    }
+
     @MessageAuthorize(text = ["农场商店"], groupPermissions = [EconPerm.FARM_PERM])
     suspend fun viewShop(event: GroupMessageEvent) {
         FarmUsecase.viewShop(event)
@@ -61,7 +66,11 @@ class FarmAction {
         FarmUsecase.sellFruits(event)
     }
 
-    @MessageAuthorize(text = ["升级农场"], groupPermissions = [EconPerm.FARM_PERM])
+    @MessageAuthorize(
+        text = ["升级农场\\*?"],
+        messageMatching = MessageMatchingEnum.REGULAR,
+        groupPermissions = [EconPerm.FARM_PERM]
+    )
     suspend fun upgradeFarm(event: GroupMessageEvent) {
         FarmUsecase.upgradeFarm(event)
     }

@@ -15,28 +15,17 @@ import net.mamoe.mirai.event.events.MessageEvent
 class FoxBondAction {
 
     /**
-     * 查看当前国卷列表
+     * 查看本周国卷发行信息 + 本行持仓列表
      */
-    @MessageAuthorize(text = ["国卷(查看)?"], messageMatching = MessageMatchingEnum.REGULAR)
-    suspend fun foxView(event: MessageEvent) {
-        FoxBondUsecase.foxView(event)
-    }
-
-    /**
-     * 提交狐卷竞标
-     */
-    @MessageAuthorize(
-        text = ["国卷竞标 \\S+ \\d+(\\.\\d+)? \\d+(\\.\\d+)?"],
-        messageMatching = MessageMatchingEnum.REGULAR
-    )
-    suspend fun foxBid(event: MessageEvent) {
-        FoxBondUsecase.foxBid(event)
+    @MessageAuthorize(text = ["国卷( 查看|查看)?", "国卷列表"], messageMatching = MessageMatchingEnum.REGULAR)
+    suspend fun bondList(event: MessageEvent) {
+        FoxBondUsecase.bondList(event)
     }
 
     /**
      * 购买国卷（行长用流动金池资金购买本周国卷）
      */
-    @MessageAuthorize(text = ["国卷购买 \\d+(\\.\\d+)?"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(text = ["国卷购买 \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun buyBond(event: MessageEvent) {
         FoxBondUsecase.buyBond(event)
     }
@@ -49,11 +38,4 @@ class FoxBondAction {
         FoxBondUsecase.redeemBond(event)
     }
 
-    /**
-     * 查看本周国卷发行信息 + 本行持仓列表
-     */
-    @MessageAuthorize(text = ["国卷列表"], messageMatching = MessageMatchingEnum.REGULAR)
-    suspend fun bondList(event: MessageEvent) {
-        FoxBondUsecase.bondList(event)
-    }
 }

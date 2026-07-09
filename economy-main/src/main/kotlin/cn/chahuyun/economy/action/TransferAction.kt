@@ -18,7 +18,7 @@ class TransferAction {
      * 用户转账给另一个用户操作
      */
     @MessageAuthorize(
-        text = ["转账(\\[mirai:at:\\d+])? \\d+( \\d+)?"],
+        text = ["转账(\\[mirai:at:\\d+])? \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?( \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?)?"],
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun userToUser(event: MessageEvent) {
@@ -26,7 +26,7 @@ class TransferAction {
     }
 
     @MessageAuthorize(
-        text = ["greedisgood \\d+"],
+        text = ["greedisgood \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?"],
         messageMatching = MessageMatchingEnum.REGULAR,
         userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN]
     )

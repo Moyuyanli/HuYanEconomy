@@ -4,8 +4,10 @@ package cn.chahuyun.economy.action
 
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
+import cn.chahuyun.authorize.constant.MessageMatchingEnum
 import cn.chahuyun.authorize.constant.AuthPerm
 import cn.chahuyun.economy.constant.EconPerm
+import cn.chahuyun.economy.manager.GamesManager
 import cn.chahuyun.economy.service.GameCoroutineService
 import cn.chahuyun.economy.usecase.GamesUsecase
 import net.mamoe.mirai.event.events.GroupMessageEvent
@@ -51,6 +53,15 @@ class GamesAction {
     @MessageAuthorize(text = ["鱼塘等级"], groupPermissions = [EconPerm.FISH_PERM])
     suspend fun viewFishPond(event: GroupMessageEvent) {
         GamesUsecase.viewFishPond(event)
+    }
+
+    @MessageAuthorize(
+        text = ["升级鱼竿\\*?"],
+        messageMatching = MessageMatchingEnum.REGULAR,
+        groupPermissions = [EconPerm.FISH_PERM]
+    )
+    suspend fun upFishRod(event: MessageEvent) {
+        GamesManager.upFishRod(event)
     }
 
 }
