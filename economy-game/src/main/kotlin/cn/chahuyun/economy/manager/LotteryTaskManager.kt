@@ -4,6 +4,7 @@ import cn.chahuyun.economy.model.LotteryInfoDto
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.service.LotteryDataService
+import cn.chahuyun.economy.utils.MoneyFormatUtil
 import cn.hutool.core.util.RandomUtil
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.contact.Group
@@ -201,9 +202,9 @@ class LotteryDayTask(
             val ignored = list.map { lotteryInfo ->
                 val normalMember: NormalMember? = botGroup?.get(lotteryInfo.qq)
                 if (normalMember == null) {
-                    "${lotteryInfo.qq}:${lotteryInfo.number}->奖金:${lotteryInfo.bonus}"
+                    "${lotteryInfo.qq}:${lotteryInfo.number}->奖金:${MoneyFormatUtil.format(lotteryInfo.bonus)}"
                 } else {
-                    "${normalMember.nick}:${lotteryInfo.number}->奖金:${lotteryInfo.bonus}"
+                    "${normalMember.nick}:${lotteryInfo.number}->奖金:${MoneyFormatUtil.format(lotteryInfo.bonus)}"
                 }
             }
 
@@ -213,4 +214,3 @@ class LotteryDayTask(
         HuYanScheduler.cancel(id)
     }
 }
-

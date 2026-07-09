@@ -5,6 +5,7 @@ import cn.chahuyun.economy.entity.farm.FarmCrop
 import cn.chahuyun.economy.entity.farm.FarmPlot
 import cn.chahuyun.economy.model.farm.FarmOperationResult
 import cn.chahuyun.economy.model.farm.FarmState
+import cn.chahuyun.economy.utils.MoneyFormatUtil
 import net.mamoe.mirai.contact.User
 
 object FarmOperationService {
@@ -115,7 +116,7 @@ object FarmOperationService {
 
         val selected = plantable.take(seedAmount + autoBought)
         if (selected.isEmpty()) {
-            return FarmOperationResult(false, "${crop.name} 种子不足，自动购买还需要${crop.seedPrice.toLong()}金币")
+            return FarmOperationResult(false, "${crop.name} 种子不足，自动购买还需要${MoneyFormatUtil.format(crop.seedPrice.toDouble())}金币")
         }
         FarmInventoryStorageService.removeInventory(user.id, FarmConstants.ITEM_SEED, crop.code, selected.size)
         val now = System.currentTimeMillis()
@@ -144,6 +145,7 @@ object FarmOperationService {
         val now = System.currentTimeMillis()
         var harvested = 0
         var fruits = 0
+        val harvestedFruits = linkedMapOf<String, Int>()
         val messages = mutableListOf<String>()
 
         plotNumbers.forEach { plotNo ->
@@ -164,6 +166,7 @@ object FarmOperationService {
             FarmInventoryStorageService.addInventory(qq, FarmConstants.ITEM_FRUIT, crop.code, crop.yieldPerSeason)
             harvested += 1
             fruits += crop.yieldPerSeason
+            harvestedFruits[crop.name] = (harvestedFruits[crop.name] ?: 0) + crop.yieldPerSeason
             if (plot.currentSeason < crop.totalSeasons && crop.nextMatureMinutes > 0) {
                 plot.currentSeason += 1
                 plot.nextMatureAt = now + crop.nextMatureMinutes * MINUTE
@@ -177,8 +180,13 @@ object FarmOperationService {
             FarmOperationResult(false, messages.joinToString("\n").ifBlank { "没有收获任何作物" })
         } else {
             val detail = if (messages.isEmpty()) "" else "\n" + messages.joinToString("\n")
-            FarmOperationResult(true, "收获${harvested}块土地，获得果实${fruits}个$detail")
+            FarmOperationResult(true, "收获${harvested}块土地，获得${harvestedFruits.formatHarvestedFruits(fruits)}$detail")
         }
+    }
+
+    private fun Map<String, Int>.formatHarvestedFruits(total: Int): String {
+        val summary = entries.joinToString("、") { (name, amount) -> "${name}${amount}个" }
+        return if (size <= 1) summary else "$summary（共${total}个）"
     }
 
     fun sellFruits(user: User, cropCode: String?, amount: Int?): FarmOperationResult {
@@ -211,7 +219,7 @@ object FarmOperationService {
             }
             return FarmOperationResult(false, "卖出失败，果实已退回仓库")
         }
-        return FarmOperationResult(true, "卖出果实${sold}个，获得${totalMoney}金币")
+        return FarmOperationResult(true, "卖出果实${sold}个，获得${MoneyFormatUtil.format(totalMoney.toDouble())}金币")
     }
 
     fun clearPlot(plot: FarmPlot) {

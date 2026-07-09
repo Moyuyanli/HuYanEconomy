@@ -15,7 +15,7 @@ object LotteryMessageFormatter {
         return StringBuilder(title)
             .append("\n本期号码:${lotteryInfo.current}")
             .append("\n你的号码:${lotteryInfo.number}")
-            .append("\n获得奖金为:${lotteryInfo.bonus}")
+            .append("\n获得奖金为:${MoneyFormatUtil.format(lotteryInfo.bonus)}")
             .toString()
     }
 

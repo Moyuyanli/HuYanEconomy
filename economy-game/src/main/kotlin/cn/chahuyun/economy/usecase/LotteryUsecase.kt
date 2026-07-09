@@ -31,7 +31,10 @@ object LotteryUsecase {
         val split = code.split(" ")
         var number = StringBuilder(split[1])
 
-        val money = split[2].toDouble()
+        val money = MoneyFormatUtil.parse(split[2]) ?: run {
+            GameUsecaseReplySupport.reply(subject, message, "金额格式错误!")
+            return
+        }
 
         val moneyByUser = EconomyAccountService.walletBalance(user)
         if (moneyByUser - money <= 0) {

@@ -28,6 +28,18 @@ object FarmWaterService {
     /** 高级农场每日帮浇水次数上限。 */
     private const val ADVANCED_DAILY_WATER_LIMIT = 10
 
+    fun dailyWaterLimit(level: Int): Int =
+        when {
+            level < WATER_REQUIRED_LEVEL -> 0
+            level >= ADVANCED_WATER_LEVEL -> ADVANCED_DAILY_WATER_LIMIT
+            else -> DEFAULT_DAILY_WATER_LIMIT
+        }
+
+    fun todayWaterCount(player: FarmPlayer): Int {
+        val today = LocalDate.now().toString()
+        return if (player.lastWaterDate == today) player.todayWaterCount else 0
+    }
+
     fun water(waterer: UserInfoDto, watererState: FarmState, targetState: FarmState): FarmOperationResult {
         if (waterer.qq == targetState.player.qq) {
             return FarmOperationResult(false, "不能给自己浇水")
@@ -39,11 +51,7 @@ object FarmWaterService {
         }
 
         refreshWaterCounter(watererPlayer)
-        val maxWater = if (watererPlayer.level >= ADVANCED_WATER_LEVEL) {
-            ADVANCED_DAILY_WATER_LIMIT
-        } else {
-            DEFAULT_DAILY_WATER_LIMIT
-        }
+        val maxWater = dailyWaterLimit(watererPlayer.level)
         if (watererPlayer.todayWaterCount >= maxWater) {
             return FarmOperationResult(false, "今日浇水次数已用完")
         }

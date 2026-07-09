@@ -16,6 +16,10 @@ object FarmUsecase {
         FarmViewUsecase.viewWarehouse(event)
     }
 
+    suspend fun viewFarmDetail(event: GroupMessageEvent) {
+        FarmViewUsecase.viewFarmDetail(event)
+    }
+
     suspend fun buySeed(event: GroupMessageEvent) {
         FarmOperationUsecase.buySeed(event)
     }

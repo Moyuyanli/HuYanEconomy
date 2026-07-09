@@ -32,8 +32,12 @@ object FarmOperationUsecase {
     }
 
     suspend fun upgradeFarm(event: GroupMessageEvent) {
-        val result = FarmManager.upgradeFarm(event.sender)
-        FarmUsecaseSupport.reply(event, result.message)
+        val message = if (FarmUsecaseSupport.isAutoUpgrade(event)) {
+            FarmManager.upgradeFarmUntilFailure(event.sender)
+        } else {
+            FarmManager.upgradeFarm(event.sender).message
+        }
+        FarmUsecaseSupport.reply(event, message)
     }
 
     suspend fun water(event: GroupMessageEvent) {

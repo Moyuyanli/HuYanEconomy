@@ -5,6 +5,8 @@ import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.service.FarmOperationService
 import cn.chahuyun.economy.service.FarmStateService
 import cn.chahuyun.economy.service.FarmWaterService
+import cn.chahuyun.economy.service.UpgradeLoopService
+import cn.chahuyun.economy.service.UpgradeStepResult
 import net.mamoe.mirai.contact.User
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
@@ -50,6 +52,13 @@ object FarmManager {
         FarmOperationService.upgradeFarm(user, FarmStateService.getOrCreateFarm(user.id))
     }
 
+    fun upgradeFarmUntilFailure(user: User): String = withUserLock(user.id) {
+        val state = FarmStateService.getOrCreateFarm(user.id)
+        UpgradeLoopService.runUntilFailure {
+            FarmOperationService.upgradeFarm(user, state).toUpgradeStepResult()
+        }
+    }
+
     fun activateShield(qq: Long): FarmOperationResult = withUserLock(qq) {
         FarmOperationService.activateShield(FarmStateService.getOrCreateFarm(qq))
     }
@@ -61,4 +70,7 @@ object FarmManager {
             FarmStateService.getOrCreateFarm(targetQq),
         )
     }
+
+    private fun FarmOperationResult.toUpgradeStepResult(): UpgradeStepResult =
+        UpgradeStepResult(success, message)
 }

@@ -1,6 +1,7 @@
 package cn.chahuyun.economy.service
 
 import cn.chahuyun.economy.model.fish.FishRankingDto
+import cn.chahuyun.economy.utils.MoneyFormatUtil
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import net.mamoe.mirai.message.data.PlainText
@@ -20,7 +21,7 @@ object FishingRankingMessageFormatter {
         }
         message += "用户:${ranking.name}(鱼竿等级:${ranking.fishRodLevel})\n" +
             "尺寸:${ranking.dimensions}\n" +
-            "金额:${ranking.money}\n" +
+            "金额:${MoneyFormatUtil.format(ranking.money)}\n" +
             "鱼:${ranking.fishName}(等级:${ranking.fishLevel})\n" +
             "鱼塘:${ranking.fishPondName}(鱼塘等级:${ranking.fishPondLevel})"
         return PlainText(message)

@@ -22,7 +22,7 @@ internal object FishingMessageBuilder {
 
     fun success(userId: Long, fish: FishDto, dimensions: Int, money: Double): Message {
         val result =
-            "\n起竿咯！\n${fish.name}\n等级:${fish.level}\n单价:${fish.price}\n尺寸:$dimensions\n总金额:$money\n${fish.description}"
+            "\n起竿咯！\n${fish.name}\n等级:${fish.level}\n单价:${MoneyFormatUtil.format(fish.price.toDouble())}\n尺寸:$dimensions\n总金额:${MoneyFormatUtil.format(money)}\n${fish.description}"
         return MessageChainBuilder().append(At(userId)).append(result).build()
     }
 

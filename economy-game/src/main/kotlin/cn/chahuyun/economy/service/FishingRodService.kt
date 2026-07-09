@@ -75,7 +75,11 @@ object FishingRodService {
             )
             return
         }
-        subject.sendMessage(fishInfo.updateRod(userInfo))
+        if (isAutoUpgrade(event)) {
+            subject.sendMessage(FishingRodUpgradeService.upgradeUntilFailure(fishInfo, userInfo))
+        } else {
+            subject.sendMessage(fishInfo.updateRod(userInfo))
+        }
     }
 
     suspend fun viewFishLevel(event: MessageEvent) {
@@ -84,4 +88,7 @@ object FishingRodService {
         val rodLevel = userInfo.getFishInfo().rodLevel
         event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, FishingRodMessageFormatter.currentLevel(rodLevel)))
     }
+
+    private fun isAutoUpgrade(event: MessageEvent): Boolean =
+        event.message.contentToString().trim().endsWith("*")
 }

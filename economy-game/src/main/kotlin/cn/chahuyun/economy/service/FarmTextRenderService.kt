@@ -3,6 +3,7 @@ package cn.chahuyun.economy.service
 import cn.chahuyun.economy.constant.FarmConstants
 import cn.chahuyun.economy.model.farm.FarmPlotView
 import cn.chahuyun.economy.model.farm.FarmViewState
+import cn.chahuyun.economy.utils.MoneyFormatUtil
 import java.util.concurrent.TimeUnit
 
 object FarmTextRenderService {
@@ -22,7 +23,7 @@ object FarmTextRenderService {
             "农场商店暂无可购买种子"
         } else {
             crops.joinToString("\n", "农场商店(${state.level}级可购买):\n") {
-                "${it.emoji} ${it.name} 种子:${it.seedPrice}金币 成熟:${it.firstMatureMinutes}分 售价:${it.fruitPrice}"
+                "${it.emoji} ${it.name} 种子:${MoneyFormatUtil.format(it.seedPrice.toDouble())}金币 成熟:${it.firstMatureMinutes}分 售价:${MoneyFormatUtil.format(it.fruitPrice.toDouble())}"
             }
         }
     }

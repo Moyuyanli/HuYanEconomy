@@ -25,6 +25,9 @@ internal object FarmUsecaseSupport {
     fun commandPayload(event: GroupMessageEvent, commands: List<String>): String =
         FarmCommandTextParser.payload(event.message.contentToString(), commands)
 
+    fun isAutoUpgrade(event: GroupMessageEvent): Boolean =
+        event.message.contentToString().trim().endsWith("*")
+
     suspend fun atTargetOrReply(event: GroupMessageEvent): Long? {
         val at = event.message.filterIsInstance<At>().firstOrNull()
         if (at == null) {
