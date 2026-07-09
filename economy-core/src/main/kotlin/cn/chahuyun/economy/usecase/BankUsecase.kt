@@ -185,7 +185,7 @@ object BankUsecase {
         if (amountToken == "!") return BankTransferRequest(null, BankRoute.DEFAULT)
         if (amountToken == "!!") return BankTransferRequest(null, BankRoute.MAIN)
 
-        val amount = parseMoney(amountToken) ?: return null
+        val amount = MoneyFormatUtil.parse(amountToken) ?: return null
         val target = parts.getOrNull(2)?.trim()?.takeIf { it.isNotBlank() }
         return when {
             target == null -> BankTransferRequest(amount, BankRoute.DEFAULT)
@@ -193,23 +193,6 @@ object BankUsecase {
                 BankTransferRequest(amount, BankRoute.MAIN)
             else -> BankTransferRequest(amount, BankRoute.PRIVATE, target)
         }
-    }
-
-    private fun parseMoney(text: String): Double? {
-        val normalized = text.trim()
-        if (normalized.isBlank()) return null
-        val match = Regex("""^(\d+(?:\.\d+)?)([kKmMgGtTpPwW万亿]?)$""").matchEntire(normalized) ?: return null
-        val number = match.groupValues[1].toDoubleOrNull() ?: return null
-        val multiplier = when (match.groupValues[2]) {
-            "k", "K" -> 1_000.0
-            "w", "W", "万" -> 10_000.0
-            "m", "M" -> 1_000_000.0
-            "g", "G", "亿" -> 100_000_000.0
-            "t", "T" -> 1_000_000_000_000.0
-            "p", "P" -> 1_000_000_000_000_000.0
-            else -> 1.0
-        }
-        return number * multiplier
     }
 
     suspend fun viewBankInterest(event: MessageEvent) {

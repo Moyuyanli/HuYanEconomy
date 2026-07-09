@@ -2,6 +2,7 @@
 
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.utils.EconomyUtil
+import cn.chahuyun.economy.utils.MoneyFormatUtil
 import net.mamoe.mirai.event.events.FriendMessageEvent
 import net.mamoe.mirai.message.data.MessageChain
 import xyz.cssxsh.mirai.economy.EconomyService
@@ -46,16 +47,18 @@ object FundingUsecase {
             return
         }
 
-        val amount = content.split(" ")[3].toInt()
+        val amount = MoneyFormatUtil.parse(content.split(" ")[3]) ?: run {
+            event.sender.sendMessage("金额格式错误")
+            return
+        }
 
         val userId = user.id
         val account: EconomyAccount = EconomyService.account(userId, null)
 
-        if (EconomyUtil.plusMoneyToBankForAccount(account, -amount.toDouble())) {
-            event.sender.sendMessage("fund get $uuid $amount success")
+        if (EconomyUtil.plusMoneyToBankForAccount(account, -amount)) {
+            event.sender.sendMessage("fund get $uuid ${MoneyFormatUtil.format(amount)} success")
         } else {
-            event.sender.sendMessage("fund get $uuid $amount fail")
+            event.sender.sendMessage("fund get $uuid ${MoneyFormatUtil.format(amount)} fail")
         }
     }
 }
-

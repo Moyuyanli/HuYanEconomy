@@ -37,10 +37,16 @@ object TransferUsecase {
                     qq = singleMessage.target
                 }
             }
-            money = s.last().toDouble()
+            money = MoneyFormatUtil.parse(s.last()) ?: run {
+                subject.sendMessage("转账失败！")
+                return
+            }
         } else {
             qq = s[1].toLong()
-            money = s[2].toDouble()
+            money = MoneyFormatUtil.parse(s[2]) ?: run {
+                subject.sendMessage("转账失败！")
+                return
+            }
         }
 
         if (money < 0 || user.id == qq) {
@@ -80,7 +86,10 @@ object TransferUsecase {
         val code = message.serializeToMiraiCode()
 
         val s = code.split(" ")
-        val money = s.last().toDouble()
+        val money = MoneyFormatUtil.parse(s.last()) ?: run {
+            subject.sendMessage("作弊失败！")
+            return
+        }
 
         val chainBuilder = MessageChainBuilder()
         if (EconomyUtil.Cheat(user, money)) {

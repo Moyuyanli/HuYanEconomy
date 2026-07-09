@@ -42,7 +42,7 @@ object RedPackUsecase {
         val info = content.split(" ").filter { it.isNotBlank() }
         if (info.size < 3) return
 
-        val money = info[1].toDoubleOrNull() ?: return
+        val money = MoneyFormatUtil.parse(info[1]) ?: return
         val number = info[2].toIntOrNull() ?: return
 
         var type = RedPackKind.NORMAL

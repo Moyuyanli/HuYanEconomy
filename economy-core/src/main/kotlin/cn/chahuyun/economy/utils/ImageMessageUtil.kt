@@ -16,16 +16,23 @@ import javax.imageio.ImageIO
  * 图片模块只负责输出 BufferedImage；上传和发送仍由当前 core/main 的 Mirai 侧流程完成。
  */
 object ImageMessageUtil {
+    init {
+        ImageIO.setUseCache(false)
+    }
 
     suspend fun sendImage(subject: Contact, image: BufferedImage) {
-        ByteArrayInputStream(toPngBytes(image)).toExternalResource().use { resource ->
-            subject.sendMessage(subject.uploadImage(resource))
-        }
+        sendPngBytes(subject, toPngBytes(image))
     }
 
     suspend fun sendQuotedImage(subject: Contact, quote: MessageChain, image: BufferedImage) {
         ByteArrayInputStream(toPngBytes(image)).toExternalResource().use { resource ->
             subject.sendMessage(MessageUtil.quoteReply(quote).append(subject.uploadImage(resource)).build())
+        }
+    }
+
+    suspend fun sendPngBytes(subject: Contact, bytes: ByteArray) {
+        ByteArrayInputStream(bytes).toExternalResource().use { resource ->
+            subject.sendMessage(subject.uploadImage(resource))
         }
     }
 
@@ -37,8 +44,8 @@ object ImageMessageUtil {
         }
     }
 
-    private fun toPngBytes(image: BufferedImage): ByteArray {
-        val stream = ByteArrayOutputStream()
+    fun toPngBytes(image: BufferedImage): ByteArray {
+        val stream = ByteArrayOutputStream(image.width * image.height / 2)
         ImageIO.write(image, "png", stream)
         return stream.toByteArray()
     }

@@ -137,7 +137,7 @@ object PrivateBankUsecase {
             append("银行列表（按星级排序）\n")
             banks.take(15).forEachIndexed { idx, b ->
                 append(
-                    "${idx + 1}) ${b.name} | code=${b.code} | ⭐${b.star} | " +
+                    "${idx + 1}) ${b.name} | code=${b.code} | 星级=${b.star} | " +
                             "利率=${FormatUtil.fixed(b.depositorInterest / 10.0, 1)}% | " +
                             "失信=${if (b.isDefaulter()) "是" else "否"}\n"
                 )
@@ -217,9 +217,12 @@ object PrivateBankUsecase {
     suspend fun pbLoanOffer(event: MessageEvent) {
         val subject = event.subject
         val sender = event.sender
-        val parts = event.message.contentToString().trim().split(" ")
-        val money = parts.getOrNull(1)?.toDoubleOrNull() ?: 0.0
-        val rateRaw = parts.getOrNull(2)?.toDoubleOrNull() ?: 0.0
+        val parts = event.message.contentToString().trim().split(Regex("\\s+"))
+        val money = parts.getOrNull(1)?.let(MoneyFormatUtil::parse)
+        if (money == null || money <= 0) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "用法：放贷 <金额> [利率]，例如：放贷 100000 / 放贷 10M / 放贷 20K"))
+            return
+        }
 
         val bank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == sender.id }
         if (bank == null) {
@@ -227,9 +230,55 @@ object PrivateBankUsecase {
             return
         }
 
+        val rateRaw = parts.getOrNull(2)?.toDoubleOrNull() ?: (bank.depositorInterest / 10.0)
         val ratePercent = if (rateRaw > 10) rateRaw / 10.0 else rateRaw
         val (_, msg) = PrivateBankService.publishLoanByPlan(sender, bank.code, money, ratePercent)
         subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
+    }
+
+    suspend fun defaultBank(event: MessageEvent) {
+        val userInfo = UserCoreManager.getUserInfo(event.sender)
+        val key = userInfo.defaultPrivateBankCode.trim()
+        if (key.isBlank()) {
+            event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "当前默认银行：主银行"))
+            return
+        }
+
+        val bank = PrivateBankService.getBank(key)
+        val msg = if (bank == null) {
+            "当前默认银行：$key（银行不存在或已删除）"
+        } else {
+            "当前默认银行：${bank.name}(code=${bank.code})"
+        }
+        event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
+    }
+
+    suspend fun setDefaultBank(event: MessageEvent) {
+        val subject = event.subject
+        val userInfo = UserCoreManager.getUserInfo(event.sender)
+        val parts = event.message.contentToString().trim().split(Regex("\\s+"), limit = 2)
+        val key = parts.getOrNull(1)?.trim().orEmpty()
+        if (key.isBlank()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "用法：默认银行设置 <code/name|main|主银行>"))
+            return
+        }
+
+        if (key.equals("main", ignoreCase = true) || key == "主银行") {
+            userInfo.defaultPrivateBankCode = ""
+            UserCoreManager.saveUserInfo(userInfo)
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "默认银行已切换为：主银行"))
+            return
+        }
+
+        val bank = PrivateBankService.getBank(key)
+        if (bank == null) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "未找到该银行：$key"))
+            return
+        }
+
+        userInfo.defaultPrivateBankCode = bank.code
+        UserCoreManager.saveUserInfo(userInfo)
+        subject.sendMessage(MessageUtil.formatMessageChain(event.message, "默认银行已切换为：${bank.name}(code=${bank.code})"))
     }
 
     suspend fun foxView(event: MessageEvent) {
@@ -273,7 +322,7 @@ object PrivateBankUsecase {
             return
         }
         val code = parts[1]
-        val premium = parts[2].toDoubleOrNull() ?: 0.0
+        val premium = MoneyFormatUtil.parse(parts[2]) ?: 0.0
         val rate = parts[3].toDoubleOrNull() ?: 0.0
         val (_, msg) = PrivateBankFoxBondService.submitBid(event.sender, code, premium, rate)
         subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
@@ -293,7 +342,11 @@ object PrivateBankUsecase {
 
         // 不带参：优先展示自己拥有的私银；否则展示默认私银；都没有则跳过
         val ownerBank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == event.sender.id }
-        val key = ownerBank?.code ?: userInfo.defaultPrivateBankCode
+        val key = ownerBank?.code ?: userInfo.defaultPrivateBankCode.trim().takeIf { it.isNotBlank() }
+        if (key.isNullOrBlank()) {
+            event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你还没有创建自己的银行，也没有默认银行"))
+            return
+        }
         sendBankInfo(event, key)
     }
 
@@ -342,7 +395,7 @@ object PrivateBankUsecase {
     suspend fun pbBorrow(event: MessageEvent) {
         val subject = event.subject
         val parts = event.message.contentToString().trim().split(" ")
-        val amount = parts.getOrNull(1)?.toDoubleOrNull() ?: 0.0
+        val amount = parts.getOrNull(1)?.let(MoneyFormatUtil::parse) ?: 0.0
         val userInfo = UserCoreManager.getUserInfo(event.sender)
         val key = parts.getOrNull(2) ?: userInfo.defaultPrivateBankCode
         if (key.isNullOrBlank()) {
@@ -364,7 +417,7 @@ object PrivateBankUsecase {
     suspend fun pbRepay(event: MessageEvent) {
         val subject = event.subject
         val parts = event.message.contentToString().trim().split(" ")
-        val amount = parts.getOrNull(1)?.toDoubleOrNull() ?: 0.0
+        val amount = parts.getOrNull(1)?.let(MoneyFormatUtil::parse) ?: 0.0
         val userInfo = UserCoreManager.getUserInfo(event.sender)
         val key = parts.getOrNull(2) ?: userInfo.defaultPrivateBankCode
         if (key.isNullOrBlank()) {

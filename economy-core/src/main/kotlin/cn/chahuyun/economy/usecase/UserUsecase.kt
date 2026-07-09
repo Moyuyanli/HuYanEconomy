@@ -76,8 +76,8 @@ object UserUsecase {
             MessageUtil.formatMessageChain(
                 message,
                 "你的经济状况:\n" +
-                    "钱包余额:${FormatUtil.fixed(money, 1)}\n" +
-                    "银行存款:${FormatUtil.fixed(bank, 1)}"
+                    "钱包余额:${MoneyFormatUtil.format(money)}\n" +
+                    "银行存款:${MoneyFormatUtil.format(bank)}"
             )
         )
     }

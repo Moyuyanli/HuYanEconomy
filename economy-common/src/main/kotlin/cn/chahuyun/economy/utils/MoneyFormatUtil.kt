@@ -4,89 +4,81 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 /**
- * 金额缩写格式化工具（供 Kotlin/Java 共用）。
+ * 通用资金格式转换工具。
  *
- * 格式化规则：
- * 1. 数值 < 9,999,999：显示原数，最多保留两位小数，去掉无意义的尾随零（如 100.0 -> 100）。
- * 2. 数值 >= 9,999,999：进入千进制缩写模式。
- * 3. 缩写单位：M (百万), G (十亿/Billion), T (万亿), P (千万亿)。
- * 4. 进位处理：采用标准千进制（1000进位），并处理了四舍五入导致的临界点显示问题。
+ * - 0 ~ 999,999：显示原数，保留一位小数。
+ * - 1,000,000 起按千进制缩写：M、G、T、P。
+ * - 缩写最多保留一位小数，并移除无意义的 .0。
  */
 object MoneyFormatUtil {
 
-    /** 触发缩写显示的阈值：低于 9,999,999 时直接显示原数。 */
-    private const val THRESHOLD = 9_999_999.0
-
-    /** 缩写进位基数：M/G/T/P 之间按 1000 进位。 */
     private const val CARRY = 1000.0
-
-    /** 缩写单位后缀 */
     private val suffixes = charArrayOf('M', 'G', 'T', 'P')
-
-    /** 进位方式 */
     private val mode = RoundingMode.HALF_UP
 
     /**
-     * 格式化金额
-     * @param amount 原始金额
-     * @return 格式化后的字符串
+     * 将资金数值转换为展示文本。
+     *
+     * 示例：`52300000.0 -> 52.3M`。
      */
     @JvmStatic
     fun format(amount: Double): String {
-        // 处理非有限数值（如 NaN 或 Infinity）
         if (!amount.isFinite()) return amount.toString()
 
         val sign = if (amount < 0) "-" else ""
         val abs = kotlin.math.abs(amount)
-
-        // 情况 A: 未达阈值，直接显示原数
-        if (abs < THRESHOLD) {
-            return sign + formatPlain(abs)
+        if (abs < 1_000_000.0) {
+            return sign + BigDecimal.valueOf(abs).setScale(1, mode).toPlainString()
         }
 
-        // 情况 B: 超过阈值，计算缩写
-        var unit = 1_000_000.0 // 起始单位：M
-        var idx = 0
+        var unit = 1_000_000.0
+        var index = 0
         var scaled = abs / unit
 
-        // 进位判断
-        while (scaled >= CARRY - 0.005 && idx < suffixes.lastIndex) {
+        while (scaled >= CARRY && index < suffixes.lastIndex) {
             unit *= CARRY
-            idx++
+            index++
             scaled = abs / unit
         }
 
-        // 最终保留两位小数并四舍五入
-        val rounded = BigDecimal.valueOf(scaled)
-            .setScale(2, mode)
-            .toPlainString()
+        var rounded = BigDecimal.valueOf(scaled).setScale(1, mode)
+        while (rounded >= BigDecimal.valueOf(CARRY) && index < suffixes.lastIndex) {
+            unit *= CARRY
+            index++
+            scaled = abs / unit
+            rounded = BigDecimal.valueOf(scaled).setScale(1, mode)
+        }
 
-        return "$sign$rounded${suffixes[idx]}"
+        val value = rounded.stripTrailingZeros().toPlainString()
+        return "$sign$value${suffixes[index]}"
     }
 
     /**
-     * 格式化原始数值，移除无意义的 .0
+     * 将资金文本反向解析为数值。
+     *
+     * 示例：`52.3M -> 52300000.0`。
      */
-    private fun formatPlain(abs: Double): String {
-        val asLong = abs.toLong()
-        // 如果是整数，直接返回整数字符串
-        if (abs == asLong.toDouble()) return asLong.toString()
-
-        // 如果是浮点数，保留两位小数并去掉末尾多余的 0
-        return BigDecimal.valueOf(abs)
-            .setScale(2, mode)
-            .stripTrailingZeros()
-            .toPlainString()
+    @JvmStatic
+    fun parse(text: String): Double? {
+        val normalized = text.trim()
+        if (normalized.isBlank()) return null
+        val match = Regex("""^([+-]?\d+(?:\.\d+)?)([kKmMgGtTpPwW万亿]?)$""").matchEntire(normalized) ?: return null
+        val number = match.groupValues[1].toDoubleOrNull() ?: return null
+        val multiplier = when (match.groupValues[2]) {
+            "k", "K" -> 1_000.0
+            "w", "W", "万" -> 10_000.0
+            "m", "M" -> 1_000_000.0
+            "g", "G" -> 1_000_000_000.0
+            "亿" -> 100_000_000.0
+            "t", "T" -> 1_000_000_000_000.0
+            "p", "P" -> 1_000_000_000_000_000.0
+            else -> 1.0
+        }
+        return number * multiplier
     }
 
-
     /**
-     * 将Double类型的数值转换为货币格式的字符串
-     *
-     * 此函数为Double类型的扩展函数，直接对调用者进行格式化
-     *
-     * @return 格式化后的货币字符串
+     * 将 Double 类型的数值转换为资金展示文本。
      */
-    fun Double.toMoneyFormat() = format(this)
-
+    fun Double.toMoneyFormat(): String = format(this)
 }

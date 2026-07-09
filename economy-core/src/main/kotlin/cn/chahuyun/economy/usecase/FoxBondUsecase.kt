@@ -59,7 +59,7 @@ object FoxBondUsecase {
             return
         }
         val code = parts[1]
-        val premium = parts[2].toDoubleOrNull() ?: 0.0
+        val premium = MoneyFormatUtil.parse(parts[2]) ?: 0.0
         val rate = parts[3].toDoubleOrNull() ?: 0.0
         val (_, msg) = PrivateBankFoxBondService.submitBid(event.sender, code, premium, rate)
         subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
@@ -71,7 +71,7 @@ object FoxBondUsecase {
     suspend fun buyBond(event: MessageEvent) {
         val subject: Contact = event.subject
         val parts = event.message.contentToString().trim().split(" ")
-        val amount = parts.getOrNull(1)?.toDoubleOrNull() ?: 0.0
+        val amount = parts.getOrNull(1)?.let(MoneyFormatUtil::parse) ?: 0.0
         if (amount <= 0) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.message, "用法：国卷购买 <金额>"))
             return
