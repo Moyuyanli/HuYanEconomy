@@ -227,30 +227,16 @@ hye repair
 ## 📁 项目结构
 
 ```
-src/main/kotlin/cn/chahuyun/economy/
-├── HuYanEconomy.kt      # 插件入口（KotlinPlugin 单例）
-├── action/              # 指令入口（@MessageAuthorize 注解扫描）
-├── usecase/             # 业务逻辑层
-├── manager/             # 模块管理器（生命周期 & API）
-├── repository/          # 数据访问层（Hibernate）
-├── entity/              # 数据实体（JPA @Entity）
-├── config/              # 插件配置（AutoSavePluginConfig）
-├── constant/            # 常量定义
-├── command/             # Console 命令
-├── scheduler/           # 定时任务引擎
-├── privatebank/         # 私人银行模块（service, repository, ledger）
-├── plugin/              # 插件辅助管理（PluginManager, FishManager 等）
-├── utils/               # 工具类（EconomyUtil, HibernateUtil, ImageUtil 等）
-├── prop/                # 道具系统
-├── sign/                # 签到模块
-├── fish/                # 钓鱼模块事件
-├── prizes/              # 奖品处理
-├── model/               # 数据模型 / DTO
-├── data/                # 插件数据
-├── event/               # 自定义事件
-├── exception/           # 自定义异常
-├── repair/              # 版本修复工具
-└── version/             # 版本相关
+HuYanEconomy/
+├── economy-main/        # Mirai 插件入口、Action、命令、事件、权限注册、最终打包
+├── economy-core/        # 签到、银行、背包、道具、称号、红包、私人银行等核心经济流程
+├── economy-game/        # 钓鱼、抢劫、抽奖、农场等玩法流程
+├── economy-data/        # 实体、DTO、Converter、Repository、EntityProxy、数据版本与缓存
+├── economy-image/       # 图片渲染、画布工具、Renderer
+├── economy-common/      # 通用基础能力、常量、时间/金额/文本工具
+├── docs/                # 长期开发文档
+├── plan/                # 版本规划与迁移记录
+└── debug-sandbox/       # 本地 mirai-console 调试环境
 ```
 
 > 📌 详细的目录说明请参阅 [项目结构说明.md](docs/项目结构说明.md)
@@ -262,32 +248,17 @@ src/main/kotlin/cn/chahuyun/economy/
 ### 分层架构
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        用户消息                               │
-└────────────────────────┬────────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│  控制层 (action/)                                             │
-│  @MessageAuthorize 注解匹配 → 指令分发                         │
-└────────────────────────┬────────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│  业务层 (usecase/)                                            │
-│  核心业务逻辑 → 流程编排                                        │
-└────────────────────────┬────────────────────────────────────┘
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│  管理层 (manager/)                                            │
-│  模块级 API → 生命周期管理                                      │
-└────────────┬───────────────────────────┬────────────────────┘
-             ▼                           ▼
-┌─────────────────────────┐  ┌────────────────────────────────┐
-│  数据访问层 (repository/) │  │  私人银行服务 (privatebank/)     │
-└────────────┬────────────┘  └───────────┬────────────────────┘
-             ▼                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│  数据实体层 (entity/) — Hibernate @Entity                      │
-└─────────────────────────────────────────────────────────────┘
+用户消息
+  ↓
+economy-main/action       # @MessageAuthorize 指令入口
+  ↓
+economy-core|game/usecase # 业务流程编排
+  ↓
+economy-core|game/manager # 模块级 API 与生命周期
+  ↓
+economy-data/repository   # 数据访问与版本代理
+  ↓
+economy-data/entity       # Hibernate @Entity
 ```
 
 ### 技术栈

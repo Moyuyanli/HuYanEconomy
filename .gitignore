@@ -132,7 +132,7 @@ src/test/kotlin/RunTerminal.kt
 /bots
 
 # Local Test Launch Point working directory
-/debug-sandbox
+/economy-main/debug-sandbox
 /.vscode/settings.json
 /economy-main/debug-sandbox/config/cn.chahuyun.HuYanAuthorize/AuthorizeConfig.yml
 /economy-main/debug-sandbox/config/cn.chahuyun.HuYanEconomy/Config.yml

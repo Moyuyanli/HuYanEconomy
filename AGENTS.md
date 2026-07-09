@@ -24,6 +24,9 @@
 # 构建并查看完整堆栈
 ./gradlew.bat buildPlugin --console=plain --stacktrace
 
+# 六模块测试
+./gradlew.bat :economy-common:test :economy-data:test :economy-image:test :economy-core:test :economy-game:test :economy-main:test --console=plain
+
 # 测试运行（debug-sandbox 环境）
 # 配置 debug-sandbox/config/ 和 debug-sandbox/bots/ 后启动
 ```
@@ -33,33 +36,34 @@
 ## 架构分层
 
 ```
-action/          → 控制层：指令入口，由 AuthorizeServer 扫描注册事件
+economy-main/action
+                → 控制层：指令入口，由 AuthorizeServer 扫描注册事件
   ↓
-usecase/         → 业务层：核心业务逻辑
+economy-core|economy-game/usecase
+                → 业务层：核心业务逻辑
   ↓
-manager/         → 模块管理器：模块级 API 与生命周期管理
+economy-core|economy-game/manager
+                → 模块管理器：模块级 API 与生命周期管理
   ↓
-repository/      → 数据访问层
+economy-data/data/repository 或 economy-data/data/proxy
+                → 数据访问层
   ↓
-entity/          → 数据实体（Hibernate @Entity）
+economy-data/entity
+                → 数据实体（Hibernate @Entity）
 ```
 
 ### 关键目录
 
 | 目录 | 职责 |
 |------|------|
-| `src/main/kotlin/cn/chahuyun/economy/` | 所有源码，包名 `cn.chahuyun.economy` |
-| `action/` | 指令/消息入口（`@MessageAuthorize` 注解扫描） |
-| `usecase/` | 业务逻辑（BankUsecase, GamesUsecase, SignUsecase 等） |
-| `manager/` | 管理器（BankManager, LotteryManager, PrivateBankManager 等） |
-| `entity/` | 实体模型（含 bank/, fish/, privatebank/, props/, redpack/ 等子包） |
-| `config/` | mirai-console AutoSavePluginConfig 配置类 |
-| `constant/` | 常量定义（权限码、图标、坐标等） |
-| `scheduler/` | 定时任务引擎（HuYanScheduler, ScheduledExecutorEngine） |
-| `plugin/` | 插件辅助管理（PluginManager, PermCodeManager, ImageManager 等） |
-| `privatebank/` | 私人银行模块（service, repository, ledger） |
-| `utils/` | 工具类（EconomyUtil, HibernateUtil, ImageUtil, MessageUtil, Log） |
-| `src/main/resources/` | 资源文件（图片、ServiceLoader 配置） |
+| `economy-main/` | Mirai 插件入口、Action、命令、事件、权限注册、最终打包 |
+| `economy-core/` | 签到、银行、背包、道具、称号、红包、私人银行等核心经济流程 |
+| `economy-game/` | 钓鱼、抢劫、抽奖、农场等玩法流程 |
+| `economy-data/` | 实体、DTO、Converter、Repository、EntityProxy、数据版本与缓存 |
+| `economy-image/` | 图片渲染、画布工具、Renderer |
+| `economy-common/` | 通用基础能力、常量、时间/金额/文本工具 |
+| `economy-main/src/main/resources/` | 插件资源（图片、表格、ServiceLoader 配置） |
+| `src/main/resources/` | 历史资源残留，新增资源优先放入 `economy-main/src/main/resources/` |
 | `debug-sandbox/` | 本地调试环境（config、bots、data、plugins） |
 | `plan/` | 版本规划文档（v2.0.0、v2.0.1） |
 
@@ -77,7 +81,7 @@ entity/          → 数据实体（Hibernate @Entity）
 - **配置类**使用 `AutoSavePluginConfig` 的 Kotlin `object`
 - **指令注册**通过 `AuthorizeServer.registerEvents()` 扫描 `cn.chahuyun.economy.action` 包
 - **权限码**在 `PermCodeManager.init()` 中注册
-- **数据层**通过 Hibernate 访问，运行时由 mirai-hibernate-plugin 提供 SessionFactory
+- **数据层**新增读写优先走 `economy-data` 的 repository/proxy，不在 core/game 新增 `HibernateFactory` 直连
 - **日志**使用自定义 `Log` 工具类（封装 mirai logger）
 - **单 bot 限制**：插件仅支持绑定一个 bot（由配置指定 bot QQ 号）
 - **数据库**支持 H2 / SQLite / MySQL，通过配置切换
@@ -88,4 +92,4 @@ entity/          → 数据实体（Hibernate @Entity）
 1. **ClassLoader 冲突**: mirai-console 的 app classloader 已含 log4j-api，插件不得再打包 log4j，否则触发 `LinkageError`
 2. **Hibernate 冲突**: 不要将 Hibernate/HikariCP 打入插件 jar，运行期由 mirai-hibernate-plugin 提供
 3. **版本迁移**: 部分版本升级需执行 `hye repair` 指令修复数据库
-4. **KSP 生成代码**: `build/generated/ksp/` 下有 KSP 生成的 AuthorizeRegistrar，不要手动修改
+4. **KSP 生成代码**: `economy-main/build/generated/ksp/` 下有 KSP 生成的 AuthorizeRegistrar，不要手动修改
