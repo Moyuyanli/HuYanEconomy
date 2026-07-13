@@ -184,6 +184,12 @@ object FishRepository {
     fun topRankingWinner(): FishRankingDto? =
         topRankingByMoney(limit = 1).firstOrNull()
 
+    @JvmStatic
+    fun listRankingByQq(qq: Long): List<FishRankingDto> =
+        HibernateDataStore.selectList(FishRanking::class.java, "qq", qq)
+            .sortedByDescending { it.date?.time ?: 0L }
+            .map { rankingConverter.toDto(it) }
+
     /**
      * 将所有正在钓鱼的状态置回 false。
      */
