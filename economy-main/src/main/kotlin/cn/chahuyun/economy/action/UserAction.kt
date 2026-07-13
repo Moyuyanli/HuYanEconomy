@@ -16,9 +16,14 @@ import net.mamoe.mirai.event.events.MessageEvent
 @EventComponent
 class UserAction {
 
-    @MessageAuthorize(text = ["个人信息", "info"])
+    @MessageAuthorize(text = ["个人信息", "info", "我的信息", "用户信息"])
     suspend fun getUserInfoImage(event: MessageEvent) {
         UserUsecase.getUserInfoImage(event)
+    }
+
+    @MessageAuthorize(text = ["info#", "我的信息#", "用户信息#", "个人信息#", "我的#", "用户#"])
+    suspend fun getUserInfoText(event: MessageEvent) {
+        UserUsecase.getUserInfoText(event)
     }
 
     @MessageAuthorize(text = ["money", "经济信息", "我的资金"])

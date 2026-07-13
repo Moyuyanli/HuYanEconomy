@@ -10,14 +10,24 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
 @EventComponent
 class FarmAction {
 
-    @MessageAuthorize(text = ["我的农场"], groupPermissions = [EconPerm.FARM_PERM])
+    @MessageAuthorize(text = ["我的农场", "农场信息"], groupPermissions = [EconPerm.FARM_PERM])
     suspend fun viewFarm(event: GroupMessageEvent) {
+        FarmUsecase.viewFarmDetail(event)
+    }
+
+    @MessageAuthorize(text = ["我的农场#", "农场信息#"], groupPermissions = [EconPerm.FARM_PERM])
+    suspend fun viewFarmText(event: GroupMessageEvent) {
         FarmUsecase.viewFarm(event)
     }
 
     @MessageAuthorize(text = ["农场详情"], groupPermissions = [EconPerm.FARM_PERM])
-    suspend fun viewFarmDetail(event: GroupMessageEvent) {
+    suspend fun viewFarmDetailCompat(event: GroupMessageEvent) {
         FarmUsecase.viewFarmDetail(event)
+    }
+
+    @MessageAuthorize(text = ["农场等级"], groupPermissions = [EconPerm.FARM_PERM])
+    suspend fun viewFarmLevel(event: GroupMessageEvent) {
+        FarmUsecase.viewFarmLevel(event)
     }
 
     @MessageAuthorize(text = ["农场商店"], groupPermissions = [EconPerm.FARM_PERM])

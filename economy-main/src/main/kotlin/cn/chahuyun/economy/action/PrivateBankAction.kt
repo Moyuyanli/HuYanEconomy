@@ -53,6 +53,24 @@ class PrivateBankAction {
         PrivateBankUsecase.pbLoanOffer(event)
     }
 
+    @MessageAuthorize(
+        text = ["贷款利息(修改|变更) \\d+ \\d+(\\.\\d+)?", "放贷利息(修改|变更) \\d+ \\d+(\\.\\d+)?"],
+        messageMatching = MessageMatchingEnum.REGULAR
+    )
+    suspend fun pbLoanRate(event: MessageEvent) {
+        PrivateBankUsecase.pbLoanRate(event)
+    }
+
+    @MessageAuthorize(text = ["贷款列表", "放贷列表", "贷款额度"], messageMatching = MessageMatchingEnum.REGULAR)
+    suspend fun pbLoanOffers(event: MessageEvent) {
+        PrivateBankUsecase.pbLoanOffers(event)
+    }
+
+    @MessageAuthorize(text = ["撤贷 \\d+", "贷款撤回 \\d+", "放贷撤回 \\d+"], messageMatching = MessageMatchingEnum.REGULAR)
+    suspend fun pbLoanCancel(event: MessageEvent) {
+        PrivateBankUsecase.pbLoanCancel(event)
+    }
+
     @MessageAuthorize(text = ["狐卷( 查看)?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun foxView(event: MessageEvent) {
         PrivateBankUsecase.foxView(event)
@@ -68,6 +86,16 @@ class PrivateBankAction {
     @MessageAuthorize(text = ["银行信息( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbInfo(event: MessageEvent) {
         PrivateBankUsecase.pbInfo(event)
+    }
+
+    @MessageAuthorize(text = ["我的银行"])
+    suspend fun myBank(event: MessageEvent) {
+        PrivateBankUsecase.myBank(event)
+    }
+
+    @MessageAuthorize(text = ["我的银行#"])
+    suspend fun myBankText(event: MessageEvent) {
+        PrivateBankUsecase.myBankText(event)
     }
 
     @MessageAuthorize(text = ["银行评分 [1-5]( .+)?"], messageMatching = MessageMatchingEnum.REGULAR)

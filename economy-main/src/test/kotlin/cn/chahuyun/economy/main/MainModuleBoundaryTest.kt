@@ -45,6 +45,25 @@ class MainModuleBoundaryTest {
     }
 
     @Test
+    fun `GamesAction exposes documented fishing rod commands`() {
+        val gamesAction = Path.of("src/main/kotlin/cn/chahuyun/economy/action/GamesAction.kt").readText()
+
+        val required = listOf(
+            "购买鱼竿",
+            "GamesManager.buyFishRod",
+            "升级鱼竿\\\\*?",
+            "GamesManager.upFishRod",
+            "鱼竿等级",
+            "GamesManager.viewFishLevel"
+        ).filterNot { it in gamesAction }
+
+        assertTrue(
+            required.isEmpty(),
+            "GamesAction must expose documented fishing rod commands:\n${required.joinToString("\n")}"
+        )
+    }
+
+    @Test
     fun `main user visible entry text does not contain common mojibake fragments`() {
         val roots = listOf(
             Path.of("src/main/kotlin/cn/chahuyun/economy/action"),

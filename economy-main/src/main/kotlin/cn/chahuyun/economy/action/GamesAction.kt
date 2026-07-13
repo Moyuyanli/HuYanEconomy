@@ -4,8 +4,8 @@ package cn.chahuyun.economy.action
 
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
-import cn.chahuyun.authorize.constant.MessageMatchingEnum
 import cn.chahuyun.authorize.constant.AuthPerm
+import cn.chahuyun.authorize.constant.MessageMatchingEnum
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.manager.GamesManager
 import cn.chahuyun.economy.service.GameCoroutineService
@@ -31,6 +31,11 @@ class GamesAction {
         GamesUsecase.fishing(GameCoroutineService, event)
     }
 
+    @MessageAuthorize(text = ["购买鱼竿"], groupPermissions = [EconPerm.FISH_PERM])
+    suspend fun buyFishRod(event: MessageEvent) {
+        GamesManager.buyFishRod(event)
+    }
+
     @MessageAuthorize(
         text = ["刷新钓鱼"],
         userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN],
@@ -53,6 +58,21 @@ class GamesAction {
     @MessageAuthorize(text = ["鱼塘等级"], groupPermissions = [EconPerm.FISH_PERM])
     suspend fun viewFishPond(event: GroupMessageEvent) {
         GamesUsecase.viewFishPond(event)
+    }
+
+    @MessageAuthorize(text = ["鱼竿等级"], groupPermissions = [EconPerm.FISH_PERM])
+    suspend fun viewFishLevel(event: MessageEvent) {
+        GamesManager.viewFishLevel(event)
+    }
+
+    @MessageAuthorize(text = ["钓鱼信息"], groupPermissions = [EconPerm.FISH_PERM])
+    suspend fun viewFishingInfo(event: GroupMessageEvent) {
+        GamesUsecase.viewFishingInfo(event)
+    }
+
+    @MessageAuthorize(text = ["钓鱼信息#"], groupPermissions = [EconPerm.FISH_PERM])
+    suspend fun viewFishingInfoText(event: GroupMessageEvent) {
+        GamesUsecase.viewFishingInfoText(event)
     }
 
     @MessageAuthorize(
