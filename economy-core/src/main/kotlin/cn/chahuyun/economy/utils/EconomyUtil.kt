@@ -7,7 +7,6 @@ import cn.chahuyun.economy.utils.EconomyUtil.init
 import net.mamoe.mirai.contact.User
 import xyz.cssxsh.mirai.economy.EconomyService
 import xyz.cssxsh.mirai.economy.service.*
-import java.text.DecimalFormat
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -80,9 +79,7 @@ object EconomyUtil {
             economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
                 with(context) {
                     val account: UserEconomyAccount = economyService.account(user)
-                    val format = DecimalFormat("#.0")
-                    val v = account[currency]
-                    format.format(v).toDouble()
+                    account[currency]
                 }
             }
         } catch (e: Exception) {
@@ -110,9 +107,7 @@ object EconomyUtil {
             economyService.global().use { global ->
                 with(global) {
                     val account: UserEconomyAccount = economyService.account(user)
-                    val format = DecimalFormat("#.0")
-                    val v = account[currency]
-                    format.format(v).toDouble()
+                    account[currency]
                 }
             }
         } catch (e: Exception) {
@@ -140,9 +135,7 @@ object EconomyUtil {
             economyService.global().use { global ->
                 with(global) {
                     val account: EconomyAccount = economyService.account(userId, description)
-                    val format = DecimalFormat("#.0")
-                    val v = account[currency]
-                    format.format(v).toDouble()
+                    account[currency]
                 }
             }
         } catch (e: Exception) {
@@ -174,9 +167,7 @@ object EconomyUtil {
             economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
                 with(context) {
                     val account: EconomyAccount = economyService.account(userId, description)
-                    val format = DecimalFormat("#.0")
-                    val v = account[currency]
-                    format.format(v).toDouble()
+                    account[currency]
                 }
             }
         } catch (e: Exception) {

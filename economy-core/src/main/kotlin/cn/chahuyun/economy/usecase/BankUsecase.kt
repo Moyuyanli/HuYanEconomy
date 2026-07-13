@@ -8,6 +8,7 @@ import cn.chahuyun.economy.utils.*
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.Group
+import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.ForwardMessageBuilder
 import net.mamoe.mirai.message.data.PlainText
@@ -18,28 +19,16 @@ import xyz.cssxsh.mirai.economy.service.EconomyAccount
  */
 object BankUsecase {
 
-    private enum class BankRoute {
-        DEFAULT,
-        MAIN,
-        PRIVATE
-    }
-
-    private data class BankTransferRequest(
-        val amount: Double?,
-        val route: BankRoute,
-        val bankKey: String? = null
-    )
-
     suspend fun deposit(event: MessageEvent) {
         val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
         val subject: Contact = event.subject
-        val request = parseBankTransfer(event.message.contentToString(), "存款", "deposit")
+        val request = BankTransferParser.parse(event.message.contentToString(), "存款", "deposit")
         if (request == null) {
             subject.sendMessage(
                 MessageUtil.formatMessageChain(
                     event.message,
-                    "用法：存款! / 存款!! / 存款 <金额> [!/银行]"
+                    "用法：存款! / 存款!! / 存款 <金额> [银行|main]"
                 )
             )
             return
@@ -66,7 +55,7 @@ object BankUsecase {
                     Log.error("银行管理:主银行存款失败")
                 }
             }
-            BankRoute.PRIVATE -> depositPrivateBank(event, userInfo, request.bankKey.orEmpty(), amount)
+            BankRoute.PRIVATE -> depositPrivateBank(event, user, request.bankKey.orEmpty(), amount)
             BankRoute.DEFAULT -> {
                 val defaultPb = userInfo.defaultPrivateBankCode.trim().takeIf { it.isNotBlank() }
                 if (defaultPb.isNullOrBlank()) {
@@ -77,7 +66,7 @@ object BankUsecase {
                         Log.error("银行管理:默认主银行存款失败")
                     }
                 } else {
-                    depositPrivateBank(event, userInfo, defaultPb, amount)
+                    depositPrivateBank(event, user, defaultPb, amount)
                 }
             }
         }
@@ -87,12 +76,12 @@ object BankUsecase {
         val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
         val subject: Contact = event.subject
-        val request = parseBankTransfer(event.message.contentToString(), "取款", "withdraw")
+        val request = BankTransferParser.parse(event.message.contentToString(), "取款", "withdraw")
         if (request == null) {
             subject.sendMessage(
                 MessageUtil.formatMessageChain(
                     event.message,
-                    "用法：取款! / 取款!! / 取款 <金额> [!/银行]"
+                    "用法：取款! / 取款!! / 取款 <金额> [银行|main]"
                 )
             )
             return
@@ -100,31 +89,24 @@ object BankUsecase {
 
         when (request.route) {
             BankRoute.MAIN -> withdrawMainBank(event, request.amount ?: EconomyUtil.getMoneyByBank(user))
-            BankRoute.PRIVATE -> withdrawPrivateBank(event, userInfo, request.bankKey.orEmpty(), request.amount)
+            BankRoute.PRIVATE -> withdrawPrivateBank(event, request.bankKey.orEmpty(), request.amount)
             BankRoute.DEFAULT -> {
                 val defaultPb = userInfo.defaultPrivateBankCode.trim().takeIf { it.isNotBlank() }
                 if (defaultPb.isNullOrBlank()) {
                     withdrawMainBank(event, request.amount ?: EconomyUtil.getMoneyByBank(user))
                 } else {
-                    withdrawPrivateBank(event, userInfo, defaultPb, request.amount)
+                    withdrawPrivateBank(event, defaultPb, request.amount)
                 }
             }
         }
     }
 
-    private suspend fun depositPrivateBank(event: MessageEvent, userInfo: cn.chahuyun.economy.model.user.UserInfoDto, bankKey: String, amount: Double) {
-        val (ok, msg) = PrivateBankService.deposit(userInfo.user, bankKey, amount)
+    private suspend fun depositPrivateBank(event: MessageEvent, user: User, bankKey: String, amount: Double) {
+        val (_, msg) = PrivateBankService.deposit(user, bankKey, amount)
         event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
-        if (ok) {
-            val bank = PrivateBankService.getBank(bankKey)
-            if (bank != null) {
-                userInfo.defaultPrivateBankCode = bank.code
-                UserCoreManager.saveUserInfo(userInfo)
-            }
-        }
     }
 
-    private suspend fun withdrawPrivateBank(event: MessageEvent, userInfo: cn.chahuyun.economy.model.user.UserInfoDto, bankKey: String, requestedAmount: Double?) {
+    private suspend fun withdrawPrivateBank(event: MessageEvent, bankKey: String, requestedAmount: Double?) {
         val bank = PrivateBankService.getBank(bankKey)
         if (bank == null) {
             event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "未找到该银行：$bankKey"))
@@ -136,12 +118,8 @@ object BankUsecase {
             return
         }
 
-        val (ok, msg) = PrivateBankService.withdraw(event.sender, bank.code, amount)
+        val (_, msg) = PrivateBankService.withdraw(event.sender, bank.code, amount)
         event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
-        if (ok) {
-            userInfo.defaultPrivateBankCode = bank.code
-            UserCoreManager.saveUserInfo(userInfo)
-        }
     }
 
     private suspend fun withdrawMainBank(event: MessageEvent, amount: Double) {
@@ -163,35 +141,6 @@ object BankUsecase {
         } else {
             subject.sendMessage(MessageUtil.formatMessageChain(event.message, "取款失败!"))
             Log.error("银行管理:主银行取款失败")
-        }
-    }
-
-    private fun parseBankTransfer(raw: String, chineseCommand: String, englishCommand: String): BankTransferRequest? {
-        val text = raw.trim()
-        if (text.isBlank()) return null
-        val parts = text.split(Regex("\\s+"))
-        val command = parts.firstOrNull() ?: return null
-        val suffix = when {
-            command.startsWith(chineseCommand) -> command.removePrefix(chineseCommand)
-            command.startsWith(englishCommand) -> command.removePrefix(englishCommand)
-            else -> return null
-        }
-
-        if (suffix == "!") return BankTransferRequest(null, BankRoute.DEFAULT)
-        if (suffix == "!!") return BankTransferRequest(null, BankRoute.MAIN)
-        if (suffix.isNotBlank()) return null
-
-        val amountToken = parts.getOrNull(1) ?: return null
-        if (amountToken == "!") return BankTransferRequest(null, BankRoute.DEFAULT)
-        if (amountToken == "!!") return BankTransferRequest(null, BankRoute.MAIN)
-
-        val amount = MoneyFormatUtil.parse(amountToken) ?: return null
-        val target = parts.getOrNull(2)?.trim()?.takeIf { it.isNotBlank() }
-        return when {
-            target == null -> BankTransferRequest(amount, BankRoute.DEFAULT)
-            target == "!" || target == "!!" || target == "主银行" || target.equals("main", ignoreCase = true) ->
-                BankTransferRequest(amount, BankRoute.MAIN)
-            else -> BankTransferRequest(amount, BankRoute.PRIVATE, target)
         }
     }
 

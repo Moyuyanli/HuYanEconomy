@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.usecase
 
+import cn.chahuyun.economy.data.repository.PrivateBankRepository
 import cn.chahuyun.economy.manager.BackpackManager
 import cn.chahuyun.economy.manager.TitleManager
 import cn.chahuyun.economy.manager.UserCoreManager
@@ -28,16 +29,7 @@ object UserUsecase {
         val userInfo = UserCoreManager.getUserInfo(sender)
         TitleManager.checkMonopolyJava(userInfo, subject)
 
-        val moneyByUser = EconomyUtil.getMoneyByUser(sender)
-        val singleMessages = MessageChainBuilder()
-
-        try {
-            singleMessages.append(ImageMessageUtil.uploadImageFromUrl(subject, sender.avatarUrl(AvatarSpec.LARGE)))
-        } catch (e: Exception) {
-            Log.error("用户管理:查询个人信息上传头像出错!", e)
-        }
-
-        singleMessages.append(userInfo.getString()).append("金币:${MoneyFormatUtil.format(moneyByUser)}")
+        val textFallback = buildUserInfoText(event)
 
         val yiYan: YiYan = YiYanManager.getYiyan()
 
@@ -51,7 +43,7 @@ object UserUsecase {
             null
         }
         if (userInfoImageBase == null) {
-            subject.sendMessage(singleMessages.build())
+            subject.sendMessage(textFallback)
             return
         }
 
@@ -59,10 +51,31 @@ object UserUsecase {
             ImageMessageUtil.sendImage(subject, userInfoImageBase)
         } catch (e: Exception) {
             Log.error("用户管理:个人信息图片发送错误", e)
-            subject.sendMessage(singleMessages.build())
+            subject.sendMessage(textFallback)
             return
         }
     }
+
+    suspend fun getUserInfoText(event: MessageEvent) {
+        Log.info("个人信息文字指令")
+        event.subject.sendMessage(buildUserInfoText(event))
+    }
+
+    private suspend fun buildUserInfoText(event: MessageEvent) = MessageChainBuilder().apply {
+        val subject = event.subject
+        val sender = event.sender
+        val userInfo = UserCoreManager.getUserInfo(sender)
+        TitleManager.checkMonopolyJava(userInfo, subject)
+
+        try {
+            append(ImageMessageUtil.uploadImageFromUrl(subject, sender.avatarUrl(AvatarSpec.LARGE)))
+        } catch (e: Exception) {
+            Log.error("用户管理:查询个人信息上传头像出错!", e)
+        }
+
+        append(userInfo.getString())
+        append("金币:${MoneyFormatUtil.format(EconomyUtil.getMoneyByUser(sender))}")
+    }.build()
 
     suspend fun moneyInfo(event: MessageEvent) {
         val subject = event.subject
@@ -71,16 +84,46 @@ object UserUsecase {
 
         val money = EconomyUtil.getMoneyByUser(user)
         val bank = EconomyUtil.getMoneyByBank(user)
+        val privateDeposits = PrivateBankRepository.listBanks()
+            .mapNotNull { privateBank ->
+                val deposit = PrivateBankRepository.findDeposit(privateBank.code, user.id) ?: return@mapNotNull null
+                if (deposit.principal <= 0.0) return@mapNotNull null
+                privateBank.name.ifBlank { privateBank.code } to deposit.principal
+            }
+            .sortedByDescending { it.second }
+        val privateTotal = privateDeposits.sumOf { it.second }
+        val total = money + bank + privateTotal
+        val privateDepositText = if (privateDeposits.isEmpty()) {
+            "私人银行存款:0 (${moneyRatio(0.0, total)})"
+        } else {
+            buildString {
+                append("私人银行存款合计:")
+                    .append(MoneyFormatUtil.format(privateTotal))
+                    .append(" (").append(moneyRatio(privateTotal, total)).append(")")
+                    .append('\n')
+                privateDeposits.forEach { (bankName, amount) ->
+                    append("- ").append(bankName)
+                        .append(":").append(MoneyFormatUtil.format(amount))
+                        .append(" (").append(moneyRatio(amount, total)).append(")")
+                        .append('\n')
+                }
+            }.trimEnd()
+        }
 
         subject.sendMessage(
             MessageUtil.formatMessageChain(
                 message,
                 "你的经济状况:\n" +
-                    "钱包余额:${MoneyFormatUtil.format(money)}\n" +
-                    "银行存款:${MoneyFormatUtil.format(bank)}"
+                    "钱包余额:${MoneyFormatUtil.format(money)} (${moneyRatio(money, total)})\n" +
+                    "主银行存款:${MoneyFormatUtil.format(bank)} (${moneyRatio(bank, total)})\n" +
+                    "$privateDepositText\n" +
+                    "总资产:${MoneyFormatUtil.format(total)}"
             )
         )
     }
+
+    private fun moneyRatio(amount: Double, total: Double): String =
+        if (total <= 0.0) "0.0%" else "${FormatUtil.fixed(amount / total * 100.0, 1)}%"
 
     suspend fun discharge(event: GroupMessageEvent) {
         val user: Member = event.sender

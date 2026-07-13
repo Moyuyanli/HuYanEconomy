@@ -17,15 +17,32 @@ import cn.chahuyun.economy.utils.*
 import cn.hutool.core.date.DateUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.MessageEvent
+import net.mamoe.mirai.message.data.ForwardMessageBuilder
+import net.mamoe.mirai.message.data.PlainText
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 银行用例（代码层模块名仍为 PrivateBank；用户侧统一称为“银行”）。
  */
 object PrivateBankUsecase {
+
+    private const val LOAN_OFFER_DEDUP_WINDOW_MS = 5_000L
+    private val recentLoanOfferCommands = ConcurrentHashMap<String, Long>()
+
+    data class PrivateBankListItem(
+        val bank: PrivateBankDto,
+        val owner: String,
+        val totalDeposit: Double,
+        val remainingLoanLimit: Double,
+        val outstandingLoan: Double,
+        val inventory: Double,
+        val withdrawSuccessRate: Double
+    )
 
     private fun displayUser(subject: Contact, qq: Long): String {
         val nick = (subject as? Group)
@@ -35,6 +52,77 @@ object PrivateBankUsecase {
             ?.takeIf { it.isNotBlank() }
 
         return if (nick != null) "$nick($qq)" else qq.toString()
+    }
+
+    fun buildBankListItems(subject: Contact, banks: List<PrivateBankDto>): List<PrivateBankListItem> {
+        return banks.map { bank ->
+            val totalDeposit = PrivateBankRepository.listDeposits(bank.code).sumOf { it.principal }
+            val activeOffers = PrivateBankRepository.listLoanOffers(bank.code)
+                .filter { it.enabled && it.remaining > 0.0001 }
+            val activeLoans = PrivateBankRepository.listLoansByBank(bank.code)
+                .filter { it.repaidAt == 0L }
+            val withdrawSuccessRate = if (bank.withdrawRequests <= 0) {
+                100.0
+            } else {
+                100.0 * (bank.withdrawRequests - bank.withdrawFailures) / bank.withdrawRequests.toDouble()
+            }
+
+            PrivateBankListItem(
+                bank = bank,
+                owner = displayUser(subject, bank.ownerQq),
+                totalDeposit = totalDeposit,
+                remainingLoanLimit = activeOffers.sumOf { it.remaining },
+                outstandingLoan = activeLoans.sumOf { (it.dueTotal - it.repaidAmount).coerceAtLeast(0.0) },
+                inventory = EconomyUtil.getMoneyFromPluginBankForId(bank.code, PrivateBankLedger.INVENTORY_DESC),
+                withdrawSuccessRate = withdrawSuccessRate
+            )
+        }.sortedWith(
+            compareByDescending<PrivateBankListItem> { it.bank.star }
+                .thenByDescending { it.bank.avgReview }
+                .thenByDescending { it.totalDeposit }
+                .thenBy { it.bank.code }
+        )
+    }
+
+    fun formatBankListItem(index: Int, item: PrivateBankListItem): String {
+        val bank = item.bank
+        val defaulterText = if (bank.isDefaulter()) {
+            bank.defaulterUntil.takeIf { it != 0L }
+                ?.let { "是，到 ${DateUtil.formatDateTime(java.util.Date(it))}" }
+                ?: "是"
+        } else {
+            "否"
+        }
+
+        return buildString {
+            append("#").append(index).append("  ")
+            append(bank.name).append("  code=").append(bank.code).append('\n')
+            append("行长：").append(item.owner).append('\n')
+            append("星级：").append("★".repeat(bank.star.coerceIn(1, 5)))
+            append("（").append(bank.star.coerceIn(1, 5)).append("）")
+            append(" / 评分：").append(FormatUtil.fixed(bank.avgReview, 2)).append('\n')
+            append("存款利率：").append(FormatUtil.fixed(bank.depositorInterest / 10.0, 1)).append("%")
+            append(" / 取款成功率：").append(FormatUtil.fixed(item.withdrawSuccessRate, 1)).append("%").append('\n')
+            append("存款总额：").append(MoneyFormatUtil.format(item.totalDeposit))
+            append(" / 可借额度：").append(MoneyFormatUtil.format(item.remainingLoanLimit)).append('\n')
+            append("放贷库存：").append(MoneyFormatUtil.format(item.inventory))
+            append(" / 待收本息：").append(MoneyFormatUtil.format(item.outstandingLoan)).append('\n')
+            append("失信：").append(defaulterText)
+            bank.slogan.trim().takeIf { it.isNotBlank() }?.let {
+                append('\n').append("描述：").append(it.take(80))
+            }
+        }
+    }
+
+    fun markLoanOfferCommandIfFresh(key: String, now: Long = System.currentTimeMillis()): Boolean {
+        recentLoanOfferCommands.entries.removeIf { now - it.value > LOAN_OFFER_DEDUP_WINDOW_MS }
+        val previous = recentLoanOfferCommands.putIfAbsent(key, now) ?: return true
+        return if (now - previous > LOAN_OFFER_DEDUP_WINDOW_MS) {
+            recentLoanOfferCommands[key] = now
+            true
+        } else {
+            false
+        }
     }
 
     private suspend fun sendBankInfo(event: MessageEvent, bankKey: String) {
@@ -59,6 +147,10 @@ object PrivateBankUsecase {
                 )
             )
         }
+    }
+
+    private suspend fun sendBankInfoText(event: MessageEvent, bank: PrivateBankDto) {
+        event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, formatPrivateBankInfoCard(buildPrivateBankInfoCard(event.subject, bank))))
     }
 
     private fun buildPrivateBankInfoCard(subject: Contact, bank: PrivateBankDto): PrivateBankInfoCard {
@@ -109,13 +201,13 @@ object PrivateBankUsecase {
                 BankInfoFundLine("狐卷锁仓", MoneyFormatUtil.format(foxBondPrincipal), "未到期")
             ),
             loanLines = buildList {
-                add(BankInfoLoanLine("可借额度", MoneyFormatUtil.format(remainingLoanLimit), "${activeOffers.size} 个启用标的"))
+                add(BankInfoLoanLine("可借额度", MoneyFormatUtil.format(remainingLoanLimit), "${activeOffers.size} 个可借项目"))
                 add(BankInfoLoanLine("发布总额", MoneyFormatUtil.format(totalLoanLimit), "当前启用额度"))
                 add(BankInfoLoanLine("待收本息", MoneyFormatUtil.format(outstandingLoan), "${activeLoans.size} 笔未结清"))
                 activeOffers.take(1).forEach {
                     add(
                         BankInfoLoanLine(
-                            "标的 #${it.id}",
+                            "贷款 #${it.id}",
                             MoneyFormatUtil.format(it.remaining),
                             "日利率 ${FormatUtil.fixed(it.interest / 10.0, 1)}% / ${it.termDays} 天"
                         )
@@ -125,25 +217,57 @@ object PrivateBankUsecase {
         )
     }
 
+    private fun formatPrivateBankInfoCard(card: PrivateBankInfoCard): String = buildString {
+        append(card.name).append("(code=").append(card.code).append(")\n")
+        append("行长：").append(card.owner).append('\n')
+        append("星级：").append("★".repeat(card.star.coerceIn(1, 5)))
+        append("（").append(card.star.coerceIn(1, 5)).append("）")
+        append(" / 评分：").append(card.avgReview).append('\n')
+        append("存款利率：").append(card.interest)
+        append(" / 存款总额：").append(card.totalDeposit).append('\n')
+        append("取款成功率：").append(card.withdrawSuccessRate)
+        append(" / 失信至：").append(card.defaulterUntil).append('\n')
+        append("描述：").append(card.slogan.ifBlank { "暂无描述" }).append('\n')
+        append("\n资金位置：\n")
+        card.fundLines.forEach { line ->
+            append("- ").append(line.label).append("：").append(line.amount)
+            if (line.description.isNotBlank()) append("（").append(line.description).append("）")
+            append('\n')
+        }
+        append("\n额度与放贷：\n")
+        if (card.loanLines.isEmpty()) {
+            append("- 暂无放贷：0（未发布贷款额度）\n")
+        } else {
+            card.loanLines.forEach { line ->
+                append("- ").append(line.label).append("：").append(line.value)
+                if (line.description.isNotBlank()) append("（").append(line.description).append("）")
+                append('\n')
+            }
+        }
+    }.trimEnd()
+
     suspend fun listBanks(event: MessageEvent) {
         val subject: Contact = event.subject
-        val banks = PrivateBankRepository.listBanks().sortedByDescending { it.star }
+        val bot: Bot = event.bot
+        val banks = PrivateBankRepository.listBanks()
         if (banks.isEmpty()) {
             subject.sendMessage(MessageUtil.formatMessageChain(event.message, "当前没有银行"))
             return
         }
 
-        val msg = buildString {
-            append("银行列表（按星级排序）\n")
-            banks.take(15).forEachIndexed { idx, b ->
-                append(
-                    "${idx + 1}) ${b.name} | code=${b.code} | 星级=${b.star} | " +
-                            "利率=${FormatUtil.fixed(b.depositorInterest / 10.0, 1)}% | " +
-                            "失信=${if (b.isDefaulter()) "是" else "否"}\n"
-                )
-            }
+        val items = buildBankListItems(subject, banks)
+        val builder = ForwardMessageBuilder(subject)
+        builder.add(
+            bot,
+            PlainText("银行列表（按星级、评分、存款排序）\n共 ${items.size} 家银行，展示前 ${items.take(15).size} 家。")
+        )
+        items.take(15).forEachIndexed { index, item ->
+            builder.add(bot, PlainText(formatBankListItem(index + 1, item)))
         }
-        subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg.trimEnd()))
+        if (items.size > 15) {
+            builder.add(bot, PlainText("还有 ${items.size - 15} 家银行未展示，可使用 银行信息 <code> 查看详情。"))
+        }
+        subject.sendMessage(builder.build())
     }
 
     suspend fun pbCreate(event: MessageEvent) {
@@ -156,13 +280,8 @@ object PrivateBankUsecase {
         }
         val code = parts[1].trim()
         val name = parts[2].trim()
-        val (ok, msg) = PrivateBankService.createBank(sender, code, name)
+        val (_, msg) = PrivateBankService.createBank(sender, code, name)
         subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
-        if (ok) {
-            val userInfo = UserCoreManager.getUserInfo(sender)
-            userInfo.defaultPrivateBankCode = code
-            UserCoreManager.saveUserInfo(userInfo)
-        }
     }
 
     suspend fun pbDesc(event: MessageEvent) {
@@ -230,9 +349,79 @@ object PrivateBankUsecase {
             return
         }
 
+        val dedupKey = listOf(sender.id, bank.code, money, event.message.contentToString().trim()).joinToString("|")
+        if (!markLoanOfferCommandIfFresh(dedupKey)) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "放贷请求已收到，请勿重复提交"))
+            return
+        }
+
         val rateRaw = parts.getOrNull(2)?.toDoubleOrNull() ?: (bank.depositorInterest / 10.0)
         val ratePercent = if (rateRaw > 10) rateRaw / 10.0 else rateRaw
         val (_, msg) = PrivateBankService.publishLoanByPlan(sender, bank.code, money, ratePercent)
+        subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
+    }
+
+    suspend fun pbLoanRate(event: MessageEvent) {
+        val subject = event.subject
+        val parts = event.message.contentToString().trim().split(Regex("\\s+"))
+        val offerId = parts.getOrNull(1)?.toIntOrNull()
+        val rate = parts.getOrNull(2)?.toDoubleOrNull()
+        if (offerId == null || rate == null) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "用法：贷款利息修改 <offerId> <1.0-18.0>"))
+            return
+        }
+
+        val (_, msg) = PrivateBankService.updateLoanOfferInterest(event.sender, offerId, rate)
+        subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
+    }
+
+    suspend fun pbLoanOffers(event: MessageEvent) {
+        val subject = event.subject
+        val bank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == event.sender.id }
+        if (bank == null) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你还没有创建自己的银行"))
+            return
+        }
+
+        val offers = PrivateBankRepository.listLoanOffers(bank.code)
+            .sortedWith(compareByDescending<cn.chahuyun.economy.model.privatebank.PrivateBankLoanOfferDto> { it.enabled }
+                .thenByDescending { it.remaining }
+                .thenByDescending { it.id })
+
+        if (offers.isEmpty()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "当前没有贷款额度"))
+            return
+        }
+
+        val msg = buildString {
+            append("${bank.name} 的贷款额度\n")
+            offers.take(20).forEach { offer ->
+                val status = if (offer.enabled && offer.remaining > 0.0001) "启用" else "关闭"
+                append("#").append(offer.id)
+                    .append(" | ").append(status)
+                    .append(" | 剩余=").append(MoneyFormatUtil.format(offer.remaining))
+                    .append(" / 总额=").append(MoneyFormatUtil.format(offer.total))
+                    .append(" | 日利率=").append(FormatUtil.fixed(offer.interest / 10.0, 1)).append("%")
+                    .append(" | 期限=").append(offer.termDays).append("天")
+                    .append('\n')
+            }
+            if (offers.size > 20) append("还有 ${offers.size - 20} 条未展示\n")
+            append("修改：贷款利息修改 <offerId> <1.0-18.0>\n")
+            append("撤回：撤贷 <offerId>")
+        }.trimEnd()
+
+        subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
+    }
+
+    suspend fun pbLoanCancel(event: MessageEvent) {
+        val subject = event.subject
+        val offerId = event.message.contentToString().trim().split(Regex("\\s+")).getOrNull(1)?.toIntOrNull()
+        if (offerId == null) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "用法：撤贷 <offerId>"))
+            return
+        }
+
+        val (_, msg) = PrivateBankService.cancelLoanOffer(event.sender, offerId)
         subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
     }
 
@@ -350,6 +539,24 @@ object PrivateBankUsecase {
         sendBankInfo(event, key)
     }
 
+    suspend fun myBank(event: MessageEvent) {
+        val bank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == event.sender.id }
+        if (bank == null) {
+            event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你没有创建银行"))
+            return
+        }
+        sendBankInfo(event, bank.code)
+    }
+
+    suspend fun myBankText(event: MessageEvent) {
+        val bank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == event.sender.id }
+        if (bank == null) {
+            event.subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你没有创建银行"))
+            return
+        }
+        sendBankInfoText(event, bank)
+    }
+
     suspend fun pbReview(event: MessageEvent) {
         val subject = event.subject
         val raw = event.message.contentToString().trim()
@@ -384,12 +591,6 @@ object PrivateBankUsecase {
 
         val (_, msg) = PrivateBankService.addReview(event.sender, bankKey, rating, content)
         subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
-
-        val bank = PrivateBankService.getBank(bankKey)
-        if (bank != null) {
-            userInfo.defaultPrivateBankCode = bank.code
-            UserCoreManager.saveUserInfo(userInfo)
-        }
     }
 
     suspend fun pbBorrow(event: MessageEvent) {
@@ -403,15 +604,8 @@ object PrivateBankUsecase {
             return
         }
 
-        val (ok, msg) = PrivateBankService.borrowFromBank(event.sender, key, amount)
+        val (_, msg) = PrivateBankService.borrowFromBank(event.sender, key, amount)
         subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
-        if (ok) {
-            val bank = PrivateBankService.getBank(key)
-            if (bank != null) {
-                userInfo.defaultPrivateBankCode = bank.code
-                UserCoreManager.saveUserInfo(userInfo)
-            }
-        }
     }
 
     suspend fun pbRepay(event: MessageEvent) {

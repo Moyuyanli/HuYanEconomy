@@ -9,6 +9,7 @@ import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.User
 import java.util.*
+import kotlin.math.abs
 import kotlin.math.ln
 
 object PrivateBankService {
@@ -27,6 +28,9 @@ object PrivateBankService {
 
     /** 默认贷款期限，单位：天。 */
     private const val LOAN_TERM_DAYS = 14
+
+    private const val MIN_LOAN_INTEREST = 10
+    private const val MAX_LOAN_INTEREST = 180
 
     private fun baseInterest(): Int {
         return BankManager.getBankInfo(1)?.interest ?: 0
@@ -60,6 +64,21 @@ object PrivateBankService {
             .minByOrNull { it.interest }
             ?: return false to "该银行暂无可用贷款额度"
         return borrow(user, offer.id, amount)
+    }
+
+    fun canUserDepositToBank(userQq: Long, bank: PrivateBankDto): Boolean =
+        bank.ownerQq != userQq
+
+    fun isLoanInterestAllowed(interest: Int): Boolean =
+        interest in MIN_LOAN_INTEREST..MAX_LOAN_INTEREST
+
+    fun buildLoanOfferCancelMoves(remaining: Double): List<LoanFundMove> {
+        val refund = ShareUtils.rounding(remaining.coerceAtLeast(0.0))
+        if (refund <= 0.0001) return emptyList()
+        return listOf(
+            LoanFundMove(PrivateBankLedger.INVENTORY_DESC, -refund),
+            LoanFundMove(PrivateBankLedger.LIQUIDITY_DESC, refund)
+        )
     }
 
     private fun resolveUser(qq: Long): User? {
@@ -136,6 +155,9 @@ object PrivateBankService {
         if (amount <= 0) return false to "金额必须大于 0"
 
         val bank = findBankByCodeOrName(bankCode) ?: return false to "未找到该银行：$bankCode"
+        if (!canUserDepositToBank(user.id, bank)) {
+            return false to "行长不能向自己的银行存款"
+        }
         if (bank.vipOnly) {
             val list = bank.vipWhitelist.split(',').mapNotNull { it.trim().takeIf(String::isNotBlank) }
             if (list.isNotEmpty() && user.id.toString() !in list) {
@@ -178,7 +200,7 @@ object PrivateBankService {
 
         refreshRating(bank.code)
 
-        return true to "存入成功：${MoneyFormatUtil.format(amount)}（准备金 ${MoneyFormatUtil.format(reservePart)} / 流动金 ${MoneyFormatUtil.format(liquidityPart)}）"
+        return true to "存入成功：${MoneyFormatUtil.format(amount)} 已存入 ${bank.name}(code=${bank.code})"
     }
 
     fun withdraw(user: User, bankCode: String, amount: Double): Pair<Boolean, String> {
@@ -398,20 +420,127 @@ object PrivateBankService {
 
     private fun maxLoanOffersByStar(star: Int): Int = star.coerceIn(1, 5)
 
-    private fun maxLoanInterestByStar(star: Int): Int {
-        // interest 单位是 0.1%，不同星级限制最高放贷日利率。
-        return when (star.coerceIn(1, 5)) {
-            1 -> 25
-            2 -> 35
-            3 -> 45
-            4 -> 55
-            else -> 65
+    private fun parseLoanInterest(ratePercent: Double): Int =
+        (ratePercent * 10.0).toInt()
+
+    fun publishLoanByPlan(owner: User, bankCode: String, total: Double, ratePercent: Double): Pair<Boolean, String> {
+        val interest = parseLoanInterest(ratePercent)
+        return publishLoan(owner, bankCode, total, interest, LOAN_TERM_DAYS, "LIQUIDITY")
+    }
+
+    fun updateLoanOfferInterest(owner: User, offerId: Int, ratePercent: Double): Pair<Boolean, String> {
+        val offer = PrivateBankRepository.findLoanOffer(offerId) ?: return false to "未找到贷款额度：$offerId"
+        val bank = findBankByCodeOrName(offer.bankCode) ?: return false to "未找到对应银行：${offer.bankCode}"
+        if (bank.ownerQq != owner.id) return false to "只有行长可以修改贷款利息"
+        if (!offer.enabled || offer.remaining <= 0.0001) return false to "该贷款额度已不可修改"
+
+        val interest = parseLoanInterest(ratePercent)
+        if (!isLoanInterestAllowed(interest)) {
+            return false to "贷款利息必须在 1.0% - 18.0% 之间"
+        }
+
+        offer.interest = interest
+        PrivateBankRepository.saveLoanOffer(offer)
+        return true to "贷款利息已更新：offerId=${offer.id} 日利率=${FormatUtil.fixed(offer.interest / 10.0, 1)}%"
+    }
+
+    fun cancelLoanOffer(owner: User, offerId: Int): Pair<Boolean, String> {
+        val offer = PrivateBankRepository.findLoanOffer(offerId) ?: return false to "未找到贷款额度：$offerId"
+        val bank = findBankByCodeOrName(offer.bankCode) ?: return false to "未找到对应银行：${offer.bankCode}"
+        if (bank.ownerQq != owner.id) return false to "只有行长可以撤回贷款额度"
+        if (!offer.enabled && offer.remaining <= 0.0001) return false to "该贷款额度已关闭"
+
+        val moves = buildLoanOfferCancelMoves(offer.remaining)
+        val refund = moves.firstOrNull { it.description == PrivateBankLedger.LIQUIDITY_DESC }?.amount ?: 0.0
+        if (moves.isNotEmpty()) {
+            val debit = moves.first { it.description == PrivateBankLedger.INVENTORY_DESC }
+            val credit = moves.first { it.description == PrivateBankLedger.LIQUIDITY_DESC }
+            if (!EconomyUtil.plusMoneyToPluginBankForId(offer.bankCode, debit.description, debit.amount)) {
+                return false to "撤贷失败：放贷库存扣减失败"
+            }
+            if (!EconomyUtil.plusMoneyToPluginBankForId(offer.bankCode, credit.description, credit.amount)) {
+                EconomyUtil.plusMoneyToPluginBankForId(offer.bankCode, debit.description, -debit.amount)
+                return false to "撤贷失败：流动金池回流失败"
+            }
+        }
+
+        offer.remaining = 0.0
+        offer.enabled = false
+        PrivateBankRepository.saveLoanOffer(offer)
+        return true to "撤贷成功：offerId=${offer.id}，已回流 ${MoneyFormatUtil.format(refund)} 到流动金池"
+    }
+
+    data class LoanFundMove(
+        val description: String,
+        val amount: Double
+    )
+
+    data class LoanFundFreezePlan(
+        val source: String,
+        val requiredBalanceError: String,
+        val moves: List<LoanFundMove>
+    )
+
+    fun buildLoanFundFreezePlan(source: String, total: Double): LoanFundFreezePlan? {
+        val src = source.uppercase(Locale.getDefault())
+        return when (src) {
+            "LIQUIDITY" -> LoanFundFreezePlan(
+                source = src,
+                requiredBalanceError = "流动金池余额不足",
+                moves = listOf(
+                    LoanFundMove(PrivateBankLedger.LIQUIDITY_DESC, -total),
+                    LoanFundMove(PrivateBankLedger.INVENTORY_DESC, total)
+                )
+            )
+            "OWNER" -> LoanFundFreezePlan(
+                source = src,
+                requiredBalanceError = "行长钱包余额不足",
+                moves = listOf(
+                    LoanFundMove(PrivateBankLedger.INVENTORY_DESC, total)
+                )
+            )
+            else -> null
         }
     }
 
-    fun publishLoanByPlan(owner: User, bankCode: String, total: Double, ratePercent: Double): Pair<Boolean, String> {
-        val interest = (ratePercent * 10.0).toInt()
-        return publishLoan(owner, bankCode, total, interest, LOAN_TERM_DAYS, "LIQUIDITY")
+    private fun freezeLoanFundsFromLiquidity(bankCode: String, plan: LoanFundFreezePlan): Boolean {
+        val debit = plan.moves.firstOrNull { it.description == PrivateBankLedger.LIQUIDITY_DESC && it.amount < 0 }
+            ?: return false
+        val credit = plan.moves.firstOrNull { it.description == PrivateBankLedger.INVENTORY_DESC && it.amount > 0 }
+            ?: return false
+
+        val beforeLiquidity = EconomyUtil.getMoneyFromPluginBankForId(bankCode, debit.description)
+        if (!EconomyUtil.plusMoneyToPluginBankForId(bankCode, debit.description, debit.amount)) {
+            return false
+        }
+        val afterDebitLiquidity = EconomyUtil.getMoneyFromPluginBankForId(bankCode, debit.description)
+        val expectedLiquidity = ShareUtils.rounding(beforeLiquidity + debit.amount)
+        if (abs(afterDebitLiquidity - expectedLiquidity) > 0.1) {
+            if (afterDebitLiquidity < beforeLiquidity - 0.1) {
+                EconomyUtil.plusMoneyToPluginBankForId(bankCode, debit.description, -debit.amount)
+            }
+            return false
+        }
+
+        if (!EconomyUtil.plusMoneyToPluginBankForId(bankCode, credit.description, credit.amount)) {
+            EconomyUtil.plusMoneyToPluginBankForId(bankCode, debit.description, -debit.amount)
+            return false
+        }
+        return true
+    }
+
+    private fun freezeLoanFundsFromOwnerWallet(owner: User, bankCode: String, total: Double, plan: LoanFundFreezePlan): Boolean {
+        val credit = plan.moves.firstOrNull { it.description == PrivateBankLedger.INVENTORY_DESC && it.amount > 0 }
+            ?: return false
+
+        if (!EconomyUtil.minusMoneyToUser(owner, total)) {
+            return false
+        }
+        if (!EconomyUtil.plusMoneyToPluginBankForId(bankCode, credit.description, credit.amount)) {
+            EconomyUtil.plusMoneyToUser(owner, total)
+            return false
+        }
+        return true
     }
 
     fun refreshRating(bankCode: String) {
@@ -485,16 +614,20 @@ object PrivateBankService {
         return true to "购买成功：国债 ${MoneyFormatUtil.format(amount)}（锁仓 ${issue.lockDays} 天，倍数 ${FormatUtil.fixed(issue.rateMultiplier, 2)}x）"
     }
 
+    fun isBondMatured(holding: PrivateBankGovBondHoldingDto, now: Date = Date()): Boolean {
+        val days = DateUtil.between(Date(holding.boughtAt), now, DateUnit.DAY)
+        return days >= holding.lockDays
+    }
+
     fun redeemBond(owner: User, holdingId: Int): Pair<Boolean, String> {
         val holding = PrivateBankRepository.findBondHolding(holdingId) ?: return false to "未找到该持仓"
         val bank = PrivateBankRepository.findBankByCode(holding.bankCode) ?: return false to "未找到对应银行"
         if (bank.ownerQq != owner.id) return false to "只有行长可以赎回国卷"
         if (holding.redeemedAt != 0L) return false to "该持仓已赎回"
 
-        val days = DateUtil.between(Date(holding.boughtAt), Date(), DateUnit.DAY)
         val base = baseInterest()
 
-        val payout = if (days >= holding.lockDays) {
+        val payout = if (isBondMatured(holding)) {
             // 到期赎回：本金 * 锁仓期收益。
             val rate = (base / 1000.0) * holding.rateMultiplier
             ShareUtils.rounding(holding.principal * (1 + rate * holding.lockDays))
@@ -522,27 +655,25 @@ object PrivateBankService {
         val activeOffers = PrivateBankRepository.listLoanOffers(bank.code)
             .count { it.enabled && it.remaining > 0.0001 }
         if (activeOffers >= maxLoanOffersByStar(bank.star)) {
-            return false to "发布失败：当前银行星级最多允许 ${maxLoanOffersByStar(bank.star)} 笔放贷标的"
+            return false to "发布失败：当前银行星级最多允许 ${maxLoanOffersByStar(bank.star)} 笔贷款额度"
         }
 
-        if (interest <= 0 || interest > maxLoanInterestByStar(bank.star)) {
-            return false to "发布失败：利息超出星级限制（星级 ${bank.star} 最大允许 ${FormatUtil.fixed(maxLoanInterestByStar(bank.star) / 10.0, 1)}%）"
+        if (!isLoanInterestAllowed(interest)) {
+            return false to "发布失败：贷款利息必须在 1.0% - 18.0% 之间"
         }
 
-        val src = source.uppercase(Locale.getDefault())
-        if (src != "LIQUIDITY" && src != "OWNER") return false to "source 仅支持 LIQUIDITY/OWNER"
+        val freezePlan = buildLoanFundFreezePlan(source, total)
+            ?: return false to "source 仅支持 LIQUIDITY/OWNER"
 
         // 发布贷款前先冻结对应资金到放贷库存池。
-        val ok = if (src == "LIQUIDITY") {
+        val ok = if (freezePlan.source == "LIQUIDITY") {
             val liquidity = EconomyUtil.getMoneyFromPluginBankForId(bank.code, PrivateBankLedger.LIQUIDITY_DESC)
-            if (liquidity < total) return false to "流动金池余额不足"
-            EconomyUtil.plusMoneyToPluginBankForId(bank.code, PrivateBankLedger.LIQUIDITY_DESC, -total) &&
-                EconomyUtil.plusMoneyToPluginBankForId(bank.code, PrivateBankLedger.INVENTORY_DESC, total)
+            if (liquidity < total) return false to freezePlan.requiredBalanceError
+            freezeLoanFundsFromLiquidity(bank.code, freezePlan)
         } else {
             val ownerWallet = EconomyUtil.getMoneyByUser(owner)
-            if (ownerWallet < total) return false to "行长钱包余额不足"
-            EconomyUtil.minusMoneyToUser(owner, total) &&
-                EconomyUtil.plusMoneyToPluginBankForId(bank.code, PrivateBankLedger.INVENTORY_DESC, total)
+            if (ownerWallet < total) return false to freezePlan.requiredBalanceError
+            freezeLoanFundsFromOwnerWallet(owner, bank.code, total, freezePlan)
         }
 
         if (!ok) return false to "发布失败：资金冻结失败"
@@ -550,11 +681,12 @@ object PrivateBankService {
         val offer = PrivateBankLoanOfferDto(
             bankCode = bank.code,
             ownerQq = owner.id,
-            source = src,
+            source = freezePlan.source,
             total = total,
             remaining = total,
             interest = interest,
-            termDays = termDays
+            termDays = termDays,
+            createdAt = System.currentTimeMillis()
         )
         val savedOffer = PrivateBankRepository.saveLoanOffer(offer)
         return true to "放贷已发布：offerId=${savedOffer.id} 额度=${MoneyFormatUtil.format(savedOffer.remaining)}"
@@ -562,8 +694,8 @@ object PrivateBankService {
 
     fun borrow(user: User, offerId: Int, amount: Double): Pair<Boolean, String> {
         if (amount <= 0) return false to "金额必须大于 0"
-        val offer = PrivateBankRepository.findLoanOffer(offerId) ?: return false to "未找到贷款标的"
-        if (!offer.enabled) return false to "该贷款标的已关闭"
+        val offer = PrivateBankRepository.findLoanOffer(offerId) ?: return false to "未找到贷款额度"
+        if (!offer.enabled) return false to "该贷款额度已关闭"
         if (offer.remaining < amount) return false to "剩余额度不足（剩余 ${MoneyFormatUtil.format(offer.remaining)}）"
 
         // 从放贷库存池扣除放款金额。
@@ -601,9 +733,10 @@ object PrivateBankService {
             createdAt = System.currentTimeMillis(),
             dueAt = dueAt.time
         )
-        val savedLoan = PrivateBankRepository.saveLoan(loan)
+        PrivateBankRepository.saveLoan(loan)
+        val interestAmount = ShareUtils.rounding(dueTotal - amount)
 
-        return true to "借款成功：loanId=${savedLoan.id} 本金=${MoneyFormatUtil.format(amount)} 应还=${MoneyFormatUtil.format(dueTotal)} 到期=${DateUtil.formatDateTime(dueAt)}"
+        return true to "借款成功: 本金=${MoneyFormatUtil.format(amount)}, 应还=${MoneyFormatUtil.format(dueTotal)}, 利息=${MoneyFormatUtil.format(interestAmount)}, 最迟还款=${DateUtil.formatDateTime(dueAt)}"
     }
 
     fun repay(user: User, loanId: Int): Pair<Boolean, String> {

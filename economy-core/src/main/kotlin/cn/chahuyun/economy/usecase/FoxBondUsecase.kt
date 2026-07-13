@@ -109,9 +109,10 @@ object FoxBondUsecase {
             // 赎回全部到期持仓
             val holdings = PrivateBankRepository.listBondHoldings(bank.code)
                 .filter { it.redeemedAt == 0L }
+                .filter { PrivateBankService.isBondMatured(it) }
 
             if (holdings.isEmpty()) {
-                subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你没有国债持仓"))
+                subject.sendMessage(MessageUtil.formatMessageChain(event.message, "没有可批量赎回的到期国卷；未到期持仓请指定 ID 手动赎回（会折价）"))
                 return
             }
 
