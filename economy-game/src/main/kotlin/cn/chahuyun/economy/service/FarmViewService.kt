@@ -21,6 +21,9 @@ object FarmViewService {
     fun renderWarehouse(state: FarmViewState): String =
         FarmTextRenderService.renderWarehouse(state)
 
+    fun renderFarmLevel(state: FarmViewState): String =
+        FarmTextRenderService.renderFarmLevel(state)
+
     fun blackMarketText(state: FarmViewState): String =
         FarmTextRenderService.blackMarketText(state)
 
@@ -98,9 +101,7 @@ object FarmViewService {
     }
 
     private fun cn.chahuyun.economy.model.farm.FarmPlotView.cropTitle(): String =
-        listOf(cropEmoji, cropName.ifBlank { cropCode.ifBlank { "未知作物" } })
-            .filter { it.isNotBlank() }
-            .joinToString(" ")
+        cropName.ifBlank { cropCode.ifBlank { "未知作物" } }
 
     private fun seasonText(currentSeason: Int, totalSeasons: Int): String =
         if (totalSeasons > 0 && currentSeason > 0) "第${currentSeason}/${totalSeasons}季" else "作物数据异常"

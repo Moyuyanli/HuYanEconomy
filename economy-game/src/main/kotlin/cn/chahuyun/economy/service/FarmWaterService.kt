@@ -40,7 +40,7 @@ object FarmWaterService {
         return if (player.lastWaterDate == today) player.todayWaterCount else 0
     }
 
-    fun water(waterer: UserInfoDto, watererState: FarmState, targetState: FarmState): FarmOperationResult {
+    fun water(waterer: UserInfoDto, watererState: FarmState, targetState: FarmState, times: Int = 1): FarmOperationResult {
         if (waterer.qq == targetState.player.qq) {
             return FarmOperationResult(false, "不能给自己浇水")
         }
@@ -56,24 +56,45 @@ object FarmWaterService {
             return FarmOperationResult(false, "今日浇水次数已用完")
         }
 
+        val requestedTimes = times.coerceAtLeast(1)
+        val availableTimes = (maxWater - watererPlayer.todayWaterCount).coerceAtMost(requestedTimes)
         val now = System.currentTimeMillis()
-        val plot = targetState.plots
-            .filter { it.status == FarmConstants.PLOT_PLANTED && it.nextMatureAt > now }
-            .maxByOrNull { it.nextMatureAt - now }
-            ?: return FarmOperationResult(false, "对方没有需要浇水的作物")
-        val crop = FarmCropService.getCrop(plot.cropCode)
-            ?: return FarmOperationResult(false, "目标作物数据异常")
+        var successTimes = 0
+        var totalReduceMillis = 0L
+        val reducedCrops = linkedMapOf<String, Long>()
+        val rewards = linkedMapOf<String, WaterReward>()
 
-        val reduceMillis = calculateReduceMillis(crop, plot.nextMatureAt - now)
-        plot.nextMatureAt = (plot.nextMatureAt - reduceMillis).coerceAtLeast(now)
-        FarmPlotService.savePlot(plot)
+        repeat(availableTimes) {
+            val plot = targetState.plots
+                .filter { it.status == FarmConstants.PLOT_PLANTED && it.nextMatureAt > now }
+                .maxByOrNull { it.nextMatureAt - now }
+                ?: return@repeat
+            val crop = FarmCropService.getCrop(plot.cropCode) ?: return FarmOperationResult(false, "目标作物数据异常")
 
-        watererPlayer.todayWaterCount += 1
+            val reduceMillis = calculateReduceMillis(crop, plot.nextMatureAt - now)
+            plot.nextMatureAt = (plot.nextMatureAt - reduceMillis).coerceAtLeast(now)
+            FarmPlotService.savePlot(plot)
+
+            successTimes += 1
+            totalReduceMillis += reduceMillis
+            reducedCrops[crop.name] = (reducedCrops[crop.name] ?: 0L) + reduceMillis
+            rollWaterReward(crop)?.let { reward ->
+                val current = rewards[reward.code]
+                rewards[reward.code] = reward.copy(amount = (current?.amount ?: 0) + reward.amount)
+            }
+        }
+
+        if (successTimes == 0) {
+            return FarmOperationResult(false, "对方没有需要浇水的作物")
+        }
+
+        watererPlayer.todayWaterCount += successTimes
         FarmPlayerService.savePlayer(watererPlayer)
+        rewards.values.forEach { reward ->
+            EconomyInventoryService.addStackableProp(waterer, reward.code, PropsKind.functionProp, reward.amount)
+        }
 
-        val dropMessage = dropWaterReward(waterer, crop)
-        val reduceMinutes = (reduceMillis / MINUTE).coerceAtLeast(1)
-        return FarmOperationResult(true, "浇水成功，${crop.name} 缩短${reduceMinutes}分钟成熟时间$dropMessage")
+        return FarmOperationResult(true, formatWaterMessage(successTimes, requestedTimes, totalReduceMillis, reducedCrops, rewards.values))
     }
 
     private fun calculateReduceMillis(crop: FarmCrop, remainingMillis: Long): Long {
@@ -95,7 +116,7 @@ object FarmWaterService {
         }
     }
 
-    private fun dropWaterReward(waterer: UserInfoDto, crop: FarmCrop): String {
+    private fun rollWaterReward(crop: FarmCrop): WaterReward? {
         val roll = RandomUtil.randomInt(1, 101)
         val reward = when {
             crop.level < 10 && roll <= 1 -> FunctionProps.FARM_RAFFLE_ADVANCED to 1
@@ -103,10 +124,39 @@ object FarmWaterService {
             crop.level >= 10 && roll <= 1 -> FunctionProps.FARM_RAFFLE_ADVANCED to 2
             crop.level >= 10 && roll <= 6 -> FunctionProps.FARM_RAFFLE_ADVANCED to 1
             else -> null
-        } ?: return ""
+        } ?: return null
 
-        EconomyInventoryService.addStackableProp(waterer, reward.first, PropsKind.functionProp, reward.second)
         val name = if (reward.first == FunctionProps.FARM_RAFFLE_BASIC) "初级农场抽奖券" else "高级农场抽奖券"
-        return "，获得${name} x${reward.second}"
+        return WaterReward(reward.first, name, reward.second)
     }
+
+    private fun formatWaterMessage(
+        successTimes: Int,
+        requestedTimes: Int,
+        totalReduceMillis: Long,
+        reducedCrops: Map<String, Long>,
+        rewards: Collection<WaterReward>,
+    ): String {
+        val totalMinutes = (totalReduceMillis / MINUTE).coerceAtLeast(1)
+        val cropText = reducedCrops.entries.joinToString("、") { (name, millis) ->
+            "${name}${(millis / MINUTE).coerceAtLeast(1)}分钟"
+        }
+        val rewardText = rewards
+            .takeIf { it.isNotEmpty() }
+            ?.joinToString("，", prefix = "，获得") { reward -> "${reward.name} x${reward.amount}" }
+            .orEmpty()
+        val partialText = if (successTimes < requestedTimes) "，剩余次数或可浇作物不足，实际执行${successTimes}次" else ""
+        return if (successTimes == 1) {
+            val first = reducedCrops.entries.first()
+            "浇水成功，${first.key} 缩短${(first.value / MINUTE).coerceAtLeast(1)}分钟成熟时间$rewardText"
+        } else {
+            "批量浇水成功${successTimes}次，共缩短${totalMinutes}分钟成熟时间（$cropText）$rewardText$partialText"
+        }
+    }
+
+    private data class WaterReward(
+        val code: String,
+        val name: String,
+        val amount: Int,
+    )
 }

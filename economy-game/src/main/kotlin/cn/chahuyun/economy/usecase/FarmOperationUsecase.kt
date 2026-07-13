@@ -43,7 +43,7 @@ object FarmOperationUsecase {
     suspend fun water(event: GroupMessageEvent) {
         val target = FarmUsecaseSupport.atTargetOrReply(event) ?: return
         val userInfo = EconomyUserService.getOrCreate(event.sender)
-        val result = FarmManager.water(userInfo, target)
+        val result = FarmManager.water(userInfo, target, FarmUsecaseSupport.waterTimes(event))
         FarmUsecaseSupport.reply(event, result.message)
     }
 

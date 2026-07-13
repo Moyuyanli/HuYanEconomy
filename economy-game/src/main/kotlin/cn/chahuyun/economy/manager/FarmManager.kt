@@ -2,11 +2,7 @@ package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.model.farm.FarmOperationResult
 import cn.chahuyun.economy.model.user.UserInfoDto
-import cn.chahuyun.economy.service.FarmOperationService
-import cn.chahuyun.economy.service.FarmStateService
-import cn.chahuyun.economy.service.FarmWaterService
-import cn.chahuyun.economy.service.UpgradeLoopService
-import cn.chahuyun.economy.service.UpgradeStepResult
+import cn.chahuyun.economy.service.*
 import net.mamoe.mirai.contact.User
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
@@ -63,11 +59,12 @@ object FarmManager {
         FarmOperationService.activateShield(FarmStateService.getOrCreateFarm(qq))
     }
 
-    fun water(waterer: UserInfoDto, targetQq: Long): FarmOperationResult = withTwoUserLocks(waterer.qq, targetQq) {
+    fun water(waterer: UserInfoDto, targetQq: Long, times: Int = 1): FarmOperationResult = withTwoUserLocks(waterer.qq, targetQq) {
         FarmWaterService.water(
             waterer,
             FarmStateService.getOrCreateFarm(waterer.qq),
             FarmStateService.getOrCreateFarm(targetQq),
+            times,
         )
     }
 

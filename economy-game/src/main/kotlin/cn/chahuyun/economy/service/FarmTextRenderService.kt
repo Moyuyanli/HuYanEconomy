@@ -40,6 +40,41 @@ object FarmTextRenderService {
             }
         }
 
+    fun renderFarmLevel(state: FarmViewState): String {
+        val features = listOf(
+            FarmFeature(1, "基础农场", "查看农场、商店、仓库、购买种子、播种、收获、卖出果实"),
+            FarmFeature(13, "帮浇水", "每日帮好友缩短作物成熟时间"),
+            FarmFeature(14, "一键卖出", "卖出仓库内全部果实"),
+            FarmFeature(15, "一键收获", "收获所有已成熟土地"),
+            FarmFeature(16, "一键播种", "为空闲土地批量播种"),
+            FarmFeature(17, "激活守护", "开启12小时农场守护"),
+            FarmFeature(18, "高级帮浇水", "每日帮浇水次数提升至10次"),
+            FarmFeature(18, "黑市", "特殊农场功能入口"),
+        )
+        val unlocked = features.filter { state.hasLevel(it.level) }
+        val locked = features.filterNot { state.hasLevel(it.level) }
+        val next = locked.minByOrNull { it.level }
+
+        return buildString {
+            append("农场等级: Lv.${state.level}\n")
+            append("地块: ${state.plots.count { !it.isLocked }}/${FarmConstants.MAX_PLOTS}\n")
+            if (state.dailyWaterLimit > 0) {
+                append("今日帮浇水: ${state.todayWaterCount}/${state.dailyWaterLimit}\n")
+            }
+            if (next != null) {
+                append("下个解锁: Lv.${next.level} ${next.name}，还差${next.level - state.level}级\n")
+            } else {
+                append("全部等级功能已解锁\n")
+            }
+            append("\n已解锁功能:\n")
+            append(unlocked.joinToString("\n") { "Lv.${it.level} ${it.name}: ${it.description}" })
+            if (locked.isNotEmpty()) {
+                append("\n\n未解锁功能:\n")
+                append(locked.joinToString("\n") { "Lv.${it.level} ${it.name}: 还差${it.level - state.level}级，${it.description}" })
+            }
+        }
+    }
+
     fun blackMarketText(state: FarmViewState): String =
         if (state.hasLevel(18)) "黑市尚未开放" else "18级开放黑市"
 
@@ -73,4 +108,10 @@ object FarmTextRenderService {
         val minutes = TimeUnit.MILLISECONDS.toMinutes(millis) % 60
         return "${hours}小时${minutes}分钟"
     }
+
+    private data class FarmFeature(
+        val level: Int,
+        val name: String,
+        val description: String,
+    )
 }

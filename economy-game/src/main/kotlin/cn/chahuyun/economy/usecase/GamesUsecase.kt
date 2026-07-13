@@ -4,8 +4,11 @@ import cn.chahuyun.authorize.utils.PermUtil
 import cn.chahuyun.authorize.utils.UserUtil
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.constant.TitleCode
+import cn.chahuyun.economy.data.repository.FishRepository
 import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
+import cn.chahuyun.economy.image.FishingInfoImageRenderer
+import cn.chahuyun.economy.image.model.FishingInfoCard
 import cn.chahuyun.economy.model.fish.*
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.model.user.getFishInfo
@@ -13,12 +16,15 @@ import cn.chahuyun.economy.model.user.group
 import cn.chahuyun.economy.model.user.user
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.service.*
+import cn.chahuyun.economy.utils.ImageMessageUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
+import cn.chahuyun.economy.utils.MoneyFormatUtil
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import cn.hutool.core.util.RandomUtil
 import kotlinx.coroutines.*
+import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.broadcast
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MessageEvent
@@ -323,5 +329,62 @@ object GamesUsecase {
             event.message,
             FishingMessageBuilder.pondInfo(fishPond, money)
         )
+    }
+
+    suspend fun viewFishingInfo(event: GroupMessageEvent) {
+        val card = buildFishingInfoCard(event)
+        try {
+            ImageMessageUtil.sendQuotedImage(event.subject, event.message, FishingInfoImageRenderer.render(card))
+        } catch (e: Exception) {
+            Log.error("钓鱼信息图片生成或发送失败", e)
+            GameUsecaseReplySupport.reply(event, formatFishingInfoCard(card))
+        }
+    }
+
+    suspend fun viewFishingInfoText(event: GroupMessageEvent) {
+        GameUsecaseReplySupport.reply(event, formatFishingInfoCard(buildFishingInfoCard(event)))
+    }
+
+    private fun buildFishingInfoCard(event: GroupMessageEvent): FishingInfoCard {
+        val sender = event.sender
+        val userInfo = EconomyUserService.getOrCreate(sender)
+        val fishInfo = userInfo.getFishInfo()
+        val currentPond = fishInfo.getFishPond(event.group)
+        val rankings = FishRepository.listRankingByQq(sender.id)
+        val biggest = rankings.maxByOrNull { it.dimensions }
+        val maxPondLevel = fishInfo.level
+        val accessiblePonds = FishRepository.listFishPonds()
+            .filter { it.minLevel <= maxPondLevel }
+        val maxPond = accessiblePonds.maxWithOrNull(
+            compareBy<cn.chahuyun.economy.entity.fish.FishPond> { it.pondLevel }
+                .thenBy { it.minLevel }
+        )
+        val maxPondText = maxPond?.let { "${it.name}(Lv.${it.pondLevel})" } ?: "暂无可用鱼塘"
+
+        return FishingInfoCard(
+            owner = "${sender.nameCardOrNick}(${sender.id})",
+            rodLevel = if (fishInfo.isFishRod) "Lv.${fishInfo.rodLevel}" else "未购买",
+            maxPond = maxPondText,
+            biggestFish = biggest?.let { "${it.fishName.ifBlank { "未知鱼" }} ${it.dimensions}cm" } ?: "暂无记录",
+            biggestFishDetail = biggest?.let {
+                "鱼等级 Lv.${it.fishLevel} / 价值 ${MoneyFormatUtil.format(it.money)} / 鱼塘 ${it.fishPondName.ifBlank { "未知鱼塘" }}"
+            } ?: "还没有成功上鱼，去抛第一竿吧。",
+            historyCount = rankings.size.toString(),
+            successCount = rankings.size.toString(),
+            currentPond = "${currentPond.name}(Lv.${currentPond.pondLevel})",
+            currentPondDetail = "最低鱼竿等级 ${currentPond.minLevel} / 累计上鱼 ${currentPond.number} 次 / 鱼种 ${currentPond.fishCount} 个",
+        )
+    }
+
+    private fun formatFishingInfoCard(card: FishingInfoCard): String = buildString {
+        append("钓鱼信息：").append(card.owner).append('\n')
+        append("鱼竿等级：").append(card.rodLevel).append('\n')
+        append("最多钓鱼鱼塘：").append(card.maxPond).append('\n')
+        append("最大的鱼：").append(card.biggestFish).append('\n')
+        append(card.biggestFishDetail).append('\n')
+        append("历史钓鱼次数：").append(card.historyCount).append('\n')
+        append("上鱼次数：").append(card.successCount).append('\n')
+        append("当前鱼塘：").append(card.currentPond).append('\n')
+        append(card.currentPondDetail)
     }
 }

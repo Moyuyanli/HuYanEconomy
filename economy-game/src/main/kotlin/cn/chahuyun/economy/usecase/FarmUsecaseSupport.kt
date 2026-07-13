@@ -28,6 +28,17 @@ internal object FarmUsecaseSupport {
     fun isAutoUpgrade(event: GroupMessageEvent): Boolean =
         event.message.contentToString().trim().endsWith("*")
 
+    fun waterTimes(event: GroupMessageEvent): Int {
+        val text = FarmCommandTextParser.commandText(event.message.contentToString())
+        return Regex("\\*(\\d+)\\s*$")
+            .find(text)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.toIntOrNull()
+            ?.coerceAtLeast(1)
+            ?: 1
+    }
+
     suspend fun atTargetOrReply(event: GroupMessageEvent): Long? {
         val at = event.message.filterIsInstance<At>().firstOrNull()
         if (at == null) {

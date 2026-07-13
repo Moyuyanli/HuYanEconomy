@@ -19,9 +19,11 @@ object EconomyImageRenderer {
     /** 个人信息图高度。 */
     const val PERSONAL_HEIGHT = 720
 
-    // 帮助图是 1280x1280 正方形，适合容纳两列指令分组。
+    // 帮助图宽度固定，高度按内容计算，避免新增指令后压到页脚。
     private const val HELP_WIDTH = 1280
-    private const val HELP_HEIGHT = 1280
+    private const val HELP_MIN_HEIGHT = 1280
+    private const val HELP_TOP_CONTENT_Y = 190
+    private const val HELP_BOTTOM_PADDING = 86
 
     // 私人银行信息图沿用 1280x720 横版尺寸，便于和个人信息图保持发送体验一致。
     private const val BANK_INFO_WIDTH = 1280
@@ -201,9 +203,10 @@ object EconomyImageRenderer {
      * 两张帮助图的视觉结构一致：顶部标题区 + 左右两列分组卡片 + 右下角页脚。
      */
     private fun renderHelp(page: HelpImagePage, font: Font): BufferedImage {
-        val image = BufferedImage(HELP_WIDTH, HELP_HEIGHT, BufferedImage.TYPE_INT_ARGB)
+        val helpHeight = calculateHelpHeight(page)
+        val image = BufferedImage(HELP_WIDTH, helpHeight, BufferedImage.TYPE_INT_ARGB)
         val g = ImageUtil.getG2d(image)
-        drawFlatBackground(g, HELP_WIDTH, HELP_HEIGHT)
+        drawFlatBackground(g, HELP_WIDTH, helpHeight)
 
         // 顶部标题和副标题先画，给下面的分组卡片留出固定起始位置。
         g.font = font.deriveFont(Font.BOLD, 54f)
@@ -219,7 +222,7 @@ object EconomyImageRenderer {
 
         // 两列瀑布流：每次把下一个分组放到当前更短的一列，避免一边太空。
         val columns = listOf(72, 660)
-        val yStart = intArrayOf(190, 190)
+        val yStart = intArrayOf(HELP_TOP_CONTENT_Y, HELP_TOP_CONTENT_Y)
         val sectionColors = listOf(green, blue, gold, red, Color(91, 108, 143), Color(127, 98, 149))
         page.sections.forEachIndexed { index, section ->
             val col = if (yStart[0] <= yStart[1]) 0 else 1
@@ -253,9 +256,19 @@ object EconomyImageRenderer {
             yStart[col] = y + height + 24
         }
 
-        drawFooter(g, font, HELP_WIDTH - 32, HELP_HEIGHT - 28)
+        drawFooter(g, font, HELP_WIDTH - 32, helpHeight - 28)
         g.dispose()
         return image
+    }
+
+    private fun calculateHelpHeight(page: HelpImagePage): Int {
+        val yStart = intArrayOf(HELP_TOP_CONTENT_Y, HELP_TOP_CONTENT_Y)
+        page.sections.forEach { section ->
+            val col = if (yStart[0] <= yStart[1]) 0 else 1
+            val height = 72 + section.items.size * 42
+            yStart[col] += height + 24
+        }
+        return maxOf(HELP_MIN_HEIGHT, (yStart.maxOrNull() ?: HELP_TOP_CONTENT_Y) + HELP_BOTTOM_PADDING)
     }
 
     private fun privateBankFrame(font: Font): BufferedImage {
@@ -356,25 +369,33 @@ object EconomyImageRenderer {
         g.color = ink
         g.drawString("额度与放贷", 526, 466)
 
+        val colors = listOf(green, blue, gold, red)
         val lines = if (card.loanLines.isEmpty()) {
             listOf(BankInfoLoanLine("暂无放贷", "0", "未发布贷款额度"))
         } else {
             card.loanLines
         }
-        var y = 514
-        lines.take(4).forEach { line ->
+        lines.take(4).forEachIndexed { index, line ->
+            val col = index % 2
+            val row = index / 2
+            val x = 526 + col * 350
+            val y = 504 + row * 70
+            val color = colors[index % colors.size]
+            g.color = Color(color.red, color.green, color.blue, 30)
+            g.fillRoundRect(x, y - 22, 306, 58, 14, 14)
+            g.color = color
+            g.fillRoundRect(x + 14, y - 8, 8, 30, 8, 8)
             g.font = font.deriveFont(Font.PLAIN, 18f)
             g.color = muted
-            g.drawString(line.label, 526, y)
-            g.font = font.deriveFont(Font.BOLD, fitFontSize(g, line.value, 190, 24f))
+            g.drawString(line.label, x + 34, y)
+            g.font = font.deriveFont(Font.BOLD, fitFontSize(g, line.value, 134, 24f))
             g.color = ink
-            g.drawString(line.value, 678, y)
+            g.drawString(line.value, x + 34, y + 28)
             if (line.description.isNotBlank()) {
-                g.font = font.deriveFont(Font.PLAIN, 17f)
+                g.font = font.deriveFont(Font.PLAIN, fitFontSize(g, line.description, 120, 15f))
                 g.color = muted
-                drawWrapped(g, line.description, 888, y, 284, 21, 1)
+                g.drawString(line.description.take(20), x + 174, y + 25)
             }
-            y += 42
         }
     }
 

@@ -4,6 +4,7 @@ import cn.chahuyun.economy.image.FarmDetailImageRenderer
 import cn.chahuyun.economy.service.FarmViewService
 import cn.chahuyun.economy.utils.ImageMessageUtil
 import cn.chahuyun.economy.utils.Log
+import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.events.GroupMessageEvent
 
 object FarmViewUsecase {
@@ -22,15 +23,20 @@ object FarmViewUsecase {
 
     suspend fun viewFarmDetail(event: GroupMessageEvent) {
         try {
+            val sender = event.sender
             val card = FarmViewService.farmDetailCard(
-                qq = event.sender.id,
-                owner = event.sender.id.toString(),
+                qq = sender.id,
+                owner = "${sender.nameCardOrNick}(${sender.id})",
             )
-            ImageMessageUtil.sendQuotedImage(event.subject, event.message, FarmDetailImageRenderer.render(card))
+            ImageMessageUtil.sendQuotedWebpImage(event.subject, event.message, FarmDetailImageRenderer.render(card))
         } catch (e: Exception) {
             Log.error("农场详情图片生成或发送失败", e)
             FarmUsecaseSupport.reply(event, "农场详情图片生成失败，请稍后再试。")
         }
+    }
+
+    suspend fun viewFarmLevel(event: GroupMessageEvent) {
+        FarmUsecaseSupport.replyView(event) { FarmViewService.renderFarmLevel(it) }
     }
 
     suspend fun blackMarket(event: GroupMessageEvent) {
