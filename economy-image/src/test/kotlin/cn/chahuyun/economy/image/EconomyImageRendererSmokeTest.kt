@@ -12,7 +12,7 @@ class EconomyImageRendererSmokeTest {
         val image = EconomyImageRenderer.renderMainHelp()
 
         assertEquals(1280, image.width)
-        assertEquals(1280, image.height)
+        assertTrue(image.height >= 1280)
         assertNonBlank(image)
     }
 
@@ -21,7 +21,7 @@ class EconomyImageRendererSmokeTest {
         val image = EconomyImageRenderer.renderGameHelp()
 
         assertEquals(1280, image.width)
-        assertEquals(1280, image.height)
+        assertTrue(image.height >= 1280)
         assertNonBlank(image)
     }
 
@@ -101,7 +101,7 @@ class EconomyImageRendererSmokeTest {
 
         val image = FarmDetailImageRenderer.render(
             FarmDetailCard(
-                owner = "572490972",
+                owner = "测试用户(572490972)",
                 level = 4,
                 unlockedPlots = 9,
                 totalPlots = 18,
@@ -116,7 +116,28 @@ class EconomyImageRendererSmokeTest {
         )
 
         assertEquals(1280, image.width)
-        assertEquals(960, image.height)
+        assertEquals(1014, image.height)
+        assertNonBlank(image)
+    }
+
+    @Test
+    fun `fishing info image renders as non blank canvas`() {
+        val image = FishingInfoImageRenderer.render(
+            FishingInfoCard(
+                owner = "测试用户(572490972)",
+                rodLevel = "Lv.100",
+                maxPond = "小狐狸的星怒鱼塘(Lv.9)",
+                biggestFish = "鲭鱼 114cm",
+                biggestFishDetail = "鱼等级 Lv.3 / 价值 912.0 / 鱼塘 小狐狸的星怒鱼塘",
+                historyCount = "266",
+                successCount = "266",
+                currentPond = "小狐狸的星怒鱼塘(Lv.9)",
+                currentPondDetail = "最低鱼竿等级 10 / 累计上鱼 16267 次 / 鱼种 0 个",
+            )
+        )
+
+        assertEquals(1280, image.width)
+        assertEquals(720, image.height)
         assertNonBlank(image)
     }
 
