@@ -25,14 +25,32 @@ object PrivateBankFoxBondService {
     }
 
     fun issueBondsForToday(now: Date = Date()): List<PrivateBankFoxBondDto> {
-        val (bidStartAt, bidEndAt) = buildIssueTimes(now)
         val day = DateUtil.dayOfMonth(now)
         if (day != 1 && day != 15) return emptyList()
+        return issueBondBatch(now, supplement = false)
+    }
+
+    fun supplementBonds(now: Date = Date()): List<PrivateBankFoxBondDto> =
+        issueBondBatch(now, supplement = true)
+
+    private fun issueBondBatch(now: Date, supplement: Boolean): List<PrivateBankFoxBondDto> {
+        val (bidStartAt, bidEndAt) = if (supplement) {
+            now to DateUtil.offsetHour(now, 10)
+        } else {
+            buildIssueTimes(now)
+        }
 
         // 每个发行日只生成一次，按 FB-yyyyMMdd-xxx 前缀去重。
         val prefix = "FB-${DateUtil.format(now, "yyyyMMdd")}-"
-        val existing = PrivateBankRepository.listFoxBonds().any { it.code.startsWith(prefix) }
-        if (existing) return emptyList()
+        val existingCodes = PrivateBankRepository.listFoxBonds()
+            .map { it.code }
+            .filter { it.startsWith(prefix) }
+        if (!supplement && existingCodes.isNotEmpty()) return emptyList()
+        val firstSequence = existingCodes
+            .mapNotNull { it.removePrefix(prefix).toIntOrNull() }
+            .maxOrNull()
+            ?.plus(1)
+            ?: 1
 
         val bonds = mutableListOf<PrivateBankFoxBondDto>()
 
@@ -53,7 +71,7 @@ object PrivateBankFoxBondService {
         }
 
         // 3 张小额狐卷：100M-300M，7-14 天。
-        var seq = 1
+        var seq = firstSequence
         repeat(3) { addBond(seq++, 100_000_000.0, 300_000_000.0, 7, 14) }
         // 6 张中额狐卷：500M-900M，14-21 天。
         repeat(6) { addBond(seq++, 500_000_000.0, 900_000_000.0, 14, 21) }
@@ -93,7 +111,7 @@ object PrivateBankFoxBondService {
             return false to "竞标利率不得低于主银行基准均值（${FormatUtil.fixed(minRate, 1)}%）"
         }
 
-        val reserve = EconomyUtil.getMoneyByBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC)
+        val reserve = PrivateBankLedger.balance(bank.code, PrivateBankLedger.RESERVE_DESC)
         if (reserve + 1e-6 < bond.faceValue + premium) {
             val need = ShareUtils.rounding(bond.faceValue + premium)
             return false to "准备金不足：需要 ${MoneyFormatUtil.format(need)}（面额 ${MoneyFormatUtil.format(bond.faceValue)} + 溢价 ${MoneyFormatUtil.format(premium)}），当前 ${MoneyFormatUtil.format(reserve)}"
@@ -129,7 +147,7 @@ object PrivateBankFoxBondService {
 
             val maxPremium = bids.maxOf { it.premium }.coerceAtLeast(1.0)
             val bankCodes = bids.map { it.bankCode }.distinct()
-            val reserves = bankCodes.associateWith { EconomyUtil.getMoneyByBankFromId(it, PrivateBankLedger.RESERVE_DESC) }
+            val reserves = bankCodes.associateWith { PrivateBankLedger.balance(it, PrivateBankLedger.RESERVE_DESC) }
             val maxReserve = reserves.values.maxOrNull()?.coerceAtLeast(1.0) ?: 1.0
 
             fun starScore(bankCode: String): Double {
@@ -155,7 +173,7 @@ object PrivateBankFoxBondService {
             for (candidate in sorted) {
                 val bank = PrivateBankRepository.findBankByCode(candidate.bankCode) ?: continue
                 if (bank.isDefaulter()) continue
-                val reserve = EconomyUtil.getMoneyByBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC)
+                val reserve = PrivateBankLedger.balance(bank.code, PrivateBankLedger.RESERVE_DESC)
                 if (reserve + 1e-6 < bond.faceValue + candidate.premium) continue
                 winner = candidate
                 break
@@ -171,24 +189,18 @@ object PrivateBankFoxBondService {
 
             // 1) 扣除溢价（销毁）
             if (winner.premium > 0) {
-                if (!EconomyUtil.plusMoneyToBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC, -winner.premium)) {
+                if (!PrivateBankLedger.debit(bank.code, PrivateBankLedger.RESERVE_DESC, winner.premium)) {
                     Log.error("狐卷结算:扣除溢价失败 bank=${bank.code} bond=${bond.code}")
                     continue
                 }
             }
 
-            // 2) 从准备金池(global)锁定狐卷面额到狐卷锁仓池(custom)。
-            val locked = EconomyUtil.turnGlobalBankAccountToPluginBankForId(
-                fromUserId = bank.code,
-                fromDescription = PrivateBankLedger.RESERVE_DESC,
-                toUserId = bond.code,
-                toDescription = PrivateBankLedger.FOX_BOND_LOCK_DESC,
-                quantity = bond.faceValue
-            )
+            // 2) 扣除准备金池本金，锁仓本金由狐卷持仓实体记录。
+            val locked = PrivateBankLedger.debit(bank.code, PrivateBankLedger.RESERVE_DESC, bond.faceValue)
             if (!locked) {
                 // 回滚溢价（尽力）
                 if (winner.premium > 0) {
-                    EconomyUtil.plusMoneyToBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC, winner.premium)
+                    PrivateBankLedger.add(bank.code, PrivateBankLedger.RESERVE_DESC, winner.premium)
                 }
                 Log.error("狐卷结算:锁定本金失败 bank=${bank.code} bond=${bond.code}")
                 continue
@@ -227,12 +239,9 @@ object PrivateBankFoxBondService {
             val bond = PrivateBankRepository.findFoxBondByCode(h.bondCode) ?: continue
             val bank = PrivateBankRepository.findBankByCode(h.bankCode) ?: continue
 
-            // 解锁本金（从锁仓池扣减），再把“本金 + 收益”打回准备金池。
-            val okUnlock = EconomyUtil.plusMoneyToPluginBankForId(bond.code, PrivateBankLedger.FOX_BOND_LOCK_DESC, -h.principal)
-            if (!okUnlock) continue
-
+            // 本金由狐卷持仓实体记录，到期把“本金 + 收益”打回准备金池。
             val payout = ShareUtils.rounding(h.principal * (1 + (h.rate / 100.0) * bond.termDays))
-            EconomyUtil.plusMoneyToBankFromId(bank.code, PrivateBankLedger.RESERVE_DESC, payout)
+            PrivateBankLedger.add(bank.code, PrivateBankLedger.RESERVE_DESC, payout)
 
             h.redeemedAt = now.time
             PrivateBankRepository.saveFoxBondHolding(h)

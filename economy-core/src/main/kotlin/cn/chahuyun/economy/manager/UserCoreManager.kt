@@ -2,8 +2,10 @@ package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.constant.TitleCode
 import cn.chahuyun.economy.constant.UserLocation
+import cn.chahuyun.economy.data.proxy.DataVersion
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.data.repository.PrivateBankRepository
+import cn.chahuyun.economy.data.repository.UserInfoRepository
 import cn.chahuyun.economy.game.GameOverviewBridge
 import cn.chahuyun.economy.image.PersonalInfoImageRenderer
 import cn.chahuyun.economy.image.model.BankDepositLine
@@ -11,6 +13,7 @@ import cn.chahuyun.economy.image.model.PersonalInfoCard
 import cn.chahuyun.economy.model.user.*
 import cn.chahuyun.economy.utils.DateUtil
 import cn.chahuyun.economy.utils.EconomyUtil
+import cn.chahuyun.economy.utils.FormatUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil.toMoneyFormat
 import net.mamoe.mirai.contact.*
@@ -31,6 +34,13 @@ object UserCoreManager {
 
     fun saveUserInfoDto(dto: UserInfoDto): UserInfoDto {
         return userProxy.save(dto)
+    }
+
+    fun listRankingUsers(): List<UserInfoDto> {
+        return when (userProxy.getCurrentVersion()) {
+            DataVersion.V2 -> UserInfoRepository.listRankingUsersV2()
+            else -> UserInfoRepository.listRankingUsers()
+        }
     }
 
     @JvmStatic
@@ -193,14 +203,25 @@ object UserCoreManager {
         val lines = mutableListOf<BankDepositLine>()
 
         val mainBankMoney = EconomyUtil.getMoneyByBank(user)
-        lines += BankDepositLine("主银行", mainBankMoney.toMoneyFormat(), mainBankMoney)
+        val mainBankInterest = BankManager.getBankInfo(1)?.interest ?: 0
+        lines += BankDepositLine(
+            "主银行",
+            mainBankMoney.toMoneyFormat(),
+            "利率 ${FormatUtil.fixed(mainBankInterest / 10.0, 1)}%",
+            mainBankMoney
+        )
 
         try {
             PrivateBankRepository.listBanks()
                 .mapNotNull { bank ->
                     val deposit = PrivateBankRepository.findDeposit(bank.code, user.id) ?: return@mapNotNull null
                     if (deposit.principal <= 0.0) return@mapNotNull null
-                    BankDepositLine(bank.name.ifBlank { bank.code }, deposit.principal.toMoneyFormat(), deposit.principal)
+                    BankDepositLine(
+                        bank.name.ifBlank { bank.code },
+                        deposit.principal.toMoneyFormat(),
+                        "利率 ${FormatUtil.fixed(bank.depositorInterest / 10.0, 1)}%",
+                        deposit.principal
+                    )
                 }
                 .forEach(lines::add)
         } catch (e: Exception) {

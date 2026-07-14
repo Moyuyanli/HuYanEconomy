@@ -9,28 +9,23 @@ import cn.chahuyun.economy.prop.UseResult
 import cn.chahuyun.economy.service.EconomyFactorService
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.chahuyun.economy.utils.ShareUtils
-import cn.hutool.core.date.DateUnit
-import cn.hutool.core.date.DateUtil
 import net.mamoe.mirai.contact.MemberPermission
-import java.util.*
 
 object RedEyesEffectHandler : PropEffectHandler {
     override val codes: Set<String> = setOf(FunctionProps.RED_EYES)
 
     override suspend fun use(prop: BaseProp, event: UseEvent): UseResult {
-        val buff = EconomyFactorService.getUserBuff(event.userInfo, FunctionProps.RED_EYES)
-        if (buff == null) {
-            EconomyFactorService.setUserBuff(event.userInfo, FunctionProps.RED_EYES, DateUtil.now())
-            return UseResult.success("你猛猛炫了一瓶红牛")
-        }
-
-        val between = DateUtil.between(DateUtil.parse(buff), Date(), DateUnit.MINUTE)
-        if (between <= PropConstant.RED_EYES_CD) {
+        if (EconomyFactorService.isUserBuffActive(
+                event.userInfo,
+                FunctionProps.RED_EYES,
+                PropConstant.RED_EYES_DURATION,
+            )
+        ) {
             return UseResult.fail("红牛喝多了可对肾不好!")
         }
 
-        EconomyFactorService.setUserBuff(event.userInfo, FunctionProps.RED_EYES, DateUtil.now())
-        return UseResult.success("续上一瓶红牛")
+        EconomyFactorService.setUserBuffStartedNow(event.userInfo, FunctionProps.RED_EYES)
+        return UseResult.success("你猛猛炫了一瓶红牛，钓鱼冷却缩短80%")
     }
 }
 
@@ -66,7 +61,7 @@ object MuteCardEffectHandler : PropEffectHandler {
         }
 
         subject.sendMessage("请输入你想要禁言的人")
-        val messageEvent = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.id, event.sender.id, 180)
+        val messageEvent = MessageUtil.INSTANCE.nextUserForGroupMessageEvent(subject.id, event.sender.id, 180)
             ?: return UseResult.fail("使用失败!")
         val member = ShareUtils.getAtMember(messageEvent) ?: return UseResult.fail("使用失败!")
 

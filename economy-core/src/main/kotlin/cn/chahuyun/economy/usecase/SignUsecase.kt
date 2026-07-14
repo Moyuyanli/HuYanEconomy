@@ -10,12 +10,14 @@ import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.model.user.sign
 import cn.chahuyun.economy.model.user.user
+import cn.chahuyun.economy.service.EconomyAsyncService
 import cn.chahuyun.economy.sign.BeforeSignEvent
 import cn.chahuyun.economy.sign.SignCommittedEvent
 import cn.chahuyun.economy.sign.SignRewardEvent
 import cn.chahuyun.economy.utils.*
 import cn.hutool.core.date.DateTime
 import cn.hutool.core.util.RandomUtil
+import kotlinx.coroutines.withContext
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
@@ -103,8 +105,8 @@ object SignUsecase {
         }
         signInfoLines += eventReplyLines
 
-        TitleManager.checkSignTitleJava(userInfo, subject)
-        TitleManager.checkMonopolyJava(userInfo, subject)
+        TitleManager.checkSignTitle(userInfo, subject)
+        TitleManager.checkMonopoly(userInfo, subject)
 
         val resultMessages = messages.build()
         SignCommittedEvent(userInfo, event, goldNumber, resultMessages).broadcast()
@@ -168,13 +170,15 @@ object SignUsecase {
         // 签到图复用个人信息底图，但右下角信息区改成显示本次签到详情。
         // 这样“签到成功/金币/随机事件/道具事件”都由统一的卡片绘制流程负责排版。
         val userInfoImageBase: BufferedImage = runCatching {
-            val card = UserCoreManager.buildUserInfoCard(
-                userInfo = userInfo,
-                infoTitle = "签到信息",
-                infoText = signInfoText,
-                infoSignature = "",
-            )
-            UserCoreManager.renderUserInfoCard(userInfo, card)
+            withContext(EconomyAsyncService.coroutineDispatcher()) {
+                val card = UserCoreManager.buildUserInfoCard(
+                    userInfo = userInfo,
+                    infoTitle = "签到信息",
+                    infoText = signInfoText,
+                    infoSignature = "",
+                )
+                UserCoreManager.renderUserInfoCard(userInfo, card)
+            }
         }.getOrElse { e ->
             Log.error("签到管理:签到图片生成错误!", e)
             null

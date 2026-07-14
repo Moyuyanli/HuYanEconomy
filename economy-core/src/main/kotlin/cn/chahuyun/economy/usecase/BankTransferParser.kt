@@ -38,7 +38,7 @@ object BankTransferParser {
         val amount = MoneyFormatUtil.parse(amountToken) ?: return null
         val target = parts.getOrNull(2)?.trim()?.takeIf { it.isNotBlank() }
         return when {
-            target == null -> BankTransferRequest(amount, BankRoute.MAIN)
+            target == null -> BankTransferRequest(amount, BankRoute.DEFAULT)
             target == "!" || target == "!!" || target == "主银行" || target.equals("main", ignoreCase = true) ->
                 BankTransferRequest(amount, BankRoute.MAIN)
             else -> BankTransferRequest(amount, BankRoute.PRIVATE, target)

@@ -143,8 +143,6 @@ object RedPackUsecase {
      * @param event 群消息事件
      */
     suspend fun receive(event: GroupMessageEvent) {
-        Log.info("收红包指令")
-
         val subject = event.subject
         val group = event.group
         val sender = event.sender
@@ -157,6 +155,8 @@ object RedPackUsecase {
         val hasPrefix = content.startsWith("领红包") || content.startsWith("收红包")
 
         if (hasPrefix) {
+            Log.info("收红包指令")
+
             if (info.size < 2) {
                 // 只有前缀，提示输入ID或口令（因为只有抢红包才支持一键全抢）
                 subject.sendMessage(MessageUtil.formatMessageChain(message, "请在指令后输入红包ID或口令！"))
@@ -200,7 +200,9 @@ object RedPackUsecase {
             }
         } else {
             // 没有前缀，说明是直接发送的口令（由 RedPackAction.grabByPassword 触发）
-            grabByPassword(event, content.trim())
+            val password = content.trim()
+            if (!RedPackManager.hasActivePassword(group.id, password)) return
+            grabByPassword(event, password, logOnMatch = true)
         }
     }
 
@@ -209,16 +211,19 @@ object RedPackUsecase {
      * @param event 群消息事件
      * @param password 口令
      */
-    private suspend fun grabByPassword(event: GroupMessageEvent, password: String) {
+    private suspend fun grabByPassword(event: GroupMessageEvent, password: String, logOnMatch: Boolean = false) {
         val group = event.group
         val sender = event.sender
         val subject = event.subject
 
-        val redPacks = RedPackManager.listByGroupId(group.id)
-            .filter { it.type == RedPackKind.PASSWORD && it.password == password }
+        val redPacks = RedPackManager.listPasswordByGroupAndPassword(group.id, password)
 
         if (redPacks.isEmpty()) {
             return // 没有匹配的口令红包，不做处理
+        }
+
+        if (logOnMatch) {
+            Log.info("收红包指令")
         }
 
         val results = mutableListOf<Pair<String, Double>>()

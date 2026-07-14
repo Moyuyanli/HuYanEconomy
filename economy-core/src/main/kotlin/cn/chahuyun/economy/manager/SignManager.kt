@@ -2,10 +2,7 @@ package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.constant.TitleCode
 import cn.chahuyun.economy.model.props.PropsCard
-import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.model.user.UserInfoDto
-import cn.chahuyun.economy.model.user.getProp
-import cn.chahuyun.economy.model.user.user
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.sign.SignRewardEvent
 import cn.chahuyun.economy.utils.MessageUtil
@@ -63,13 +60,18 @@ object SignManager {
         val backpacks = userInfo.backpacks
         val list = backpacks.toList()
 
-        if (BackpackManager.checkPropInUser(userInfo, PropsCard.MONTHLY)) {
-            val prop = userInfo.getProp(PropsCard.MONTHLY)
-            if (PropsManager.getProp(prop, PropsCard::class.java).status) {
+        for (backpack in list.filter { it.propCode == PropsCard.MONTHLY }) {
+            val card = runCatching { PropsManager.getProp(backpack, PropsCard::class.java) }.getOrNull()
+                ?: continue
+            if (isMonthlyCardActive(card)) {
                 event.doubleCardApplied = true
                 event.tripleCardApplied = true
                 multiples += 4
                 event.eventReplyAdd(MessageUtil.formatMessageChain("已启用签到月卡,本次签到奖励翻5倍!"))
+                break
+            }
+            if (card.isExpired()) {
+                event.consumeProp(backpack)
             }
         }
 
@@ -114,26 +116,25 @@ object SignManager {
                 }
 
                 PropsCard.SIGN_IN -> {
-                    try {
+                    val card = try {
                         PropsManager.deserialization(propId, PropsCard::class.java)
                     } catch (_: Exception) {
-                        BackpackManager.delPropToBackpack(userInfo, propId)
+                        event.consumeProp(backpack)
                         continue
                     }
-                    if (event.makeupCardApplied) {
+                    if (event.makeupCardApplied || !card.status) {
                         continue
                     }
 
                     val oldSignNumber = userInfo.oldSignNumber
                     if (oldSignNumber == 0) {
-                        break
+                        continue
                     }
 
                     userInfo.signNumber = userInfo.signNumber + oldSignNumber
                     userInfo.oldSignNumber = 0
 
-                    val useEvent = UseEvent(userInfo.user, event.group, userInfo)
-                    PropsManager.usePropJava(backpack, useEvent)
+                    event.consumeProp(backpack)
                     event.eventReplyAdd(MessageUtil.formatMessageChain("使用了一张补签卡，续上断掉的签到天数!"))
                     event.makeupCardApplied = true
                 }
@@ -142,4 +143,7 @@ object SignManager {
 
         event.addMultiplier(multiples - 1)
     }
+
+    internal fun isMonthlyCardActive(card: PropsCard): Boolean =
+        card.code == PropsCard.MONTHLY && !card.isExpired()
 }

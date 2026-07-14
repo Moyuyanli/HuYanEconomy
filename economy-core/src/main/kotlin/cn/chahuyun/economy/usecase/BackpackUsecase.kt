@@ -47,7 +47,7 @@ object BackpackUsecase {
 
         // 等待用户翻页操作
         while (true) {
-            val nextMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(group.id, sender.id, 30)
+            val nextMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEvent(group.id, sender.id, 30)
             if (nextMessage == null || !nextMessage.message.contentToString().matches(Regex("[上下]一页"))) {
                 return
             }
@@ -165,5 +165,4 @@ object BackpackUsecase {
         group.sendMessage(builder.build())
     }
 }
-
 

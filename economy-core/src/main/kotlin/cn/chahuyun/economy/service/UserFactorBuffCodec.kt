@@ -6,7 +6,7 @@ import cn.hutool.json.JSONUtil
 object UserFactorBuffCodec {
 
     fun getBuffValue(factor: UserFactorDto, buffName: String): String? {
-        val array = JSONUtil.parseArray(factor.buff)
+        val array = parseBuffs(factor)
         for (obj in array.jsonIter()) {
             if (buffName == obj.getStr("name")) return obj.getStr("value")
         }
@@ -14,7 +14,7 @@ object UserFactorBuffCodec {
     }
 
     fun withBuffValue(factor: UserFactorDto, buffName: String, value: String?): UserFactorDto {
-        val array = JSONUtil.parseArray(factor.buff)
+        val array = parseBuffs(factor)
         var foundIndex = -1
         for (i in 0 until array.size) {
             val obj = array.getJSONObject(i)
@@ -35,4 +35,7 @@ object UserFactorBuffCodec {
         }
         return factor.copy(buff = array.toString())
     }
+
+    private fun parseBuffs(factor: UserFactorDto) =
+        runCatching { JSONUtil.parseArray(factor.buff) }.getOrElse { JSONUtil.createArray() }
 }

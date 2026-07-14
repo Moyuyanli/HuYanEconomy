@@ -9,7 +9,9 @@ import cn.chahuyun.economy.model.props.PropsCard
 import cn.chahuyun.economy.model.user.getString
 import cn.chahuyun.economy.model.yiyan.YiYan
 import cn.chahuyun.economy.plugin.YiYanManager
+import cn.chahuyun.economy.service.EconomyAsyncService
 import cn.chahuyun.economy.utils.*
+import kotlinx.coroutines.withContext
 import net.mamoe.mirai.contact.AvatarSpec
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.Member
@@ -27,7 +29,7 @@ object UserUsecase {
         val sender = event.sender
 
         val userInfo = UserCoreManager.getUserInfo(sender)
-        TitleManager.checkMonopolyJava(userInfo, subject)
+        TitleManager.checkMonopoly(userInfo, subject)
 
         val textFallback = buildUserInfoText(event)
 
@@ -35,20 +37,23 @@ object UserUsecase {
 
         val hitokoto = yiYan.hitokoto ?: "今日也要好好经营。"
         val signature = "--" + (yiYan.author ?: "无名") + ":" + (yiYan.from ?: "未知")
-        val userInfoImageBase = runCatching {
-            val card = UserCoreManager.buildUserInfoCard(userInfo, hitokoto, signature)
-            UserCoreManager.renderUserInfoCard(userInfo, card)
+        val userInfoImageBytes = runCatching {
+            withContext(EconomyAsyncService.coroutineDispatcher()) {
+                val card = UserCoreManager.buildUserInfoCard(userInfo, hitokoto, signature)
+                val image = UserCoreManager.renderUserInfoCard(userInfo, card)
+                image?.let { ImageMessageUtil.toSizeLimitedImageBytes(it) }
+            }
         }.getOrElse { e ->
             Log.error("用户管理:个人信息图片生成错误", e)
             null
         }
-        if (userInfoImageBase == null) {
+        if (userInfoImageBytes == null) {
             subject.sendMessage(textFallback)
             return
         }
 
         try {
-            ImageMessageUtil.sendImage(subject, userInfoImageBase)
+            ImageMessageUtil.sendImageBytes(subject, userInfoImageBytes)
         } catch (e: Exception) {
             Log.error("用户管理:个人信息图片发送错误", e)
             subject.sendMessage(textFallback)
@@ -65,7 +70,7 @@ object UserUsecase {
         val subject = event.subject
         val sender = event.sender
         val userInfo = UserCoreManager.getUserInfo(sender)
-        TitleManager.checkMonopolyJava(userInfo, subject)
+        TitleManager.checkMonopoly(userInfo, subject)
 
         try {
             append(ImageMessageUtil.uploadImageFromUrl(subject, sender.avatarUrl(AvatarSpec.LARGE)))

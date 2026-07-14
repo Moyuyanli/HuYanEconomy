@@ -10,6 +10,7 @@ import cn.chahuyun.economy.utils.MessageUtil
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 import cn.chahuyun.economy.utils.TimeConvertUtil
 import cn.hutool.core.date.BetweenFormatter
+import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Contact
@@ -20,6 +21,7 @@ import net.mamoe.mirai.message.data.MessageChain
 import net.mamoe.mirai.message.data.PlainText
 import xyz.cssxsh.mirai.economy.EconomyService
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 红包管理器。
@@ -27,6 +29,18 @@ import java.util.*
  * 负责随机红包金额分配、红包领取、过期退还和红包列表展示。
  */
 object RedPackManager {
+
+    @Volatile
+    private var passwordLookupInitialized = false
+    private val passwordLookup = ConcurrentHashMap<Long, Set<String>>()
+
+    @JvmStatic
+    fun init() {
+        synchronized(this) {
+            rebuildPasswordLookup()
+            passwordLookupInitialized = true
+        }
+    }
 
     suspend fun viewRedPack(
         subject: Contact,
@@ -200,12 +214,80 @@ object RedPackManager {
 
     fun listByGroupId(groupId: Long): List<RedPackDto> = redPackProxy.findWhere { it.groupId == groupId }
 
+    fun hasActivePassword(groupId: Long, password: String): Boolean {
+        if (!isValidPasswordCandidate(password)) return false
+        ensurePasswordLookup()
+        return passwordLookup[groupId]?.contains(password) == true
+    }
+
+    fun listPasswordByGroupAndPassword(groupId: Long, password: String): List<RedPackDto> {
+        if (!hasActivePassword(groupId, password)) return emptyList()
+        val matches = listByGroupId(groupId).filter {
+            it.isActivePasswordPack() && it.password == password
+        }
+        if (matches.isEmpty()) {
+            rebuildPasswordLookup()
+        }
+        return matches
+    }
+
     fun listAll(): List<RedPackDto> = redPackProxy.findAll()
 
-    fun save(redPack: RedPackDto): RedPackDto = redPackProxy.save(redPack)
+    fun save(redPack: RedPackDto): RedPackDto {
+        val saved = redPackProxy.save(redPack)
+        refreshPasswordLookup(saved)
+        return saved
+    }
 
-    fun delete(redPack: RedPackDto): Boolean = redPackProxy.delete(redPack.id.toLong())
+    fun delete(redPack: RedPackDto): Boolean {
+        val deleted = redPackProxy.delete(redPack.id.toLong())
+        if (deleted && passwordLookupInitialized && redPack.type == RedPackKind.PASSWORD) {
+            rebuildPasswordLookup()
+        }
+        return deleted
+    }
 
     private val redPackProxy
         get() = EntityProxyRegistry.get<RedPackDto>("redpack") ?: error("红包代理器未初始化")
+
+    private fun ensurePasswordLookup() {
+        if (passwordLookupInitialized) return
+        synchronized(this) {
+            if (!passwordLookupInitialized) {
+                rebuildPasswordLookup()
+                passwordLookupInitialized = true
+            }
+        }
+    }
+
+    private fun rebuildPasswordLookup() {
+        val grouped = listAll()
+            .filter { it.isActivePasswordPack() }
+            .groupBy({ it.groupId }, { it.password })
+            .mapValues { (_, passwords) -> passwords.toSet() }
+
+        passwordLookup.clear()
+        passwordLookup.putAll(grouped)
+    }
+
+    private fun refreshPasswordLookup(redPack: RedPackDto) {
+        if (!passwordLookupInitialized || redPack.type != RedPackKind.PASSWORD) return
+        if (!redPack.isActivePasswordPack()) {
+            rebuildPasswordLookup()
+            return
+        }
+
+        passwordLookup.merge(redPack.groupId, setOf(redPack.password)) { old, new -> old + new }
+    }
+
+    private fun RedPackDto.isActivePasswordPack(): Boolean {
+        if (type != RedPackKind.PASSWORD) return false
+        if (!isValidPasswordCandidate(password)) return false
+        if (receiverList.size >= number) return false
+        return DateUtil.between(Date(createTime), Date(), DateUnit.DAY) < 1
+    }
+
+    private fun isValidPasswordCandidate(password: String): Boolean {
+        return password.isNotBlank() && password.length <= 32
+    }
 }

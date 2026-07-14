@@ -9,6 +9,9 @@ import cn.chahuyun.economy.utils.MoneyFormatUtil
 import cn.hutool.core.date.DateUtil
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.event.events.MessageEvent
+import net.mamoe.mirai.message.data.ForwardMessageBuilder
+import net.mamoe.mirai.message.data.PlainText
+import java.util.*
 
 /**
  * 国卷/狐卷债券相关用例。
@@ -66,14 +69,15 @@ object FoxBondUsecase {
     }
 
     /**
-     * 购买国卷：行长用流动金池资金购买本周国卷
+     * 购买国卷：行长用流动金池资金购买指定 code 的国卷
      */
     suspend fun buyBond(event: MessageEvent) {
         val subject: Contact = event.subject
         val parts = event.message.contentToString().trim().split(" ")
         val amount = parts.getOrNull(1)?.let(MoneyFormatUtil::parse) ?: 0.0
-        if (amount <= 0) {
-            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "用法：国卷购买 <金额>"))
+        val code = parts.getOrNull(2).orEmpty()
+        if (amount <= 0 || code.isBlank()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "用法：购买国卷 <金额> <code>"))
             return
         }
 
@@ -83,17 +87,22 @@ object FoxBondUsecase {
             return
         }
 
-        val (_, msg) = PrivateBankService.buyBond(event.sender, bank.code, amount)
+        val (_, msg) = PrivateBankService.buyBond(event.sender, bank.code, code, amount)
         subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
     }
 
     /**
-     * 赎回国卷；带 ID 时赎回指定持仓，不带 ID 时尝试赎回全部持仓。
+     * 赎回国卷；不带金额时赎回该 code 的全部持仓，带金额时赎回指定本金。
      */
     suspend fun redeemBond(event: MessageEvent) {
         val subject: Contact = event.subject
         val parts = event.message.contentToString().trim().split(" ")
-        val holdingId = parts.getOrNull(1)?.toIntOrNull()
+        val code = parts.getOrNull(1).orEmpty()
+        val amount = parts.getOrNull(2)?.let(MoneyFormatUtil::parse)
+        if (code.isBlank()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "用法：赎回国卷 <code> [金额]"))
+            return
+        }
 
         val bank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == event.sender.id }
         if (bank == null) {
@@ -101,78 +110,85 @@ object FoxBondUsecase {
             return
         }
 
-        if (holdingId != null) {
-            // 赎回指定持仓
-            val (_, msg) = PrivateBankService.redeemBond(event.sender, holdingId)
-            subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
-        } else {
-            // 赎回全部到期持仓
-            val holdings = PrivateBankRepository.listBondHoldings(bank.code)
-                .filter { it.redeemedAt == 0L }
-                .filter { PrivateBankService.isBondMatured(it) }
-
-            if (holdings.isEmpty()) {
-                subject.sendMessage(MessageUtil.formatMessageChain(event.message, "没有可批量赎回的到期国卷；未到期持仓请指定 ID 手动赎回（会折价）"))
-                return
-            }
-
-            var successCount = 0
-            val results = mutableListOf<String>()
-
-            for (h in holdings) {
-                val (ok, msg) = PrivateBankService.redeemBond(event.sender, h.id)
-                if (ok) {
-                    successCount++
-                    results.add("持仓#${h.id}: $msg")
-                } else {
-                    results.add("持仓#${h.id}: $msg")
-                }
-            }
-
-            val summary = buildString {
-                append("国卷赎回结果（共 ${holdings.size} 笔）\n")
-                results.forEach { append("$it\n") }
-            }
-            subject.sendMessage(MessageUtil.formatMessageChain(event.message, summary.trimEnd()))
-        }
+        val (_, msg) = PrivateBankService.redeemBond(event.sender, code, amount)
+        subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg))
     }
 
-    /**
-     * 查看本周国卷发行信息 + 本行持仓列表
-     */
+    /** 查看仍可购买的国卷，每个转发页最多 15 个。 */
     suspend fun bondList(event: MessageEvent) {
         val subject: Contact = event.subject
-        val issue = PrivateBankService.ensureWeeklyBondIssue()
+        PrivateBankService.ensureDailyBondIssues()
+        val issues = PrivateBankService.listAvailableBondIssues()
+        if (issues.isEmpty()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "当前没有可购买的国卷"))
+            return
+        }
 
-        val bank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == event.sender.id }
-
-        val msg = buildString {
-            append("本周国卷信息\n")
-            append("期号: ${issue.weekKey}\n")
-            append("利率倍数: ${FormatUtil.fixed(issue.rateMultiplier, 2)}x\n")
-            append("锁仓天数: ${issue.lockDays} 天\n")
-            append("总额度: ${MoneyFormatUtil.format(issue.totalLimit)}\n")
-            append("剩余额度: ${MoneyFormatUtil.format(issue.remaining)}\n")
-
-            if (bank != null) {
-                val holdings = PrivateBankRepository.listBondHoldings(bank.code)
-                    .filter { it.redeemedAt == 0L }
-                if (holdings.isNotEmpty()) {
-                    append("\n你的银行持仓（${bank.name}）\n")
-                    holdings.forEach { h ->
-                        val dueAt = java.util.Date(h.boughtAt + h.lockDays * 86400000L)
-                        val isExpired = dueAt.before(java.util.Date())
-                        val status = if (isExpired) "已到期" else "未到期"
-                        append("  #${h.id} | 金额=${MoneyFormatUtil.format(h.principal)} | ${h.rateMultiplier}x | $status\n")
-                    }
-                } else {
-                    append("\n你的银行暂无国卷持仓\n")
-                }
-                append("\n用法：国卷购买 <金额> | 国卷赎回 [持仓ID]")
-            } else {
-                append("\n你还没有创建银行，无法购买国债")
+        val lines = issues.map { issue ->
+            val code = issue.code.ifBlank { issue.weekKey }
+            buildString {
+                append(code)
+                append("\n剩余：${MoneyFormatUtil.format(issue.remaining)} / ${MoneyFormatUtil.format(issue.totalLimit)}")
+                append("\n利率：${FormatUtil.fixed(issue.rateMultiplier, 2)}%/day")
+                append("\n锁仓：${issue.lockDays} 天")
+                append("\n赎回时间：${DateUtil.formatDateTime(Date(PrivateBankService.bondRedeemAt(issue)))}")
             }
         }
-        subject.sendMessage(MessageUtil.formatMessageChain(event.message, msg.trimEnd()))
+        sendForwardPages(event, "可购买国卷", lines)
     }
+
+    /** 查看当前发送者作为行长所拥有银行的国卷持仓。 */
+    suspend fun bondHoldings(event: MessageEvent) {
+        val subject = event.subject
+        val bank = PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == event.sender.id }
+        if (bank == null) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "你还没有创建自己的银行"))
+            return
+        }
+
+        val issueById = PrivateBankRepository.listBondIssues().associateBy { it.id }
+        val holdings = PrivateBankRepository.listBondHoldings(bank.code)
+            .filter { it.redeemedAt == 0L && it.principal > 0.0001 }
+            .sortedBy { it.boughtAt + it.lockDays * DAY_MILLIS }
+        if (holdings.isEmpty()) {
+            subject.sendMessage(MessageUtil.formatMessageChain(event.message, "${bank.name} 暂无国卷持仓"))
+            return
+        }
+
+        val now = System.currentTimeMillis()
+        val lines = holdings.map { holding ->
+            val issue = issueById[holding.issueId]
+            val code = issue?.code?.ifBlank { issue.weekKey } ?: "#${holding.issueId}"
+            val dueAt = holding.boughtAt + holding.lockDays * DAY_MILLIS
+            buildString {
+                append(code)
+                append("\n本金：${MoneyFormatUtil.format(holding.principal)}")
+                append("\n利率：${FormatUtil.fixed(holding.rateMultiplier, 2)}%/day")
+                append("\n购买时间：${DateUtil.formatDateTime(Date(holding.boughtAt))}")
+                append("\n赎回时间：${DateUtil.formatDateTime(Date(dueAt))}")
+                append("\n状态：${if (dueAt <= now) "可赎回" else "锁仓中"}")
+            }
+        }
+        sendForwardPages(event, "${bank.name} 国卷持仓", lines)
+    }
+
+    suspend fun supplementBonds(event: MessageEvent) {
+        val issues = PrivateBankService.supplementDailyBondIssues()
+        event.subject.sendMessage(
+            MessageUtil.formatMessageChain(event.message, "国卷补发完成，本次新增 ${issues.size} 个国卷")
+        )
+    }
+
+    private suspend fun sendForwardPages(event: MessageEvent, title: String, lines: List<String>) {
+        val pages = lines.chunked(PAGE_SIZE)
+        pages.forEachIndexed { pageIndex, page ->
+            val builder = ForwardMessageBuilder(event.subject)
+            builder.add(event.bot, PlainText("$title ${pageIndex + 1}/${pages.size}（共 ${lines.size} 个）"))
+            page.forEach { builder.add(event.bot, PlainText(it)) }
+            event.subject.sendMessage(builder.build())
+        }
+    }
+
+    private const val PAGE_SIZE = 15
+    private const val DAY_MILLIS = 86_400_000L
 }

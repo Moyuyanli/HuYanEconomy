@@ -1,13 +1,61 @@
 package cn.chahuyun.economy.privatebank
 
-/**
- * 银行（PrivateBank 模块）相关账本描述常量
- */
-object PrivateBankLedger {
-    const val RESERVE_DESC = "pb-reserve"      // 主银行(global)准备金池（80%）
-    const val LIQUIDITY_DESC = "pb-liquidity"  // 自定义(custom)流动金池（20%）
-    const val INVENTORY_DESC = "pb-inventory"  // 自定义(custom)行长注入库存
-    const val GUARANTEE_DESC = "pb-guarantee"  // 自定义(custom)10M 风险保证金
+import cn.chahuyun.economy.utils.EconomyUtil
+import net.mamoe.mirai.contact.User
 
-    const val FOX_BOND_LOCK_DESC = "pb-foxbond-lock" // 自定义(custom)狐卷锁仓资金池（按 bondCode 记账）
+object PrivateBankLedger {
+    const val RESERVE_DESC = "pb-reserve"
+    const val LIQUIDITY_DESC = "pb-liquidity"
+    const val INVENTORY_DESC = "pb-inventory"
+
+    fun accountId(bankCode: String, description: String): String {
+        return when (description) {
+            RESERVE_DESC -> "$bankCode-P"
+            LIQUIDITY_DESC -> "$bankCode-F"
+            INVENTORY_DESC -> "$bankCode-L"
+            else -> bankCode
+        }
+    }
+
+    fun balance(bankCode: String, description: String): Double {
+        return EconomyUtil.getMoneyFromPluginBankForId(accountId(bankCode, description), description)
+    }
+
+    fun add(bankCode: String, description: String, amount: Double): Boolean {
+        return EconomyUtil.plusMoneyToPluginBankForId(accountId(bankCode, description), description, amount)
+    }
+
+    fun debit(bankCode: String, description: String, amount: Double): Boolean {
+        if (amount <= 0) return false
+        if (balance(bankCode, description) + 0.0001 < amount) return false
+        return add(bankCode, description, -amount)
+    }
+
+    fun transferFromMainBank(user: User, bankCode: String, description: String, amount: Double): Boolean {
+        return EconomyUtil.turnUserGlobalBankToPluginBankForId(user, accountId(bankCode, description), description, amount)
+    }
+
+    fun transferFromWallet(user: User, bankCode: String, description: String, amount: Double): Boolean {
+        if (amount <= 0) return false
+        if (!EconomyUtil.minusMoneyToUser(user, amount)) return false
+        if (add(bankCode, description, amount)) return true
+        EconomyUtil.plusMoneyToUser(user, amount)
+        return false
+    }
+
+    fun transferToWallet(bankCode: String, description: String, user: User, amount: Double): Boolean {
+        if (amount <= 0) return false
+        if (!debit(bankCode, description, amount)) return false
+        if (EconomyUtil.plusMoneyToUser(user, amount)) return true
+        add(bankCode, description, amount)
+        return false
+    }
+
+    fun transferToMainBank(bankCode: String, description: String, user: User, amount: Double): Boolean {
+        if (amount <= 0) return false
+        if (!debit(bankCode, description, amount)) return false
+        if (EconomyUtil.plusMoneyToBank(user, amount)) return true
+        add(bankCode, description, amount)
+        return false
+    }
 }

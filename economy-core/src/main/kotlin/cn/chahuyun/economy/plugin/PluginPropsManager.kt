@@ -82,6 +82,7 @@ object PluginPropsManager {
                 description = "持续一个月的5倍经济，无法与签到卡同时生效!"
                 cost = 9999
                 canBuy = true
+                status = true
                 isStack = false
                 canItExpire = true
                 expireDays = 30
@@ -213,4 +214,3 @@ class PropExpireCheckTask : Runnable {
         }
     }
 }
-

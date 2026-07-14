@@ -4,7 +4,7 @@ import cn.chahuyun.economy.manager.BackpackManager
 import cn.chahuyun.economy.manager.EventPropsManager
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.fish.FishBait
-import cn.chahuyun.economy.model.user.getProp
+import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.model.user.user
 import cn.chahuyun.economy.prop.BaseProp
 import cn.chahuyun.economy.prop.PropsManager
@@ -18,6 +18,82 @@ import net.mamoe.mirai.message.data.MessageChainBuilder
 import net.mamoe.mirai.message.data.QuoteReply
 
 object EventPropsUsecase {
+
+    private data class BuyItem(val code: String, val number: Int)
+
+    private fun createStackableProp(
+        userInfo: UserInfoDto,
+        template: BaseProp,
+        propCode: String,
+        buyNum: Int,
+        createdPropIds: MutableList<Long>,
+    ) {
+        val prop = template.copyProp<BaseProp>()
+        if (prop !is Stackable || !prop.isStack) {
+            error("道具模板不是可堆叠道具: code=$propCode")
+        }
+        prop.num = buyNum
+        val propId = PropsManager.addProp(prop)
+        createdPropIds += propId
+        BackpackManager.addPropToBackpack(userInfo, propCode, template.kind, propId)
+    }
+
+    private fun addOrCreateStackableProp(
+        userInfo: UserInfoDto,
+        template: BaseProp,
+        propCode: String,
+        buyNum: Int,
+        createdPropIds: MutableList<Long>,
+    ) {
+        val backpacks = userInfo.backpacks.filter { it.propCode == propCode }
+        for (backpack in backpacks) {
+            val prop = PropsManager.getProp(backpack)
+            if (prop == null) {
+                Log.error("清理失效背包道具: user=${userInfo.qq}, code=$propCode, backpackId=${backpack.id}, propId=${backpack.propId}")
+                BackpackManager.delPropToBackpack(userInfo, backpack)
+                continue
+            }
+            if (prop !is Stackable || !prop.isStack) {
+                Log.error("清理类型异常背包道具: user=${userInfo.qq}, code=$propCode, backpackId=${backpack.id}, propId=${backpack.propId}")
+                BackpackManager.delPropToBackpack(userInfo, backpack)
+                continue
+            }
+
+            prop.num += buyNum
+            PropsManager.updateProp(backpack.propId, prop)
+            return
+        }
+
+        createStackableProp(userInfo, template, propCode, buyNum, createdPropIds)
+    }
+
+    private fun parseBuyItems(content: String): List<BuyItem> {
+        val split = content.split(Regex("\\s+")).filter { it.isNotBlank() }
+        val items = mutableListOf<BuyItem>()
+        var index = 1
+
+        while (index < split.size) {
+            var code = split[index]
+            var number = 1
+
+            if (code.matches(Regex("^\\S+\\*\\d+$"))) {
+                val strings = code.split("*", limit = 2)
+                code = strings[0]
+                number = strings[1].toIntOrNull()?.coerceIn(1, 1000) ?: 1
+            } else {
+                val nextNumber = split.getOrNull(index + 1)?.toIntOrNull()
+                if (nextNumber != null) {
+                    number = nextNumber.coerceIn(1, 1000)
+                    index++
+                }
+            }
+
+            items += BuyItem(code, number)
+            index++
+        }
+
+        return items
+    }
 
     suspend fun viewShop(event: GroupMessageEvent) {
         val content = event.message.contentToString()
@@ -37,28 +113,14 @@ object EventPropsUsecase {
         val content = message.contentToString()
         val sender = event.sender
 
-        val split = content.split(" ")
+        val buyItems = parseBuyItems(content)
         val builder = MessageChainBuilder()
         builder.add(QuoteReply(message))
         builder.add("本次购买道具:")
 
         val userInfo = UserCoreManager.getUserInfo(sender)
 
-        for (i in 1 until split.size) {
-            var code = split[i]
-            if (code.isBlank()) continue
-            var number = 1
-            if (code.matches(Regex("^\\S+\\*\\d+$"))) {
-                val strings = code.split("*")
-                code = strings[0]
-                try {
-                    number = strings[1].toInt().coerceIn(1, 1000)
-                } catch (_: NumberFormatException) {
-                    group.sendMessage(MessageUtil.formatMessageChain(sender.id, "没办法买那么多"))
-                    return
-                }
-            }
-
+        for ((code, number) in buyItems) {
             if (!PropsShop.checkPropExist(code) && !PropsShop.checkPropNameExist(code)) {
                 builder.add(MessageUtil.formatMessage("\n道具 ${code} 不存在!"))
                 continue
@@ -91,25 +153,7 @@ object EventPropsUsecase {
                     val baseNumber = FishBait.fishbaitTimer[propCode] ?: 1
                     val buyNum = number * baseNumber
 
-                    if (BackpackManager.checkPropInUser(userInfo, propCode)) {
-                        val backpack = userInfo.getProp(propCode)
-                        val prop = PropsManager.getProp(backpack)
-                            ?: error("背包道具数据不存在: code=$propCode, propId=${backpack.propId}")
-                        if (prop !is Stackable || !prop.isStack) {
-                            error("背包道具不是可堆叠道具: code=$propCode, propId=${backpack.propId}")
-                        }
-                        prop.num += buyNum
-                        PropsManager.updateProp(backpack.propId, prop)
-                    } else {
-                        val prop = template.copyProp<BaseProp>()
-                        if (prop !is Stackable || !prop.isStack) {
-                            error("道具模板不是可堆叠道具: code=$propCode")
-                        }
-                        prop.num = buyNum
-                        val propId = PropsManager.addProp(prop)
-                        createdPropIds += propId
-                        BackpackManager.addPropToBackpack(userInfo, propCode, template.kind, propId)
-                    }
+                    addOrCreateStackableProp(userInfo, template, propCode, buyNum, createdPropIds)
                 } else {
                     repeat(number) {
                         val prop = template.copyProp<BaseProp>()

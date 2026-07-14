@@ -68,7 +68,7 @@ object EventPropsManager {
         group.sendMessage(nodes.build())
 
         while (true) {
-            val nextMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(group.id, sender.id, 180) ?: return
+            val nextMessage = MessageUtil.INSTANCE.nextUserForGroupMessageEvent(group.id, sender.id, 180) ?: return
             val content = nextMessage.message.contentToString()
             if (content == "下一页") {
                 if (++currentPage <= totalPages) {
@@ -88,5 +88,4 @@ object EventPropsManager {
         }
     }
 }
-
 

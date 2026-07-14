@@ -2,7 +2,9 @@
 
 package cn.chahuyun.economy.repair
 
-import cn.chahuyun.economy.converter.v1.UserBackpackV1Converter
+import cn.chahuyun.economy.converter.v1.PropsDataV1Converter
+import cn.chahuyun.economy.data.proxy.DataVersion
+import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.data.repository.RepairRepository
 import cn.chahuyun.economy.entity.UserBackpack
 import cn.chahuyun.economy.entity.fish.FishPond
@@ -24,18 +26,71 @@ interface Repair {
 object RepairManager {
 
     @JvmStatic
-    fun init(): String {
+    fun usage(): String = buildString {
+        appendLine("请指定数据修复范围:")
+        appendLine("hye repair v1 - 仅修复 V1 数据")
+        appendLine("hye repair v2 - 仅修复 V2 数据")
+        append("hye repair V1TOV2 - 从只读 V1 备份修复迁移到 V2 的数据")
+    }
+
+    @JvmStatic
+    fun init(scope: RepairScope): String = when (scope) {
+        RepairScope.V1 -> repairV1()
+        RepairScope.V2 -> repairV2()
+        RepairScope.V1_TO_V2 -> repairV1ToV2()
+    }
+
+    private fun repairV1(): String {
         if (!FishPondRepair().repair()) {
-            return "鱼塘错误数据修复失败!"
+            return "V1 鱼塘错误数据修复失败!"
         }
         if (!RobRepair().repair()) {
-            return "抢劫错误数据修复失败!"
+            return "V1 抢劫错误数据修复失败!"
         }
         if (!PropRepair().repair()) {
-            return "道具错误数据修复失败!"
+            return "V1 道具错误数据修复失败!"
+        }
+        return "V1 数据修复完成"
+    }
+
+    private fun repairV2(): String {
+        return "V2 当前没有已登记的修复动作，未修改任何数据"
+    }
+
+    private fun repairV1ToV2(): String {
+        val signRepair = UserSignRepair()
+        if (!signRepair.repair()) {
+            return "V1 到 V2 连续签到信息修复失败!"
+        }
+        val fishPondMigration = EntityProxyRegistry.migrateModuleTo("fish_pond", DataVersion.V2, switchAfterSuccess = true)
+        if (!fishPondMigration.success) {
+            return "V1 到 V2 鱼塘实体迁移修复失败: ${fishPondMigration.errors.take(3).joinToString("; ")}"
+        }
+        val propMigration = EntityProxyRegistry.migrateModuleTo("props", DataVersion.V2, switchAfterSuccess = true)
+        if (!propMigration.success) {
+            return "V1 到 V2 道具实体迁移修复失败: ${propMigration.errors.take(3).joinToString("; ")}"
         }
 
-        return "数据修复与版本升级完成"
+        return "V1 到 V2 迁移修复完成\n连续签到修复 ${signRepair.repairedCount} 人，鱼塘迁移 ${fishPondMigration.migratedCount} 条，道具迁移 ${propMigration.migratedCount} 条"
+    }
+}
+
+enum class RepairScope {
+    V1,
+    V2,
+    V1_TO_V2
+}
+
+class UserSignRepair : Repair {
+    var repairedCount: Int = 0
+        private set
+
+    override fun repair(): Boolean = try {
+        repairedCount = RepairRepository.repairUserSignData()
+        true
+    } catch (e: Exception) {
+        Log.error("修复连续签到信息失败", e)
+        false
     }
 }
 
@@ -103,15 +158,26 @@ class RobRepair : Repair {
  * 将旧版扁平 JSON 升级为结构化存储。
  */
 class PropRepair : Repair {
-    private val userBackpackConverter = UserBackpackV1Converter()
+    private val propsDataConverter = PropsDataV1Converter()
 
     private fun UserBackpack.destroy() {
         val propId = propId ?: return
-        PropsManager.destroyPros(propId)
+        RepairRepository.deletePropsData(propId)
         RepairRepository.delete(this)
     }
 
-    private fun UserBackpack.asDto() = userBackpackConverter.toDto(this)
+    private fun UserBackpack.getV1Prop(): BaseProp? {
+        val propId = propId ?: return null
+        val propsData = RepairRepository.findPropsData(propId) ?: return null
+        val dto = propsDataConverter.toDto(propsData)
+        val clazz = PropsManager.getPropClass(dto.kind) ?: return null
+        return PropsManager.deserialization(dto, clazz)
+    }
+
+    private fun saveV1PropsData(prop: BaseProp, id: Long) {
+        val dto = PropsManager.serialization(prop).copy(id = id)
+        RepairRepository.savePropsData(propsDataConverter.toEntity(dto))
+    }
 
     /**
      * 执行道具数据修复，包括字段迁移、数量修复、可堆叠物品合并等。
@@ -158,9 +224,7 @@ class PropRepair : Repair {
                 // 使用修正后的 JSON 反序列化出对象。
                 val prop = JSONUtil.toBean(jsonObject, propClass)
                 // 利用 PropsManager 同步核心列数据。
-                val updatedPropsData = PropsManager.serialization(prop).copy(id = propsData.id ?: 0)
-
-                PropsManager.savePropsData(updatedPropsData)
+                saveV1PropsData(prop, propsData.id ?: 0)
             } catch (e: Exception) {
                 Log.error("升级道具数据失败: id=${propsData.id}", e)
             }
@@ -182,7 +246,13 @@ class PropRepair : Repair {
                 continue
             }
 
-            val template = PropsManager.getTemplate<BaseProp>(propCode)
+            val template = try {
+                PropsManager.getTemplate<BaseProp>(propCode)
+            } catch (e: Exception) {
+                Log.error("修复背包道具失败: 未找到道具模板 code=$propCode, backpackId=${backpack.id}", e)
+                backpack.destroy()
+                continue@for_backpack
+            }
 
             if (template is Stackable && template.isStack) {
                 val userId = backpack.userId
@@ -193,13 +263,13 @@ class PropRepair : Repair {
                 val key = userId to propCode
                 if (userBackpackToBaseProp.containsKey(key)) {
                     val only = userBackpackToBaseProp[key]
-                    val one = (only?.let { PropsManager.getProp(it.asDto()) } ?: run {
+                    val one = (only?.getV1Prop() ?: run {
                         only?.destroy()
                         userBackpackToBaseProp.remove(key)
                         null
                     }) ?: continue@for_backpack
 
-                    val prop = PropsManager.getProp(backpack.asDto())
+                    val prop = backpack.getV1Prop()
                     if (prop !is Stackable) {
                         backpack.destroy()
                         continue@for_backpack
@@ -211,9 +281,7 @@ class PropRepair : Repair {
                         one.num += num
                     }
 
-                    val updatedPropsData = PropsManager.serialization(one).copy(id = only?.propId ?: 0)
-
-                    PropsManager.savePropsData(updatedPropsData)
+                    saveV1PropsData(one, only?.propId ?: 0)
                     backpack.destroy()
                 } else {
                     userBackpackToBaseProp[key] = backpack
@@ -226,7 +294,7 @@ class PropRepair : Repair {
         // 3. 最终清理残留的无效背包条目。
         RepairRepository.listUserBackpacks().forEach { backpack ->
             try {
-                if (PropsManager.getProp(backpack.asDto()) == null) {
+                if (backpack.getV1Prop() == null) {
                     backpack.destroy()
                 }
             } catch (_: Exception) {

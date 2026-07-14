@@ -33,6 +33,36 @@ object PropsManager {
         }
     }
 
+    private fun resolveExpiredTime(data: PropsDataDto, jsonObject: JSONObject?): Date? {
+        if (data.expiredTime > 0) {
+            return Date(data.expiredTime)
+        }
+
+        return when (val raw = jsonObject?.get("expiredTime")) {
+            is Date -> raw
+            is Number -> raw.toLong().takeIf { it > 0 }?.let { Date(it) }
+            is String -> raw
+                .takeIf { it.isNotBlank() && it != "null" }
+                ?.let { text ->
+                    text.toLongOrNull()?.let { Date(it) }
+                        ?: runCatching { DateUtil.parse(text) }.getOrNull()
+                }
+            else -> null
+        }
+    }
+
+    private fun applyPersistedFields(prop: BaseProp, data: PropsDataDto, jsonObject: JSONObject? = null) {
+        if (prop is Stackable && data.num > 0) {
+            prop.num = data.num
+        }
+        if (prop is Expirable) {
+            prop.expiredTime = resolveExpiredTime(data, jsonObject) ?: prop.expiredTime
+        }
+        if (prop is cn.chahuyun.economy.model.props.PropsCard) {
+            prop.status = data.status
+        }
+    }
+
     private val propsClassMap = ConcurrentHashMap<String, Class<out BaseProp>>()
 
     @PublishedApi
@@ -69,6 +99,9 @@ object PropsManager {
         }
         val onlyCode = code ?: prop.code
         propsTemplateMap[onlyCode] = prop
+        if (prop.canBuy) {
+            PropsShop.addShop(onlyCode, prop)
+        }
         return true
     }
 
@@ -231,6 +264,7 @@ object PropsManager {
             val propId = backpack.propId.takeIf { it != 0L } ?: error("背包道具 id 缺失!")
             if (result.shouldRemove) {
                 destroyProsAndBackpack(propId)
+                removeBackpackReference(event, propId)
             } else if (result.shouldUpdate) {
                 if (prop is Stackable && prop.isConsumption) {
                     if (prop.num > 1) {
@@ -238,6 +272,7 @@ object PropsManager {
                         updateProp(propId, prop)
                     } else {
                         destroyProsAndBackpack(propId)
+                        removeBackpackReference(event, propId)
                     }
                 } else {
                     updateProp(propId, prop)
@@ -246,6 +281,11 @@ object PropsManager {
         }
 
         return result
+    }
+
+    private fun removeBackpackReference(event: UseEvent, propId: Long) {
+        event.userInfo.backpacks = event.userInfo.backpacks.filterNot { it.propId == propId }
+        event.userInfo.backpackCount = event.userInfo.backpacks.size
     }
 
     /**
@@ -325,6 +365,7 @@ object PropsManager {
                 ?: throw RuntimeException("道具反序列化结果为空")
 
             applyCodeIfPossible(prop, jsonObject.getStr("code") ?: propsData.code)
+            applyPersistedFields(prop, propsData, jsonObject)
             prop
         } catch (e: Exception) {
             throw RuntimeException("道具反序列化失败，ID: $id, 目标类型: ${clazz.name}, 错误: ${e.message}", e)
@@ -352,6 +393,7 @@ object PropsManager {
                 ?: throw RuntimeException("道具反序列化结果为空")
 
             applyCodeIfPossible(prop, jsonObject.getStr("code") ?: one.code)
+            applyPersistedFields(prop, one, jsonObject)
             prop
         } catch (e: Exception) {
             throw RuntimeException("道具反序列化失败，ID: ${one.id}, 目标类型: ${clazz.name}, 错误: ${e.message}", e)

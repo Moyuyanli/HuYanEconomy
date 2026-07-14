@@ -2,9 +2,14 @@
 
 import cn.chahuyun.economy.manager.BankManager
 import cn.chahuyun.economy.manager.UserCoreManager
+import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.model.user.user
 import cn.chahuyun.economy.privatebank.PrivateBankService
+import cn.chahuyun.economy.service.EconomyAsyncService
 import cn.chahuyun.economy.utils.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.Group
@@ -13,11 +18,17 @@ import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.ForwardMessageBuilder
 import net.mamoe.mirai.message.data.PlainText
 import xyz.cssxsh.mirai.economy.service.EconomyAccount
+import java.util.*
 
 /**
  * 银行相关用例（主银行 + 默认私银路由）。
  */
 object BankUsecase {
+    private const val REGAL_TOP_CACHE_TTL_MS = 5 * 60 * 1000L
+
+    @Volatile
+    private var regalTopCache: RegalTopCache? = null
+    private val regalTopCacheMutex = Mutex()
 
     suspend fun deposit(event: MessageEvent) {
         val userInfo= UserCoreManager.getUserInfo(event.sender)
@@ -57,8 +68,8 @@ object BankUsecase {
             }
             BankRoute.PRIVATE -> depositPrivateBank(event, user, request.bankKey.orEmpty(), amount)
             BankRoute.DEFAULT -> {
-                val defaultPb = userInfo.defaultPrivateBankCode.trim().takeIf { it.isNotBlank() }
-                if (defaultPb.isNullOrBlank()) {
+                val defaultPb = defaultPrivateBankKey(userInfo.defaultPrivateBankCode)
+                if (defaultPb == null) {
                     if (EconomyUtil.turnUserToBank(user, amount)) {
                         subject.sendMessage(MessageUtil.formatMessageChain(event.message, "存款成功：${MoneyFormatUtil.format(amount)} 已存入主银行"))
                     } else {
@@ -91,13 +102,20 @@ object BankUsecase {
             BankRoute.MAIN -> withdrawMainBank(event, request.amount ?: EconomyUtil.getMoneyByBank(user))
             BankRoute.PRIVATE -> withdrawPrivateBank(event, request.bankKey.orEmpty(), request.amount)
             BankRoute.DEFAULT -> {
-                val defaultPb = userInfo.defaultPrivateBankCode.trim().takeIf { it.isNotBlank() }
-                if (defaultPb.isNullOrBlank()) {
+                val defaultPb = defaultPrivateBankKey(userInfo.defaultPrivateBankCode)
+                if (defaultPb == null) {
                     withdrawMainBank(event, request.amount ?: EconomyUtil.getMoneyByBank(user))
                 } else {
                     withdrawPrivateBank(event, defaultPb, request.amount)
                 }
             }
+        }
+    }
+
+    internal fun defaultPrivateBankKey(raw: String?): String? {
+        val key = raw?.trim().orEmpty()
+        return key.takeUnless {
+            it.isBlank() || it.equals("main", ignoreCase = true) || it == "主银行"
         }
     }
 
@@ -170,34 +188,158 @@ object BankUsecase {
         val builder = ForwardMessageBuilder(subject)
         builder.add(bot, PlainText("以下是银行存款排行榜:"))
 
-        val accountByBank: Map<EconomyAccount, Double> = EconomyUtil.getAccountByBank()
-        val totalBankMoney = EconomyUtil.getBankTotalCached()
-
-        // 全局银行可能存在同一用户的多个子账户（不同 description）。富豪榜需要按用户聚合，避免同一人多次上榜。
-        val userTotals: List<Pair<String, Double>> = accountByBank.entries
-            .groupBy({ it.key.uuid }, { it.value })
-            .map { (uuid, values) -> uuid to values.sum() }
-            .sortedByDescending { it.second }
-            .take(10)
-
-        var index = 1
-        for ((uuid, money) in userTotals) {
-            val userInfo = UserCoreManager.getUserInfo(uuid) ?: continue
-            val group: Group? = bot.getGroup(userInfo.registerGroup)
-            val groupName = group?.name ?: "未找到群"
-            val groupDisplay = "${userInfo.registerGroup} (${groupName})"
-            val ratio = if (totalBankMoney > 0) money / totalBankMoney * 100 else 0.0
-
-            val plainText = MessageUtil.formatMessage(
-                "top:${index++}\n" +
-                    "用户:${userInfo.name.ifBlank { "未知" }}\n" +
-                    "注册群:${groupDisplay}\n" +
-                    "存款:${MoneyFormatUtil.format(money)}\n" +
-                    "占比:${FormatUtil.fixed(ratio, 1)}%"
-            )
-            builder.add(bot, plainText)
+        val lines = getRegalTopLines(bot)
+        if (lines.isEmpty()) {
+            builder.add(bot, PlainText("暂无银行存款排行数据"))
+        } else {
+            for (line in lines) {
+                builder.add(bot, MessageUtil.formatMessage(line))
+            }
         }
 
         subject.sendMessage(builder.build())
+    }
+
+    private suspend fun getRegalTopLines(bot: Bot, now: Long = System.currentTimeMillis()): List<String> {
+        val cached = regalTopCache
+        if (cached != null && now - cached.createdAt < REGAL_TOP_CACHE_TTL_MS) {
+            return cached.lines
+        }
+
+        return regalTopCacheMutex.withLock {
+            val latest = regalTopCache
+            if (latest != null && now - latest.createdAt < REGAL_TOP_CACHE_TTL_MS) {
+                latest.lines
+            } else {
+                withContext(EconomyAsyncService.coroutineDispatcher()) {
+                    buildRegalTopLines(bot)
+                }.also { lines ->
+                    regalTopCache = RegalTopCache(now, lines)
+                }
+            }
+        }
+    }
+
+    private fun buildRegalTopLines(bot: Bot): List<String> {
+        val accountByBank: Map<EconomyAccount, Double> = EconomyUtil.getAccountByBank()
+        val accountBalances = HashMap<String, Double>(accountByBank.size)
+        accountByBank.forEach { (account, money) ->
+            accountBalances.merge(account.uuid, money, Double::plus)
+        }
+
+        val snapshot = buildRegalTopSnapshot(
+            accountBalances = accountBalances,
+            users = UserCoreManager.listRankingUsers()
+        )
+        val userTotals = snapshot.entries
+        val totalRankedMoney = snapshot.totalMoney
+
+        var index = 1
+        return userTotals.map { entry ->
+            val userInfo = entry.userInfo
+            val group: Group? = bot.getGroup(userInfo.registerGroup)
+            val groupName = group?.name ?: "未找到群"
+            val groupDisplay = "${userInfo.registerGroup} (${groupName})"
+            val ratio = if (totalRankedMoney > 0) entry.money / totalRankedMoney * 100 else 0.0
+
+            "top:${index++}\n" +
+                "用户:${userInfo.name.ifBlank { "未知" }}\n" +
+                "注册群:${groupDisplay}\n" +
+                "存款:${MoneyFormatUtil.format(entry.money)}\n" +
+                "占比:${FormatUtil.fixed(ratio, 1)}%"
+        }
+    }
+
+    private data class RegalTopCache(
+        val createdAt: Long,
+        val lines: List<String>,
+    )
+
+    internal data class RegalTopEntry(
+        val userInfo: UserInfoResolved,
+        val money: Double,
+    )
+
+    internal data class RegalTopSnapshot(
+        val entries: List<RegalTopEntry>,
+        val totalMoney: Double,
+    )
+
+    internal data class UserInfoResolved(
+        val qq: Long,
+        val name: String,
+        val registerGroup: Long,
+    )
+
+    internal fun buildRegalTopEntries(
+        accountBalances: Map<String, Double>,
+        users: List<UserInfoDto>,
+        limit: Int = 10,
+    ): List<RegalTopEntry> =
+        buildRegalTopSnapshot(accountBalances, users, limit).entries
+
+    internal fun buildRegalTopSnapshot(
+        accountBalances: Map<String, Double>,
+        users: List<UserInfoDto>,
+        limit: Int = 10,
+    ): RegalTopSnapshot {
+        val lookup = RankingUserLookup(users)
+        val totals = HashMap<Long, RegalTopEntry>()
+
+        accountBalances.forEach { (uuid, money) ->
+            if (uuid.isBlank() || money <= 0.0) return@forEach
+            val userInfo = lookup.resolve(uuid) ?: return@forEach
+            val current = totals[userInfo.qq]
+            totals[userInfo.qq] = if (current == null) {
+                RegalTopEntry(userInfo, money)
+            } else {
+                RegalTopEntry(current.userInfo, current.money + money)
+            }
+        }
+
+        return RegalTopSnapshot(
+            entries = topRegalEntries(totals.values, limit),
+            totalMoney = totals.values.sumOf { it.money }
+        )
+    }
+
+    private fun topRegalEntries(entries: Collection<RegalTopEntry>, limit: Int): List<RegalTopEntry> {
+        if (limit <= 0) return emptyList()
+
+        val heap = PriorityQueue<RegalTopEntry>(compareBy { it.money })
+        entries.forEach { entry ->
+            if (entry.money <= 0.0) return@forEach
+            if (heap.size < limit) {
+                heap.add(entry)
+            } else if (entry.money > heap.peek().money) {
+                heap.poll()
+                heap.add(entry)
+            }
+        }
+
+        return heap.toList().sortedByDescending { it.money }
+    }
+
+    private class RankingUserLookup(users: List<UserInfoDto>) {
+        private val byId = HashMap<String, UserInfoResolved>()
+        private val byFunding = HashMap<String, UserInfoResolved>()
+        private val byQq = HashMap<String, UserInfoResolved>()
+
+        init {
+            users.forEach { user ->
+                if (user.qq <= 0) return@forEach
+                val resolved = UserInfoResolved(
+                    qq = user.qq,
+                    name = user.name,
+                    registerGroup = user.registerGroup,
+                )
+                user.id.takeIf { it.isNotBlank() }?.let { byId.putIfAbsent(it, resolved) }
+                user.funding.takeIf { it.isNotBlank() }?.let { byFunding.putIfAbsent(it, resolved) }
+                byQq.putIfAbsent(user.qq.toString(), resolved)
+            }
+        }
+
+        fun resolve(uuid: String): UserInfoResolved? =
+            byId[uuid] ?: byFunding[uuid] ?: byQq[uuid]
     }
 }

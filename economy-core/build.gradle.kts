@@ -21,9 +21,6 @@ dependencies {
     implementation("cn.hutool:hutool-all:5.8.40") {
         exclude(group = "org.apache.logging.log4j", module = "log4j-api")
     }
-    implementation("org.apache.poi:poi-ooxml:5.4.0") {
-        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
-    }
     implementation("com.github.gotson:webp-imageio:0.2.2")
 
     compileOnly("cn.chahuyun:hibernate-plus:2.1.1")

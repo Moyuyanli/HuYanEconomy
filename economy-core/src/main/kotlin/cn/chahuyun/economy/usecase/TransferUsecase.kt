@@ -2,6 +2,7 @@
 
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.user.user
+import cn.chahuyun.economy.privatebank.PrivateBankService
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil
@@ -24,6 +25,10 @@ object TransferUsecase {
         val subject: Contact = event.subject
         val userInfo= UserCoreManager.getUserInfo(event.sender)
         val user = userInfo.user
+        if (PrivateBankService.hasUnrepaidLoans(user.id)) {
+            subject.sendMessage("你还有未还贷款，暂时不能转账")
+            return
+        }
 
         val message: MessageChain = event.message
         val code = message.serializeToMiraiCode()

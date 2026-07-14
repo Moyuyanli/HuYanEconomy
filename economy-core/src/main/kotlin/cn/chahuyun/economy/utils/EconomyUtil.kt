@@ -591,6 +591,46 @@ object EconomyUtil {
         }
     }
 
+    @JvmStatic
+    fun getMoneyByBankForAccount(
+        account: EconomyAccount,
+        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
+    ): Double {
+        return try {
+            economyService.global().use { context ->
+                with(context) { account[currency] }
+            }
+        } catch (e: Exception) {
+            Log.error("经济获取出错:按账户获取主银行余额", e)
+            0.0
+        }
+    }
+
+    @JvmStatic
+    fun turnBankAccountToUserWallet(
+        fromAccount: EconomyAccount,
+        toUser: User,
+        quantity: Double,
+        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
+    ): Boolean {
+        if (quantity <= 0) return false
+        return try {
+            economyService.global().use { global ->
+                economyService.custom(EconomyRuntime.plugin).use { custom ->
+                    val balance = global.run { fromAccount[currency] }
+                    if (balance + 0.0001 < quantity) return false
+                    global.run { fromAccount.minusAssign(currency, quantity) }
+                    val target = economyService.account(toUser)
+                    custom.run { target.plusAssign(currency, quantity) }
+                    true
+                }
+            }
+        } catch (e: Exception) {
+            Log.error("经济转移出错:账户主银行->用户钱包", e)
+            false
+        }
+    }
+
     /**
      * 从 [用户主银行(global)] 转入 [插件自定义账户(custom)]。
         * 用于跨账本锁定保证金、银行（PrivateBank 模块）库存注入等。

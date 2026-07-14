@@ -4,6 +4,8 @@ import cn.chahuyun.economy.model.GlobalFactorDto
 import cn.chahuyun.economy.model.user.UserFactorDto
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.plugin.FactorManager
+import cn.hutool.core.date.DateUtil
+import java.util.*
 
 /**
  * Core-facing factor operations for feature modules.
@@ -33,4 +35,27 @@ object EconomyFactorService {
     @JvmStatic
     fun clearUserBuff(userInfo: UserInfoDto, buffName: String) =
         saveUserFactor(UserFactorBuffCodec.withBuffValue(userFactor(userInfo), buffName, null))
+
+    @JvmStatic
+    fun setUserBuffStartedNow(userInfo: UserInfoDto, buffName: String, now: Date = Date()) =
+        setUserBuff(userInfo, buffName, now.time.toString())
+
+    @JvmStatic
+    fun getUserBuffStartedAt(userInfo: UserInfoDto, buffName: String): Date? {
+        val value = getUserBuff(userInfo, buffName) ?: return null
+        return value.toLongOrNull()?.let(::Date)
+            ?: runCatching { DateUtil.parse(value) }.getOrNull()
+    }
+
+    @JvmStatic
+    fun isUserBuffActive(
+        userInfo: UserInfoDto,
+        buffName: String,
+        durationMinutes: Int,
+        now: Date = Date(),
+    ): Boolean {
+        val startedAt = getUserBuffStartedAt(userInfo, buffName) ?: return false
+        val elapsed = now.time - startedAt.time
+        return elapsed >= 0 && elapsed < durationMinutes * 60_000L
+    }
 }
