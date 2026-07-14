@@ -21,7 +21,7 @@ class RedPackAction {
      * @param event 群消息事件
      */
     @MessageAuthorize(
-        text = ["发红包 \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]? \\d+( (sj|随机|kl|口令).*)?"],
+        text = ["发红包 \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]? \\d+( (sj|随机|kl|口令).*)?"],
         messageMatching = MessageMatchingEnum.REGULAR,
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )

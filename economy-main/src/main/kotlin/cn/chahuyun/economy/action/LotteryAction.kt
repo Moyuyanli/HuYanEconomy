@@ -18,7 +18,7 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
 class LotteryAction {
 
     @MessageAuthorize(
-        text = ["猜签 \\d+ \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?", "lottery \\d+ \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?"],
+        text = ["猜签 \\d+ \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?", "lottery \\d+ \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?"],
         messageMatching = MessageMatchingEnum.REGULAR,
         groupPermissions = [EconPerm.LOTTERY_PERM]
     )

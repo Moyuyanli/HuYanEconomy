@@ -17,7 +17,7 @@ class BankAction {
      * 存款：统一处理默认银行、主银行和指定私银。
      */
     @MessageAuthorize(
-        text = ["存款(!{1,2}| \\S+( \\S+)?)", "deposit(!{1,2}| \\S+( \\S+)?)"],
+        text = ["(存款|deposit)(!{1,2}| \\S+( \\S+)?)"],
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun deposit(event: MessageEvent) {
@@ -28,7 +28,7 @@ class BankAction {
      * 取款：统一处理默认银行、主银行和指定私银。
      */
     @MessageAuthorize(
-        text = ["取款(!{1,2}| \\S+( \\S+)?)", "withdraw(!{1,2}| \\S+( \\S+)?)"],
+        text = ["(取款|withdraw)(!{1,2}| \\S+( \\S+)?)"],
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun withdrawal(event: MessageEvent) {

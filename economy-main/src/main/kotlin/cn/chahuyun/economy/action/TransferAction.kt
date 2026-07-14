@@ -18,7 +18,7 @@ class TransferAction {
      * 用户转账给另一个用户操作
      */
     @MessageAuthorize(
-        text = ["转账(\\[mirai:at:\\d+])? \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?( \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?)?"],
+        text = ["转账(\\[mirai:at:\\d+])? \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?( \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?)?"],
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun userToUser(event: MessageEvent) {
@@ -26,9 +26,9 @@ class TransferAction {
     }
 
     @MessageAuthorize(
-        text = ["greedisgood \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?"],
+        text = ["greedisgood \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?"],
         messageMatching = MessageMatchingEnum.REGULAR,
-        userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN]
+        userPermissions = [AuthPerm.OWNER]
     )
     suspend fun cheat(event: MessageEvent) {
         TransferUsecase.cheat(event)

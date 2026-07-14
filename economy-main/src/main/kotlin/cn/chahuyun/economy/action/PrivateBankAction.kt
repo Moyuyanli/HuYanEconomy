@@ -2,6 +2,7 @@ package cn.chahuyun.economy.action
 
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
+import cn.chahuyun.authorize.constant.AuthPerm
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
 import cn.chahuyun.economy.usecase.PrivateBankUsecase
 import net.mamoe.mirai.event.events.MessageEvent
@@ -40,13 +41,28 @@ class PrivateBankAction {
         PrivateBankUsecase.pbDesc(event)
     }
 
-    @MessageAuthorize(text = ["银行利率(变更|修改) \\S+"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(text = ["银行利率(变更|修改|调整) \\S+"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbRate(event: MessageEvent) {
         PrivateBankUsecase.pbRate(event)
     }
 
+    @MessageAuthorize(text = ["银行补资 .+"], messageMatching = MessageMatchingEnum.REGULAR)
+    suspend fun pbFund(event: MessageEvent) {
+        PrivateBankUsecase.pbFund(event)
+    }
+
+    @MessageAuthorize(text = ["银行撤资 \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?( [pPfF])?"], messageMatching = MessageMatchingEnum.REGULAR)
+    suspend fun pbDivest(event: MessageEvent) {
+        PrivateBankUsecase.pbDivest(event)
+    }
+
+    @MessageAuthorize(text = ["银行资料修改 \\S+ .+"], messageMatching = MessageMatchingEnum.REGULAR)
+    suspend fun pbProfile(event: MessageEvent) {
+        PrivateBankUsecase.pbProfile(event)
+    }
+
     @MessageAuthorize(
-        text = ["(银行)?放贷 \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?( \\d+(\\.\\d+)?)?"],
+        text = ["(银行)?放贷 \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?( \\d+(\\.\\d+)?)?"],
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun pbLoanOffer(event: MessageEvent) {
@@ -61,9 +77,14 @@ class PrivateBankAction {
         PrivateBankUsecase.pbLoanRate(event)
     }
 
-    @MessageAuthorize(text = ["贷款列表", "放贷列表", "贷款额度"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(text = ["放贷列表"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbLoanOffers(event: MessageEvent) {
         PrivateBankUsecase.pbLoanOffers(event)
+    }
+
+    @MessageAuthorize(text = ["借贷列表"])
+    suspend fun pbLoans(event: MessageEvent) {
+        PrivateBankUsecase.pbBorrowedLoans(event)
     }
 
     @MessageAuthorize(text = ["撤贷 \\d+", "贷款撤回 \\d+", "放贷撤回 \\d+"], messageMatching = MessageMatchingEnum.REGULAR)
@@ -71,13 +92,18 @@ class PrivateBankAction {
         PrivateBankUsecase.pbLoanCancel(event)
     }
 
-    @MessageAuthorize(text = ["狐卷( 查看)?"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(text = ["狐卷", "狐卷查看", "狐卷列表"])
     suspend fun foxView(event: MessageEvent) {
         PrivateBankUsecase.foxView(event)
     }
 
+    @MessageAuthorize(text = ["狐卷补发"], userPermissions = [AuthPerm.OWNER])
+    suspend fun foxSupplement(event: MessageEvent) {
+        PrivateBankUsecase.foxSupplement(event)
+    }
+
     @MessageAuthorize(
-        text = ["狐卷竞标 \\S+ \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]? \\d+(\\.\\d+)?"], messageMatching = MessageMatchingEnum.REGULAR
+        text = ["狐卷竞标 \\S+ \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]? \\d+(\\.\\d+)?"], messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun foxBid(event: MessageEvent) {
         PrivateBankUsecase.foxBid(event)
@@ -103,12 +129,12 @@ class PrivateBankAction {
         PrivateBankUsecase.pbReview(event)
     }
 
-    @MessageAuthorize(text = ["(贷款|借款) \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(text = ["(贷款|借款) \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbBorrow(event: MessageEvent) {
         PrivateBankUsecase.pbBorrow(event)
     }
 
-    @MessageAuthorize(text = ["还款 \\d+(\\.\\d+)?[kKmMgGtTpPwW万亿]?( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
+    @MessageAuthorize(text = ["还款 \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbRepay(event: MessageEvent) {
         PrivateBankUsecase.pbRepay(event)
     }

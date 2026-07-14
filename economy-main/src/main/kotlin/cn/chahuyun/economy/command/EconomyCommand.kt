@@ -5,7 +5,10 @@ import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.data.proxy.DataVersion
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.data.proxy.MigrationResult
+import cn.chahuyun.economy.privatebank.PrivateBankRepairService
+import cn.chahuyun.economy.privatebank.PrivateBankService
 import cn.chahuyun.economy.repair.RepairManager
+import cn.chahuyun.economy.repair.RepairScope
 import net.mamoe.mirai.console.command.CommandSender
 import net.mamoe.mirai.console.command.CompositeCommand
 
@@ -21,9 +24,60 @@ class EconomyCommand : CompositeCommand(
     }
 
     @SubCommand("repair")
-    @Description("修复版本迭代带来的错误数据")
+    @Description("显示数据修复范围")
     suspend fun CommandSender.repair() {
-        sendMessage(RepairManager.init())
+        sendMessage(RepairManager.usage())
+    }
+
+    @SubCommand("repair v1")
+    @Description("仅修复 V1 数据，不读写 V2")
+    suspend fun CommandSender.repairV1() {
+        sendMessage(RepairManager.init(RepairScope.V1))
+    }
+
+    @SubCommand("repair v2")
+    @Description("仅修复 V2 数据，不读写 V1")
+    suspend fun CommandSender.repairV2() {
+        sendMessage(RepairManager.init(RepairScope.V2))
+    }
+
+    @SubCommand("repair V1TOV2")
+    @Description("只读 V1 备份并修复 V1 到 V2 的迁移数据")
+    suspend fun CommandSender.repairV1ToV2() {
+        sendMessage(RepairManager.init(RepairScope.V1_TO_V2))
+    }
+
+    @SubCommand("repair privatebank ledger")
+    @Description("清理没有私人银行实体和业务记录的孤儿私人银行资金账本")
+    suspend fun CommandSender.repairPrivateBankLedger(code: String) {
+        val (_, message) = PrivateBankService.clearOrphanPrivateBankLedger(code)
+        sendMessage(message)
+    }
+
+    @SubCommand("repair privatebank audit")
+    @Description("审计私人银行资金池、放贷标的和主银行债务")
+    suspend fun CommandSender.auditPrivateBank(code: String) {
+        val (_, message) = PrivateBankRepairService.audit(code)
+        sendMessage(message)
+    }
+
+    @SubCommand("repair privatebank deposit")
+    @Description("将指定用户的私人银行本金校正为明确值，仅允许下调")
+    suspend fun CommandSender.repairPrivateBankDeposit(
+        code: String,
+        userQq: Long,
+        correctPrincipal: Double,
+        confirmation: String,
+    ) {
+        val (_, message) = PrivateBankRepairService.correctDeposit(code, userQq, correctPrincipal, confirmation)
+        sendMessage(message)
+    }
+
+    @SubCommand("repair privatebank reconcile")
+    @Description("修复负放贷库存并同步放贷标的剩余额度")
+    suspend fun CommandSender.reconcilePrivateBank(code: String, confirmation: String) {
+        val (_, message) = PrivateBankRepairService.reconcile(code, confirmation)
+        sendMessage(message)
     }
 
     @SubCommand("entity switch")
@@ -64,12 +118,6 @@ class EconomyCommand : CompositeCommand(
                 }
             }.trimEnd()
         )
-    }
-
-    @SubCommand("entity verison")
-    @Description("显示当前实体代理数据版本，兼容历史拼写")
-    suspend fun CommandSender.entityVerisonAlias() {
-        entityVersion()
     }
 
     private fun parseDataVersion(version: String): DataVersion? {

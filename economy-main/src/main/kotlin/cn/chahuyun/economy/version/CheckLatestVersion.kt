@@ -6,13 +6,18 @@ import cn.hutool.http.HttpUtil
 import cn.hutool.json.JSONUtil
 
 object CheckLatestVersion {
+    private const val REQUEST_TIMEOUT_MILLIS = 5_000
+
     /**
      * 检查版本
      */
     @JvmStatic
     fun init() {
         val response = try {
-            HttpUtil.get("https://api.github.com/repos/Moyuyanli/HuYanEconomy/releases/latest")
+            HttpUtil.get(
+                "https://api.github.com/repos/Moyuyanli/HuYanEconomy/releases/latest",
+                REQUEST_TIMEOUT_MILLIS
+            )
         } catch (e: Exception) {
             Log.warning("检查最新版本失败!")
             return

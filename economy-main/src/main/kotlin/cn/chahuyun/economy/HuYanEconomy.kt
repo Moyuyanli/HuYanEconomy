@@ -15,13 +15,11 @@ import cn.chahuyun.economy.fish.FishRollEvent
 import cn.chahuyun.economy.fish.FishStartEvent
 import cn.chahuyun.economy.game.DefaultGameOverviewProvider
 import cn.chahuyun.economy.game.GameOverviewBridge
-import cn.chahuyun.economy.manager.BankManager
-import cn.chahuyun.economy.manager.LotteryManager
-import cn.chahuyun.economy.manager.PrivateBankManager
-import cn.chahuyun.economy.manager.TitleManager
+import cn.chahuyun.economy.manager.*
 import cn.chahuyun.economy.plugin.*
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.scheduler.HuYanScheduler
+import cn.chahuyun.economy.service.EconomyAsyncService
 import cn.chahuyun.economy.service.GameEventService
 import cn.chahuyun.economy.sign.SignRewardEvent
 import cn.chahuyun.economy.utils.EconomyUtil
@@ -118,6 +116,7 @@ object HuYanEconomy : KotlinPlugin(
         config = EconomyConfig
         msgConfig = FishingMsgConfig
         robConfig = RobMsgConfig
+        EconomyAsyncService.init()
         GameOverviewBridge.register(DefaultGameOverviewProvider)
 
         // 初始化插件功能。
@@ -143,6 +142,7 @@ object HuYanEconomy : KotlinPlugin(
         FishManager.init()
         FarmCropManager.init()
         BankManager.init()
+        RedPackManager.init()
         TitleManager.init()
         PrivateBankManager.init()
         YiYanManager.init()
@@ -202,6 +202,7 @@ object HuYanEconomy : KotlinPlugin(
         LotteryManager.close()
         YiYanManager.shutdown()
         HuYanScheduler.stop()
+        EconomyAsyncService.shutdown()
         Log.info("插件已卸载")
     }
 }

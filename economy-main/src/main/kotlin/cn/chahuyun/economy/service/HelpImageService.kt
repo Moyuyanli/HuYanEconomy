@@ -4,6 +4,7 @@ import cn.chahuyun.economy.image.EconomyImageRenderer
 import cn.chahuyun.economy.image.ImageManager
 import cn.chahuyun.economy.utils.ImageMessageUtil
 import cn.chahuyun.economy.utils.Log
+import kotlinx.coroutines.withContext
 import net.mamoe.mirai.event.events.GroupMessageEvent
 
 object HelpImageService {
@@ -14,23 +15,29 @@ object HelpImageService {
     private var gameHelpCache: ByteArray? = null
 
     suspend fun sendMainHelp(event: GroupMessageEvent) {
-        sendHelpImage(event, mainHelpCache ?: synchronized(this) {
-            mainHelpCache ?: ImageMessageUtil.toPngBytes(
-                EconomyImageRenderer.renderMainHelp(ImageManager.getCustomFont())
-            ).also {
-                mainHelpCache = it
+        val bytes = withContext(EconomyAsyncService.coroutineDispatcher()) {
+            mainHelpCache ?: synchronized(this@HelpImageService) {
+                mainHelpCache ?: ImageMessageUtil.toPngBytes(
+                    EconomyImageRenderer.renderMainHelp(ImageManager.getCustomFont())
+                ).also {
+                    mainHelpCache = it
+                }
             }
-        })
+        }
+        sendHelpImage(event, bytes)
     }
 
     suspend fun sendGameHelp(event: GroupMessageEvent) {
-        sendHelpImage(event, gameHelpCache ?: synchronized(this) {
-            gameHelpCache ?: ImageMessageUtil.toPngBytes(
-                EconomyImageRenderer.renderGameHelp(ImageManager.getCustomFont())
-            ).also {
-                gameHelpCache = it
+        val bytes = withContext(EconomyAsyncService.coroutineDispatcher()) {
+            gameHelpCache ?: synchronized(this@HelpImageService) {
+                gameHelpCache ?: ImageMessageUtil.toPngBytes(
+                    EconomyImageRenderer.renderGameHelp(ImageManager.getCustomFont())
+                ).also {
+                    gameHelpCache = it
+                }
             }
-        })
+        }
+        sendHelpImage(event, bytes)
     }
 
     private suspend fun sendHelpImage(event: GroupMessageEvent, bytes: ByteArray) {

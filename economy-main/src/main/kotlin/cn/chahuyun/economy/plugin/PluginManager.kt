@@ -19,6 +19,8 @@ import java.nio.file.Path
  * 这里不注册指令和业务模块，避免插件启动流程职责混在一起。
  */
 object PluginManager {
+    private const val NETWORK_TIMEOUT_MILLIS = 5_000
+
     /** 当前是否成功加载自定义图片/字体资源。 */
     @JvmField
     var isCustomImage: Boolean = false
@@ -38,7 +40,11 @@ object PluginManager {
             // 首次启动时补齐默认字体。下载失败时保留目录，用户可手动放入字体文件。
             font.mkdir()
             try {
-                URL("https://data.chahuyun.cn/file/bot/Maple%20UI.ttf").openStream().use { input: InputStream ->
+                val connection = URL("https://data.chahuyun.cn/file/bot/Maple%20UI.ttf").openConnection().apply {
+                    connectTimeout = NETWORK_TIMEOUT_MILLIS
+                    readTimeout = NETWORK_TIMEOUT_MILLIS
+                }
+                connection.getInputStream().use { input: InputStream ->
                     FileUtil.writeFromStream(input, path.resolve("font/Maple UI.ttf").toFile())
                 }
             } catch (e: IOException) {

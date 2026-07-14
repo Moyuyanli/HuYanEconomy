@@ -94,6 +94,15 @@ class FarmAction {
         FarmUsecase.water(event)
     }
 
+    @MessageAuthorize(
+        text = ["偷菜.*"],
+        messageMatching = MessageMatchingEnum.REGULAR,
+        groupPermissions = [EconPerm.FARM_PERM]
+    )
+    suspend fun steal(event: GroupMessageEvent) {
+        FarmUsecase.steal(event)
+    }
+
     @MessageAuthorize(text = ["一键卖出"], groupPermissions = [EconPerm.FARM_PERM])
     suspend fun sellAll(event: GroupMessageEvent) {
         FarmUsecase.sellAll(event)
