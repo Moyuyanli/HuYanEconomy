@@ -39,10 +39,10 @@ internal object FarmUsecaseSupport {
             ?: 1
     }
 
-    suspend fun atTargetOrReply(event: GroupMessageEvent): Long? {
+    suspend fun atTargetOrReply(event: GroupMessageEvent, usage: String): Long? {
         val at = event.message.filterIsInstance<At>().firstOrNull()
         if (at == null) {
-            reply(event, "格式: 帮浇水 @用户")
+            reply(event, usage)
             return null
         }
         return at.target

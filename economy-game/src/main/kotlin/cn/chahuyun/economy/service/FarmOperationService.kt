@@ -12,12 +12,6 @@ object FarmOperationService {
     /** 一分钟的毫秒数，用于作物成熟与守护时长换算。 */
     private const val MINUTE = 60_000L
 
-    /** 开放农场守护功能的最低等级。 */
-    private const val SHIELD_REQUIRED_LEVEL = 17
-
-    /** 单次守护持续时间：12 小时。 */
-    private const val SHIELD_DURATION_MILLIS = 12 * 60 * MINUTE
-
     fun upgradeFarm(user: User, state: FarmState): FarmOperationResult {
         val player = state.player
         if (player.level >= FarmConstants.MAX_LEVEL) {
@@ -39,14 +33,37 @@ object FarmOperationService {
         return FarmOperationResult(true, "农场升级成功，${nextLevel - 1} -> $nextLevel，花费${cost.toLong()}金币")
     }
 
-    fun activateShield(state: FarmState): FarmOperationResult {
+    fun activateShield(user: User, state: FarmState, now: Long = System.currentTimeMillis()): FarmOperationResult {
         val player = state.player
-        if (player.level < SHIELD_REQUIRED_LEVEL) {
+        if (player.level < FarmShieldRules.REQUIRED_LEVEL) {
             return FarmOperationResult(false, "17级开放激活守护")
         }
-        player.shieldUntil = System.currentTimeMillis() + SHIELD_DURATION_MILLIS
-        FarmPlayerService.savePlayer(player)
-        return FarmOperationResult(true, "守护已激活，持续12小时")
+        if (player.shieldUntil > now) {
+            return FarmOperationResult(false, "农场守护仍在生效，无需重复激活")
+        }
+        val crop = FarmCropService.getCropByLevel(player.level)
+            ?: return FarmOperationResult(false, "缺少${player.level}级农场配置")
+        val cost = FarmShieldRules.activationCost(crop.upgradeCost).toDouble()
+        if (EconomyAccountService.walletBalance(user) < cost) {
+            return FarmOperationResult(false, "金币不足，激活守护需要${cost.toLong()}金币")
+        }
+        if (!EconomyAccountService.subtractWallet(user, cost)) {
+            return FarmOperationResult(false, "守护费用扣款失败")
+        }
+
+        val previousShieldUntil = player.shieldUntil
+        player.shieldUntil = now + FarmShieldRules.DURATION_MILLIS
+        return try {
+            FarmPlayerService.savePlayer(player)
+            FarmOperationResult(true, "守护已激活，持续12小时，花费${cost.toLong()}金币")
+        } catch (_: Exception) {
+            player.shieldUntil = previousShieldUntil
+            val refunded = EconomyAccountService.addWallet(user, cost)
+            FarmOperationResult(
+                false,
+                if (refunded) "守护激活失败，费用已退回" else "守护激活失败且退款失败，请联系管理员",
+            )
+        }
     }
 
     fun buySeed(user: User, cropCode: String, amount: Int, state: FarmState): FarmOperationResult {
@@ -126,6 +143,8 @@ object FarmOperationService {
             plot.plantedAt = now
             plot.currentSeason = 1
             plot.nextMatureAt = now + crop.firstMatureMinutes * MINUTE
+            plot.stolenSeason = 0
+            plot.stolenAmount = 0
             FarmPlotService.savePlot(plot)
         }
         val details = mutableListOf<String>()
@@ -163,10 +182,11 @@ object FarmOperationService {
                 messages += "${plotNo}号地作物数据异常"
                 return@forEach
             }
-            FarmInventoryStorageService.addInventory(qq, FarmConstants.ITEM_FRUIT, crop.code, crop.yieldPerSeason)
+            val harvestAmount = FarmStealRules.ownerHarvestAmount(plot, crop)
+            FarmInventoryStorageService.addInventory(qq, FarmConstants.ITEM_FRUIT, crop.code, harvestAmount)
             harvested += 1
-            fruits += crop.yieldPerSeason
-            harvestedFruits[crop.name] = (harvestedFruits[crop.name] ?: 0) + crop.yieldPerSeason
+            fruits += harvestAmount
+            harvestedFruits[crop.name] = (harvestedFruits[crop.name] ?: 0) + harvestAmount
             if (plot.currentSeason < crop.totalSeasons && crop.nextMatureMinutes > 0) {
                 plot.currentSeason += 1
                 plot.nextMatureAt = now + crop.nextMatureMinutes * MINUTE
@@ -228,5 +248,7 @@ object FarmOperationService {
         plot.plantedAt = 0
         plot.currentSeason = 0
         plot.nextMatureAt = 0
+        plot.stolenSeason = 0
+        plot.stolenAmount = 0
     }
 }

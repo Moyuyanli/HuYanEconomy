@@ -8,6 +8,7 @@ import cn.chahuyun.economy.constant.TitleCode
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.model.user.getProp
+import cn.chahuyun.economy.privatebank.PrivateBankService
 import cn.chahuyun.economy.service.*
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil
@@ -32,6 +33,11 @@ object RobUsecase {
 
         val user: Member = event.sender
         val thisUser = EconomyUserService.getOrCreate(user)
+
+        if (PrivateBankService.hasUnrepaidLoans(user.id)) {
+            GameUsecaseReplySupport.reply(group, message, "你还有未还贷款，暂时不能抢劫")
+            return
+        }
 
         val remaining = RobService.getCoolingRemainingMinutes(user.id, COOLDOWN_MINUTES)
         if (remaining > 0) {
@@ -114,7 +120,7 @@ object RobUsecase {
         if (EconomyInventoryService.hasProp(thisUser, FunctionProps.ELECTRIC_BATON)) {
             val prop = thisUser.getProp(FunctionProps.ELECTRIC_BATON)
 
-            if (EconomyInventoryService.usePropSync(prop, UseEvent(user, group, thisUser)).success) {
+            if (EconomyInventoryService.useProp(prop, UseEvent(user, group, thisUser)).success) {
                 userFactor = userFactor.copy(force = userFactor.force + 0.3)
                 GameUsecaseReplySupport.reply(group, message, "你携带了便携电棒，攻击性变强了!")
             } else {
@@ -125,7 +131,7 @@ object RobUsecase {
         if (EconomyInventoryService.hasProp(atUser, FunctionProps.ELECTRIC_BATON)) {
             val prop = atUser.getProp(FunctionProps.ELECTRIC_BATON)
 
-            if (EconomyInventoryService.usePropSync(prop, UseEvent(user, group, atUser)).success) {
+            if (EconomyInventoryService.useProp(prop, UseEvent(user, group, atUser)).success) {
                 atUserFactor = atUserFactor.copy(
                     dodge = atUserFactor.dodge + 0.2,
                     irritable = atUserFactor.irritable + 0.4
@@ -171,27 +177,40 @@ object RobUsecase {
                 return
             }
 
+            val robRate = RandomUtil.randomDouble(0.05, 0.350001)
+            val moneyRandom = ShareUtils.rounding(atMoney * robRate)
             val resistance = ShareUtils.percentageToInt(atUserFactor.resistance)
+            val resisted = ShareUtils.randomCompare(resistance)
 
-            val moneyRandom = if (ShareUtils.randomCompare(resistance)) {
-                val amount = ShareUtils.rounding(RandomUtil.randomDouble(0.0, atMoney / 2))
+            if (resisted) {
                 GameUsecaseReplySupport.reply(
                     group,
                     message,
-                    "对方拼命反抗，但是你还是抢到了对方${MoneyFormatUtil.format(amount)}的金币跑了..."
+                    "对方拼命反抗，但是你还是抢到了对方${MoneyFormatUtil.format(moneyRandom)}的金币跑了..."
                 )
-                amount
             } else {
                 GameUsecaseReplySupport.reply(
                     group,
                     message,
-                    "这次抢劫很顺利，对方看起来弱小可怜又无助，你抢了他全部的${MoneyFormatUtil.format(atMoney)}金币"
+                    "这次抢劫很顺利，你抢到了对方${MoneyFormatUtil.format(moneyRandom)}的金币"
                 )
-                atMoney
             }
 
-            EconomyAccountService.addWallet(user, moneyRandom)
-            EconomyAccountService.subtractWallet(member, moneyRandom)
+            if (!EconomyAccountService.subtractWallet(member, moneyRandom)) {
+                GameUsecaseReplySupport.reply(group, message, "抢劫结算失败，对方的钱包扣款失败")
+                return
+            }
+            val repayment = PrivateBankService.repayOverdueLoansFromIncome(user.id, moneyRandom)
+            if (repayment.remaining > 0.0001) {
+                EconomyAccountService.addWallet(user, repayment.remaining)
+            }
+            if (repayment.repaid > 0.0001) {
+                GameUsecaseReplySupport.reply(
+                    group,
+                    user.id,
+                    "抢劫所得已优先偿还逾期贷款 ${MoneyFormatUtil.format(repayment.repaid)}，入账 ${MoneyFormatUtil.format(repayment.remaining)}"
+                )
+            }
 
             val success = thisRobInfo.robSuccess
             val robSuccess = success + 1

@@ -48,6 +48,10 @@ object FarmUsecase {
         FarmOperationUsecase.water(event)
     }
 
+    suspend fun steal(event: GroupMessageEvent) {
+        FarmOperationUsecase.steal(event)
+    }
+
     suspend fun sellAll(event: GroupMessageEvent) {
         FarmOperationUsecase.sellAll(event)
     }

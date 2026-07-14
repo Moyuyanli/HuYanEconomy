@@ -1,12 +1,11 @@
 package cn.chahuyun.economy.service
 
+import cn.chahuyun.economy.constant.PropConstant
 import cn.chahuyun.economy.data.repository.FishRepository
 import cn.chahuyun.economy.model.fish.*
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.utils.MessageUtil
-import cn.hutool.core.date.DateUnit
-import cn.hutool.core.date.DateUtil
 import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.User
@@ -21,17 +20,8 @@ object FishingRuntimeService {
 
     fun getFishingCooldownText(userInfo: UserInfoDto, isFishingTitle: Boolean, fishInfo: FishInfoDto): String {
         val lastDate = playerCooling[userInfo.qq] ?: return "可钓鱼"
-        val between = DateUtil.between(lastDate, Date(), DateUnit.MINUTE, true)
-        var expired = calculateExpiredMinutes(isFishingTitle, fishInfo)
-
-        EconomyFactorService.getUserBuff(userInfo, FunctionProps.RED_EYES)?.let { buff ->
-            if (DateUtil.between(DateUtil.parse(buff), Date(), DateUnit.MINUTE) <= 60) {
-                expired -= (expired * 0.8).toInt()
-            }
-        }
-
-        val remaining = expired - between
-        return if (remaining > 0) "还需 ${remaining} 分钟" else "可钓鱼"
+        val remaining = remainingCooldownMillis(userInfo, isFishingTitle, fishInfo, lastDate, Date())
+        return if (remaining > 0) "还需 ${minutesRoundedUp(remaining)} 分钟" else "可钓鱼"
     }
 
     suspend fun checkAndProcessFishing(
@@ -49,22 +39,12 @@ object FishingRuntimeService {
 
         return try {
             playerCooling[qq]?.let { lastDate ->
-                val between = DateUtil.between(lastDate, Date(), DateUnit.MINUTE, true)
-                var expired = calculateExpiredMinutes(isFishingTitle, fishInfo)
-
-                EconomyFactorService.getUserBuff(userInfo, FunctionProps.RED_EYES)?.let { buff ->
-                    if (DateUtil.between(DateUtil.parse(buff), Date(), DateUnit.MINUTE) <= 60) {
-                        expired -= (expired * 0.8).toInt()
-                    } else {
-                        EconomyFactorService.clearUserBuff(userInfo, FunctionProps.RED_EYES)
-                    }
-                }
-
-                if (between < expired) {
+                val remaining = remainingCooldownMillis(userInfo, isFishingTitle, fishInfo, lastDate, Date())
+                if (remaining > 0) {
                     subject.sendMessage(
                         MessageUtil.formatMessageChain(
                             chain,
-                            "你还差${expired - between}分钟来抛第二杆!"
+                            "你还差${minutesRoundedUp(remaining)}分钟来抛第二杆!"
                         )
                     )
                     return true
@@ -132,4 +112,32 @@ object FishingRuntimeService {
 
     private fun calculateExpiredMinutes(isFishingTitle: Boolean, fishInfo: FishInfoDto): Int =
         if (isFishingTitle) 5 else (10 * 60 - fishInfo.rodLevel * 3) / 60
+
+    private fun remainingCooldownMillis(
+        userInfo: UserInfoDto,
+        isFishingTitle: Boolean,
+        fishInfo: FishInfoDto,
+        lastDate: Date,
+        now: Date,
+    ): Long {
+        val hasRedEyes = EconomyFactorService.isUserBuffActive(
+            userInfo,
+            FunctionProps.RED_EYES,
+            PropConstant.RED_EYES_DURATION,
+            now,
+        )
+        if (!hasRedEyes && EconomyFactorService.getUserBuff(userInfo, FunctionProps.RED_EYES) != null) {
+            EconomyFactorService.clearUserBuff(userInfo, FunctionProps.RED_EYES)
+        }
+        val cooldown = calculateCooldownMillis(calculateExpiredMinutes(isFishingTitle, fishInfo), hasRedEyes)
+        return (cooldown - (now.time - lastDate.time)).coerceAtLeast(0L)
+    }
+
+    internal fun calculateCooldownMillis(baseMinutes: Int, hasRedEyes: Boolean): Long {
+        val baseMillis = baseMinutes.coerceAtLeast(0) * 60_000L
+        return if (hasRedEyes) baseMillis / 5 else baseMillis
+    }
+
+    internal fun minutesRoundedUp(durationMillis: Long): Long =
+        (durationMillis.coerceAtLeast(0L) + 59_999L) / 60_000L
 }

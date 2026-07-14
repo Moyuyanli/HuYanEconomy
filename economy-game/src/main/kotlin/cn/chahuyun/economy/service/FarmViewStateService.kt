@@ -14,9 +14,9 @@ object FarmViewStateService {
         FarmViewState(
             level = player.level,
             shieldUntil = player.shieldUntil,
-            todayWaterCount = FarmWaterService.todayWaterCount(player),
-            dailyWaterLimit = FarmWaterService.dailyWaterLimit(player.level),
-            lastWaterDate = player.lastWaterDate,
+            todaySocialCount = FarmSocialQuotaService.todayCount(player),
+            dailySocialLimit = FarmSocialQuotaService.dailyLimit(player.level),
+            lastSocialDate = player.lastWaterDate,
             plots = plots.map {
                 val crop = FarmCropService.getCrop(it.cropCode)
                 FarmPlotView(
@@ -28,6 +28,8 @@ object FarmViewStateService {
                     currentSeason = it.currentSeason,
                     totalSeasons = crop?.totalSeasons ?: 0,
                     nextMatureAt = it.nextMatureAt,
+                    stolenSeason = it.stolenSeason,
+                    stolenAmount = it.stolenAmount,
                 )
             },
             inventory = inventory.map {

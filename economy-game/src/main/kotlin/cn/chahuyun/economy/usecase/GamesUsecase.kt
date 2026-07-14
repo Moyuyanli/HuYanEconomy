@@ -195,9 +195,8 @@ object GamesUsecase {
         try {
             withTimeoutOrNull(180 * 1000L) {
                 while (currentCoroutineContext().isActive) {
-                    val nextMessage = withContext(Dispatchers.IO) {
-                        MessageUtil.INSTANCE.nextUserForGroupMessageEventSync(subject.id, sender.id, 180)
-                    } ?: break
+                    val nextMessage = MessageUtil.INSTANCE
+                        .nextUserForGroupMessageEvent(subject.id, sender.id, 180) ?: break
 
                     if (Pattern.matches("[拉起!！]", nextMessage.message.contentToString())) {
                         resultTime = Date()

@@ -5,9 +5,9 @@ import cn.chahuyun.economy.constant.FarmConstants
 data class FarmViewState(
     val level: Int,
     val shieldUntil: Long,
-    val todayWaterCount: Int = 0,
-    val dailyWaterLimit: Int = 0,
-    val lastWaterDate: String = "",
+    val todaySocialCount: Int = 0,
+    val dailySocialLimit: Int = 0,
+    val lastSocialDate: String = "",
     val plots: List<FarmPlotView>,
     val inventory: List<FarmInventoryView>,
     val availableCrops: List<FarmCropView>,
@@ -34,6 +34,8 @@ data class FarmPlotView(
     val currentSeason: Int = 0,
     val totalSeasons: Int = 0,
     val nextMatureAt: Long,
+    val stolenSeason: Int = 0,
+    val stolenAmount: Int = 0,
 ) {
     val isLocked: Boolean
         get() = status == FarmConstants.PLOT_LOCKED
@@ -43,6 +45,9 @@ data class FarmPlotView(
 
     val isPlanted: Boolean
         get() = status == FarmConstants.PLOT_PLANTED
+
+    val isCurrentSeasonStolen: Boolean
+        get() = currentSeason > 0 && stolenSeason == currentSeason && stolenAmount > 0
 }
 
 data class FarmInventoryView(

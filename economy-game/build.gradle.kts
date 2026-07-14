@@ -22,11 +22,12 @@ dependencies {
     implementation("cn.hutool:hutool-all:5.8.40") {
         exclude(group = "org.apache.logging.log4j", module = "log4j-api")
     }
-    implementation("org.apache.poi:poi-ooxml:5.4.0") {
-        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
-    }
+    // POI 5.x uses Log4j 2 and conflicts with mirai-console's app classloader.
+    // 4.1.2 is sufficient for the bundled XLSX resources and does not use Log4j 2.
+    implementation("org.apache.poi:poi-ooxml:4.1.2")
 
     compileOnly("cn.chahuyun:hibernate-plus:2.1.1")
 
     testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }

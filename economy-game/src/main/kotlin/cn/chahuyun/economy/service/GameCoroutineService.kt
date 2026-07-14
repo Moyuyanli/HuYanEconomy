@@ -1,7 +1,6 @@
 package cn.chahuyun.economy.service
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlin.coroutines.CoroutineContext
 
@@ -18,7 +17,7 @@ object GameCoroutineService : CoroutineScope {
     private var supervisorJob = SupervisorJob()
 
     override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Default + supervisorJob
+        get() = EconomyAsyncService.coroutineDispatcher() + supervisorJob
 
     fun init() {
         synchronized(lock) {

@@ -41,9 +41,16 @@ object FarmOperationUsecase {
     }
 
     suspend fun water(event: GroupMessageEvent) {
-        val target = FarmUsecaseSupport.atTargetOrReply(event) ?: return
+        val target = FarmUsecaseSupport.atTargetOrReply(event, "格式: 帮浇水 @用户") ?: return
         val userInfo = EconomyUserService.getOrCreate(event.sender)
         val result = FarmManager.water(userInfo, target, FarmUsecaseSupport.waterTimes(event))
+        FarmUsecaseSupport.reply(event, result.message)
+    }
+
+    suspend fun steal(event: GroupMessageEvent) {
+        val target = FarmUsecaseSupport.atTargetOrReply(event, "格式: 偷菜 @用户") ?: return
+        val userInfo = EconomyUserService.getOrCreate(event.sender)
+        val result = FarmManager.steal(userInfo, target)
         FarmUsecaseSupport.reply(event, result.message)
     }
 
@@ -64,7 +71,7 @@ object FarmOperationUsecase {
     }
 
     suspend fun activateShield(event: GroupMessageEvent) {
-        val result = FarmManager.activateShield(event.sender.id)
+        val result = FarmManager.activateShield(event.sender)
         FarmUsecaseSupport.reply(event, result.message)
     }
 }

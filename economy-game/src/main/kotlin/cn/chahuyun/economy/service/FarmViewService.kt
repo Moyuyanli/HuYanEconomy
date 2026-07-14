@@ -36,15 +36,15 @@ object FarmViewService {
         val planted = state.plots.count { it.isPlanted }
         val ready = state.plots.count { it.isPlanted && it.nextMatureAt <= now }
         val empty = state.plots.count { it.isEmpty }
-        val waterText = if (state.dailyWaterLimit <= 0) {
+        val socialText = if (state.dailySocialLimit <= 0) {
             "13级开放"
         } else {
-            "${state.todayWaterCount}/${state.dailyWaterLimit}"
+            "${state.todaySocialCount}/${state.dailySocialLimit}"
         }
-        val waterHint = if (state.lastWaterDate.isBlank()) {
-            "今日帮浇水次数每日自动重置"
+        val socialHint = if (state.lastSocialDate.isBlank()) {
+            "浇水与偷菜共享每日次数"
         } else {
-            "最近浇水日期 ${state.lastWaterDate}"
+            "最近互动日期 ${state.lastSocialDate}"
         }
 
         return FarmDetailCard(
@@ -56,8 +56,8 @@ object FarmViewService {
             readyPlots = ready,
             emptyPlots = empty,
             shieldText = state.shieldRemaining(now).takeIf { it > 0 }?.let { formatDuration(it) } ?: "未激活",
-            waterText = waterText,
-            waterHint = waterHint,
+            waterText = socialText,
+            waterHint = socialHint,
             plots = state.plots.sortedBy { it.plotNo }.map { plot ->
                 when {
                     plot.isLocked -> FarmPlotDetailLine(
@@ -83,7 +83,7 @@ object FarmViewService {
                         title = plot.cropTitle(),
                         subtitle = seasonText(plot.currentSeason, plot.totalSeasons),
                         statusText = "可收获",
-                        progressText = "已成熟",
+                        progressText = if (plot.isCurrentSeasonStolen) "已被偷 ${plot.stolenAmount} 个" else "已成熟",
                         status = FarmPlotDetailStatus.READY,
                     )
 

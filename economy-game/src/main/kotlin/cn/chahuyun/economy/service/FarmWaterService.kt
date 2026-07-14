@@ -9,36 +9,17 @@ import cn.chahuyun.economy.model.farm.FarmState
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.hutool.core.util.RandomUtil
-import java.time.LocalDate
 import kotlin.math.roundToLong
 
 object FarmWaterService {
     /** 一分钟的毫秒数，用于成熟时间换算。 */
     private const val MINUTE = 60_000L
 
-    /** 开放帮他人浇水的最低农场等级。 */
-    private const val WATER_REQUIRED_LEVEL = 13
-
-    /** 提升每日浇水次数上限的农场等级。 */
-    private const val ADVANCED_WATER_LEVEL = 18
-
-    /** 默认每日帮浇水次数上限。 */
-    private const val DEFAULT_DAILY_WATER_LIMIT = 5
-
-    /** 高级农场每日帮浇水次数上限。 */
-    private const val ADVANCED_DAILY_WATER_LIMIT = 10
-
     fun dailyWaterLimit(level: Int): Int =
-        when {
-            level < WATER_REQUIRED_LEVEL -> 0
-            level >= ADVANCED_WATER_LEVEL -> ADVANCED_DAILY_WATER_LIMIT
-            else -> DEFAULT_DAILY_WATER_LIMIT
-        }
+        FarmSocialQuotaService.dailyLimit(level)
 
-    fun todayWaterCount(player: FarmPlayer): Int {
-        val today = LocalDate.now().toString()
-        return if (player.lastWaterDate == today) player.todayWaterCount else 0
-    }
+    fun todayWaterCount(player: FarmPlayer): Int =
+        FarmSocialQuotaService.todayCount(player)
 
     fun water(waterer: UserInfoDto, watererState: FarmState, targetState: FarmState, times: Int = 1): FarmOperationResult {
         if (waterer.qq == targetState.player.qq) {
@@ -46,18 +27,17 @@ object FarmWaterService {
         }
 
         val watererPlayer = watererState.player
-        if (watererPlayer.level < WATER_REQUIRED_LEVEL) {
+        if (watererPlayer.level < FarmSocialQuotaService.REQUIRED_LEVEL) {
             return FarmOperationResult(false, "13级开放帮浇水")
         }
 
-        refreshWaterCounter(watererPlayer)
-        val maxWater = dailyWaterLimit(watererPlayer.level)
-        if (watererPlayer.todayWaterCount >= maxWater) {
-            return FarmOperationResult(false, "今日浇水次数已用完")
+        FarmSocialQuotaService.refresh(watererPlayer)
+        if (FarmSocialQuotaService.remaining(watererPlayer) == 0) {
+            return FarmOperationResult(false, "今日农场互动次数已用完")
         }
 
         val requestedTimes = times.coerceAtLeast(1)
-        val availableTimes = (maxWater - watererPlayer.todayWaterCount).coerceAtMost(requestedTimes)
+        val availableTimes = FarmSocialQuotaService.remaining(watererPlayer).coerceAtMost(requestedTimes)
         val now = System.currentTimeMillis()
         var successTimes = 0
         var totalReduceMillis = 0L
@@ -88,7 +68,9 @@ object FarmWaterService {
             return FarmOperationResult(false, "对方没有需要浇水的作物")
         }
 
-        watererPlayer.todayWaterCount += successTimes
+        check(FarmSocialQuotaService.consume(watererPlayer, successTimes)) {
+            "validated farm social quota could not be consumed"
+        }
         FarmPlayerService.savePlayer(watererPlayer)
         rewards.values.forEach { reward ->
             EconomyInventoryService.addStackableProp(waterer, reward.code, PropsKind.functionProp, reward.amount)
@@ -106,14 +88,6 @@ object FarmWaterService {
             fixed + (remainingMillis * percent / 100.0).roundToLong()
         }
         return reduceMillis.coerceAtMost(remainingMillis)
-    }
-
-    private fun refreshWaterCounter(player: FarmPlayer) {
-        val today = LocalDate.now().toString()
-        if (player.lastWaterDate != today) {
-            player.lastWaterDate = today
-            player.todayWaterCount = 0
-        }
     }
 
     private fun rollWaterReward(crop: FarmCrop): WaterReward? {

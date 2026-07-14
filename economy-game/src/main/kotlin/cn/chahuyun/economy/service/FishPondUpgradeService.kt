@@ -5,7 +5,6 @@ import cn.chahuyun.economy.data.repository.FishRepository
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.Log
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import net.mamoe.mirai.Bot
@@ -13,12 +12,20 @@ import kotlin.coroutines.CoroutineContext
 
 object FishPondUpgradeService : CoroutineScope {
     private const val TASK_ID = "fish-pond-upgrade"
-    private val supervisorJob = SupervisorJob()
+    private val lock = Any()
+
+    @Volatile
+    private var supervisorJob = SupervisorJob()
 
     override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Default + supervisorJob
+        get() = EconomyAsyncService.coroutineDispatcher() + supervisorJob
 
     fun init() {
+        synchronized(lock) {
+            if (!supervisorJob.isActive) {
+                supervisorJob = SupervisorJob()
+            }
+        }
         HuYanScheduler.schedule(TASK_ID, "0 0 12 * * ?", Runnable {
             launch {
                 upgradeEligiblePonds()
@@ -28,7 +35,9 @@ object FishPondUpgradeService : CoroutineScope {
 
     fun shutdown() {
         HuYanScheduler.cancel(TASK_ID)
-        supervisorJob.cancel()
+        synchronized(lock) {
+            supervisorJob.cancel()
+        }
     }
 
     private suspend fun upgradeEligiblePonds() {
