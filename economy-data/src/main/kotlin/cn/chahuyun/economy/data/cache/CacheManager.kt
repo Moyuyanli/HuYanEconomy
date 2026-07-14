@@ -5,6 +5,7 @@ import kotlinx.serialization.KSerializer
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 
 /**
@@ -18,7 +19,12 @@ import kotlin.reflect.KClass
 class CacheManager(
     private val config: CacheConfig
 ) {
-    private val delayExecutor = ScheduledThreadPoolExecutor(2).apply {
+    private val threadCounter = AtomicInteger(0)
+    private val delayExecutor = ScheduledThreadPoolExecutor(2) { runnable ->
+        Thread(runnable, "HuYan-Cache-${threadCounter.incrementAndGet()}").apply {
+            isDaemon = true
+        }
+    }.apply {
         removeOnCancelPolicy = true
     }
 
@@ -140,7 +146,7 @@ class CacheManager(
      * 关闭缓存管理器
      */
     fun shutdown() {
-        delayExecutor.shutdown()
+        delayExecutor.shutdownNow()
         retryQueue.clear()
         Log.info("缓存管理器已关闭")
     }

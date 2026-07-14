@@ -30,4 +30,7 @@ class PrivateBankGovBondIssue(
     var remaining: Double = 0.0,
 
     var createdAt: Date = Date(),
+
+    /** 国卷编码，例如 GB-20260713-001 */
+    var code: String = "",
 )

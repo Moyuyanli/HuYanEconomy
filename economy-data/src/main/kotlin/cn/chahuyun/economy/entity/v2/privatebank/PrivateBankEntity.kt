@@ -57,6 +57,9 @@ class PrivateBankEntity(
     @Column(name = "avg_review", nullable = false)
     var avgReview: Double = 0.0,
 
+    @Column(name = "bankrupt_at")
+    var bankruptAt: Long? = null,
+
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Long = 0
 ) : Serializable

@@ -33,4 +33,10 @@ class FarmPlot : Serializable {
 
     @Column(nullable = false)
     var nextMatureAt: Long = 0
+
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    var stolenSeason: Int = 0
+
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    var stolenAmount: Int = 0
 }

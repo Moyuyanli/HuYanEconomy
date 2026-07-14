@@ -20,5 +20,7 @@ data class PrivateBankGovBondIssueDto(
     /** 剩余额度 */
     var remaining: Double = 0.0,
     /** 创建时间 */
-    var createdAt: Long = 0
+    var createdAt: Long = 0,
+    /** 国卷编码 */
+    var code: String = ""
 )

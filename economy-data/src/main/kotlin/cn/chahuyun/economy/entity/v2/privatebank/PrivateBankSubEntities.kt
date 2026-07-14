@@ -43,7 +43,8 @@ class PrivateBankGovBondIssueEntity(
     @Column(name = "lock_days", nullable = false) var lockDays: Int = 3,
     @Column(name = "total_limit", nullable = false) var totalLimit: Double = 0.0,
     @Column(name = "remaining", nullable = false) var remaining: Double = 0.0,
-    @Column(name = "created_at", nullable = false) var createdAt: Long = 0
+    @Column(name = "created_at", nullable = false) var createdAt: Long = 0,
+    @Column(name = "code", length = 128) var code: String = ""
 ) : Serializable
 
 @Entity(name = "PrivateBankGovBondHoldingEntityV2")
@@ -99,6 +100,23 @@ class PrivateBankLoanEntity(
     @Column(name = "created_at", nullable = false) var createdAt: Long = 0,
     @Column(name = "due_at", nullable = false) var dueAt: Long = 0,
     @Column(name = "repaid_at", nullable = false) var repaidAt: Long = 0
+) : Serializable
+
+@Entity(name = "PrivateBankMainBankDebtEntityV2")
+@Table(
+    name = "hye_private_bank_main_bank_debt",
+    indexes = [Index(name = "idx_hye_pb_main_debt_bank", columnList = "bank_code", unique = true)]
+)
+class PrivateBankMainBankDebtEntity(
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) @Column(name = "id")
+    var id: Long = 0,
+    @Column(name = "bank_code", length = 128) var bankCode: String = "",
+    @Column(name = "principal", nullable = false) var principal: Double = 0.0,
+    @Column(name = "accrued_interest", nullable = false) var accruedInterest: Double = 0.0,
+    @Column(name = "last_accrued_at", nullable = false) var lastAccruedAt: Long = 0,
+    @Column(name = "created_at", nullable = false) var createdAt: Long = 0,
+    @Column(name = "updated_at", nullable = false) var updatedAt: Long = 0,
+    @Column(name = "repaid_at", nullable = false) var repaidAt: Long = 0,
 ) : Serializable
 
 @Entity(name = "PrivateBankFoxBondEntityV2")

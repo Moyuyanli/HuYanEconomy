@@ -21,10 +21,22 @@ class PrivateBankReviewV2Converter : Converter<PrivateBankReviewEntity, PrivateB
 }
 
 class PrivateBankGovBondIssueV2Converter : Converter<PrivateBankGovBondIssueEntity, PrivateBankGovBondIssueDto> {
-    override fun toDto(entity: PrivateBankGovBondIssueEntity) = PrivateBankGovBondIssueDto(entity.id.toInt(), entity.weekKey, entity.rateMultiplier, entity.lockDays, entity.totalLimit, entity.remaining, entity.createdAt)
+    override fun toDto(entity: PrivateBankGovBondIssueEntity): PrivateBankGovBondIssueDto {
+        val weekKey = entity.weekKey.orEmpty()
+        return PrivateBankGovBondIssueDto(
+            entity.id.toInt(),
+            weekKey,
+            entity.rateMultiplier,
+            entity.lockDays,
+            entity.totalLimit,
+            entity.remaining,
+            entity.createdAt,
+            entity.code.orEmpty().ifBlank { weekKey }
+        )
+    }
     override fun toEntity(dto: PrivateBankGovBondIssueDto): PrivateBankGovBondIssueEntity {
         val now = System.currentTimeMillis()
-        return PrivateBankGovBondIssueEntity(dto.id.toLong(), dto.weekKey, dto.rateMultiplier, dto.lockDays, dto.totalLimit, dto.remaining, dto.createdAt.takeIf { it != 0L } ?: now)
+        return PrivateBankGovBondIssueEntity(dto.id.toLong(), dto.weekKey, dto.rateMultiplier, dto.lockDays, dto.totalLimit, dto.remaining, dto.createdAt.takeIf { it != 0L } ?: now, dto.code.ifBlank { dto.weekKey })
     }
 }
 
@@ -46,6 +58,33 @@ class PrivateBankLoanV2Converter : Converter<PrivateBankLoanEntity, PrivateBankL
     override fun toEntity(dto: PrivateBankLoanDto): PrivateBankLoanEntity {
         val now = System.currentTimeMillis()
         return PrivateBankLoanEntity(dto.id.toLong(), dto.offerId, dto.bankCode, dto.lenderQq, dto.borrowerQq, dto.principal, dto.dueTotal, dto.repaidAmount, dto.interest, dto.termDays, dto.createdAt.takeIf { it != 0L } ?: now, dto.dueAt.takeIf { it != 0L } ?: now, dto.repaidAt)
+    }
+}
+
+class PrivateBankMainBankDebtV2Converter : Converter<PrivateBankMainBankDebtEntity, PrivateBankMainBankDebtDto> {
+    override fun toDto(entity: PrivateBankMainBankDebtEntity) = PrivateBankMainBankDebtDto(
+        entity.id.toInt(),
+        entity.bankCode,
+        entity.principal,
+        entity.accruedInterest,
+        entity.lastAccruedAt,
+        entity.createdAt,
+        entity.updatedAt,
+        entity.repaidAt,
+    )
+
+    override fun toEntity(dto: PrivateBankMainBankDebtDto): PrivateBankMainBankDebtEntity {
+        val now = System.currentTimeMillis()
+        return PrivateBankMainBankDebtEntity(
+            dto.id.toLong(),
+            dto.bankCode,
+            dto.principal,
+            dto.accruedInterest,
+            dto.lastAccruedAt.takeIf { it != 0L } ?: now,
+            dto.createdAt.takeIf { it != 0L } ?: now,
+            dto.updatedAt.takeIf { it != 0L } ?: now,
+            dto.repaidAt,
+        )
     }
 }
 

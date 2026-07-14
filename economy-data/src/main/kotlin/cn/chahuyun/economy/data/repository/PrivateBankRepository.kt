@@ -17,6 +17,7 @@ object PrivateBankRepository {
     private val bondHoldingConverter = PrivateBankGovBondHoldingV1Converter()
     private val loanOfferConverter = PrivateBankLoanOfferV1Converter()
     private val loanConverter = PrivateBankLoanV1Converter()
+    private val mainBankDebtConverter = PrivateBankMainBankDebtV1Converter()
     private val foxBondConverter = PrivateBankFoxBondV1Converter()
     private val foxBondBidConverter = PrivateBankFoxBondBidV1Converter()
     private val foxBondHoldingConverter = PrivateBankFoxBondHoldingV1Converter()
@@ -27,6 +28,7 @@ object PrivateBankRepository {
     private val bondHoldingV2Converter = PrivateBankGovBondHoldingV2Converter()
     private val loanOfferV2Converter = PrivateBankLoanOfferV2Converter()
     private val loanV2Converter = PrivateBankLoanV2Converter()
+    private val mainBankDebtV2Converter = PrivateBankMainBankDebtV2Converter()
     private val foxBondV2Converter = PrivateBankFoxBondV2Converter()
     private val foxBondBidV2Converter = PrivateBankFoxBondBidV2Converter()
     private val foxBondHoldingV2Converter = PrivateBankFoxBondHoldingV2Converter()
@@ -177,14 +179,45 @@ object PrivateBankRepository {
             HibernateDataStore.selectOne(PrivateBankGovBondIssue::class.java, "weekKey", weekKey)?.let(bondIssueConverter::toDto)
         }
 
+    fun findBondIssueByCode(code: String): PrivateBankGovBondIssueDto? =
+        if (isV2) {
+            HibernateDataStore.selectOne(PrivateBankGovBondIssueEntity::class.java, "code", code)?.let(bondIssueV2Converter::toDto)
+                ?: HibernateDataStore.selectOne(PrivateBankGovBondIssueEntity::class.java, "weekKey", code)?.let(bondIssueV2Converter::toDto)
+        } else {
+            HibernateDataStore.selectOne(PrivateBankGovBondIssue::class.java, "code", code)?.let(bondIssueConverter::toDto)
+                ?: HibernateDataStore.selectOne(PrivateBankGovBondIssue::class.java, "weekKey", code)?.let(bondIssueConverter::toDto)
+        }
+
+    fun listBondIssues(): List<PrivateBankGovBondIssueDto> =
+        if (isV2) {
+            bondIssueV2Converter.toDtoList(HibernateDataStore.selectList(PrivateBankGovBondIssueEntity::class.java))
+        } else {
+            bondIssueConverter.toDtoList(HibernateDataStore.selectList(PrivateBankGovBondIssue::class.java))
+        }
+
     fun saveBondIssue(issue: PrivateBankGovBondIssueDto): PrivateBankGovBondIssueDto =
         if (isV2) {
             val entity = bondIssueV2Converter.toEntity(issue)
-            val existing = if (issue.id != 0) HibernateDataStore.selectOneById(PrivateBankGovBondIssueEntity::class.java, issue.id.toLong()) else HibernateDataStore.selectOne(PrivateBankGovBondIssueEntity::class.java, "weekKey", issue.weekKey)
+            val existing = if (issue.id != 0) {
+                HibernateDataStore.selectOneById(PrivateBankGovBondIssueEntity::class.java, issue.id.toLong())
+            } else {
+                issue.code.takeIf { it.isNotBlank() }
+                    ?.let { HibernateDataStore.selectOne(PrivateBankGovBondIssueEntity::class.java, "code", it) }
+                    ?: HibernateDataStore.selectOne(PrivateBankGovBondIssueEntity::class.java, "weekKey", issue.weekKey)
+            }
             if (existing != null) entity.id = existing.id
             bondIssueV2Converter.toDto(HibernateDataStore.merge(entity))
         } else {
-            bondIssueConverter.toDto(HibernateDataStore.merge(bondIssueConverter.toEntity(issue)))
+            val entity = bondIssueConverter.toEntity(issue)
+            val existing = if (issue.id != 0) {
+                HibernateDataStore.selectOneById(PrivateBankGovBondIssue::class.java, issue.id)
+            } else {
+                issue.code.takeIf { it.isNotBlank() }
+                    ?.let { HibernateDataStore.selectOne(PrivateBankGovBondIssue::class.java, "code", it) }
+                    ?: HibernateDataStore.selectOne(PrivateBankGovBondIssue::class.java, "weekKey", issue.weekKey)
+            }
+            if (existing != null) entity.id = existing.id
+            bondIssueConverter.toDto(HibernateDataStore.merge(entity))
         }
 
     fun listBondHoldings(bankCode: String): List<PrivateBankGovBondHoldingDto> =
@@ -266,6 +299,49 @@ object PrivateBankRepository {
             loanConverter.toDto(HibernateDataStore.merge(loanConverter.toEntity(loan)))
         }
 
+    fun findMainBankDebt(bankCode: String): PrivateBankMainBankDebtDto? =
+        if (isV2) {
+            HibernateDataStore.selectOne(PrivateBankMainBankDebtEntity::class.java, "bankCode", bankCode)
+                ?.let(mainBankDebtV2Converter::toDto)
+        } else {
+            HibernateDataStore.selectOne(PrivateBankMainBankDebt::class.java, "bankCode", bankCode)
+                ?.let(mainBankDebtConverter::toDto)
+        }
+
+    fun listMainBankDebts(): List<PrivateBankMainBankDebtDto> =
+        if (isV2) {
+            mainBankDebtV2Converter.toDtoList(HibernateDataStore.selectList(PrivateBankMainBankDebtEntity::class.java))
+        } else {
+            mainBankDebtConverter.toDtoList(HibernateDataStore.selectList(PrivateBankMainBankDebt::class.java))
+        }
+
+    fun saveMainBankDebt(debt: PrivateBankMainBankDebtDto): PrivateBankMainBankDebtDto =
+        if (isV2) {
+            val entity = mainBankDebtV2Converter.toEntity(debt)
+            val existing = if (debt.id != 0) {
+                HibernateDataStore.selectOneById(PrivateBankMainBankDebtEntity::class.java, debt.id.toLong())
+            } else {
+                HibernateDataStore.selectOne(PrivateBankMainBankDebtEntity::class.java, "bankCode", debt.bankCode)
+            }
+            if (existing != null) {
+                entity.id = existing.id
+                entity.createdAt = existing.createdAt
+            }
+            mainBankDebtV2Converter.toDto(HibernateDataStore.merge(entity))
+        } else {
+            val entity = mainBankDebtConverter.toEntity(debt)
+            val existing = if (debt.id != 0) {
+                HibernateDataStore.selectOneById(PrivateBankMainBankDebt::class.java, debt.id)
+            } else {
+                HibernateDataStore.selectOne(PrivateBankMainBankDebt::class.java, "bankCode", debt.bankCode)
+            }
+            if (existing != null) {
+                entity.id = existing.id
+                entity.createdAt = existing.createdAt
+            }
+            mainBankDebtConverter.toDto(HibernateDataStore.merge(entity))
+        }
+
     // ===== 狐债 =====
 
     fun findFoxBondByCode(code: String): PrivateBankFoxBondDto? =
@@ -290,6 +366,13 @@ object PrivateBankRepository {
             foxBondV2Converter.toDtoList(HibernateDataStore.selectList(PrivateBankFoxBondEntity::class.java))
         } else {
             foxBondConverter.toDtoList(HibernateDataStore.selectList(PrivateBankFoxBond::class.java))
+        }
+
+    fun listAllFoxBondBids(): List<PrivateBankFoxBondBidDto> =
+        if (isV2) {
+            foxBondBidV2Converter.toDtoList(HibernateDataStore.selectList(PrivateBankFoxBondBidEntity::class.java))
+        } else {
+            foxBondBidConverter.toDtoList(HibernateDataStore.selectList(PrivateBankFoxBondBid::class.java))
         }
 
     fun saveFoxBondBid(bid: PrivateBankFoxBondBidDto): PrivateBankFoxBondBidDto =
@@ -373,6 +456,9 @@ object PrivateBankRepository {
         }
         migrate("loan", loanConverter.toDtoList(HibernateDataStore.selectList(PrivateBankLoan::class.java))) { dto ->
             loanV2Converter.toDto(HibernateDataStore.merge(loanV2Converter.toEntity(dto)))
+        }
+        migrate("mainBankDebt", mainBankDebtConverter.toDtoList(HibernateDataStore.selectList(PrivateBankMainBankDebt::class.java))) { dto ->
+            mainBankDebtV2Converter.toDto(HibernateDataStore.merge(mainBankDebtV2Converter.toEntity(dto)))
         }
         migrate("foxBond", foxBondConverter.toDtoList(HibernateDataStore.selectList(PrivateBankFoxBond::class.java))) { dto ->
             val entity = foxBondV2Converter.toEntity(dto)

@@ -34,5 +34,7 @@ data class PrivateBankDto(
     /** 评分星级 */
     var star: Int = 1,
     /** 平均评分 */
-    var avgReview: Double = 0.0
+    var avgReview: Double = 0.0,
+    /** 永久破产时间，0 表示正常 */
+    var bankruptAt: Long = 0,
 )

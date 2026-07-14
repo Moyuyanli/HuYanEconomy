@@ -3,6 +3,7 @@ package cn.chahuyun.economy.converter.v1
 import cn.chahuyun.economy.converter.Converter
 import cn.chahuyun.economy.entity.privatebank.PrivateBankGovBondIssue
 import cn.chahuyun.economy.model.privatebank.PrivateBankGovBondIssueDto
+import java.util.*
 
 /**
  * PrivateBankGovBondIssue V1实体与DTO转换器
@@ -12,12 +13,13 @@ class PrivateBankGovBondIssueV1Converter : Converter<PrivateBankGovBondIssue, Pr
     override fun toDto(entity: PrivateBankGovBondIssue): PrivateBankGovBondIssueDto {
         return PrivateBankGovBondIssueDto(
             id = entity.id,
-            weekKey = entity.weekKey,
+            weekKey = entity.weekKey.orEmpty(),
             rateMultiplier = entity.rateMultiplier,
             lockDays = entity.lockDays,
             totalLimit = entity.totalLimit,
             remaining = entity.remaining,
-            createdAt = entity.createdAt.time
+            createdAt = entity.createdAt.time,
+            code = entity.code.orEmpty().ifBlank { entity.weekKey.orEmpty() }
         )
     }
 
@@ -29,6 +31,8 @@ class PrivateBankGovBondIssueV1Converter : Converter<PrivateBankGovBondIssue, Pr
             lockDays = dto.lockDays
             totalLimit = dto.totalLimit
             remaining = dto.remaining
+            createdAt = Date(dto.createdAt.takeIf { it != 0L } ?: Date().time)
+            code = dto.code.ifBlank { dto.weekKey }
         }
     }
 }

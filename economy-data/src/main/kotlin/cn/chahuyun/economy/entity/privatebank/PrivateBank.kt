@@ -59,4 +59,7 @@ class PrivateBank(
 
     /** 平均评分（1-5） */
     var avgReview: Double = 0.0,
+
+    /** 永久破产时间 */
+    var bankruptAt: Date? = null,
 )

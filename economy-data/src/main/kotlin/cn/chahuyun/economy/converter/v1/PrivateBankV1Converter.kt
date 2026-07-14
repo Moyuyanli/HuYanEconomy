@@ -25,7 +25,8 @@ class PrivateBankV1Converter : Converter<PrivateBank, PrivateBankDto> {
             withdrawRequests = entity.withdrawRequests,
             withdrawFailures = entity.withdrawFailures,
             star = entity.star,
-            avgReview = entity.avgReview
+            avgReview = entity.avgReview,
+            bankruptAt = entity.bankruptAt?.time ?: 0,
         )
     }
 
@@ -45,6 +46,7 @@ class PrivateBankV1Converter : Converter<PrivateBank, PrivateBankDto> {
             withdrawFailures = dto.withdrawFailures
             star = dto.star
             avgReview = dto.avgReview
+            bankruptAt = dto.bankruptAt.takeIf { it != 0L }?.let(::Date)
         }
     }
 }
