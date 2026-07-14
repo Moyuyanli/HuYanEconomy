@@ -30,6 +30,7 @@ class MoneyFormatUtilTest {
         assertEquals(20_000.0, MoneyFormatUtil.parse("20K"))
         assertEquals(1_000_000_000.0, MoneyFormatUtil.parse("1G"))
         assertEquals(10_000.0, MoneyFormatUtil.parse("1万"))
+        assertEquals(100_000_000.0, MoneyFormatUtil.parse("1e"))
         assertEquals(100_000_000.0, MoneyFormatUtil.parse("1亿"))
     }
 }

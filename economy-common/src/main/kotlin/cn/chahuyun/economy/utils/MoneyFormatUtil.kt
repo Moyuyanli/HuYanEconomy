@@ -62,14 +62,14 @@ object MoneyFormatUtil {
     fun parse(text: String): Double? {
         val normalized = text.trim()
         if (normalized.isBlank()) return null
-        val match = Regex("""^([+-]?\d+(?:\.\d+)?)([kKmMgGtTpPwW万亿]?)$""").matchEntire(normalized) ?: return null
+        val match = Regex("""^([+-]?\d+(?:\.\d+)?)([kKmMgGtTpPwWeE万亿]?)$""").matchEntire(normalized) ?: return null
         val number = match.groupValues[1].toDoubleOrNull() ?: return null
         val multiplier = when (match.groupValues[2]) {
             "k", "K" -> 1_000.0
             "w", "W", "万" -> 10_000.0
             "m", "M" -> 1_000_000.0
             "g", "G" -> 1_000_000_000.0
-            "亿" -> 100_000_000.0
+            "e", "E", "亿" -> 100_000_000.0
             "t", "T" -> 1_000_000_000_000.0
             "p", "P" -> 1_000_000_000_000_000.0
             else -> 1.0
