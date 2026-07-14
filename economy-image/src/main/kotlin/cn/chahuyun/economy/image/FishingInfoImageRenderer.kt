@@ -29,17 +29,30 @@ object FishingInfoImageRenderer {
         val image = copy(frameFor(font))
         val g = ImageUtil.getG2d(image)
 
-        g.font = font.deriveFont(Font.BOLD, fitFontSize(g, card.owner, 560, 46f))
+        g.font = font.deriveFont(Font.BOLD, fitFontSize(g, card.owner, 560, 42f))
         g.color = ink
-        g.drawString(card.owner, 72, 94)
+        g.drawString(card.owner, 72, 112)
         g.font = font.deriveFont(Font.PLAIN, 22f)
         g.color = muted
-        g.drawString("钓鱼信息", 76, 132)
+        g.drawString("钓鱼信息", 76, 146)
 
-        drawMetric(g, font, "鱼竿等级", card.rodLevel, 86, 228, 250, teal)
-        drawMetric(g, font, "最多钓鱼鱼塘", card.maxPond, 386, 228, 340, blue)
-        drawMetric(g, font, "历史钓鱼次数", card.historyCount, 786, 228, 180, gold)
-        drawMetric(g, font, "上鱼次数", card.successCount, 1010, 228, 160, red)
+        drawPlainMetric(g, font, "鱼竿等级", card.rodLevel, 820, 118, 260)
+        val metricPanelX = 56
+        val metricPanelWidth = 1168
+        val metricPadding = 24
+        val metricGap = 22
+        val metricContentWidth = metricPanelWidth - metricPadding * 2 - metricGap * 2
+        val unitWidth = metricContentWidth / 4
+        val wideWidth = unitWidth * 2
+        val narrowWidth = unitWidth
+        val metricY = 272
+        val firstX = metricPanelX + metricPadding + 16
+        val secondX = metricPanelX + metricPadding + wideWidth + metricGap + 16
+        val thirdX = metricPanelX + metricPadding + wideWidth + metricGap + narrowWidth + metricGap + 16
+
+        drawMetric(g, font, "钓鱼最多的鱼塘", card.maxPond, firstX, metricY, wideWidth - 24, blue)
+        drawMetric(g, font, "历史钓鱼次数", card.historyCount, secondX, metricY, narrowWidth - 24, gold)
+        drawMetric(g, font, "上鱼次数", card.successCount, thirdX, metricY, narrowWidth - 24, red)
 
         drawBiggestFish(g, font, card)
         drawCurrentPond(g, font, card)
@@ -60,9 +73,9 @@ object FishingInfoImageRenderer {
             g.color = Color(53, 134, 143, 28)
             g.fillOval(-130, 470, 340, 340)
             drawPanel(g, 56, 54, 1168, 116)
-            drawPanel(g, 56, 194, 1168, 114)
-            drawPanel(g, 56, 344, 548, 268)
-            drawPanel(g, 636, 344, 588, 268)
+            drawPanel(g, 56, 194, 1168, 132)
+            drawPanel(g, 56, 350, 548, 262)
+            drawPanel(g, 636, 350, 588, 262)
             drawFooter(g, font)
             g.dispose()
             image
@@ -91,24 +104,41 @@ object FishingInfoImageRenderer {
         g.drawString(value, x + 22, y + 18)
     }
 
+    private fun drawPlainMetric(
+        g: Graphics2D,
+        font: Font,
+        label: String,
+        value: String,
+        x: Int,
+        y: Int,
+        maxWidth: Int,
+    ) {
+        g.font = font.deriveFont(Font.PLAIN, 18f)
+        g.color = muted
+        g.drawString(label, x, y)
+        g.font = font.deriveFont(Font.BOLD, fitFontSize(g, value, maxWidth, 28f))
+        g.color = ink
+        g.drawString(value, x, y + 32)
+    }
+
     private fun drawBiggestFish(g: Graphics2D, font: Font, card: FishingInfoCard) {
         g.font = font.deriveFont(Font.BOLD, 30f)
         g.color = ink
-        g.drawString("最大的鱼", 90, 398)
+        g.drawString("最大的鱼", 90, 404)
         g.font = font.deriveFont(Font.BOLD, fitFontSize(g, card.biggestFish, 440, 42f))
         g.color = teal
         g.drawString(card.biggestFish, 90, 468)
-        drawDetailSegments(g, font, card.biggestFishDetail, 90, 514, 480, 4)
+        drawDetailSegments(g, font, card.biggestFishDetail, 90, 520, 480, 3)
     }
 
     private fun drawCurrentPond(g: Graphics2D, font: Font, card: FishingInfoCard) {
         g.font = font.deriveFont(Font.BOLD, 30f)
         g.color = ink
-        g.drawString("当前鱼塘", 670, 398)
+        g.drawString("当前鱼塘", 670, 404)
         g.font = font.deriveFont(Font.BOLD, fitFontSize(g, card.currentPond, 500, 42f))
         g.color = blue
         g.drawString(card.currentPond, 670, 468)
-        drawDetailSegments(g, font, card.currentPondDetail, 670, 514, 510, 4)
+        drawDetailSegments(g, font, card.currentPondDetail, 670, 520, 510, 3)
     }
 
     private fun drawPanel(g: Graphics2D, x: Int, y: Int, width: Int, height: Int) {

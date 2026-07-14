@@ -180,12 +180,12 @@ object EconomyImageRenderer {
                 fishingCooldown = "还需 4 分钟",
                 farmStatus = "有成熟",
                 bankDeposits = listOf(
-                    BankDepositLine("主银行", "1.52w", 15200.0),
-                    BankDepositLine("狐言中央银行", "88.6w", 886000.0),
-                    BankDepositLine("南山储蓄社", "12.4w", 124000.0),
-                    BankDepositLine("北城联合银行", "9.8w", 98000.0),
-                    BankDepositLine("海湾基金库", "7.2w", 72000.0),
-                    BankDepositLine("云巷储蓄行", "5.5w", 55000.0)
+                    BankDepositLine("主银行", "1.52w", "利率 0.8%", 15200.0),
+                    BankDepositLine("狐言中央银行", "88.6w", "利率 1.1%", 886000.0),
+                    BankDepositLine("南山储蓄社", "12.4w", "利率 0.9%", 124000.0),
+                    BankDepositLine("北城联合银行", "9.8w", "利率 0.7%", 98000.0),
+                    BankDepositLine("海湾基金库", "7.2w", "利率 1.0%", 72000.0),
+                    BankDepositLine("云巷储蓄行", "5.5w", "利率 0.6%", 55000.0)
                 ),
                 infoTitle = "签到信息",
                 infoText = "签到成功!\n金币:960(+960)\n哇偶,你今天运气爆棚,获得160.0金币\n本次签到触发事件:\n装备签到狂人称号，本次签到奖励翻倍!\n已启用签到月卡,本次签到奖励翻5倍!\n使用了一张双倍签到卡，本次签到奖励翻倍!\n使用了一张补签卡，续上断掉的签到天数!",
@@ -388,14 +388,18 @@ object EconomyImageRenderer {
             g.font = font.deriveFont(Font.PLAIN, 18f)
             g.color = muted
             g.drawString(line.label, x + 34, y)
-            g.font = font.deriveFont(Font.BOLD, fitFontSize(g, line.value, 134, 24f))
+            if (line.description.isNotBlank()) {
+                val description = line.description.take(20)
+                val descriptionFont = font.deriveFont(Font.PLAIN, fitFontSize(g, description, 116, 15f))
+                val descriptionWidth = g.getFontMetrics(descriptionFont).stringWidth(description)
+                g.font = descriptionFont
+                g.color = muted
+                g.drawString(description, x + 292 - descriptionWidth, y)
+            }
+            val valueFont = font.deriveFont(Font.BOLD, fitFontSize(g, line.value, 134, 24f))
+            g.font = valueFont
             g.color = ink
             g.drawString(line.value, x + 34, y + 28)
-            if (line.description.isNotBlank()) {
-                g.font = font.deriveFont(Font.PLAIN, fitFontSize(g, line.description, 120, 15f))
-                g.color = muted
-                g.drawString(line.description.take(20), x + 174, y + 25)
-            }
         }
     }
 
@@ -553,25 +557,32 @@ object EconomyImageRenderer {
         } else {
             card.bankDeposits.sortedByDescending { it.amountValue }
         }
-        var y = PERSONAL_TOP_Y + 96
+        var y = PERSONAL_TOP_Y + 90
         deposits.take(4).forEachIndexed { index, line ->
             val color = listOf(green, blue, gold, red, Color(91, 108, 143))[index % 5]
 
             // 左侧竖色条用来分隔每一行，也让纯文字列表不那么单调。
             g.color = color
-            g.fillRoundRect(742, y - 20, 10, 34, 10, 10)
+            g.fillRoundRect(742, y - 18, 10, 40, 10, 10)
 
             // 银行名靠左，金额靠右：这是列表型金额信息最容易扫读的布局。
-            g.font = font.deriveFont(Font.BOLD, fitFontSize(g, line.bankName, 255, 24f))
+            g.font = font.deriveFont(Font.BOLD, fitFontSize(g, line.bankName, 245, 22f))
             g.color = ink
             g.drawString(line.bankName, 766, y)
-            g.font = font.deriveFont(Font.BOLD, fitFontSize(g, line.amount, 145, 26f))
+            g.font = font.deriveFont(Font.BOLD, fitFontSize(g, line.amount, 145, 24f))
             g.color = color
 
             // Graphics2D 只有 drawString(x, y)，没有“右对齐”参数，所以需要手动减去文字宽度。
             val amountWidth = g.fontMetrics.stringWidth(line.amount)
             g.drawString(line.amount, 1182 - amountWidth, y)
-            y += 45
+
+            g.font = font.deriveFont(Font.PLAIN, 15f)
+            g.color = muted
+            g.drawString("存款账户", 766, y + 20)
+            val detail = line.detail.ifBlank { "利率 -" }
+            val detailWidth = g.fontMetrics.stringWidth(detail)
+            g.drawString(detail, 1182 - detailWidth, y + 20)
+            y += 50
         }
         if (card.bankDeposits.size > 4) {
             g.font = font.deriveFont(Font.PLAIN, 19f)

@@ -92,7 +92,7 @@ object FarmDetailImageRenderer {
         drawStat(g, font, "可收获", "${card.readyPlots}", 824, 218, 100, red)
 
         drawChip(g, 962, 96, "守护", card.shieldText, blue, font, 218)
-        drawChip(g, 962, 152, "今日帮浇水", card.waterText, green, font, 218)
+        drawChip(g, 962, 152, "今日农场互动", card.waterText, green, font, 218)
 
         g.font = font.deriveFont(Font.PLAIN, 18f)
         g.color = muted

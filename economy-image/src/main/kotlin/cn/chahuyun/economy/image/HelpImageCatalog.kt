@@ -52,12 +52,16 @@ object HelpImageCatalog {
                     HelpCommandItem("银行信息 [银行]", "查看银行详情"),
                     HelpCommandItem("我的银行 / 我的银行#", "查看自己的银行"),
                     HelpCommandItem("银行描述修改", "修改本行描述"),
+                    HelpCommandItem("银行资料修改 code 名称", "修改本行 code 和名称"),
                     HelpCommandItem("银行利率变更 rate", "调整储户利率"),
+                    HelpCommandItem("银行补资 金额 [P/F]", "补入准备金或流动金"),
+                    HelpCommandItem("银行撤资 金额 [P/F]", "撤回准备金或流动金"),
                     HelpCommandItem("放贷 金额 [利率]", "发布贷款额度"),
-                    HelpCommandItem("贷款列表 / 放贷列表", "查看已发布额度"),
+                    HelpCommandItem("放贷列表", "查看已发布额度"),
                     HelpCommandItem("撤贷 ID", "撤回未借出的额度"),
                     HelpCommandItem("贷款利息修改 ID rate", "调整贷款日利率"),
                     HelpCommandItem("贷款/借款 金额 [银行]", "申请银行贷款"),
+                    HelpCommandItem("借贷列表", "查看自己的借款明细"),
                     HelpCommandItem("还款 金额 [银行]", "偿还贷款"),
                     HelpCommandItem("银行评分 1-5 [内容]", "给银行评分"),
                     HelpCommandItem("国卷 / 国卷列表", "查看国卷发行和持仓"),
@@ -84,8 +88,6 @@ object HelpImageCatalog {
             HelpSection(
                 "管理与私聊",
                 listOf(
-                    HelpCommandItem("#fund bind QQ", "私聊绑定资助账号"),
-                    HelpCommandItem("#fund get code 金额", "私聊领取资助金币"),
                     HelpCommandItem("greedisgood 金额", "管理员获取金币"),
                     HelpCommandItem("开启/关闭 签到", "管理员开关签到"),
                     HelpCommandItem("刷新签到", "管理员刷新签到状态"),
@@ -164,8 +166,9 @@ object HelpImageCatalog {
                     HelpCommandItem("一键播种 种子", "批量播种"),
                     HelpCommandItem("一键收获 / 一键卖出", "批量收获或卖出"),
                     HelpCommandItem("升级农场[*]", "升级农场等级"),
-                    HelpCommandItem("帮浇水 内容", "帮助浇水加速"),
-                    HelpCommandItem("激活守护 / 黑市", "特殊农场功能")
+                    HelpCommandItem("帮浇水 @用户", "帮助浇水加速，可掉落农场抽奖券"),
+                    HelpCommandItem("偷菜 @用户", "尝试偷取成熟作物，与浇水共享次数"),
+                    HelpCommandItem("激活守护 / 黑市", "付费守护农场或进入特殊功能")
                 )
             )
         )

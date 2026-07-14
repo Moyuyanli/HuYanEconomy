@@ -110,7 +110,7 @@ class EconomyImageRendererSmokeTest {
                 emptyPlots = 5,
                 shieldText = "未激活",
                 waterText = "13级开放",
-                waterHint = "今日帮浇水次数每日自动重置",
+                waterHint = "浇水与偷菜共享每日次数",
                 plots = plots,
             )
         )

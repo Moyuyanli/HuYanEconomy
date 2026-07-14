@@ -10,6 +10,8 @@ data class BankDepositLine(
     val bankName: String,
     /** 已格式化好的金额文本，例如 1.52w。 */
     val amount: String,
+    /** 补充信息，例如该银行的存款利率。 */
+    val detail: String = "",
     /**
      * 原始金额数值，用来排序。
      *

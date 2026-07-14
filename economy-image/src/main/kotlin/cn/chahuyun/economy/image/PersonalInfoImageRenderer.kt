@@ -15,6 +15,7 @@ import javax.imageio.ImageIO
 object PersonalInfoImageRenderer {
     private const val AVATAR_CACHE_TTL_MILLIS = 10 * 60 * 1000L
     private const val AVATAR_CACHE_MAX_SIZE = 256
+    private const val NETWORK_TIMEOUT_MILLIS = 5_000
 
     private val avatarCache = ConcurrentHashMap<String, CachedAvatar>()
 
@@ -36,7 +37,12 @@ object PersonalInfoImageRenderer {
             return it.image
         }
 
-        val image = ImageIO.read(URL(avatarUrl)) ?: throw IOException("头像读取失败: $avatarUrl")
+        val connection = URL(avatarUrl).openConnection().apply {
+            connectTimeout = NETWORK_TIMEOUT_MILLIS
+            readTimeout = NETWORK_TIMEOUT_MILLIS
+        }
+        val image = connection.getInputStream().use { ImageIO.read(it) }
+            ?: throw IOException("头像读取失败: $avatarUrl")
         if (avatarCache.size >= AVATAR_CACHE_MAX_SIZE) {
             trimAvatarCache(now)
         }
