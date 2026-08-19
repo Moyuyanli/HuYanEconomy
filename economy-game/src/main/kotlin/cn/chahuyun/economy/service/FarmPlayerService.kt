@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.service
+﻿package cn.chahuyun.economy.service
 
 import cn.chahuyun.economy.data.repository.FarmPlayerRepository
-import cn.chahuyun.economy.entity.farm.FarmPlayer
+import cn.chahuyun.economy.entity.v1.farm.FarmPlayer
 
 object FarmPlayerService {
 
@@ -11,3 +11,4 @@ object FarmPlayerService {
     fun savePlayer(player: FarmPlayer): FarmPlayer =
         FarmPlayerRepository.savePlayer(player)
 }
+

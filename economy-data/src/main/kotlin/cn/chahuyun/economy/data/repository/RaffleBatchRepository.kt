@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.raffle.RaffleBatch
+import cn.chahuyun.economy.entity.v1.raffle.RaffleBatch
 import cn.chahuyun.economy.entity.v2.raffle.RaffleBatchEntity
 
 /**
@@ -46,3 +46,4 @@ object RaffleBatchRepository {
         return true
     }
 }
+

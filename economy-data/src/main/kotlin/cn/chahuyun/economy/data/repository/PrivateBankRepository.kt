@@ -4,7 +4,7 @@ import cn.chahuyun.economy.converter.v1.*
 import cn.chahuyun.economy.converter.v2.*
 import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
 import cn.chahuyun.economy.data.proxy.DataVersion
-import cn.chahuyun.economy.entity.privatebank.*
+import cn.chahuyun.economy.entity.v1.privatebank.*
 import cn.chahuyun.economy.entity.v2.privatebank.*
 import cn.chahuyun.economy.model.privatebank.*
 
@@ -476,3 +476,4 @@ object PrivateBankRepository {
         return migrated to errors
     }
 }
+

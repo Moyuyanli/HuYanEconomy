@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.privatebank.PrivateBankReview
+import cn.chahuyun.economy.entity.v1.privatebank.PrivateBankReview
 import cn.chahuyun.economy.model.privatebank.PrivateBankReviewDto
 
 /**
@@ -30,3 +30,4 @@ class PrivateBankReviewV1Converter : Converter<PrivateBankReview, PrivateBankRev
         }
     }
 }
+

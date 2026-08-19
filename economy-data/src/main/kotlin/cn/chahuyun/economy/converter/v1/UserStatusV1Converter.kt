@@ -1,8 +1,8 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.constant.UserLocation
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.UserStatus
+import cn.chahuyun.economy.entity.v1.UserStatus
 import cn.chahuyun.economy.model.user.UserStatusDto
 import java.util.*
 
@@ -33,3 +33,4 @@ class UserStatusV1Converter : Converter<UserStatus, UserStatusDto> {
         }
     }
 }
+

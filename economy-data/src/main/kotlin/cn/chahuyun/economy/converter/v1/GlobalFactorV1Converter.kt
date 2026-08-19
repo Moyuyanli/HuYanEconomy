@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.GlobalFactor
+import cn.chahuyun.economy.entity.v1.GlobalFactor
 import cn.chahuyun.economy.model.GlobalFactorDto
 
 /**
@@ -25,3 +25,4 @@ class GlobalFactorV1Converter : Converter<GlobalFactor, GlobalFactorDto> {
         }
     }
 }
+

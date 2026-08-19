@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.UserInfo
+import cn.chahuyun.economy.entity.v1.UserInfo
 import cn.chahuyun.economy.model.user.UserInfoDto
 import java.util.*
 
@@ -50,3 +50,4 @@ class UserInfoV1Converter : Converter<UserInfo, UserInfoDto> {
         }
     }
 }
+

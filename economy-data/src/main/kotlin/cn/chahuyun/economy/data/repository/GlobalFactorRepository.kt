@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.GlobalFactor
+import cn.chahuyun.economy.entity.v1.GlobalFactor
 import cn.chahuyun.economy.entity.v2.GlobalFactorEntity
 
 /**
@@ -46,3 +46,4 @@ object GlobalFactorRepository {
         return true
     }
 }
+

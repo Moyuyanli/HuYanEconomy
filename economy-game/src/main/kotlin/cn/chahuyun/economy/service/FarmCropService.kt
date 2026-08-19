@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.service
+﻿package cn.chahuyun.economy.service
 
-import cn.chahuyun.economy.entity.farm.FarmCrop
+import cn.chahuyun.economy.entity.v1.farm.FarmCrop
 import cn.chahuyun.economy.model.farm.FarmCropView
 import cn.chahuyun.economy.plugin.FarmCropManager
 
@@ -56,3 +56,4 @@ object FarmCropService {
             firstMatureMinutes = firstMatureMinutes,
         )
 }
+

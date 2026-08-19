@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.rob.RobInfo
+import cn.chahuyun.economy.entity.v1.rob.RobInfo
 import cn.chahuyun.economy.entity.v2.rob.RobInfoEntity
 
 /**
@@ -55,3 +55,4 @@ object RobInfoRepository {
         return true
     }
 }
+

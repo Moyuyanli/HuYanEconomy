@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.bank.BankInfo
+import cn.chahuyun.economy.entity.v1.bank.BankInfo
 import cn.chahuyun.economy.entity.v2.bank.BankEntity
 
 /**
@@ -54,3 +54,4 @@ object BankInfoRepository {
         return true
     }
 }
+

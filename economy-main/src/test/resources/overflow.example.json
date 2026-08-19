@@ -1,0 +1,20 @@
+{
+    "providers": [{
+        "enabled": true,
+        "provider": "onebot11",
+        "instance": "qq-main",
+        "config": {
+            "transport": "websocket",
+            "host": "ws://127.0.0.1:3001",
+            "token": "",
+            "retry_times": 5,
+            "retry_wait_mills": 5000,
+            "retry_rest_mills": 60000,
+            "heartbeat_check_seconds": 60,
+            "use_cq_code": false,
+            "no_platform": false,
+            "use_group_upload_event_for_file_message": false,
+            "drop_events_before_connected": true
+        }
+    }]
+}

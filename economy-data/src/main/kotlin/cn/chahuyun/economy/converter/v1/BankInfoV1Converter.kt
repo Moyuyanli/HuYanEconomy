@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.bank.BankInfo
+import cn.chahuyun.economy.entity.v1.bank.BankInfo
 import cn.chahuyun.economy.model.bank.BankInfoDto
 import java.util.*
 
@@ -40,3 +40,4 @@ class BankInfoV1Converter : Converter<BankInfo, BankInfoDto> {
         }
     }
 }
+

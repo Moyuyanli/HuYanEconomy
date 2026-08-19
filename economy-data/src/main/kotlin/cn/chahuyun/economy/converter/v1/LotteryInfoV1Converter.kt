@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.LotteryInfo
+import cn.chahuyun.economy.entity.v1.LotteryInfo
 import cn.chahuyun.economy.model.LotteryInfoDto
 
 /**
@@ -35,3 +35,4 @@ class LotteryInfoV1Converter : Converter<LotteryInfo, LotteryInfoDto> {
         }
     }
 }
+

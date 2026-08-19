@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.UserProperty
+import cn.chahuyun.economy.entity.v1.UserProperty
 import cn.chahuyun.economy.model.user.UserPropertyDto
 
 /**
@@ -21,3 +21,4 @@ class UserPropertyV1Converter : Converter<UserProperty, UserPropertyDto> {
         }
     }
 }
+

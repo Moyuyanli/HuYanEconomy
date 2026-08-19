@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.plugin
+﻿package cn.chahuyun.economy.plugin
 
-import cn.chahuyun.economy.entity.farm.FarmCrop
+import cn.chahuyun.economy.entity.v1.farm.FarmCrop
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.service.FarmCropStorageService
 import cn.chahuyun.economy.utils.Log
@@ -98,3 +98,4 @@ object FarmCropManager {
         return Regex("$label:\\s*(\\d+)分").find(text)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 0
     }
 }
+

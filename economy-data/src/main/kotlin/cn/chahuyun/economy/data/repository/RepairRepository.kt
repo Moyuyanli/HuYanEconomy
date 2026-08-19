@@ -1,11 +1,11 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.UserBackpack
-import cn.chahuyun.economy.entity.UserInfo
-import cn.chahuyun.economy.entity.fish.FishPond
-import cn.chahuyun.economy.entity.fish.FishRanking
-import cn.chahuyun.economy.entity.props.PropsData
-import cn.chahuyun.economy.entity.rob.RobInfo
+import cn.chahuyun.economy.entity.v1.UserBackpack
+import cn.chahuyun.economy.entity.v1.UserInfo
+import cn.chahuyun.economy.entity.v1.fish.FishPond
+import cn.chahuyun.economy.entity.v1.fish.FishRanking
+import cn.chahuyun.economy.entity.v1.props.PropsData
+import cn.chahuyun.economy.entity.v1.rob.RobInfo
 import cn.chahuyun.economy.entity.v2.user.UserEntity
 import java.sql.Connection
 
@@ -147,3 +147,4 @@ fun mergeUserSignData(
             signNumber != currentSignNumber || oldSignNumber != currentOldSignNumber
     )
 }
+

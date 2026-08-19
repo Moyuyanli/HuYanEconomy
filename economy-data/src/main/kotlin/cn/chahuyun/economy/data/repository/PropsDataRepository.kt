@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.props.PropsData
+import cn.chahuyun.economy.entity.v1.props.PropsData
 import cn.chahuyun.economy.entity.v2.props.PropsDataEntity
 
 /**
@@ -46,3 +46,4 @@ object PropsDataRepository {
         return true
     }
 }
+

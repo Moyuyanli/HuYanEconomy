@@ -1,8 +1,8 @@
-package cn.chahuyun.economy.service
+﻿package cn.chahuyun.economy.service
 
 import cn.chahuyun.economy.constant.FarmConstants
 import cn.chahuyun.economy.data.repository.FarmInventoryRepository
-import cn.chahuyun.economy.entity.farm.FarmInventory
+import cn.chahuyun.economy.entity.v1.farm.FarmInventory
 
 object FarmInventoryStorageService {
 
@@ -39,3 +39,4 @@ object FarmInventoryStorageService {
     fun inventoryAmount(qq: Long, itemType: String, itemCode: String): Int =
         FarmInventoryRepository.findInventory(qq, itemType, itemCode)?.amount ?: 0
 }
+

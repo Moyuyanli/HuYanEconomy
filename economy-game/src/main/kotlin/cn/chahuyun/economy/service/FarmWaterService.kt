@@ -1,9 +1,9 @@
-package cn.chahuyun.economy.service
+﻿package cn.chahuyun.economy.service
 
 import cn.chahuyun.economy.constant.FarmConstants
 import cn.chahuyun.economy.constant.PropsKind
-import cn.chahuyun.economy.entity.farm.FarmCrop
-import cn.chahuyun.economy.entity.farm.FarmPlayer
+import cn.chahuyun.economy.entity.v1.farm.FarmCrop
+import cn.chahuyun.economy.entity.v1.farm.FarmPlayer
 import cn.chahuyun.economy.model.farm.FarmOperationResult
 import cn.chahuyun.economy.model.farm.FarmState
 import cn.chahuyun.economy.model.props.FunctionProps
@@ -134,3 +134,4 @@ object FarmWaterService {
         val amount: Int,
     )
 }
+

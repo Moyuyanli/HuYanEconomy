@@ -1,10 +1,10 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
 import cn.chahuyun.economy.converter.v1.FishRankingV1Converter
-import cn.chahuyun.economy.entity.fish.Fish
-import cn.chahuyun.economy.entity.fish.FishInfo
-import cn.chahuyun.economy.entity.fish.FishPond
-import cn.chahuyun.economy.entity.fish.FishRanking
+import cn.chahuyun.economy.entity.v1.fish.Fish
+import cn.chahuyun.economy.entity.v1.fish.FishInfo
+import cn.chahuyun.economy.entity.v1.fish.FishPond
+import cn.chahuyun.economy.entity.v1.fish.FishRanking
 import cn.chahuyun.economy.entity.v2.fish.FishEntity
 import cn.chahuyun.economy.entity.v2.fish.FishInfoEntity
 import cn.chahuyun.economy.entity.v2.fish.FishPondEntity
@@ -213,3 +213,4 @@ object FishRepository {
             }
         } ?: false
 }
+

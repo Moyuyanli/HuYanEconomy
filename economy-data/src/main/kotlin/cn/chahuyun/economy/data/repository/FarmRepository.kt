@@ -1,9 +1,9 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.farm.FarmCrop
-import cn.chahuyun.economy.entity.farm.FarmInventory
-import cn.chahuyun.economy.entity.farm.FarmPlayer
-import cn.chahuyun.economy.entity.farm.FarmPlot
+import cn.chahuyun.economy.entity.v1.farm.FarmCrop
+import cn.chahuyun.economy.entity.v1.farm.FarmInventory
+import cn.chahuyun.economy.entity.v1.farm.FarmPlayer
+import cn.chahuyun.economy.entity.v1.farm.FarmPlot
 
 object FarmRepository {
 
@@ -56,3 +56,4 @@ object FarmRepository {
     fun saveCrops(crops: List<FarmCrop>): List<FarmCrop> =
         FarmCropRepository.saveCrops(crops)
 }
+

@@ -10,10 +10,8 @@ dependencies {
     api(project(":economy-image"))
     api(project(":economy-core"))
 
-    val ofVersion = "1.0.8"
     compileOnly("net.mamoe:mirai-console:2.16.0")
     compileOnly("net.mamoe:mirai-core-api:2.16.0")
-    compileOnly("top.mrxiaom.mirai:overflow-core-api:$ofVersion")
     compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
 
     val auth = "1.3.7"

@@ -1,8 +1,8 @@
-package cn.chahuyun.economy.service
+﻿package cn.chahuyun.economy.service
 
 import cn.chahuyun.economy.constant.FarmConstants
-import cn.chahuyun.economy.entity.farm.FarmCrop
-import cn.chahuyun.economy.entity.farm.FarmPlot
+import cn.chahuyun.economy.entity.v1.farm.FarmCrop
+import cn.chahuyun.economy.entity.v1.farm.FarmPlot
 import cn.chahuyun.economy.model.farm.FarmOperationResult
 import cn.chahuyun.economy.model.farm.FarmState
 import cn.chahuyun.economy.utils.MoneyFormatUtil
@@ -252,3 +252,4 @@ object FarmOperationService {
         plot.stolenAmount = 0
     }
 }
+

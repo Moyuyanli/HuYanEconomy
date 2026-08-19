@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.UserRaffle
+import cn.chahuyun.economy.entity.v1.UserRaffle
 import cn.chahuyun.economy.model.user.UserRaffleDto
 
 /**
@@ -30,3 +30,4 @@ class UserRaffleV1Converter : Converter<UserRaffle, UserRaffleDto> {
         }
     }
 }
+

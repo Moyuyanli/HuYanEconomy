@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.fish.FishPond
+import cn.chahuyun.economy.entity.v1.fish.FishPond
 import cn.chahuyun.economy.model.fish.FishPondDto
 
 /**
@@ -40,3 +40,4 @@ class FishPondV1Converter : Converter<FishPond, FishPondDto> {
         }
     }
 }
+

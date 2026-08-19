@@ -1,8 +1,8 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
 import cn.chahuyun.economy.constant.FarmConstants
-import cn.chahuyun.economy.entity.farm.FarmInventory
-import cn.chahuyun.economy.entity.farm.FarmPlot
+import cn.chahuyun.economy.entity.v1.farm.FarmInventory
+import cn.chahuyun.economy.entity.v1.farm.FarmPlot
 
 object FarmStealRepository {
 
@@ -51,3 +51,4 @@ object FarmStealRepository {
         true
     }
 }
+

@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.UserInfo
+import cn.chahuyun.economy.entity.v1.UserInfo
 import cn.chahuyun.economy.entity.v2.user.UserEntity
 import cn.chahuyun.economy.model.user.UserInfoDto
 import jakarta.persistence.Tuple
@@ -101,3 +101,4 @@ object UserInfoRepository {
             funding = (tuple.get("funding") as? String).orEmpty()
         )
 }
+

@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.TitleInfo
+import cn.chahuyun.economy.entity.v1.TitleInfo
 import cn.chahuyun.economy.model.user.TitleInfoDto
 import java.util.*
 
@@ -42,3 +42,4 @@ class TitleInfoV1Converter : Converter<TitleInfo, TitleInfoDto> {
         }
     }
 }
+

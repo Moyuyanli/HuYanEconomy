@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.JavaExec
+import org.gradle.api.tasks.SourceSetContainer
+
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
@@ -13,6 +16,8 @@ base {
     archivesName.set(rootProject.name)
 }
 
+val overflowGatewayVersion = "0.1.0-gateway-SNAPSHOT"
+
 dependencies {
     implementation(project(":economy-common"))
     implementation(project(":economy-data"))
@@ -20,8 +25,6 @@ dependencies {
     implementation(project(":economy-core"))
     implementation(project(":economy-game"))
 
-    val ofVersion = "1.0.8"
-    compileOnly("top.mrxiaom.mirai:overflow-core-api:$ofVersion")
     compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
 
     val auth = "1.3.7"
@@ -38,8 +41,22 @@ dependencies {
     // Hibernate runtime is provided by mirai-hibernate-plugin.
     implementation("cn.chahuyun:hibernate-plus:2.1.1")
 
-    testConsoleRuntime("top.mrxiaom.mirai:overflow-core:$ofVersion")
+    testConsoleRuntime("cn.chahuyun:overflow-gateway:$overflowGatewayVersion")
     testImplementation(kotlin("test"))
+}
+
+configurations.named("testConsoleRuntime") {
+    resolutionStrategy.cacheChangingModulesFor(0, "seconds")
+}
+
+val sourceSets = the<SourceSetContainer>()
+
+tasks.register<JavaExec>("debugOverflowProviderLoad") {
+    group = "verification"
+    description = "Loads Overflow adapter jars on the same runtime classpath used by runConsole."
+    classpath = sourceSets["test"].runtimeClasspath + configurations.named("testConsoleRuntime").get()
+    mainClass.set("top.mrxiaom.overflow.gateway.loader.ProviderLoadDebugMainKt")
+    args(layout.projectDirectory.dir("debug-sandbox/adapters").asFile.absolutePath)
 }
 
 mirai {
@@ -68,18 +85,40 @@ tasks.matching { it.name == "buildPlugin" }.configureEach {
 
 afterEvaluate {
     tasks.named<JavaExec>("runConsole").configure {
+        val gatewayConfig = workingDir.resolve("overflow.json")
+        val exampleGatewayConfig = project.file("src/test/resources/overflow.example.json")
+        systemProperty("overflow.config", gatewayConfig.absolutePath)
+        systemProperty("overflow.data", workingDir.resolve("overflow-gateway").absolutePath)
+        systemProperty("overflow.adapters", workingDir.resolve("adapters").absolutePath)
+
+        doFirst {
+            if (!gatewayConfig.exists()) {
+                gatewayConfig.parentFile.mkdirs()
+                exampleGatewayConfig.copyTo(gatewayConfig)
+                logger.lifecycle("Created runConsole Gateway configuration from: ${exampleGatewayConfig.absolutePath}")
+            }
+            require(gatewayConfig.isFile) {
+                "Missing runConsole Overflow configuration: ${gatewayConfig.absolutePath}"
+            }
+            workingDir.resolve("adapters").mkdirs()
+            logger.lifecycle(
+                "runConsole uses Overflow Gateway snapshot: cn.chahuyun:overflow-gateway:$overflowGatewayVersion"
+            )
+            logger.lifecycle("Gateway configuration: ${gatewayConfig.absolutePath}")
+        }
+
         fun pluginJarCandidates(pluginsDir: File) = pluginsDir.listFiles { file ->
             file.isFile &&
                 file.name.endsWith(".mirai2.jar") &&
                 (file.name.startsWith("${project.name}-") || file.name.startsWith("${rootProject.name}-"))
         }.orEmpty()
 
-        val cleanDevPluginJars = org.gradle.api.Action<org.gradle.api.Task> {
+        val cleanDevPluginJars = Action<Task> {
             val pluginsDir = workingDir.resolve("plugins")
             pluginJarCandidates(pluginsDir).forEach { it.delete() }
         }
 
-        val syncDevPluginJar = org.gradle.api.Action<org.gradle.api.Task> {
+        val syncDevPluginJar = Action<Task> {
             val pluginsDir = workingDir.resolve("plugins")
             val generatedJar = pluginsDir.resolve("${project.name}-dev.mirai2.jar")
             val expectedJar = pluginsDir.resolve("${rootProject.name}-dev.mirai2.jar")

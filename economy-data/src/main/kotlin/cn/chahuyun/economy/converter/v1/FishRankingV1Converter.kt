@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.fish.FishRanking
+import cn.chahuyun.economy.entity.v1.fish.FishRanking
 import cn.chahuyun.economy.model.fish.FishRankingDto
 
 /**
@@ -36,3 +36,4 @@ class FishRankingV1Converter : Converter<FishRanking, FishRankingDto> {
         }
     }
 }
+

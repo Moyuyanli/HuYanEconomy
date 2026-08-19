@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.UserFactor
+import cn.chahuyun.economy.entity.v1.UserFactor
 import cn.chahuyun.economy.entity.v2.user.UserFactorEntity
 
 /**
@@ -55,3 +55,4 @@ object UserFactorRepository {
         return true
     }
 }
+

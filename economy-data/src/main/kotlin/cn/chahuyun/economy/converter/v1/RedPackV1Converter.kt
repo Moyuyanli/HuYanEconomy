@@ -1,8 +1,8 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.redpack.RedPack
-import cn.chahuyun.economy.entity.redpack.RedPackType
+import cn.chahuyun.economy.entity.v1.redpack.RedPack
+import cn.chahuyun.economy.entity.v1.redpack.RedPackType
 import cn.chahuyun.economy.model.redpack.RedPackDto
 import cn.chahuyun.economy.model.redpack.RedPackKind
 import java.util.*
@@ -62,3 +62,4 @@ class RedPackV1Converter : Converter<RedPack, RedPackDto> {
         }
     }
 }
+

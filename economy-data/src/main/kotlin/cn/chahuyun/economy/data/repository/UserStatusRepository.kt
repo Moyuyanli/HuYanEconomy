@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.UserStatus
+import cn.chahuyun.economy.entity.v1.UserStatus
 import cn.chahuyun.economy.entity.v2.user.UserStatusEntity
 
 /**
@@ -55,3 +55,4 @@ object UserStatusRepository {
         return true
     }
 }
+

@@ -1,4 +1,4 @@
-package cn.chahuyun.economy.usecase
+﻿package cn.chahuyun.economy.usecase
 
 import cn.chahuyun.authorize.utils.PermUtil
 import cn.chahuyun.authorize.utils.UserUtil
@@ -355,7 +355,7 @@ object GamesUsecase {
         val accessiblePonds = FishRepository.listFishPonds()
             .filter { it.minLevel <= maxPondLevel }
         val maxPond = accessiblePonds.maxWithOrNull(
-            compareBy<cn.chahuyun.economy.entity.fish.FishPond> { it.pondLevel }
+            compareBy<cn.chahuyun.economy.entity.v1.fish.FishPond> { it.pondLevel }
                 .thenBy { it.minLevel }
         )
         val maxPondText = maxPond?.let { "${it.name}(Lv.${it.pondLevel})" } ?: "暂无可用鱼塘"
@@ -387,3 +387,4 @@ object GamesUsecase {
         append(card.currentPondDetail)
     }
 }
+

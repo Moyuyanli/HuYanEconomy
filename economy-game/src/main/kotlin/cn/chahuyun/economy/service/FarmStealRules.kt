@@ -1,8 +1,8 @@
-package cn.chahuyun.economy.service
+﻿package cn.chahuyun.economy.service
 
 import cn.chahuyun.economy.constant.FarmConstants
-import cn.chahuyun.economy.entity.farm.FarmCrop
-import cn.chahuyun.economy.entity.farm.FarmPlot
+import cn.chahuyun.economy.entity.v1.farm.FarmCrop
+import cn.chahuyun.economy.entity.v1.farm.FarmPlot
 import kotlin.math.abs
 import kotlin.math.ceil
 
@@ -52,3 +52,4 @@ object FarmStealRules {
     private fun percentageAmount(yieldPerSeason: Int, percent: Int): Int =
         ceil(yieldPerSeason * percent / 100.0).toInt()
 }
+

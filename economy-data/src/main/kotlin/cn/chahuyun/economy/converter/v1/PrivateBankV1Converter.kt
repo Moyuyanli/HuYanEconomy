@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.privatebank.PrivateBank
+import cn.chahuyun.economy.entity.v1.privatebank.PrivateBank
 import cn.chahuyun.economy.model.privatebank.PrivateBankDto
 import java.util.*
 
@@ -50,3 +50,4 @@ class PrivateBankV1Converter : Converter<PrivateBank, PrivateBankDto> {
         }
     }
 }
+

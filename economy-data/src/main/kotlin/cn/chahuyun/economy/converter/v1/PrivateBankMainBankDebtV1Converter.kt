@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.privatebank.PrivateBankMainBankDebt
+import cn.chahuyun.economy.entity.v1.privatebank.PrivateBankMainBankDebt
 import cn.chahuyun.economy.model.privatebank.PrivateBankMainBankDebtDto
 import java.util.*
 
@@ -31,3 +31,4 @@ class PrivateBankMainBankDebtV1Converter : Converter<PrivateBankMainBankDebt, Pr
         )
     }
 }
+

@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.farm.FarmPlayer
+import cn.chahuyun.economy.entity.v1.farm.FarmPlayer
 
 object FarmPlayerRepository {
 
@@ -12,3 +12,4 @@ object FarmPlayerRepository {
     fun savePlayer(player: FarmPlayer): FarmPlayer =
         HibernateDataStore.merge(player)
 }
+

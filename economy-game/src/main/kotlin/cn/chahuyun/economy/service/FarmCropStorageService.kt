@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.service
+﻿package cn.chahuyun.economy.service
 
 import cn.chahuyun.economy.data.repository.FarmCropRepository
-import cn.chahuyun.economy.entity.farm.FarmCrop
+import cn.chahuyun.economy.entity.v1.farm.FarmCrop
 
 object FarmCropStorageService {
 
@@ -11,3 +11,4 @@ object FarmCropStorageService {
     fun saveCrops(crops: List<FarmCrop>): List<FarmCrop> =
         FarmCropRepository.saveCrops(crops)
 }
+

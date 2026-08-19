@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.farm.FarmInventory
+import cn.chahuyun.economy.entity.v1.farm.FarmInventory
 
 object FarmInventoryRepository {
 
@@ -21,3 +21,4 @@ object FarmInventoryRepository {
         HibernateDataStore.delete(inventory)
     }
 }
+

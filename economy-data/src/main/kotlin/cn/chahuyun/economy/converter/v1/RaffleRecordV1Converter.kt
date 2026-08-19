@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.raffle.RaffleRecord
+import cn.chahuyun.economy.entity.v1.raffle.RaffleRecord
 import cn.chahuyun.economy.model.raffle.RaffleRecordDto
 
 /**
@@ -28,3 +28,4 @@ class RaffleRecordV1Converter : Converter<RaffleRecord, RaffleRecordDto> {
         }
     }
 }
+

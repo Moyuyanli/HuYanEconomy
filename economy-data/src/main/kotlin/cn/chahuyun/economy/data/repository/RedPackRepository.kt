@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.redpack.RedPack
+import cn.chahuyun.economy.entity.v1.redpack.RedPack
 import cn.chahuyun.economy.entity.v2.redpack.RedPackEntity
 
 /**
@@ -61,5 +61,6 @@ object RedPackRepository {
         return true
     }
 }
+
 
 

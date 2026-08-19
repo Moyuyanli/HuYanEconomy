@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.privatebank.PrivateBankFoxBond
+import cn.chahuyun.economy.entity.v1.privatebank.PrivateBankFoxBond
 import cn.chahuyun.economy.model.privatebank.PrivateBankFoxBondDto
 import java.util.*
 
@@ -44,3 +44,4 @@ class PrivateBankFoxBondV1Converter : Converter<PrivateBankFoxBond, PrivateBankF
         }
     }
 }
+

@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.TitleInfo
+import cn.chahuyun.economy.entity.v1.TitleInfo
 import cn.chahuyun.economy.entity.v2.title.TitleInfoEntity
 
 /**
@@ -46,3 +46,4 @@ object TitleInfoRepository {
         return true
     }
 }
+

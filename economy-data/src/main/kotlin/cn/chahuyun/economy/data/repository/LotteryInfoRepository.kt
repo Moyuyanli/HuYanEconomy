@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.LotteryInfo
+import cn.chahuyun.economy.entity.v1.LotteryInfo
 import cn.chahuyun.economy.entity.v2.LotteryInfoEntity
 
 /**
@@ -46,3 +46,4 @@ object LotteryInfoRepository {
         return true
     }
 }
+

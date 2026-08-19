@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.UserBackpack
+import cn.chahuyun.economy.entity.v1.UserBackpack
 import cn.chahuyun.economy.model.user.UserBackpackDto
 
 /**
@@ -29,3 +29,4 @@ class UserBackpackV1Converter : Converter<UserBackpack, UserBackpackDto> {
         )
     }
 }
+

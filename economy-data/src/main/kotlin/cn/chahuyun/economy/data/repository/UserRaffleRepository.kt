@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.UserRaffle
+import cn.chahuyun.economy.entity.v1.UserRaffle
 import cn.chahuyun.economy.entity.v2.user.UserRaffleEntity
 
 /**
@@ -60,3 +60,4 @@ object UserRaffleRepository {
         return true
     }
 }
+

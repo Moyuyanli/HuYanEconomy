@@ -1,6 +1,6 @@
-package cn.chahuyun.economy.data.repository
+﻿package cn.chahuyun.economy.data.repository
 
-import cn.chahuyun.economy.entity.UserBackpack
+import cn.chahuyun.economy.entity.v1.UserBackpack
 import cn.chahuyun.economy.entity.v2.user.UserBackpackEntity
 
 /**
@@ -51,3 +51,4 @@ object UserBackpackRepository {
         return true
     }
 }
+

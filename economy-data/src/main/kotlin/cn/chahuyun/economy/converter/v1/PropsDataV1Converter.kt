@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.props.PropsData
+import cn.chahuyun.economy.entity.v1.props.PropsData
 import cn.chahuyun.economy.model.props.PropsDataDto
 import java.util.*
 
@@ -34,3 +34,4 @@ class PropsDataV1Converter : Converter<PropsData, PropsDataDto> {
         }
     }
 }
+

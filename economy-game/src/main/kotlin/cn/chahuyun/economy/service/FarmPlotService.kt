@@ -1,9 +1,9 @@
-package cn.chahuyun.economy.service
+﻿package cn.chahuyun.economy.service
 
 import cn.chahuyun.economy.constant.FarmConstants
 import cn.chahuyun.economy.data.repository.FarmPlotRepository
-import cn.chahuyun.economy.entity.farm.FarmPlayer
-import cn.chahuyun.economy.entity.farm.FarmPlot
+import cn.chahuyun.economy.entity.v1.farm.FarmPlayer
+import cn.chahuyun.economy.entity.v1.farm.FarmPlot
 
 object FarmPlotService {
 
@@ -32,3 +32,4 @@ object FarmPlotService {
         return plots.sortedBy { it.plotNo }
     }
 }
+

@@ -1,4 +1,4 @@
-@file:Suppress("SqlResolve", "DEPRECATION")
+﻿@file:Suppress("SqlResolve", "DEPRECATION")
 
 package cn.chahuyun.economy.repair
 
@@ -6,8 +6,8 @@ import cn.chahuyun.economy.converter.v1.PropsDataV1Converter
 import cn.chahuyun.economy.data.proxy.DataVersion
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.data.repository.RepairRepository
-import cn.chahuyun.economy.entity.UserBackpack
-import cn.chahuyun.economy.entity.fish.FishPond
+import cn.chahuyun.economy.entity.v1.UserBackpack
+import cn.chahuyun.economy.entity.v1.fish.FishPond
 import cn.chahuyun.economy.prop.BaseProp
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.prop.Stackable
@@ -307,3 +307,4 @@ class PropRepair : Repair {
         return true
     }
 }
+

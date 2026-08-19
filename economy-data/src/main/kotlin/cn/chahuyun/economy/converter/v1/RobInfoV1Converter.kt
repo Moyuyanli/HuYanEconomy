@@ -1,7 +1,7 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.rob.RobInfo
+import cn.chahuyun.economy.entity.v1.rob.RobInfo
 import cn.chahuyun.economy.model.rob.RobInfoDto
 import java.util.*
 
@@ -30,3 +30,4 @@ class RobInfoV1Converter : Converter<RobInfo, RobInfoDto> {
         }
     }
 }
+

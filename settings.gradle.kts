@@ -2,21 +2,24 @@
 
 dependencyResolutionManagement {
     repositories {
-        // 壶言私服 - 国内加速镜像代理 (推荐)
+        maven {
+            name = "LocalOverflowGatewayStage"
+            url = uri(file("../bot/Overflow-Gateway/build/maven-publishing-stage"))
+        }
+        maven("https://central.sonatype.com/repository/maven-snapshots/") {
+            mavenContent { snapshotsOnly() }
+        }
         maven("https://nexus.chahuyun.cn/repository/maven-public/")
-        // KSP 插件与常规依赖来源 (备用)
         google()
         mavenCentral()
     }
 }
 
-pluginManagement{
-    repositories{
+pluginManagement {
+    repositories {
         maven("https://nexus.chahuyun.cn/repository/maven-public/")
         gradlePluginPortal()
         mavenCentral()
-        // 壶言私服 - 国内加速镜像代理 (推荐)
-        // KSP 插件与常规依赖来源 (备用)
         google()
     }
 }
@@ -29,5 +32,5 @@ include(
     "economy-image",
     "economy-core",
     "economy-game",
-    "economy-main"
+    "economy-main",
 )

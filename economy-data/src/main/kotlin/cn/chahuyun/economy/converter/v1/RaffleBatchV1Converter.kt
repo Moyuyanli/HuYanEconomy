@@ -1,8 +1,8 @@
-package cn.chahuyun.economy.converter.v1
+﻿package cn.chahuyun.economy.converter.v1
 
 import cn.chahuyun.economy.constant.RaffleType
 import cn.chahuyun.economy.converter.Converter
-import cn.chahuyun.economy.entity.raffle.RaffleBatch
+import cn.chahuyun.economy.entity.v1.raffle.RaffleBatch
 import cn.chahuyun.economy.model.raffle.RaffleBatchDto
 import java.util.*
 
@@ -51,3 +51,4 @@ class RaffleBatchV1Converter : Converter<RaffleBatch, RaffleBatchDto> {
         return takeIf { it.isNotBlank() }?.let { RaffleType.valueOf(it) } ?: RaffleType.SINGLE
     }
 }
+
