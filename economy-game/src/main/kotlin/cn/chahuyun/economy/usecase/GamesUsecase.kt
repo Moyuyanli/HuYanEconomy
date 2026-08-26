@@ -107,7 +107,7 @@ object GamesUsecase {
             val difficulty =
                 RandomUtil.randomInt(minDifficulty, (maxDifficulty + 1).coerceAtLeast(minDifficulty + 1))
             val levelFishList = fishPond.getFishList(rank)
-            val collect = levelFishList.filter { it.difficulty <= difficulty }
+            val collect = levelFishList.filter { it.technique <= difficulty }
                 .sortedBy { it.description }
 
             if (collect.isEmpty()) {

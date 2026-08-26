@@ -22,6 +22,10 @@ pluginManagement {
         mavenCentral()
         google()
     }
+    plugins {
+        kotlin("plugin.jpa") version "1.9.21"
+        kotlin("plugin.allopen") version "1.9.21"
+    }
 }
 
 rootProject.name = "HuYanEconomy"

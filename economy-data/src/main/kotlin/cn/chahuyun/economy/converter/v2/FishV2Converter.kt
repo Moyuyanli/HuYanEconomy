@@ -19,7 +19,7 @@ class FishV2Converter : Converter<FishEntity, FishDto> {
             dimensions2 = entity.dimensions2,
             dimensions3 = entity.dimensions3,
             dimensions4 = entity.dimensions4,
-            difficulty = entity.difficulty,
+            technique = entity.technique,
             special = entity.special
         )
     }
@@ -38,7 +38,7 @@ class FishV2Converter : Converter<FishEntity, FishDto> {
             dimensions2 = dto.dimensions2,
             dimensions3 = dto.dimensions3,
             dimensions4 = dto.dimensions4,
-            difficulty = dto.difficulty,
+            technique = dto.technique,
             special = dto.special,
             createdAt = now,
             updatedAt = now

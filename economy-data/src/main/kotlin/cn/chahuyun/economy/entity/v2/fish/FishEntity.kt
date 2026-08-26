@@ -47,8 +47,8 @@ class FishEntity(
     @Column(name = "dimensions_4", nullable = false)
     var dimensions4: Int = 0,
 
-    @Column(name = "difficulty", nullable = false)
-    var difficulty: Int = 0,
+    @Column(name = "technique", nullable = false)
+    var technique: Int = 0,
 
     @Column(name = "special", nullable = false)
     var special: Boolean = false,

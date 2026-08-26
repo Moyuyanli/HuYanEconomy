@@ -22,7 +22,7 @@ class FishV1Converter : Converter<Fish, FishDto> {
             dimensions2 = entity.dimensions2,
             dimensions3 = entity.dimensions3,
             dimensions4 = entity.dimensions4,
-            difficulty = entity.difficulty,
+            technique = entity.difficulty,
             special = entity.special
         )
     }
@@ -40,7 +40,7 @@ class FishV1Converter : Converter<Fish, FishDto> {
             dimensions2 = dto.dimensions2
             dimensions3 = dto.dimensions3
             dimensions4 = dto.dimensions4
-            difficulty = dto.difficulty
+            difficulty = dto.technique
             special = dto.special
         }
     }

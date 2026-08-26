@@ -29,8 +29,8 @@ data class FishDto(
     var dimensions3: Int = 0,
     /** 尺寸阈值4 */
     var dimensions4: Int = 0,
-    /** 难度 */
-    var difficulty: Int = 0,
+    /** 技巧 */
+    var technique: Int = 0,
     /** 是否为特殊鱼 */
     var special: Boolean = false
 )

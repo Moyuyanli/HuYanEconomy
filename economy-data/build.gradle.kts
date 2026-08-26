@@ -2,6 +2,8 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
     `java-library`
+    kotlin("plugin.jpa")
+    kotlin("plugin.allopen")
 }
 
 dependencies {
@@ -14,4 +16,15 @@ dependencies {
     compileOnly("cn.chahuyun:hibernate-plus:2.1.1")
 
     testImplementation(kotlin("test"))
+}
+repositories {
+    mavenCentral()
+}
+allOpen {
+    annotation("javax.persistence.Entity")
+    annotation("javax.persistence.Embeddable")
+    annotation("javax.persistence.MappedSuperclass")
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.Embeddable")
+    annotation("jakarta.persistence.MappedSuperclass")
 }
