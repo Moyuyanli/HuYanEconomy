@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     api(project(":economy-common"))
+    api(project(":economy-base"))
     api(project(":economy-data"))
     api(project(":economy-image"))
 
@@ -15,7 +16,7 @@ dependencies {
     compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
 
     val auth = "1.3.7"
-    compileOnly("cn.chahuyun:HuYanAuthorize:$auth")
+    compileOnly("cn.chahuyun:HuYanAuthorize:$auth@mirai2.jar")
 
     implementation("cn.hutool:hutool-all:5.8.40") {
         exclude(group = "org.apache.logging.log4j", module = "log4j-api")

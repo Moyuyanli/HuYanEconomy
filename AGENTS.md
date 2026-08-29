@@ -63,7 +63,7 @@ economy-data/entity
 | `economy-image/` | 图片渲染、画布工具、Renderer |
 | `economy-common/` | 通用基础能力、常量、时间/金额/文本工具 |
 | `economy-main/src/main/resources/` | 插件资源（图片、表格、ServiceLoader 配置） |
-| `src/main/resources/` | 历史资源残留，新增资源优先放入 `economy-main/src/main/resources/` |
+| `economy-image/src/main/resources/` | 历史资源残留，新增资源优先放入 `economy-main/src/main/resources/` |
 | `debug-sandbox/` | 本地调试环境（config、bots、data、plugins） |
 | `plan/` | 版本规划文档（v2.0.0、v2.0.1） |
 

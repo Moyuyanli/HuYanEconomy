@@ -17,9 +17,6 @@ dependencies {
 
     testImplementation(kotlin("test"))
 }
-repositories {
-    mavenCentral()
-}
 allOpen {
     annotation("javax.persistence.Entity")
     annotation("javax.persistence.Embeddable")

@@ -1,6 +1,3 @@
-import org.gradle.api.tasks.JavaExec
-import org.gradle.api.tasks.SourceSetContainer
-
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
@@ -28,7 +25,7 @@ dependencies {
     compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
 
     val auth = "1.3.7"
-    compileOnly("cn.chahuyun:HuYanAuthorize:$auth")
+    compileOnly("cn.chahuyun:HuYanAuthorize:$auth@mirai2.jar")
     ksp("cn.chahuyun:HuYanAuthorize-ksp:$auth")
 
     implementation("org.projectlombok:lombok:1.18.24")
@@ -109,8 +106,8 @@ afterEvaluate {
 
         fun pluginJarCandidates(pluginsDir: File) = pluginsDir.listFiles { file ->
             file.isFile &&
-                file.name.endsWith(".mirai2.jar") &&
-                (file.name.startsWith("${project.name}-") || file.name.startsWith("${rootProject.name}-"))
+                    file.name.endsWith(".mirai2.jar") &&
+                    (file.name.startsWith("${project.name}-") || file.name.startsWith("${rootProject.name}-"))
         }.orEmpty()
 
         val cleanDevPluginJars = Action<Task> {

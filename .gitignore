@@ -115,6 +115,9 @@ gradle-app.setting
 
 **/build/
 
+# Kotlin/IDE 生成的临时编译目录
+**/bin/
+
 # Common working directory
 run/
 

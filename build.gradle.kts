@@ -10,10 +10,20 @@ plugins {
     id("org.jetbrains.dokka") version "1.8.10" apply false
     id("com.github.gmazzo.buildconfig") version "3.1.0" apply false
     id("com.google.devtools.ksp") version "1.9.20-1.0.14" apply false
-    signing
-    `java-library`
-    `maven-publish`
-    id("moe.karla.maven-publishing") version "1.3.1"
+    id("moe.karla.maven-publishing") version "1.3.1" apply false
+}
+
+// Publishing setup is only needed for an explicit publish invocation. Keeping
+// it out of normal model import avoids GPG checks during IDE synchronization.
+val publishingRequested = gradle.startParameter.taskNames.any {
+    it.substringAfterLast(':').contains("publish", ignoreCase = true)
+}
+
+if (publishingRequested) {
+    apply(plugin = "signing")
+    apply(plugin = "java-library")
+    apply(plugin = "maven-publish")
+    apply(plugin = "moe.karla.maven-publishing")
 }
 
 allprojects {
@@ -56,8 +66,10 @@ tasks.register("buildPlugin") {
     dependsOn(syncPluginToRoot)
 }
 
-mavenPublishing {
-    publishingType = MavenPublishingExtension.PublishingType.USER_MANAGED
-    url = "https://github.com/moyuyanli/HuYanEconomy"
-    developer("moyuyanli", "572490972@qq.com")
+if (publishingRequested) {
+    extensions.configure<MavenPublishingExtension> {
+        publishingType = MavenPublishingExtension.PublishingType.USER_MANAGED
+        url = "https://github.com/moyuyanli/HuYanEconomy"
+        developer("moyuyanli", "572490972@qq.com")
+    }
 }
