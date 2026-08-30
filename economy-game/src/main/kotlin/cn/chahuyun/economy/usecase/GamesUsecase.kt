@@ -124,15 +124,23 @@ object GamesUsecase {
         }
     }
 
+    /**
+     * 开始钓鱼
+     */
     suspend fun fishing(scope: CoroutineScope, event: GroupMessageEvent) {
         Log.info("钓鱼指令")
         val subject = event.subject
         val sender = event.sender
         val message = event.message
+
+        //消息时间
         val messageDate = Date(event.time.toLong() * 1000L)
 
+        //获取用户
         val userInfo = EconomyUserService.getOrCreate(sender)
+        //获取钓鱼用户
         val fishInfo = userInfo.getFishInfo()
+        //称号检测
         val fishTitle = EconomyTitleService.isEnabled(userInfo, TitleCode.FISHING)
 
         if (FishingRuntimeService.checkAndProcessFishing(userInfo, fishTitle, fishInfo, subject, message)) return

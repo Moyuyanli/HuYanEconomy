@@ -3,7 +3,7 @@ package cn.chahuyun.economy.base
 import cn.chahuyun.economy.base.entity.EconomyAccountEntity
 import cn.chahuyun.economy.base.entity.EconomyScopeEntity
 import cn.chahuyun.hibernateplus.HibernateFactory
-import org.hibernate.LockMode
+import jakarta.persistence.LockModeType
 import org.hibernate.Session
 import java.time.Instant
 
@@ -78,8 +78,8 @@ object EconomyCore {
             transaction { session ->
                 val firstId = minOf(from.id, to.id)
                 val secondId = maxOf(from.id, to.id)
-                session.find(EconomyAccountEntity::class.java, firstId, LockMode.PESSIMISTIC_WRITE)
-                session.find(EconomyAccountEntity::class.java, secondId, LockMode.PESSIMISTIC_WRITE)
+                session.find(EconomyAccountEntity::class.java, firstId, LockModeType.PESSIMISTIC_WRITE)
+                session.find(EconomyAccountEntity::class.java, secondId, LockModeType.PESSIMISTIC_WRITE)
                 val source = session.find(EconomyAccountEntity::class.java, from.id)
                     ?: return@transaction EconomyActionResult(EconomyActionStatus.FAILED)
                 val target = session.find(EconomyAccountEntity::class.java, to.id)
@@ -97,7 +97,7 @@ object EconomyCore {
         if (!valid(amount)) return EconomyActionResult(EconomyActionStatus.INVALID_AMOUNT)
         return try {
             transaction { session ->
-                val entity = session.find(EconomyAccountEntity::class.java, account.id, LockMode.PESSIMISTIC_WRITE)
+                val entity = session.find(EconomyAccountEntity::class.java, account.id, LockModeType.PESSIMISTIC_WRITE)
                     ?: return@transaction EconomyActionResult(EconomyActionStatus.FAILED)
                 if (subtract && entity.balance < amount.value) return@transaction EconomyActionResult(EconomyActionStatus.INSUFFICIENT_BALANCE, EconomyBalance.of(entity.balance))
                 entity.balance = if (subtract) entity.balance.subtract(amount.value) else entity.balance.add(amount.value)
@@ -114,7 +114,7 @@ object EconomyCore {
 
     private fun <T> transaction(readOnly: Boolean = false, block: (Session) -> T): T =
         HibernateFactory.getSessionFactory().fromTransaction { session ->
-            if (readOnly) session.defaultReadOnly = true
+            if (readOnly) session.isDefaultReadOnly = true
             block(session)
         }
 

@@ -20,7 +20,9 @@ object HibernateUtil {
         val config: EconomyConfig = EconomyRuntime.config
 
         val configuration: Configuration = HibernatePlusService.createConfiguration(economy.javaClass)
-        configuration.packageName = "cn.chahuyun.economy.entity"
+        // Scan the new economy-base entities together with legacy entities.
+        // Legacy models remain read-only at the business layer.
+        configuration.packageName = "cn.chahuyun.economy"
 
         val dataType: DriveType = config.dataType
         configuration.driveType = dataType

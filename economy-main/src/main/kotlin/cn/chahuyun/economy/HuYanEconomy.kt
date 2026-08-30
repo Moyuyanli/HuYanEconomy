@@ -7,6 +7,7 @@ import cn.chahuyun.economy.config.EconomyConfig
 import cn.chahuyun.economy.config.EconomyPluginConfig
 import cn.chahuyun.economy.config.FishingMsgConfig
 import cn.chahuyun.economy.config.RobMsgConfig
+import cn.chahuyun.economy.base.EconomyCore
 import cn.chahuyun.economy.constant.Icon
 import cn.chahuyun.economy.data.PrizesData
 import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
@@ -128,6 +129,7 @@ object HuYanEconomy : KotlinPlugin(
 
         // 初始化插件数据库。
         HibernateUtil.init(this)
+        EconomyCore.init()
 
         // 初始化实体代理框架：先把配置中的版本策略注入 data 层，再注册各模块代理。
         DataSourceStrategyImpl.configurePersistence(EconomyPluginConfig.entityDataVersions) {

@@ -16,6 +16,7 @@ import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.FormatUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil.toMoneyFormat
+import net.mamoe.mirai.console.permission.AbstractPermitteeId
 import net.mamoe.mirai.contact.*
 import xyz.cssxsh.mirai.economy.service.EconomyAccount
 import java.awt.Color
@@ -49,19 +50,16 @@ object UserCoreManager {
         val group: Group? = (user as? Member)?.group
         val dto = getUserInfoDto(userId)
 
-        val existingOrCreated = if (dto == null) {
-            saveUserInfoDto(
+        val existingOrCreated = dto
+            ?: saveUserInfoDto(
                 UserInfoDto(
-                    id = net.mamoe.mirai.console.permission.AbstractPermitteeId.ExactUser(userId).asString(),
+                    id = AbstractPermitteeId.ExactUser(userId).asString(),
                     qq = userId,
                     name = user.nick,
                     registerGroup = group?.id ?: 0,
                     registerTime = Date().time
                 )
             )
-        } else {
-            dto
-        }
 
         existingOrCreated.user = user
         existingOrCreated.group = group

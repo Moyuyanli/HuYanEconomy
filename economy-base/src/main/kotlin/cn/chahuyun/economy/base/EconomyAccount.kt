@@ -26,6 +26,9 @@ class EconomyAccount internal constructor(
     companion object {
         const val DEFAULT_SCOPE = "DEFAULT"
 
+        /**
+         * 获取一个经济用户
+         */
         fun take(account: String, scope: EconomyScope? = null): EconomyAccount =
             EconomyCore.take(account, scope ?: EconomyCore.scope(DEFAULT_SCOPE)
             ?: error("默认 Scope 未初始化"))
