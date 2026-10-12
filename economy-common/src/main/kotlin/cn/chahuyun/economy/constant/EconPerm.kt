@@ -22,6 +22,9 @@ object EconPerm {
     /** 农场玩法权限码。 */
     const val FARM_PERM: String = "farm"
 
+    /** 钓鱼玩法权限码。 */
+    const val FISH_PERM: String = "fish"
+
     object GROUP {
         /** 猜签/彩票玩法权限组显示名。 */
         const val LOTTERY_PERM_GROUP: String = "猜签组"
@@ -40,5 +43,8 @@ object EconPerm {
 
         /** 农场玩法权限组显示名。 */
         const val FARM_PERM_GROUP: String = "农场组"
+
+        /** 钓鱼玩法权限组显示名。 */
+        const val FISH_PERM_GROUP: String = "钓鱼组"
     }
 }

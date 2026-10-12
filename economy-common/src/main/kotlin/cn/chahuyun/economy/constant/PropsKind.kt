@@ -9,4 +9,7 @@ object PropsKind {
 
     /** 功能类道具。 */
     const val functionProp: String = "F_PROP"
+
+    /** 鱼饵类道具。 */
+    const val fishBait: String = "FISH_BAIT"
 }

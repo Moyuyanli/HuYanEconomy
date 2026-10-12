@@ -1,6 +1,7 @@
 package cn.chahuyun.economy.runtime
 
 import cn.chahuyun.economy.config.EconomyConfig
+import cn.chahuyun.economy.config.FishingMsgConfig
 import cn.chahuyun.economy.config.RobMsgConfig
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.console.plugin.jvm.JvmPlugin
@@ -32,6 +33,10 @@ object EconomyRuntime {
     /** 抢劫文案配置。 */
     val robConfig: RobMsgConfig
         get() = RobMsgConfig
+
+    /** 钓鱼文案配置。 */
+    val msgConfig: FishingMsgConfig
+        get() = FishingMsgConfig
 
     /** 插件 data 目录路径，用于资源、数据库文件等运行期文件。 */
     val dataFolderPath: Path

@@ -98,6 +98,7 @@ object HuYanEconomy : KotlinPlugin(
         EconomyConfig.reload()
         EconomyPluginConfig.reload()
         RobMsgConfig.reload()
+        cn.chahuyun.economy.config.FishingMsgConfig.reload()
         PrizesData.reload()
 
         // 注册指令。
@@ -136,6 +137,7 @@ object HuYanEconomy : KotlinPlugin(
         PrivateBankManager.init()
         YiYanManager.init()
         cn.chahuyun.economy.manager.FarmManager.init()
+        cn.chahuyun.economy.manager.FishingManager.init()
         FactorManager.init()
         PluginPropsManager.init()
         HuYanScheduler.registerSubmittedTasks()
@@ -185,6 +187,7 @@ object HuYanEconomy : KotlinPlugin(
         EconomyRuntime.pluginStatus = false
 
         LotteryManager.close()
+        cn.chahuyun.economy.manager.FishingManager.shutdown()
         YiYanManager.shutdown()
         HuYanScheduler.stop()
         EconomyAsyncService.shutdown()

@@ -10,13 +10,12 @@ group `cn.chahuyun`，version 2.0.0，主分支 master。包根 `cn.chahuyun.eco
   表 `economy_scope`、`economy_account`（无 hye_ 前缀）。账户编码 u<qq> / g<群号> / u<qq>g<群号>。
   **状态（2026-10-11 确认）：实现已完成、可用**——五类型 + 两表 + 金额口径 + 越界保护全部到位，
   29 个测试全绿（8 值类型 + 1 边界 + 20 H2 集成），可编译可跑。
-  仍未接管业务资金流：§11 模块迁移未做，`EconomyUtil`/`EconomyAccountService` 与上游
-  `mirai-economy-core`（core/game/main 三处 compileOnly）仍在服役，全仓对 economy-base 的引用仅 2 处
-  （`HuYanEconomy.onEnable` 的 `EconomyCore.init()`、`EconomyAccountAdapters.kt` 的无调用方扩展函数）。
+  仍未接管全量业务资金流：`EconomyUtil`/`EconomyAccountService` 与上游 `mirai-economy-core` 仍在服役。
+  **钓鱼模块已首批接入**（`FishingAccountService`：用户 `u<qq>`、鱼塘 `f<pondId>`）。
 - economy-data —— entity(v1/v2 + 根包新实体)、DTO(model)、converter(v1/v2)、data/proxy、data/cache、data/repository
 - economy-image —— 图片渲染、画布工具、各业务 Renderer（bottom*.png 资源在此）
 - economy-core —— 签到、银行、私人银行、背包、道具、称号、红包、转账、用户状态
-- economy-game —— 钓鱼、抢劫、抽奖、彩票、农场
+- economy-game —— 钓鱼(已在新实体上重建)、抢劫、抽奖、彩票、农场
 - economy-main —— 插件入口、action、命令、事件、权限注册、资源与最终打包
 
 ## 分层调用链
@@ -51,8 +50,8 @@ group `cn.chahuyun`，version 2.0.0，主分支 master。包根 `cn.chahuyun.eco
 - economy-data/entity 根包下按领域分包：common/user/item/title/fishing/farm/bank，与 entity/v1、entity/v2 并存
 - 规范：全表 `hye_` 前缀、金额 BigDecimal(19,2)、时间 Instant+DATETIME(3)、用户关联统一 `user_id -> hye_user_info.id`
 - 命名避让：新实体类名不带 V2，v2 侧统一带 V2（无 @Entity name 冲突）
-- ⚠️ 3 处表名冲突（新旧映射同表）：`hye_fish`、`hye_title_info`、`hye_user_backpack`
-- 新实体尚未接线：除自身文件外无 Repository / Service / 业务引用
+- 表名冲突：`hye_fish` **已消解**（v2/fish 已删除）；`hye_title_info`、`hye_user_backpack` 仍新旧同表（未处理）
+- 新实体接线进度：**fishing 领域已全链路接入**（见「钓鱼模块」）；user/item/title/farm/bank 仍未接线
 - HibernateUtil.packageName 已放宽为 `cn.chahuyun.economy`（为扫到 economy-base 实体），扫描范围变大
 - 待办：entity/v1|v2 归档到 entity/old/、新实体 Repository 与服务、旧数据迁移
 
@@ -90,3 +89,31 @@ group `cn.chahuyun`，version 2.0.0，主分支 master。包根 `cn.chahuyun.eco
   生命周期用 `org.junit.BeforeClass/AfterClass` + `@JvmStatic`。
 - economy-base 测试：`./gradlew.bat :economy-base:test --console=plain --offline`（H2 集成库文件落在
   `economy-base/build/h2-it/`，每次运行重建）
+
+## 钓鱼模块（2026-10-12 在新一代实体上全链路重建；旧钓鱼已在 e1e5aa3 删除）
+- 实体：`entity/fishing/` 的 FishEntity/UserPondEntity/UserFishingInfoEntity/FishingLogEntity（设计 §11，字段未改）
+- 数据：Fish/UserPond/UserFishingInfo/FishingLog 四个 Repository + `NewUserInfoRepository`（hye_user_info 桥，
+  `getOrCreateId(qq)` 解析 `hye_user_info.id`；业务表 user_id 写内部主键，不写 QQ）
+- 资金：`economy-core/.../service/FishingAccountService` → economy-base（用户 `u<qq>`、鱼塘 `f<pondId>`，Scope DEFAULT）
+- 业务(economy-game)：FishingCatalogService(默认鱼类目录)、FishingSizeService、FishingRuntimeService(冷却+会话+失败)、
+  FishingRodUpgradeRules(level=rodLevel/10+2)、FishingRodService、FishingPondService、FishingLogService(排行由流水派生)、
+  FishingMessageBuilder、FishingIdentity、FishingUsecase、FishingManager
+- 指令(economy-main/FishAction)：钓鱼/抛竿、购买鱼竿、升级鱼竿\*?、鱼竿等级、鱼塘等级、创建鱼塘、购买鱼饵、
+  钓鱼信息(图片)、钓鱼信息#(文本)、刷新钓鱼、开启/关闭 钓鱼；权限 `EconPerm.FISH_PERM`("fish")/组"钓鱼组"
+- 配置：economy-core `FishingMsgConfig`（EconomyRuntime.msgConfig 暴露）
+- 图片：`FishingInfoImageRenderer`（自包含，底图缺失退化纯色）+ `FishingInfoCard`
+- 玩法口径沿用现网：抛竿→180s 内「拉起/!」→按响应时间判定惊喜(between≤500ms)/难度→抽鱼→尺寸→结算；
+  maxDifficulty=rodLevel*baitLevel、maxGrade=rodLevel/10+2、minDifficulty=round(rodLevel*quality)
+- 与现网差异（有意）：实体无 status/isFishRod → 内存会话 + rodLevel=0 表示未购买；鱼塘改「归属用户」；
+  收费率改千分比 fee_rate_permille（现网 rebate 0.05 ⇒ 50‰）；无独立排行表（从日志派生，榜首授予 FISHING 称号）
+- 遗留：鱼饵用内置 `FishingBaitConstant` 目录（未接 hye_item/背包）；未跑模块测试（scope 内测试延后）
+
+## ⚠️ KSP Action 规则链框架（设计文档已就绪，**尚未实现**）
+- `docs/KSP 驱动的 Action 规则链框架 · 设计文档.md`（855 行，提交 1d2f6e9）：
+  `@Action(id)` / `@Before(value,order,onFail,compensate)` / `@After` / `@Provides` + KSP 生成
+  ActionRegistry/BeforeRegistry/AfterRegistry/ContextRequirements + `XxxActions` 门面 + ActionEngine.invokeFromEntry
+  + RuleResult(Continue/Skip/Abort/Reject) + 逆序补偿。order 区间：1-4 冷却、5-9 资格、10-49 加成…
+- 用户在 `economy-core/.../model/user/TitleInfoColors.kt` 末尾留过一段**非法 Kotlin** 脚手架
+  （`class FishAction { @Action("game.fish") … }` / `object FishRules { @Before(...) … }`），意图让钓鱼走规则链；
+  已被改为注释 TODO 以恢复编译。
+- 待用户确认：是否实现该框架并把钓鱼 usecase 内的横切逻辑拆成 @Before/@After 规则

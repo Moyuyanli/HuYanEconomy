@@ -39,4 +39,10 @@ object TitleCode {
 
     /** -1 表示永久有效。 */
     const val ROB_EXPIRED: Int = -1
+
+    /** 钓鱼达人称号。 */
+    const val FISHING: String = "fishing"
+
+    /** 钓鱼达人称号有效期：-1 永久。 */
+    const val FISHING_EXPIRED: Int = -1
 }
