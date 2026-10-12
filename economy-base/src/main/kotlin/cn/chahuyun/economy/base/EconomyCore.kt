@@ -85,8 +85,11 @@ object EconomyCore {
                 val target = session.find(EconomyAccountEntity::class.java, to.id)
                     ?: return@transaction EconomyActionResult(EconomyActionStatus.FAILED)
                 if (source.balance < amount.value) return@transaction EconomyActionResult(EconomyActionStatus.INSUFFICIENT_BALANCE, EconomyBalance.of(source.balance))
+                val updatedTarget = target.balance.add(amount.value)
+                // 入账后的余额同样不能越过 DECIMAL(19,2) 上限，否则写入时会被数据库拒绝。
+                if (updatedTarget.abs() > EconomyBalance.MAX_ABS) return@transaction EconomyActionResult(EconomyActionStatus.INVALID_AMOUNT, EconomyBalance.of(source.balance))
                 source.balance = source.balance.subtract(amount.value)
-                target.balance = target.balance.add(amount.value)
+                target.balance = updatedTarget
                 source.updateTime = Instant.now(); target.updateTime = Instant.now()
                 EconomyActionResult(EconomyActionStatus.SUCCESS, EconomyBalance.of(source.balance))
             }
@@ -100,14 +103,17 @@ object EconomyCore {
                 val entity = session.find(EconomyAccountEntity::class.java, account.id, LockModeType.PESSIMISTIC_WRITE)
                     ?: return@transaction EconomyActionResult(EconomyActionStatus.FAILED)
                 if (subtract && entity.balance < amount.value) return@transaction EconomyActionResult(EconomyActionStatus.INSUFFICIENT_BALANCE, EconomyBalance.of(entity.balance))
-                entity.balance = if (subtract) entity.balance.subtract(amount.value) else entity.balance.add(amount.value)
+                val updated = if (subtract) entity.balance.subtract(amount.value) else entity.balance.add(amount.value)
+                // 入账后的余额同样不能越过 DECIMAL(19,2) 上限，否则写入时会被数据库拒绝。
+                if (updated.abs() > EconomyBalance.MAX_ABS) return@transaction EconomyActionResult(EconomyActionStatus.INVALID_AMOUNT, EconomyBalance.of(entity.balance))
+                entity.balance = updated
                 entity.updateTime = Instant.now()
                 EconomyActionResult(EconomyActionStatus.SUCCESS, EconomyBalance.of(entity.balance))
             }
         } catch (_: Exception) { EconomyActionResult(EconomyActionStatus.FAILED) }
     }
 
-    private fun valid(amount: EconomyBalance): Boolean = amount.isPositive()
+    private fun valid(amount: EconomyBalance): Boolean = amount.isUsableAmount()
     private fun normalizeAccount(account: String): String = account.trim().also {
         require(it.isNotEmpty() && it.length <= 64) { "账户标识无效" }
     }

@@ -17,6 +17,8 @@ data class EconomyActionResult(
  * 已存在账户上的增、减、转账操作入口。
  *
  * Action 不负责账户查询或创建，所有操作最终由 EconomyCore 在单一事务中执行。
+ * 金额统一在入口校验：必须为正数且不超过 [EconomyBalance.MAX_ABS]，越界或非正数
+ * 一律返回 [EconomyActionStatus.INVALID_AMOUNT]（超过两位小数的输入按 HALF_UP 舍入）。
  */
 object EconomyAction {
     fun add(account: EconomyAccount, amount: EconomyBalance): EconomyActionResult =

@@ -1,4 +1,4 @@
-﻿package cn.chahuyun.economy.entity
+﻿package cn.chahuyun.economy.entity.v1
 
 import cn.chahuyun.economy.constant.UserLocation
 import jakarta.persistence.Entity

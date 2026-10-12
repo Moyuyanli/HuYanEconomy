@@ -1,5 +1,4 @@
-﻿package cn.chahuyun.economy.entity
-
+﻿package cn.chahuyun.economy.entity.v1
 import jakarta.persistence.*
 import java.io.Serializable
 import java.util.*
@@ -50,4 +49,5 @@ class UserInfo(
         registerTime = registerTime
     )
 }
+
 

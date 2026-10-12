@@ -28,3 +28,9 @@ println(account.formatBalance())
 
 金额使用 `EconomyBalance` 封装，数据库精度为 `DECIMAL(19,2)`。Int、Long、Double 和 BigDecimal 仅作为便捷输入，核心计算统一转换后执行。
 
+## 金额口径
+
+- **小数位**：超过两位小数不拒绝，统一按 `HALF_UP` 舍入到两位（`EconomyBalance.normalize`）。
+- **取值范围**：绝对值不得超过 `EconomyBalance.MAX_ABS`（`99999999999999999.99`，即 `DECIMAL(19,2)` 上限）。
+  经济操作入口对该情况返回 `InvalidAmount`，并同时保护入账后的余额不越界。
+

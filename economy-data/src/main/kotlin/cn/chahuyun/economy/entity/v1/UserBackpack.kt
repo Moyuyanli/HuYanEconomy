@@ -1,5 +1,4 @@
-﻿package cn.chahuyun.economy.entity
-
+﻿package cn.chahuyun.economy.entity.v1
 import jakarta.persistence.*
 import java.io.Serializable
 
@@ -18,4 +17,5 @@ class UserBackpack(
 
     val propId: Long? = null
 ) : Serializable
+
 
