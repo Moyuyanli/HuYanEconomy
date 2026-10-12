@@ -120,27 +120,6 @@ class EconomyImageRendererSmokeTest {
         assertNonBlank(image)
     }
 
-    @Test
-    fun `fishing info image renders as non blank canvas`() {
-        val image = FishingInfoImageRenderer.render(
-            FishingInfoCard(
-                owner = "测试用户(572490972)",
-                rodLevel = "Lv.100",
-                maxPond = "小狐狸的星怒鱼塘(Lv.9)",
-                biggestFish = "鲭鱼 114cm",
-                biggestFishDetail = "鱼等级 Lv.3 / 价值 912.0 / 鱼塘 小狐狸的星怒鱼塘",
-                historyCount = "266",
-                successCount = "266",
-                currentPond = "小狐狸的星怒鱼塘(Lv.9)",
-                currentPondDetail = "最低鱼竿等级 10 / 累计上鱼 16267 次 / 鱼种 0 个",
-            )
-        )
-
-        assertEquals(1280, image.width)
-        assertEquals(720, image.height)
-        assertNonBlank(image)
-    }
-
     private fun assertNonBlank(image: java.awt.image.BufferedImage) {
         val sampleStepX = (image.width / 16).coerceAtLeast(1)
         val sampleStepY = (image.height / 16).coerceAtLeast(1)

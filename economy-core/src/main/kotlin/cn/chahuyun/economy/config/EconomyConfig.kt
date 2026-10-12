@@ -34,11 +34,8 @@ object EconomyConfig : AutoSavePluginConfig("Config") {
     @ValueDescription("mysql 密码")
     var mysqlPassword: String by value("123456")
 
-    @ValueDescription("用户下一条消息等待线程数(可能影响同时钓鱼的玩家数量)")
+    @ValueDescription("用户下一条消息等待线程数")
     val nextMessageExecutorsNumber: Int by value(10)
-
-    @ValueDescription("钓鱼模式(new,old)")
-    val fishType: String by value("new")
 
     @ValueDescription("无法使用禁言卡的群")
     val unableToUseMuteGroup: MutableList<Long> by value(mutableListOf())

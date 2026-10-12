@@ -176,8 +176,7 @@ object EconomyImageRenderer {
                 wallet = "512.1",
                 signEarnings = "8.6w",
                 bankEarnings = "298.9",
-                location = "鱼塘",
-                fishingCooldown = "还需 4 分钟",
+                location = "家",
                 farmStatus = "有成熟",
                 bankDeposits = listOf(
                     BankDepositLine("主银行", "1.52w", "利率 0.8%", 15200.0),
@@ -454,7 +453,7 @@ object EconomyImageRenderer {
     /**
      * 绘制左上角身份卡。
      *
-     * 这个面板承担“用户是谁”的信息：头像、昵称、称号、QQ、位置/钓鱼/农场状态。
+     * 这个面板承担“用户是谁”的信息：头像、昵称、称号、QQ、位置/农场状态。
      */
     private fun drawPersonalHeader(g: Graphics2D, card: PersonalInfoCard, avatar: BufferedImage?, font: Font) {
         // 身份卡是第一视觉入口：头像、昵称、称号、QQ 和三个状态标签都放在这里。
@@ -491,10 +490,9 @@ object EconomyImageRenderer {
         g.color = muted
         g.drawString("QQ ${card.qq}", 252, PERSONAL_TOP_Y + 155)
 
-        // 三个 chip 固定展示新增状态：当前位置、钓鱼冷却、农场概况。
+        // 两个 chip 展示当前状态：当前位置、农场概况。
         val chipY = PERSONAL_TOP_Y + 186
         drawChip(g, 92, chipY, "位置", card.location, green, font)
-        drawChip(g, 257, chipY, "钓鱼", card.fishingCooldown, blue, font, width = 178)
         drawChip(g, 462, chipY, "农场", card.farmStatus, gold, font)
     }
 

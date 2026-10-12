@@ -2,18 +2,15 @@ package cn.chahuyun.economy
 
 import cn.chahuyun.authorize.AuthorizeServer
 import cn.chahuyun.authorize.exception.ExceptionHandle
+import cn.chahuyun.economy.base.EconomyCore
 import cn.chahuyun.economy.command.EconomyCommand
 import cn.chahuyun.economy.config.EconomyConfig
 import cn.chahuyun.economy.config.EconomyPluginConfig
-import cn.chahuyun.economy.config.FishingMsgConfig
 import cn.chahuyun.economy.config.RobMsgConfig
-import cn.chahuyun.economy.base.EconomyCore
 import cn.chahuyun.economy.constant.Icon
 import cn.chahuyun.economy.data.PrizesData
 import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
-import cn.chahuyun.economy.fish.FishRollEvent
-import cn.chahuyun.economy.fish.FishStartEvent
 import cn.chahuyun.economy.game.DefaultGameOverviewProvider
 import cn.chahuyun.economy.game.GameOverviewBridge
 import cn.chahuyun.economy.manager.*
@@ -21,7 +18,6 @@ import cn.chahuyun.economy.plugin.*
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.service.EconomyAsyncService
-import cn.chahuyun.economy.service.GameEventService
 import cn.chahuyun.economy.sign.SignRewardEvent
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.HibernateUtil
@@ -63,12 +59,6 @@ object HuYanEconomy : KotlinPlugin(
     lateinit var config: EconomyConfig
 
     /**
-     * 钓鱼消息配置。
-     */
-    @JvmField
-    var msgConfig: FishingMsgConfig? = null
-
-    /**
      * 抢劫消息配置。
      */
     @JvmField
@@ -107,7 +97,6 @@ object HuYanEconomy : KotlinPlugin(
         // 加载配置。
         EconomyConfig.reload()
         EconomyPluginConfig.reload()
-        FishingMsgConfig.reload()
         RobMsgConfig.reload()
         PrizesData.reload()
 
@@ -115,7 +104,6 @@ object HuYanEconomy : KotlinPlugin(
         CommandManager.registerCommand(EconomyCommand(), false)
 
         config = EconomyConfig
-        msgConfig = FishingMsgConfig
         robConfig = RobMsgConfig
         EconomyAsyncService.init()
         GameOverviewBridge.register(DefaultGameOverviewProvider)
@@ -141,14 +129,12 @@ object HuYanEconomy : KotlinPlugin(
         // 加载功能模块。
         EconomyUtil.init()
         LotteryManager.init()
-        FishManager.init()
         FarmCropManager.init()
         BankManager.init()
         RedPackManager.init()
         TitleManager.init()
         PrivateBankManager.init()
         YiYanManager.init()
-        cn.chahuyun.economy.manager.GamesManager.init()
         cn.chahuyun.economy.manager.FarmManager.init()
         FactorManager.init()
         PluginPropsManager.init()
@@ -168,11 +154,9 @@ object HuYanEconomy : KotlinPlugin(
 
         val eventChannel = GlobalEventChannel.parentScope(this)
 
-        // 监听自定义事件：指令只负责发布事件，具体奖励、钓鱼推进等逻辑在 manager/usecase 中处理。
+        // 监听自定义事件：指令只负责发布事件，具体奖励、玩法推进等逻辑在 manager/usecase 中处理。
         eventChannel.subscribeAlways<SignRewardEvent>(priority = EventPriority.HIGH) { cn.chahuyun.economy.manager.SignManager.randomSignGold(it) }
         eventChannel.subscribeAlways<SignRewardEvent> { cn.chahuyun.economy.manager.SignManager.signProp(it) }
-        eventChannel.subscribeAlways<FishStartEvent> { GameEventService.handleFishStart(it) }
-        eventChannel.subscribeAlways<FishRollEvent> { GameEventService.handleFishRoll(it) }
 
         Log.info("事件已监听")
 
@@ -200,7 +184,6 @@ object HuYanEconomy : KotlinPlugin(
         PLUGIN_STATUS = false
         EconomyRuntime.pluginStatus = false
 
-        cn.chahuyun.economy.manager.GamesManager.shutdown()
         LotteryManager.close()
         YiYanManager.shutdown()
         HuYanScheduler.stop()

@@ -2,8 +2,6 @@
 
 import cn.chahuyun.economy.entity.v1.UserBackpack
 import cn.chahuyun.economy.entity.v1.UserInfo
-import cn.chahuyun.economy.entity.v1.fish.FishPond
-import cn.chahuyun.economy.entity.v1.fish.FishRanking
 import cn.chahuyun.economy.entity.v1.props.PropsData
 import cn.chahuyun.economy.entity.v1.rob.RobInfo
 import cn.chahuyun.economy.entity.v2.user.UserEntity
@@ -18,25 +16,6 @@ import java.sql.Connection
 object RepairRepository {
 
     private val ROB_LEGACY_COLUMNS = listOf("isInJail", "cooldown", "lastRobTime", "cooling", "type")
-
-    fun listFishPonds(): List<FishPond> =
-        HibernateDataStore.selectList(FishPond::class.java)
-
-    fun listFishRankings(): List<FishRanking> =
-        HibernateDataStore.selectList(FishRanking::class.java)
-
-    fun updateFishRankingPond(rankId: Int, fishPondId: Int?) {
-        HibernateDataStore.getSessionFactory().fromTransaction { session ->
-            // Legacy schema uses a physical FishPondId column for this relation.
-            val query = session.createNativeQuery(
-                "update FishRanking set `FishPondId` = :fishId where id = :id",
-                FishRanking::class.java
-            )
-            query.setParameter("fishId", fishPondId)
-                .setParameter("id", rankId)
-                .executeUpdate()
-        }
-    }
 
     fun dropRobLegacyColumns() {
         HibernateDataStore.getSessionFactory().fromTransaction { session ->

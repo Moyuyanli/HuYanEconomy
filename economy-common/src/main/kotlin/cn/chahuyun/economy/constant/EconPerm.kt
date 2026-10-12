@@ -4,9 +4,6 @@ package cn.chahuyun.economy.constant
  * 权限相关常量
  */
 object EconPerm {
-    /** 钓鱼玩法权限码。 */
-    const val FISH_PERM: String = "fish"
-
     /** 猜签/彩票玩法权限码。 */
     const val LOTTERY_PERM: String = "lottery"
 
@@ -26,9 +23,6 @@ object EconPerm {
     const val FARM_PERM: String = "farm"
 
     object GROUP {
-        /** 钓鱼玩法权限组显示名。 */
-        const val FISH_PERM_GROUP: String = "钓鱼组"
-
         /** 猜签/彩票玩法权限组显示名。 */
         const val LOTTERY_PERM_GROUP: String = "猜签组"
 

@@ -1,6 +1,5 @@
 package cn.chahuyun.economy.manager
 
-import cn.chahuyun.economy.constant.TitleCode
 import cn.chahuyun.economy.constant.UserLocation
 import cn.chahuyun.economy.data.proxy.DataVersion
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
@@ -129,9 +128,6 @@ object UserCoreManager {
             ?.let { DateUtil.format(Date(it), "yyyy-MM-dd HH:mm:ss") }
             ?: "暂未签到"
 
-        val fishInfo = userInfo.getFishInfo()
-        val fishTitle = TitleManager.checkTitleIsOnEnable(userInfo, TitleCode.FISHING)
-
         // PersonalInfoCard is a rendering DTO; keep all text and colors preformatted here.
         return PersonalInfoCard(
             qq = user.id.toString(),
@@ -149,7 +145,6 @@ object UserCoreManager {
             signEarnings = userInfo.signEarnings.toMoneyFormat(),
             bankEarnings = userInfo.bankEarnings.toMoneyFormat(),
             location = getLocationText(userInfo),
-            fishingCooldown = GameOverviewBridge.fishingCooldownText(userInfo, fishTitle, fishInfo),
             farmStatus = GameOverviewBridge.farmStatusText(userInfo.qq),
             bankDeposits = getBankDepositLines(user),
             infoTitle = infoTitle,

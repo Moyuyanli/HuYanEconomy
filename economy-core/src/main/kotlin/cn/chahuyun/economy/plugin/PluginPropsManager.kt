@@ -1,7 +1,6 @@
 package cn.chahuyun.economy.plugin
 
 import cn.chahuyun.economy.constant.PropsKind
-import cn.chahuyun.economy.model.fish.FishBait
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.PropsCard
 import cn.chahuyun.economy.prop.Expirable
@@ -20,7 +19,6 @@ object PluginPropsManager {
         // 注册道具类型
         PropsManager.registerKindToPropClass(PropsKind.card, PropsCard::class.java)
         PropsManager.registerKindToPropClass(PropsKind.functionProp, FunctionProps::class.java)
-        PropsManager.registerKindToPropClass(PropsKind.fishBait, FishBait::class.java)
         PropEffectRegistry.registerAll(
             RedEyesEffectHandler,
             ElectricBatonEffectHandler,
@@ -33,8 +31,6 @@ object PluginPropsManager {
         initCards()
         // 初始化功能道具
         initFunctionProps()
-        // 初始化鱼饵
-        initFishBaits()
 
         // 每天凌晨4点检查过期道具
         HuYanScheduler.schedule("prop-expire-check", "0 0 4 * * ?", PropExpireCheckTask())
@@ -140,57 +136,6 @@ object PluginPropsManager {
             }
         )
         props.forEach { PropsManager.registerCodeToProp(it) }
-    }
-
-    private fun initFishBaits() {
-        val baits = listOf(
-            FishBait(PropsKind.fishBait, FishBait.BAIT_1, "基础鱼饵").apply {
-                num = 25
-                level = 1
-                quality = 0.08f
-                cost = 66
-                description = "最基础的鱼饵，量大管饱(鱼管饱)"
-                canBuy = true
-                unit = "包"
-            },
-            FishBait(PropsKind.fishBait, FishBait.BAIT_2, "中级鱼饵").apply {
-                num = 20
-                level = 2
-                quality = 0.15f
-                cost = 269
-                description = "中级鱼饵，闻着就有一股香味。"
-                canBuy = true
-                unit = "包"
-            },
-            FishBait(PropsKind.fishBait, FishBait.BAIT_3, "高级鱼饵").apply {
-                num = 15
-                level = 3
-                quality = 0.25f
-                cost = 588
-                description = "除了贵，全是优点"
-                canBuy = true
-                unit = "包"
-            },
-            FishBait(PropsKind.fishBait, FishBait.BAIT_L_1, "特化型(香味)鱼饵").apply {
-                num = 18
-                level = 4
-                quality = 0.05f
-                cost = 450
-                description = "袋子都封不住他的气味，看来传播性很好！"
-                canBuy = true
-                unit = "包"
-            },
-            FishBait(PropsKind.fishBait, FishBait.BAIT_Q_1, "特化型(口味)鱼饵").apply {
-                num = 18
-                level = 2
-                quality = 0.30f
-                cost = 350
-                description = "我家鱼吃了都说好吃！"
-                canBuy = true
-                unit = "包"
-            }
-        )
-        baits.forEach { PropsManager.registerCodeToProp(it) }
     }
 }
 

@@ -57,8 +57,6 @@ data class PersonalInfoCard(
     val bankEarnings: String,
     /** 当前所在位置。 */
     val location: String,
-    /** 钓鱼冷却状态。 */
-    val fishingCooldown: String,
     /** 农场状态概览。 */
     val farmStatus: String,
     /** 各银行存款列表。 */

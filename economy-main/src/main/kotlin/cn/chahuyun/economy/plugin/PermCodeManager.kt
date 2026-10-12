@@ -13,7 +13,6 @@ object PermCodeManager {
 
         AuthorizeServer.registerPermissions(
             plugin,
-            Perm(EconPerm.FISH_PERM, "壶言经济的钓鱼权限"),
             Perm(EconPerm.LOTTERY_PERM, "壶言经济的彩票权限"),
             Perm(EconPerm.ROB_PERM, "壶言经济的抢劫权限"),
             Perm(EconPerm.RED_PACKET_PERM, "壶言经济的红包权限"),
@@ -23,14 +22,7 @@ object PermCodeManager {
         )
 
         val util = PermUtil
-        var group: PermGroup? = util.selectPermGroupOneByName(EconPerm.GROUP.FISH_PERM_GROUP)
-        if (group == null) {
-            group = util.takePermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP)
-            val perm = util.takePerm(EconPerm.FISH_PERM)
-            util.addPermToPermGroupByPermGroup(perm, group)
-        }
-
-        group = util.selectPermGroupOneByName(EconPerm.GROUP.ROB_PERM_GROUP)
+        var group: PermGroup? = util.selectPermGroupOneByName(EconPerm.GROUP.ROB_PERM_GROUP)
         if (group == null) {
             group = util.takePermGroupByName(EconPerm.GROUP.ROB_PERM_GROUP)
             val perm = util.takePerm(EconPerm.ROB_PERM)

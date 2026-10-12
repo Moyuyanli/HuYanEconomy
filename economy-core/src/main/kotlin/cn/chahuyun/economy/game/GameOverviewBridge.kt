@@ -1,15 +1,13 @@
 package cn.chahuyun.economy.game
 
-import cn.chahuyun.economy.model.fish.FishDto
-import cn.chahuyun.economy.model.fish.FishInfoDto
-import cn.chahuyun.economy.model.fish.FishRankingDto
-import cn.chahuyun.economy.model.user.UserInfoDto
-
+/**
+ * 游戏概览桥接。
+ *
+ * core 模块通过该接口获取 game 模块提供的概览文本，避免 core 反向依赖 game。
+ * 当前仅保留农场状态；钓鱼已下线，待第三代钓鱼重写后再补充对应能力。
+ */
 interface GameOverviewProvider {
-    fun fishingCooldownText(userInfo: UserInfoDto, isFishingTitle: Boolean, fishInfo: FishInfoDto): String
     fun farmStatusText(qq: Long): String
-    fun topFishRankingWinner(): FishRankingDto?
-    fun levelFishList(fishLevel: Int): List<FishDto>
 }
 
 object GameOverviewBridge {
@@ -20,19 +18,7 @@ object GameOverviewBridge {
         this.provider = provider
     }
 
-    fun fishingCooldownText(userInfo: UserInfoDto, isFishingTitle: Boolean, fishInfo: FishInfoDto): String {
-        return provider?.fishingCooldownText(userInfo, isFishingTitle, fishInfo) ?: "可钓鱼"
-    }
-
     fun farmStatusText(qq: Long): String {
         return provider?.farmStatusText(qq) ?: "未种植"
-    }
-
-    fun topFishRankingWinner(): FishRankingDto? {
-        return provider?.topFishRankingWinner()
-    }
-
-    fun levelFishList(fishLevel: Int): List<FishDto> {
-        return provider?.levelFishList(fishLevel).orEmpty()
     }
 }

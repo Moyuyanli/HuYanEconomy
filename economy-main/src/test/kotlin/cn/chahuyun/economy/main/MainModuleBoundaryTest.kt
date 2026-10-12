@@ -23,47 +23,6 @@ class MainModuleBoundaryTest {
     }
 
     @Test
-    fun `GamesAction stays as command entry and fish events stay in GameEventService`() {
-        val gamesAction = Path.of("src/main/kotlin/cn/chahuyun/economy/action/GamesAction.kt").readText()
-        val eventService = Path.of("src/main/kotlin/cn/chahuyun/economy/service/GameEventService.kt").readText()
-
-        val actionForbidden = listOf("CoroutineScope", "FishStartEvent", "FishRollEvent", "companion object")
-            .filter { it in gamesAction }
-
-        assertTrue(
-            actionForbidden.isEmpty(),
-            "GamesAction must stay a thin command entry, but found:\n${actionForbidden.joinToString("\n")}"
-        )
-
-        val serviceRequired = listOf("FishStartEvent", "FishRollEvent", "GamesUsecase.fishStart", "GamesUsecase.fishRoll")
-            .filterNot { it in eventService }
-
-        assertTrue(
-            serviceRequired.isEmpty(),
-            "GameEventService must keep custom fish event delegation:\n${serviceRequired.joinToString("\n")}"
-        )
-    }
-
-    @Test
-    fun `GamesAction exposes documented fishing rod commands`() {
-        val gamesAction = Path.of("src/main/kotlin/cn/chahuyun/economy/action/GamesAction.kt").readText()
-
-        val required = listOf(
-            "购买鱼竿",
-            "GamesManager.buyFishRod",
-            "升级鱼竿\\\\*?",
-            "GamesManager.upFishRod",
-            "鱼竿等级",
-            "GamesManager.viewFishLevel"
-        ).filterNot { it in gamesAction }
-
-        assertTrue(
-            required.isEmpty(),
-            "GamesAction must expose documented fishing rod commands:\n${required.joinToString("\n")}"
-        )
-    }
-
-    @Test
     fun `main user visible entry text does not contain common mojibake fragments`() {
         val roots = listOf(
             Path.of("src/main/kotlin/cn/chahuyun/economy/action"),

@@ -3,7 +3,6 @@ package cn.chahuyun.economy.usecase
 import cn.chahuyun.economy.manager.BackpackManager
 import cn.chahuyun.economy.manager.EventPropsManager
 import cn.chahuyun.economy.manager.UserCoreManager
-import cn.chahuyun.economy.model.fish.FishBait
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.model.user.user
 import cn.chahuyun.economy.prop.BaseProp
@@ -150,10 +149,7 @@ object EventPropsUsecase {
             try {
                 val stackableTemplate = template as? Stackable
                 if (stackableTemplate?.isStack == true) {
-                    val baseNumber = FishBait.fishbaitTimer[propCode] ?: 1
-                    val buyNum = number * baseNumber
-
-                    addOrCreateStackableProp(userInfo, template, propCode, buyNum, createdPropIds)
+                    addOrCreateStackableProp(userInfo, template, propCode, number, createdPropIds)
                 } else {
                     repeat(number) {
                         val prop = template.copyProp<BaseProp>()

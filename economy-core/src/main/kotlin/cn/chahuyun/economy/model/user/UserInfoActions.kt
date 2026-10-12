@@ -1,8 +1,10 @@
 package cn.chahuyun.economy.model.user
 
-import cn.chahuyun.economy.model.fish.FishInfoDto
 import cn.chahuyun.economy.runtime.EconomyRuntime.config
-import cn.chahuyun.economy.service.*
+import cn.chahuyun.economy.service.EconomyInventoryService
+import cn.chahuyun.economy.service.EconomyUserProfileFormatter
+import cn.chahuyun.economy.service.UserRuntimeContextService
+import cn.chahuyun.economy.service.UserSignRuleService
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.User
 
@@ -25,9 +27,6 @@ object UserInfoBehaviorService {
 
     fun sign(dto: UserInfoDto): Boolean =
         UserSignRuleService.applySign(dto, config.reSignTime)
-
-    fun getFishInfo(dto: UserInfoDto): FishInfoDto =
-        UserFishInfoService.findOrCreate(dto)
 
     fun getString(dto: UserInfoDto): String {
         return EconomyUserProfileFormatter.basicInfo(dto)
@@ -55,9 +54,6 @@ fun UserInfoDto.attachRuntime(user: User, group: Group?): UserInfoDto =
 
 fun UserInfoDto.sign(): Boolean =
     UserInfoBehaviorService.sign(this)
-
-fun UserInfoDto.getFishInfo(): FishInfoDto =
-    UserInfoBehaviorService.getFishInfo(this)
 
 fun UserInfoDto.getString(): String =
     UserInfoBehaviorService.getString(this)

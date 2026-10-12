@@ -7,7 +7,6 @@ import cn.chahuyun.economy.data.proxy.DataVersion
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.data.repository.RepairRepository
 import cn.chahuyun.economy.entity.v1.UserBackpack
-import cn.chahuyun.economy.entity.v1.fish.FishPond
 import cn.chahuyun.economy.prop.BaseProp
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.prop.Stackable
@@ -41,9 +40,6 @@ object RepairManager {
     }
 
     private fun repairV1(): String {
-        if (!FishPondRepair().repair()) {
-            return "V1 鱼塘错误数据修复失败!"
-        }
         if (!RobRepair().repair()) {
             return "V1 抢劫错误数据修复失败!"
         }
@@ -62,16 +58,12 @@ object RepairManager {
         if (!signRepair.repair()) {
             return "V1 到 V2 连续签到信息修复失败!"
         }
-        val fishPondMigration = EntityProxyRegistry.migrateModuleTo("fish_pond", DataVersion.V2, switchAfterSuccess = true)
-        if (!fishPondMigration.success) {
-            return "V1 到 V2 鱼塘实体迁移修复失败: ${fishPondMigration.errors.take(3).joinToString("; ")}"
-        }
         val propMigration = EntityProxyRegistry.migrateModuleTo("props", DataVersion.V2, switchAfterSuccess = true)
         if (!propMigration.success) {
             return "V1 到 V2 道具实体迁移修复失败: ${propMigration.errors.take(3).joinToString("; ")}"
         }
 
-        return "V1 到 V2 迁移修复完成\n连续签到修复 ${signRepair.repairedCount} 人，鱼塘迁移 ${fishPondMigration.migratedCount} 条，道具迁移 ${propMigration.migratedCount} 条"
+        return "V1 到 V2 迁移修复完成\n连续签到修复 ${signRepair.repairedCount} 人，道具迁移 ${propMigration.migratedCount} 条"
     }
 }
 
@@ -91,49 +83,6 @@ class UserSignRepair : Repair {
     } catch (e: Exception) {
         Log.error("修复连续签到信息失败", e)
         false
-    }
-}
-
-class FishPondRepair : Repair {
-
-    /**
-     * 修复鱼塘重复引用数据。
-     */
-    override fun repair(): Boolean {
-        // 唯一鱼塘集合。
-        val fishPondSet: MutableSet<FishPond> = mutableSetOf()
-        // 现有鱼塘。
-        val fishPonds = RepairRepository.listFishPonds()
-
-        // 收集所有唯一鱼塘。
-        for (pond in fishPonds) {
-            if (!fishPondSet.contains(pond)) {
-                fishPondSet.add(pond)
-            }
-        }
-
-        // 所有钓鱼排行信息。
-        val fishRanks = RepairRepository.listFishRankings()
-        for (rank in fishRanks) {
-            val fishPond = rank.fishPond
-
-            val id = fishPond?.id ?: error("错误, 鱼塘 id 为空!")
-            var find = fishPondSet.find { it.id == id }
-            if (find != null) {
-                continue
-            }
-
-            find = fishPondSet.find { it.code == fishPond.code }
-
-            RepairRepository.updateFishRankingPond(rank.id, find?.id)
-        }
-
-        for (pond in fishPonds) {
-            if (fishPondSet.find { it.id == pond.id } != null) continue
-            RepairRepository.delete(pond)
-        }
-
-        return true
     }
 }
 

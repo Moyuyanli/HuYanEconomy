@@ -4,14 +4,12 @@ package cn.chahuyun.economy.manager
 
 import cn.chahuyun.economy.constant.TitleCode
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
-import cn.chahuyun.economy.game.GameOverviewBridge
 import cn.chahuyun.economy.model.title.TitleTemplateSimpleImpl
 import cn.chahuyun.economy.model.user.TitleInfoDto
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.model.user.user
 import cn.chahuyun.economy.plugin.TitleTemplateManager
 import cn.chahuyun.economy.utils.EconomyUtil
-import cn.chahuyun.economy.utils.MessageUtil
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import kotlinx.coroutines.runBlocking
@@ -54,14 +52,6 @@ object TitleManager {
                 "[小富翁]",
                 colorHex(Color(0xECCC68)),
                 colorHex(Color(0xffa502))
-            ),
-            TitleTemplateSimpleImpl(
-                TitleCode.FISHING, TitleCode.FISHING_EXPIRED, "钓鱼佬",
-                false, null,
-                true, true,
-                "[邓刚]",
-                colorHex(Color(0xf02fc2)),
-                colorHex(Color(0x6094ea))
             ),
             TitleTemplateSimpleImpl(
                 TitleCode.BET_MONSTER, TitleCode.BET_MONSTER_EXPIRED, "赌怪",
@@ -226,26 +216,6 @@ object TitleManager {
                 builder.append(At(userInfo.qq))
                 builder.append("恭喜!你已经连续签到 90 天，获得 365 天称号 [签到大王]!")
                 subject.sendMessage(builder.build())
-            }
-        }
-    }
-
-    /**
-     * 检查钓鱼榜首称号。
-     */
-    @JvmStatic
-    suspend fun checkFishTitle(userInfo: UserInfoDto, subject: Contact) {
-        val fishRanking = GameOverviewBridge.topFishRankingWinner() ?: return
-
-        if (fishRanking.qq != userInfo.qq) return
-
-        val titleInfo = titleProxy.findWhere { it.code == TitleCode.FISHING }.firstOrNull()
-        if (checkTitleIsExist(userInfo, TitleCode.FISHING)) return
-
-        if (addTitleInfo(userInfo, TitleCode.FISHING)) {
-            subject.sendMessage(MessageUtil.formatMessageChain(userInfo.qq, "恭喜你获得钓鱼排行榜榜首!获得 [钓鱼佬] 称号!"))
-            if (titleInfo != null) {
-                titleProxy.delete(titleInfo.id.toLong())
             }
         }
     }

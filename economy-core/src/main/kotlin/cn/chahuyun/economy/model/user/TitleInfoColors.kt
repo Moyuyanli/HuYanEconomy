@@ -1,5 +1,6 @@
 package cn.chahuyun.economy.model.user
 
+import net.mamoe.mirai.event.events.MessageEvent
 import java.awt.Color
 
 val TitleInfoDto.startColor: Color
@@ -18,4 +19,26 @@ private fun parseTitleColor(color: String): Color {
         hex.substring(2, 4).toInt(16),
         hex.substring(4, 6).toInt(16)
     )
+}
+
+
+class FishAction {
+
+    @Action("game.fish")
+    fun fish(event: MessageEvent, userInfoDto: UserInfoDto) {
+
+    }
+
+
+}
+
+
+object FishRules {
+
+    @Before("game.fish",这里可以填一些其他相关参数,优先级,回滚策略等)
+    fun titleCheck(t: UserInfoDto) {
+
+    }
+
+
 }

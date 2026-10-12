@@ -1,7 +1,6 @@
 package cn.chahuyun.economy.runtime
 
 import cn.chahuyun.economy.config.EconomyConfig
-import cn.chahuyun.economy.config.FishingMsgConfig
 import cn.chahuyun.economy.config.RobMsgConfig
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.console.plugin.jvm.JvmPlugin
@@ -29,10 +28,6 @@ object EconomyRuntime {
     /** 主配置对象，始终读取 AutoSavePluginConfig 单例的当前值。 */
     val config: EconomyConfig
         get() = EconomyConfig
-
-    /** 钓鱼文案配置。 */
-    val msgConfig: FishingMsgConfig
-        get() = FishingMsgConfig
 
     /** 抢劫文案配置。 */
     val robConfig: RobMsgConfig

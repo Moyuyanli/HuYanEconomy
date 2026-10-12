@@ -28,12 +28,6 @@ object TitleCode {
     /** 小富翁称号有效期：30 天。 */
     const val REGAL_EXPIRED: Int = 30
 
-    /** 钓鱼排行榜榜首称号。 */
-    const val FISHING: String = "fishing"
-
-    /** -1 表示永久有效。 */
-    const val FISHING_EXPIRED: Int = -1
-
     /** 赌怪称号。 */
     const val BET_MONSTER: String = "bet-monster"
 
