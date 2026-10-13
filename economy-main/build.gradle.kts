@@ -73,8 +73,10 @@ tasks.matching { it.name.startsWith("kspKotlin") }.configureEach {
 tasks.matching { it.name == "buildPlugin" }.configureEach {
     dependsOn(
         ":economy-common:jar",
+        ":economy-base:jar",
         ":economy-data:jar",
         ":economy-image:jar",
+        ":economy-action:jar",
         ":economy-core:jar",
         ":economy-game:jar"
     )

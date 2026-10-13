@@ -1,855 +1,434 @@
-# KSP 驱动的 Action 规则链框架 · 设计文档
+# KSP 驱动的 Action 规则链框架设计
 
-> 版本：v2.0（最终版）
-> 适用：基于 mirai 的 Kotlin 插件
-> 核心目标：为"多游戏动作 + 通用系统横切逻辑"提供**编译期安全、零反射、全协程、高扩展**的规则链框架
+> 状态：方案设计，尚未实现
+> 适用项目：HuYanEconomy 2.x
+> 目标：为包含多步骤业务流程、需要前置/后置规则编排的动作提供编译期生成的规则链；简单动作继续直接调用。
 
----
+本文以当前项目的模块结构和 Kotlin/KSP 版本为依据。规则链负责业务流程编排，不替代 Mirai 事件、HuYanAuthorize 权限系统、数据层事务或现有领域事件。
 
-## 1. 背景与目标
+阶段一骨架决议见[Action 骨架契约](../plan/v2.0.0/40-%E5%BC%80%E5%8F%91%E6%89%8B%E5%86%8C/Action%E9%AA%A8%E6%9E%B6%E5%A5%91%E7%BA%A6.md)；本文描述总体设计，契约文档记录进入实现前已确定与仍待决议的 API 边界。
 
-### 1.1 问题
+## 1. 目标与边界
 
-插件内有多个游戏动作（签到、钓鱼、抽卡……），每个动作前后需要挂载通用系统的横切逻辑（条件检查、称号加成、道具加成、消费、结算）。
+### 1.1 目标
 
-现状痛点：
+- 复杂业务动作可用 `@Action` 声明，并由 KSP 生成统一代理入口。
+- `@Before` / `@After` 规则按 actionId 关联、排序和执行。
+- Provider 可按类型与限定名装配参数；同类型的不同业务对象可以明确选择不同数据来源。
+- Action、规则、Provider 和生成调用保持 `suspend`，不使用运行时反射。
+- 编译期尽可能检查 actionId、参数类型、Provider 唯一性和规则签名。
+- 规则链可以分阶段接入，直接动作不需要为了统一形式而添加 `@Action`。
 
-- **步骤挤在一起**：检查、消费、执行写在一个事件里，臃肿。
-- **数据靠事件传递**：倍率等中间数据靠 mirai 事件字段传递，改一处动全身。
-- **扩展难**：新增一个加成来源，要改事件链。
-- **回滚缺失**：消费了道具但后续失败，没有自动补偿。
-- **语义单一**：只能 `throw` 表达失败，无法区分"拦截/跳过/继续/回滚"。
+### 1.2 非目标
 
-### 1.2 目标
+- 不替代 `@MessageAuthorize`、命令匹配、权限校验或 Mirai 事件订阅。
+- 不自动回滚任意数据库、内存、事件广播、消息发送或协程副作用。
+- 第一版不支持运行时动态注册规则。
+- 不要求所有指令都迁移到规则链。
 
-| 目标           | 说明                                                         |
-| -------------- | ------------------------------------------------------------ |
-| **注解声明**   | 动作打 `@Action`，规则打 `@Before`/`@After`，类型打 `@Provides` |
-| **职责分离**   | 动作作者只写业务，规则作者只写规则，装配维护者只注册类型     |
-| **规则可插拔** | 新增系统只写规则，不动已有代码                               |
-| **编译期安全** | actionId、参数类型、返回值类型全部编译期校验                 |
-| **零反射**     | KSP 生成全部调用代码                                         |
-| **全协程**     | 规则、动作、引擎全链路 `suspend`                             |
-| **一行入口**   | `XxxActions.方法名(event)`                                   |
-| **安全可控**   | `RuleResult` 表达业务结论，引擎自动逆序补偿                  |
+### 1.3 规则链适用判断
 
-### 1.3 非目标
+适合标记 `@Action` 的场景：动作包含多个前置条件、多个可插拔加成/资源操作、需要统一后置结算，或流程拆分能显著改善可读性。
 
-- 不支持运行时动态注册规则。
-- 不支持任意方法无感拦截。
-- 第一版不支持 `@Named` 多实例同类型注入。
+不需要标记的场景：简单查询、帮助、管理开关、直接委托单个 service/usecase 的命令。它们继续由 Action 入口直接调用现有业务代码。
 
----
+## 2. 项目目标结构
 
-## 2. 总体设计
-
-### 2.1 架构图
-
-```
-┌──────────────────────────────────────────────────────────┐
-│  入口层（mirai 事件）                                     │
-│  @MessageAuthorize → suspend fun sign(event)             │
-│       └── SignUsecaseActions.sign(event)  ← 一行         │
-└──────────────────────────┬───────────────────────────────┘
-                           │
-┌──────────────────────────▼───────────────────────────────┐
-│  引擎层 ActionEngine.invokeFromEntry                     │
-│  1. 提取 userId                                          │
-│  2. 装配 ActionContext（按 KSP 反推的需求列表）          │
-│  3. before 规则（按 order）→ 消费 RuleResult             │
-│  4. 执行动作本体                                         │
-│  5. after 规则（按 order）                               │
-│  6. 失败 → 逆序补偿                                      │
-└──────────────────────────┬───────────────────────────────┘
-                           │
-┌──────────────────────────▼───────────────────────────────┐
-│  注册表层（KSP 生成）                                     │
-│  ActionRegistry_Generated                                │
-│  BeforeRegistry_Generated                                │
-│  AfterRegistry_Generated                                 │
-│  ActionContextRequirements_Generated                     │
-│  XxxActions（每个业务类一个门面）                         │
-└──────────────────────────┬───────────────────────────────┘
-                           │
-┌──────────────────────────▼───────────────────────────────┐
-│  业务层                                                   │
-│  @Action suspend fun sign(event): SignResult             │
-│  @Before / @After 规则方法                                │
-│  @Provides 类型加载声明                                   │
-└──────────────────────────────────────────────────────────┘
+```text
+economy-main/action
+  Mirai 命令与权限入口（HuYanAuthorize）
+        |
+        +-- 复杂动作 -> 生成的 XxxActions facade
+        |                  |
+        |                  v
+        |          economy-core / economy-game
+        |          object usecase + rules + providers
+        |
+        +-- 简单动作 ---------------------> 业务调用
+                                           |
+                                           v
+                               economy-data / economy-base
 ```
 
-### 2.2 核心概念
+模块依赖建议：
 
-| 概念              | 说明                                               |
-| ----------------- | -------------------------------------------------- |
-| **Action**        | 可被规则链包裹的业务动作，`@Action(id)` 标记       |
-| **Rule**          | 横切逻辑，`@Before`/`@After` 标记，绑定 actionId   |
-| **Provider**      | 类型加载声明，`@Provides` 标记                     |
-| **ActionContext** | 执行上下文，承载入参、实体、返回值、自定义数据     |
-| **ActionEngine**  | 执行引擎，装配、排序、执行、补偿                   |
-| **RuleResult**    | 规则结论密封类：`Continue`/`Skip`/`Abort`/`Reject` |
-| **Compensation**  | 补偿器，规则失败时回滚副作用                       |
-| **XxxActions**    | KSP 生成的门面，入口调用它即走规则链               |
+```text
+economy-core  ──depends on──> economy-action
+economy-game  ──depends on──> economy-action
 
-### 2.3 三个角色
+economy-action-ksp ──KSP processor applied to──> economy-core / economy-game
+                                                   (and economy-main if needed)
 
-| 角色           | 写什么                  | 关注点                              |
-| -------------- | ----------------------- | ----------------------------------- |
-| **动作作者**   | `@Action` 方法          | 只写业务逻辑，不声明依赖            |
-| **规则作者**   | `@Before`/`@After` 方法 | 只声明所需参数类型，不碰 ctx 取数据 |
-| **装配维护者** | `@Provides` 方法        | 只声明"某类型怎么从 userId 加载"    |
+economy-main ──aggregates generated ActionModule descriptors──> economy-core / economy-game
+```
 
-**三者互不干扰，各自独立演进。**
+`economy-action-ksp` 是编译期插件，由 `economy-core`、`economy-game`（以及确有 Action 时的 `economy-main`）应用；它不是业务模块的运行时依赖。
 
----
+其中 `economy-action` 是运行时基础库；`economy-action-ksp` 是编译期处理器，不应进入 Mirai 插件运行时。KSP 插件版本与 Kotlin 版本保持匹配。当前项目 Kotlin 为 `1.9.20`、KSP 为 `1.9.20-1.0.14`、JVM target 为 11；首版沿用这些版本，不因引入规则链而升级。
 
-## 3. 注解定义（4 个核心注解）
+目标业务结构是 `action -> usecase/rules -> data`。`economy-core` 和 `economy-game` 中的 usecase/rules 依领域放置；新框架不要求保留原有每个 service/manager/usecase 层级。是否合并现有类由迁移任务逐个判断，不在引擎中强制规定。
 
-### 3.1 `@Action`
+## 3. 概念与执行流程
+
+### 3.1 概念
+
+| 概念 | 职责 |
+| --- | --- |
+| Action | 可选的复杂业务流程入口，由 `@Action(id)` 标记 |
+| Rule | 横切流程步骤，由 `@Before` 或 `@After` 绑定 actionId |
+| Provider | 为规则参数提供数据的 suspend 函数 |
+| ActionContext | 一次执行的上下文，包含 actionId、事件、参数和中间属性 |
+| ActionEngine | 执行规则、动作本体及后置规则 |
+| Generated facade | KSP 为带注解的 object 方法生成的调用入口 |
+| ActionModule | 一个 Gradle 业务模块的 KSP 生成描述，由 main 聚合 |
+
+### 3.2 流程
+
+```text
+HuYanAuthorize Action
+  -> XxxActions.method(event)
+  -> 创建 ActionContext
+  -> 按 order 执行 Before
+       -> Continue: 执行下一规则
+       -> EndSilently / EndWithMessage: 结束本次 Action
+  -> 调用 object 中的 Action 方法
+  -> 按 order 执行 After
+  -> 将执行结果交还入口适配层
+```
+
+只有复杂流程通过生成 facade；没有 `@Action` 的方法不生成代理，保持原有调用方式。
+
+## 4. Action、规则和动作结果
+
+### 4.1 Action 的类和签名
+
+业务类统一使用 Kotlin `object`。KSP 生成代码直接调用 object，不构造业务类、不假设无参构造，也不引入 DI 容器。
+
+首版签名约定：
+
+- 常见形式为单个 Mirai event 参数。
+- 确实需要上下文扩展能力时，业务 Action 可声明 `event, ctx`；`ctx` 由引擎创建并由生成代码注入，不由 Mirai 入口传入。
+- 不为少量多参数历史签名扩大处理器复杂度；迁移时优先把额外输入归并到 event 或 `ActionContext`。
+- 生成 facade 的公开签名只暴露入口参数（通常是 event），不会暴露引擎内部的 `ActionContext`。
+
+示意：
 
 ```kotlin
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class Action(
-    val id: String,
-)
-```
-
-**动作作者只声明 id，不声明任何依赖。**
-
-### 3.2 `@Before` / `@After`
-
-```kotlin
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class Before(
-    val value: String,
-    val order: Int = 100,
-    val onFail: FailStrategy = FailStrategy.ABORT,
-    val compensate: KClass<out Compensation>? = null,
-)
-
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class After(
-    val value: String,
-    val order: Int = 100,
-    val compensate: KClass<out Compensation>? = null,
-)
-
-enum class FailStrategy { ABORT, SKIP, IGNORE }
-```
-
-### 3.3 `@Provides`
-
-```kotlin
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class Provides
-```
-
-**装配维护者用它声明"某类型怎么加载"。**
-
-### 3.4 `order` 约定
-
-| 区间  | 用途                                     |
-| ----- | ---------------------------------------- |
-| 1–4   | 冷却、频率限制                           |
-| 5–9   | 资格检查（已签到、称号、等级）           |
-| 10–49 | 加成产出（称号倍率、道具倍率、福利倍率） |
-| 50–99 | 资源扣除（消费道具、扣费）               |
-| 100+  | 奖励发放、日志（after）                  |
-
-**写进团队规范，顺序错乱会导致"扣了钱没执行"。**
-
----
-
-## 4. 运行时基础设施
-
-### 4.1 RuleResult（规则结论）
-
-```kotlin
-sealed interface RuleResult {
-
-    /** 继续执行下一个规则（默认） */
-    object Continue : RuleResult
-
-    /** 跳过当前动作的后续分支，但不视为失败 */
-    data class Skip(val reason: String) : RuleResult
-
-    /** 阻止动作，中断并回滚 */
-    data class Abort(
-        val reason: String,
-        val rollbackTo: RollbackScope = RollbackScope.ALL,
-    ) : RuleResult
-
-    /** 阻止动作，带结构化信息 */
-    data class Reject(
-        val code: String,
-        val message: String,
-        val rollbackTo: RollbackScope = RollbackScope.ALL,
-    ) : RuleResult
+object TransferUsecase {
+    @Action("bank.transfer")
+    suspend fun transfer(event: MessageEvent, ctx: ActionContext) {
+        // 业务动作本体
+    }
 }
-
-enum class RollbackScope { ALL, CURRENT_ACTION, NONE }
 ```
 
-**语义对照**：
+### 4.2 注解草案
 
-| 结果       | 语义             | 引擎行为                                     |
-| ---------- | ---------------- | -------------------------------------------- |
-| `Continue` | 继续             | 记录，继续                                   |
-| `Skip`     | 跳过分支，不失败 | 记录（有副作用仍补偿），继续                 |
-| `Abort`    | 阻止，回滚       | 逆序补偿，抛 `ActionAborted`                 |
-| `Reject`   | 阻止，带原因     | 逆序补偿，抛 `ActionRejected(code, message)` |
-
-### 4.2 ActionContext
+以下为方案形态，最终包名和 API 名称在实现阶段确定：
 
 ```kotlin
-class ActionContext(
-    val actionId: String,
-    val userId: Long,
-    val event: Any?,
+@Target(AnnotationTarget.FUNCTION)
+annotation class Action(val id: String)
+
+@Target(AnnotationTarget.FUNCTION)
+annotation class Before(val actionId: String, val order: Int = 100)
+
+@Target(AnnotationTarget.FUNCTION)
+annotation class After(val actionId: String, val order: Int = 100)
+```
+
+`actionId` 必须唯一。规则引用的 actionId 必须存在；同一 action 的规则按 `order` 升序执行。相同 order 的稳定顺序应由生成器定义，建议按源文件路径和声明位置稳定排序，避免依赖 KSP 返回顺序。
+
+### 4.3 动作结果语义
+
+业务结果先收敛为以下候选：
+
+| 结果 | 语义 |
+| --- | --- |
+| `Continue` | 当前规则完成，继续执行后续规则或动作本体 |
+| `EndSilently` | 结束本次 Action，不发送回复 |
+| `EndWithMessage(message)` | 结束本次 Action，由结果处理端口交给上层发送回复 |
+| 回滚 | 不属于首版结果 API；待范围和时机设计完成后再加入 |
+
+`EndSilently` 和 `EndWithMessage` 是业务流程的正常结束，不是异常。意外的数据库错误或程序错误仍通过异常表达。
+
+`EndWithMessage` 首版先限定为普通文本，由运行时 `ActionResultHandler` 端口交给上层 Mirai 适配发送。规则引擎本身不直接依赖 Mirai Contact/MessageChain；复杂消息内容或图片回复后续按实际需要扩展。
+
+一次 invocation 最多调用一次 `ActionResultHandler`。框架不检查或去重 Action 本体直接发送的消息；使用规则结果回复的 Action 应避免本体再发送同一逻辑消息。
+
+规则返回结束结果后的行为：
+
+- `Before` 返回结束结果：不执行剩余 before、动作本体或 after。
+- 动作本体成功后执行 after；after 返回结束结果时停止剩余 after，并把该结果返回入口。
+- 动作本体抛异常时不执行 after，异常交由现有异常处理路径。
+- 回滚结果仅列为未来扩展，不在上述流程中产生实际副作用。
+
+### 4.4 RuleResult 草案
+
+```kotlin
+sealed interface ActionResult {
+    data object Continue : ActionResult
+    data object EndSilently : ActionResult
+    data class EndWithMessage(val message: String) : ActionResult
+}
+```
+
+规则返回 `Unit` 时可由生成代码映射为 `Continue`；需要结束流程时显式返回结果。规则控制结果类型命名为 `ActionResult`。首版不保留 `Skip`、`Abort`、`Reject` 或可执行的 Rollback 分支。
+
+Action 本体允许返回任意业务值，运行时以 `ActionExecution<T>` 表示规则结果、是否执行了 Action 本体及其返回值。Action 返回值保存于 context，供 After 规则读取；before 提前结束时 `actionExecuted` 为 false，不产生业务返回值。
+
+## 5. ActionContext 与 Provider
+
+### 5.1 ActionContext
+
+`ActionContext` 表示单次 Action 执行，可承载：
+
+- `actionId` 和原始 Mirai event；
+- Action 的显式参数；
+- 规则间共享的类型化中间数据或 attrs；
+- 动作本体的返回值（若需要供 after 使用）。
+
+Context 生命周期仅限一次调用。不得把用户数据缓存到跨调用共享的可变对象中。事件类型和 Action 参数由生成 facade 放入 context；领域数据通过 Provider 获取。
+
+### 5.2 Provider 的作用与作用域
+
+Provider 是自行注册的数据装配函数，不局限于 `userId`。可根据 `ActionContext` 中的 event、用户、群、命令参数或已有属性查询任意需要的类型。
+
+Provider 有两种可见范围：
+
+1. **全局 Provider**：未绑定 actionId，可供所有 Action 使用。
+2. **Action 局部 Provider**：声明绑定某个 actionId，只能供该 Action 的规则参数使用。
+
+局部 Provider 的作用是限制可见性，而不只是命名分组。执行某个 Action 时，有效 Provider 集合为全局集合与该 Action 的局部集合；其他 Action 的局部 Provider 不参与查找。
+
+### 5.3 类型与限定名
+
+仅按返回类型无法区分同类型的不同来源。例如转账中，付款方账户和收款方账户都是 `EconomyAccount`，但加载方式和对象不同。因此 Provider 的解析键为：
+
+```text
+(actionId, valueType, qualifier)
+```
+
+概念性声明：
+
+```kotlin
+@Provider(qualifier = "fromUser", actionId = "bank.transfer")
+suspend fun fromAccount(ctx: ActionContext): EconomyAccount = ...
+
+@Provider(qualifier = "toUser", actionId = "bank.transfer")
+suspend fun toAccount(ctx: ActionContext): EconomyAccount = ...
+```
+
+规则参数显式选择 Provider：
+
+```kotlin
+@Before("bank.transfer")
+suspend fun validateAccounts(
+    @FromProvider("fromUser") from: EconomyAccount,
+    @FromProvider("toUser") to: EconomyAccount,
 ) {
-    private val pool = mutableMapOf<KClass<*>, Any>()
-    private var result: Any? = null
-    val attrs = mutableMapOf<String, Any?>()
-
-    fun <T : Any> put(type: KClass<T>, value: T) { pool[type] = value }
-
-    fun <T : Any> get(type: KClass<T>): T? {
-        pool[type]?.let { return it as T }
-        return pool.entries.firstOrNull { type.isInstance(it.value) }?.value as? T
-    }
-
-    fun setResult(r: Any?) { result = r }
-
-    fun <T : Any> result(type: KClass<T>): T? {
-        result?.let { if (type.isInstance(it)) return it as T }
-        return null
-    }
+    // from 与 to 类型相同，但由不同 Provider 装配
 }
 ```
 
-**参数来源对照表**：
+`@Provider` 和 `@FromProvider` 是便于说明的注解草案，名称可以调整。关键约定是 Provider 声明有返回类型、限定名和可选 actionId；规则参数在有歧义时显式声明限定名。
 
-| 来源                 | 谁 put             | 何时可用  | 规则怎么取                |
-| -------------------- | ------------------ | --------- | ------------------------- |
-| `ActionContext` 本体 | 引擎创建           | 全程      | 声明 `ActionContext` 参数 |
-| 动作入参             | 入口/引擎          | Before 起 | `ctx.get(XxxClass)`       |
-| 预装配实体           | 引擎（按需求列表） | Before 起 | `ctx.get(XxxClass)`       |
-| 动作返回值           | 引擎自动           | After 起  | `ctx.result(XxxClass)`    |
-| 自定义数据           | 规则/动作手动      | 任意      | `ctx.attrs["key"]`        |
+### 5.4 Provider 校验与冲突处理
 
-### 4.3 倍率模型（可选，用于加成类场景）
+- 同一有效作用域内，`(valueType, qualifier)` 必须唯一。
+- 同一 Action 中全局 Provider 与局部 Provider 若产生相同解析键，视为冲突并报错；局部 Provider 不静默覆盖全局 Provider。
+- 带限定名的参数必须匹配相同类型和限定名的 Provider。
+- 无限定名参数仅在有效 Provider 集合中恰好有一个匹配类型时允许；零个时报缺失，多个时报歧义。类型存在多个来源时必须显式指定 qualifier。
+- Provider 函数和规则函数均为 suspend；生成代码直接调用，不使用反射。
+- Provider 只接收 `ActionContext`；同一 invocation 中首次解析后缓存，后续相同 `(类型, qualifier)` 读取复用该值。
 
-```kotlin
-sealed interface RewardModifier {
-    val source: String
+示例转账参数的唯一绑定是：
 
-    data class Add(override val source: String, val value: Double) : RewardModifier
-    data class Multiply(override val source: String, val factor: Double) : RewardModifier
-}
-
-fun List<RewardModifier>.applyTo(base: Double): Double {
-    val addSum = filterIsInstance<RewardModifier.Add>().sumOf { it.value }
-    val mulProduct = filterIsInstance<RewardModifier.Multiply>()
-        .fold(1.0) { acc, m -> acc * m.factor }
-    return (base + addSum) * mulProduct
-}
-
-// ctx 扩展
-private const val KEY_MODIFIERS = "rewardModifiers"
-
-fun ActionContext.addModifier(m: RewardModifier) {
-    @Suppress("UNCHECKED_CAST")
-    val list = (attrs[KEY_MODIFIERS] as? MutableList<RewardModifier>) ?: mutableListOf()
-    list.add(m)
-    attrs[KEY_MODIFIERS] = list
-}
-
-fun ActionContext.modifiers(): List<RewardModifier> =
-    (attrs[KEY_MODIFIERS] as? List<RewardModifier>) ?: emptyList()
+```text
+(bank.transfer, EconomyAccount, fromUser) -> fromAccount
+(bank.transfer, EconomyAccount, toUser)   -> toAccount
 ```
 
-**倍率不"传递"，而是"累加进 ctx"，结算时统一计算。**
+### 5.5 属性与中间数据
 
-### 4.4 SuspendRule 与 ActionMeta
+只在规则间传递的一次性数据放入 `ActionContext`，不应为了临时值增加 Provider。优先使用有类型的 context 扩展或独立数据类；若使用字符串 attrs，应集中定义 key，避免拼写错误。
 
-```kotlin
-class SuspendRule(
-    val order: Int,
-    val compensate: (suspend (ActionContext, Throwable) -> Unit)? = null,
-    val invoke: suspend (ActionContext) -> RuleResult,
-)
+## 6. KSP 生成与多模块
 
-class ActionMeta(
-    val id: String,
-    val invoke: suspend (ActionContext) -> Any?,
-)
+### 6.1 模块职责
+
+建议新增：
+
+- `economy-action`：注解、ActionContext、动作结果、运行时引擎及模块描述接口。
+- `economy-action-ksp`：KSP SymbolProcessor 和代码生成逻辑，只作为编译期依赖。
+
+`economy-action` 不依赖 `economy-core`、`economy-game` 或 HuYanAuthorize。Mirai 事件由业务模块以类型参数传入；若引擎需要发送消息，由 `economy-main` 适配。
+
+KSP Processor 通常不能在一个模块中扫描其他模块的源码，因此采用模块级生成：
+
+```text
+economy-core KSP -> CoreActionModule_Generated
+economy-game KSP -> GameActionModule_Generated
+economy-main KSP -> MainActionModule_Generated（若 main 自身定义 Action）
+                           |
+                           v
+economy-main 初始化时显式聚合模块描述并创建 ActionEngine
 ```
 
-### 4.5 ContextRegistry（类型注册中心）
+每个业务模块只扫描并生成本模块的 Action、规则、Provider 和 facade。main 负责组合模块描述；不能假设某个 KSP Processor 一次扫描整个 Gradle 工程。
+
+### 6.2 Provider 跨模块可见性
+
+同模块内，KSP 可直接校验规则参数与 Provider 声明。跨模块引用不能假设 Processor 能读取依赖模块的 Kotlin 源码。
+
+生成的 `ActionModule` 描述应包含 Provider 的元数据（Action 范围、返回类型、限定名）和实际加载函数。main 聚合时检查：
+
+- Action ID 是否重复；
+- 同一有效作用域内 Provider key 是否重复；
+- 规则要求的 Provider key 是否存在。
+
+实现阶段需用当前 KSP 版本验证生成类的元数据是否足以完成消费模块的编译期校验。若依赖模块生成信息不能被 KSP 稳定读取，首版采用显式模块聚合校验或模块本地规则/Provider 配对，不以反射兜底。
+
+### 6.3 生成产物
+
+每个业务模块至少生成一个模块描述，包含：
+
+- 该模块的 actionId 和 facade 调用；
+- actionId 对应的 before/after 规则及稳定排序；
+- Provider 元数据和类型限定加载函数；
+- 规则参数到 Provider 的确定绑定。
+
+不要求必须拆成多个全局 Map 源文件。优先生成结构清楚、可由 main 聚合的模块级对象，避免源文件名和注册表数量成为公共契约。
+
+每个带 `@Action` 的 object 方法生成同签名 facade，例如：
 
 ```kotlin
-class ContextRegistry {
-    private val loaders = mutableMapOf<KClass<*>, suspend (Long) -> Any>()
-
-    fun <T : Any> register(type: KClass<T>, loader: suspend (Long) -> T) {
-        loaders[type] = loader
-    }
-
-    suspend fun load(type: KClass<*>, userId: Long): Any {
-        val loader = loaders[type] ?: error("未注册的上下文类型: $type")
-        return loader(userId)
-    }
-
-    fun has(type: KClass<*>): Boolean = type in loaders
-}
-```
-
-**由 `@Provides` 生成或手动注册。**
-
-### 4.6 ActionEngine
-
-```kotlin
-class ActionEngine(
-    private val registry: ContextRegistry,
-    private val actionRegistry: Map<String, ActionMeta>,
-    private val beforeRegistry: Map<String, List<SuspendRule>>,
-    private val afterRegistry: Map<String, List<SuspendRule>>,
-    private val requirements: Map<String, List<KClass<*>>>,
-) {
-    suspend fun <T> invokeFromEntry(
-        actionId: String,
-        event: Any,
-        userId: Long = extractUserId(event),
-        block: suspend (ActionContext) -> T,
-    ): T {
-        val meta = actionRegistry[actionId] ?: error("未注册的 action: $actionId")
-        val ctx = ActionContext(actionId, userId, event)
-        ctx.put(event::class, event)
-
-        // 按 KSP 反推的需求列表装配
-        requirements[actionId].orEmpty().forEach { type ->
-            ctx.put(type, registry.load(type, userId))
-        }
-
-        val befores = beforeRegistry[actionId].orEmpty()
-        val afters = afterRegistry[actionId].orEmpty()
-        val executed = mutableListOf<SuspendRule>()
-
-        try {
-            // ---- 前置 ----
-            for (rule in befores) {
-                when (val r = rule.invoke(ctx)) {
-                    is RuleResult.Continue -> executed += rule
-                    is RuleResult.Skip -> executed += rule
-                    is RuleResult.Abort -> {
-                        rollback(executed, ctx, r.reason)
-                        throw ActionAborted(r.reason)
-                    }
-                    is RuleResult.Reject -> {
-                        rollback(executed, ctx, r.message)
-                        throw ActionRejected(r.code, r.message)
-                    }
-                }
-            }
-
-            // ---- 动作本体 ----
-            val result = block(ctx)
-            ctx.setResult(result)
-
-            // ---- 后置 ----
-            for (rule in afters) {
-                when (val r = rule.invoke(ctx)) {
-                    is RuleResult.Continue, is RuleResult.Skip -> { /* ok */ }
-                    is RuleResult.Abort -> log.error("after abort: ${r.reason}")
-                    is RuleResult.Reject -> log.error("after reject: ${r.message}")
-                }
-            }
-
-            return result
-
-        } catch (e: Throwable) {
-            if (executed.isNotEmpty()) rollback(executed, ctx, e.message ?: "unknown")
-            throw e
-        }
-    }
-
-    private suspend fun rollback(
-        executed: List<SuspendRule>,
-        ctx: ActionContext,
-        reason: String,
-    ) {
-        executed.asReversed().forEach { rule ->
-            rule.compensate?.let {
-                runCatching { it(ctx, ActionAborted(reason)) }
-                    .onFailure { ex -> log.error("补偿失败", ex) }
-            }
-        }
-    }
-
-    companion object {
-        private fun extractUserId(event: Any): Long = when (event) {
-            is GroupMessageEvent -> event.sender.id
-            is FriendMessageEvent -> event.sender.id
-            else -> error("无法从 $event 提取 userId")
-        }
-    }
-}
-```
-
-**执行语义**：
-
-- before 按 `order` 升序，任一步 `Abort`/`Reject` → 逆序补偿已执行规则。
-- 动作本体返回后 `setResult`，after 才能取。
-- 任意阶段抛异常 → 兜底逆序补偿。
-- 补偿失败只记日志，不掩盖原始异常。
-
----
-
-## 5. 规则编写规范
-
-### 5.1 两种签名
-
-**签名 A：返回 `Unit`（默认 `Continue`）**
-
-```kotlin
-@Before("daily.sign", order = 5)
-suspend fun applyTitleBonus(userTitle: UserTitle, ctx: ActionContext) {
-    titleService.rewardModifier(userTitle)?.let { ctx.addModifier(it) }
-}
-```
-
-KSP 生成：
-
-```kotlin
-SuspendRule(order = 5) { ctx ->
-    SignRules.applyTitleBonus(ctx.get(UserTitle::class)!!, ctx)
-    RuleResult.Continue   // 自动补
-}
-```
-
-**签名 B：返回 `RuleResult`（显式结论）**
-
-```kotlin
-@Before("daily.sign", order = 1)
-suspend fun checkAlreadySigned(userInfo: UserInfoDto): RuleResult =
-    if (userInfo.signedToday) RuleResult.Reject("ALREADY_SIGNED", "今日已签到")
-    else RuleResult.Continue
-```
-
-**规则作者按需选择**：正常规则写 `Unit`，有结论写 `RuleResult`。
-
-### 5.2 参数自动注入
-
-规则方法的参数**由 KSP 自动从 ctx 取**，规则作者不碰 ctx：
-
-| 参数类型                              | KSP 生成                 |
-| ------------------------------------- | ------------------------ |
-| `ActionContext`                       | 直接传 `ctx`             |
-| `@Action` 的返回值类型（仅 `@After`） | `ctx.result(XxxClass)!!` |
-| 已注册的上下文类型                    | `ctx.get(XxxClass)!!`    |
-| 未注册类型                            | **编译报错**             |
-| `@Before` 引用返回值类型              | **编译报错**             |
-
-### 5.3 自定义数据用 `ctx.attrs`
-
-规则特有的中间数据（如"消费了什么道具"）放 `ctx.attrs`，不进 `@Provides`：
-
-```kotlin
-ctx.attrs["consumed"] = item to 1
-```
-
-**建议用类型化扩展封装**：
-
-```kotlin
-var ActionContext.consumed: Pair<String, Int>?
-    get() = attrs["consumed"] as? Pair<String, Int>
-    set(v) { attrs["consumed"] = v }
-```
-
-### 5.4 补偿器
-
-```kotlin
-interface Compensation {
-    suspend fun compensate(ctx: ActionContext, cause: Throwable)
+object TransferUsecase {
+    @Action("bank.transfer")
+    suspend fun transfer(event: MessageEvent, ctx: ActionContext) { ... }
 }
 
-class ConsumeCompensation(
-    private val backpackService: BackpackService,
-) : Compensation {
-    override suspend fun compensate(ctx: ActionContext, cause: Throwable) {
-        val consumed = ctx.consumed ?: return
-        backpackService.add(ctx.userId, consumed.first, consumed.second)
-    }
-}
-```
-
-**编写原则**：
-- 幂等：补偿可能被多次调用（引擎保证一次，但业务层应容错）。
-- 不抛异常：内部失败只记日志。
-- 只补偿"写操作"，只读规则不需要补偿。
-
-### 5.5 异常 vs RuleResult
-
-| 场景                | 用哪个              |
-| ------------------- | ------------------- |
-| 条件不满足          | `RuleResult.Reject` |
-| 无福利，跳过        | `RuleResult.Skip`   |
-| 主动阻止并回滚      | `RuleResult.Abort`  |
-| 系统崩溃、DB 连不上 | `throw`（意外）     |
-| 逻辑 bug            | `throw`（意外）     |
-
-**`RuleResult` 表达业务结论，`throw` 表达意外。**
-
----
-
-## 6. KSP 生成设计
-
-### 6.1 生成产物
-
-| 文件                                     | 内容                                    |
-| ---------------------------------------- | --------------------------------------- |
-| `ActionRegistry_Generated.kt`            | `actionId → ActionMeta`                 |
-| `BeforeRegistry_Generated.kt`            | `actionId → List<SuspendRule>`          |
-| `AfterRegistry_Generated.kt`             | `actionId → List<SuspendRule>`          |
-| `ActionContextRequirements_Generated.kt` | `actionId → List<KClass>`（从规则反推） |
-| `ContextRegistry_Generated.kt`           | 从 `@Provides` 生成注册器               |
-| `<业务类名>Actions.kt`                   | 每个 `@Action` 一个同名门面函数         |
-
-### 6.2 需求列表反推（核心）
-
-KSP 扫描所有规则方法的参数，汇总每个 action 需要的类型：
-
-```kotlin
-// 规则
-@Before("daily.sign") suspend fun a(userInfo: UserInfoDto) { ... }
-@Before("daily.sign") suspend fun b(userTitle: UserTitle) { ... }
-@After("daily.sign")  suspend fun c(result: SignResult, userInfo: UserInfoDto) { ... }
-
-// 生成
-object ActionContextRequirements_Generated {
-    val requirements: Map<String, List<KClass<*>>> = mapOf(
-        "daily.sign" to listOf(
-            UserInfoDto::class,
-            UserTitle::class,
-        ),
-    )
-}
-```
-
-**`SignResult` 不在列表里**——它是返回值，引擎自动 `setResult`，不走 `@Provides`。
-
-**动作作者完全不知道有这一步。**
-
-### 6.3 `XxxActions` 门面生成
-
-```kotlin
-// 业务
-class SignUsecase {
-    @Action("daily.sign")
-    suspend fun sign(event: GroupMessageEvent): SignResult { ... }
-}
-
-// KSP 生成
-object SignUsecaseActions {
-    suspend fun sign(event: GroupMessageEvent): SignResult =
-        EngineHolder.engine.invokeFromEntry("daily.sign", event) { ctx ->
-            SignUsecase().sign(event)
+// 生成代码示意
+object TransferUsecaseActions {
+    suspend fun transfer(event: MessageEvent) =
+        ActionRuntime.invoke("bank.transfer", event) { ctx ->
+            TransferUsecase.transfer(event, ctx)
         }
 }
 ```
 
-**生成规则**：
-- 对象名 = `<业务类简单名> + Actions`。
-- 函数名 = 原方法名。
-- 签名 = 原方法签名。
-- 函数体 = `invokeFromEntry(actionId, event) { 原方法调用 }`。
-- 只对 `@Action` 方法生成，未打注解的方法**不生成**（调用编译不过）。
-
-### 6.4 参数注入决策树
-
-```
-参数是 ActionContext？
-  ├─ 是 → 传 ctx
-  └─ 否 → 是 @Action 返回值类型？
-           ├─ 是 且 @After → ctx.result(XxxClass)!!
-           ├─ 是 且 @Before → ❌ 编译报错
-           └─ 否 → 类型在 @Provides 注册？
-                    ├─ 是 → ctx.get(XxxClass)!!
-                    └─ 否 → ❌ 编译报错
-```
-
-### 6.5 编译期校验清单
-
-| 校验项                                         | 时机   |
-| ---------------------------------------------- | ------ |
-| `@Before`/`@After` 的 `value` 有对应 `@Action` | 编译期 |
-| `@Action.id` 唯一                              | 编译期 |
-| `@Before` 不引用返回值类型                     | 编译期 |
-| 规则参数类型已在 `@Provides` 注册              | 编译期 |
-| `compensate` 类实现 `Compensation`             | 编译期 |
-| 规则方法返回值是 `Unit` 或 `RuleResult`        | 编译期 |
-
-### 6.6 KSP Processor 骨架
-
-```kotlin
-class ActionProcessor(
-    private val codeGenerator: CodeGenerator,
-    private val logger: KSPLogger,
-) : SymbolProcessor {
-
-    override fun process(resolver: Resolver): List<KSAnnotated> {
-        val actions = resolver.getSymbolsWithAnnotation(Action::class.qualifiedName!!)
-            .filterIsInstance<KSFunctionDeclaration>()
-        val befores = resolver.getSymbolsWithAnnotation(Before::class.qualifiedName!!)
-            .filterIsInstance<KSFunctionDeclaration>()
-        val afters = resolver.getSymbolsWithAnnotation(After::class.qualifiedName!!)
-            .filterIsInstance<KSFunctionDeclaration>()
-        val provides = resolver.getSymbolsWithAnnotation(Provides::class.qualifiedName!!)
-            .filterIsInstance<KSFunctionDeclaration>()
-
-        validate(actions, befores, afters, provides)
-
-        generateActionRegistry(actions)
-        generateBeforeRegistry(befores)
-        generateAfterRegistry(afters)
-        generateRequirements(befores, afters)
-        generateContextRegistry(provides)
-        generateActionsFacades(actions)
-
-        return emptyList()
-    }
-}
-```
-
----
-
-## 7. 完整示例：签到
-
-### 7.1 动作
-
-```kotlin
-class SignUsecase {
-    @Action("daily.sign")
-    suspend fun sign(event: GroupMessageEvent): SignResult {
-        return doSign(event.sender.id)
-    }
-}
-```
-
-### 7.2 规则
-
-```kotlin
-object SignRules {
-
-    @Before("daily.sign", order = 1)
-    suspend fun checkAlreadySigned(userInfo: UserInfoDto): RuleResult =
-        if (userInfo.signedToday) RuleResult.Reject("ALREADY_SIGNED", "今日已签到")
-        else RuleResult.Continue
-
-    @Before("daily.sign", order = 5)
-    suspend fun applyTitleBonus(userTitle: UserTitle, ctx: ActionContext) {
-        titleService.rewardModifier(userTitle)?.let { ctx.addModifier(it) }
-    }
-
-    @Before("daily.sign", order = 10)
-    suspend fun applyWelfare(userInfo: UserInfoDto, ctx: ActionContext) {
-        if (!welfareService.isActive(userInfo.userId)) return
-        ctx.addModifier(welfareService.modifier(userInfo.userId))
-    }
-
-    @Before("daily.sign", order = 20, compensate = ConsumeCompensation::class)
-    suspend fun consumeItem(userBackpack: UserBackpack, ctx: ActionContext) {
-        val item = backpackService.signConsumeItem(userBackpack) ?: return
-        userBackpack.consume(item, 1)
-        ctx.consumed = item to 1
-    }
-
-    @Before("daily.sign", order = 30)
-    suspend fun checkFinalCondition(userInfo: UserInfoDto): RuleResult =
-        if (!userInfo.someCondition) RuleResult.Abort("条件不满足，本次签到取消")
-        else RuleResult.Continue
-
-    @After("daily.sign", order = 100)
-    suspend fun settle(
-        result: SignResult,
-        userInfo: UserInfoDto,
-        ctx: ActionContext,
-    ) {
-        val base = result.baseReward.toDouble()
-        val final = ctx.modifiers().applyTo(base)
-        rewardService.grant(userInfo.userId, final.toLong())
-    }
-}
-```
-
-### 7.3 补偿器
-
-```kotlin
-class ConsumeCompensation(
-    private val backpackService: BackpackService,
-) : Compensation {
-    override suspend fun compensate(ctx: ActionContext, cause: Throwable) {
-        val consumed = ctx.consumed ?: return
-        backpackService.add(ctx.userId, consumed.first, consumed.second)
-    }
-}
-```
-
-### 7.4 类型注册
-
-```kotlin
-object SignProviders {
-    @Provides
-    suspend fun userInfo(userId: Long): UserInfoDto = userService.load(userId)
-
-    @Provides
-    suspend fun userTitle(userId: Long): UserTitle = titleService.load(userId)
-
-    @Provides
-    suspend fun userBackpack(userId: Long): UserBackpack = backpackService.load(userId)
-}
-```
-
-### 7.5 入口
-
-```kotlin
-@MessageAuthorize(text = ["签到"], messageMatching = MessageMatchingEnum.EQUAL)
-suspend fun sign(event: GroupMessageEvent) {
-    SignUsecaseActions.sign(event)
-}
-```
+调用未生成的 facade 应编译失败。简单动作不标注 `@Action`，也不生成 facade。
 
-### 7.6 执行流程
-
-```
-用户发送"签到"
-    ↓
-sign(event) → SignUsecaseActions.sign(event)
-    ↓
-引擎装配 ctx：UserInfoDto, UserTitle, UserBackpack
-    ↓
-before 1: 已签到？→ Reject → 回滚（无）→ 抛 ActionRejected
-before 5: 称号加成 → ctx.addModifier
-before 10: 福利加成 → ctx.addModifier
-before 20: 消费道具 → ctx.consumed = ...
-before 30: 最终条件 → Abort → 逆序补偿 → ConsumeCompensation 退回道具
-    ↓（若全部通过）
-动作本体：doSign → SignResult
-    ↓
-after 100: settle → 读 modifiers → 发奖
-```
+### 6.4 编译期校验
 
----
-
-## 8. 新增系统流程（验证扩展性）
-
-**需求**：新增"连续签到 7 天，收益 ×1.5"。
-
-**第 1 步：注册类型**（装配维护者）
-
-```kotlin
-@Provides
-suspend fun signStreak(userId: Long): SignStreak = signService.streak(userId)
-```
-
-**第 2 步：写规则**（规则作者）
-
-```kotlin
-@Before("daily.sign", order = 7)
-suspend fun applyStreakBonus(streak: SignStreak, ctx: ActionContext) {
-    if (streak.days >= 7) {
-        ctx.addModifier(RewardModifier.Multiply("streak.7d", 1.5))
-    }
-}
-```
-
-**结束。**
-
-**不需要改**：`SignUsecase`、`@Action`、引擎、装配器、入口、其他规则。
-
----
-
-## 9. 工程约定
-
-### 9.1 命名约定
-
-| 项       | 约定                                        |
-| -------- | ------------------------------------------- |
-| actionId | `<域>.<动作>`，如 `daily.sign`、`game.fish` |
-| 门面对象 | `<业务类名>Actions`                         |
-| 规则类   | `<域>Rules`，如 `SignRules`                 |
-| 提供者类 | `<域>Providers`，如 `SignProviders`         |
-| 补偿器   | `<动作>Compensation`                        |
-
-### 9.2 order 约定
-
-见 3.4 节。
-
-### 9.3 事务
-
-若所有 service 共用同一数据库，**优先用数据库事务包裹 `invokeFromEntry`**，能省掉大部分手写补偿。只有跨系统（内存 + DB）才需要 `Compensation`。
-
-### 9.4 业务类实例化
-
-生成代码假设 `SignUsecase()` 无参构造。约定：
-
-- 业务类无状态，依赖通过 `ServiceLocator` / `object` 单例获取。
-- 若必须注入，改用 DI 容器并调整 KSP 生成模板。
-
----
-
-## 10. 落地路线
-
-| 阶段   | 内容                                                         | 产出       |
-| ------ | ------------------------------------------------------------ | ---------- |
-| **P0** | 手写 `ActionContext`/`ActionEngine`/`RuleResult`/三个 Registry（手动填），跑通签到 | 规则链能跑 |
-| **P1** | KSP 生成三个 Registry + Requirements                         | 注册自动化 |
-| **P2** | KSP 生成 `XxxActions`，入口换成一行                          | 入口零样板 |
-| **P3** | 加 `RuleResult` + `Unit` 默认 + 补偿器                       | 安全可控   |
-| **P4** | 加编译期校验（6 项）                                         | 编译期安全 |
-| **P5** | 加 `@Provides` 生成 `ContextRegistry`                        | 装配自动化 |
-| **P6** | 多模块支持（如有）                                           | 可拆分     |
-
-**每阶段可独立验证，不建议一次写完。**
-
----
-
-## 11. 已知限制与演进
-
-### 11.1 限制
-
-| 限制                 | 说明                     |
-| -------------------- | ------------------------ |
-| 不支持运行时动态注册 | KSP 编译期决定           |
-| 不支持无感拦截       | 必须调用 `XxxActions`    |
-| 不支持同类型多实例   | 第一版无 `@Named`        |
-| 业务类需无参构造     | 或走 DI                  |
-| 多模块需聚合         | 每个 module 生成自己的表 |
-
-### 11.2 演进方向
-
-- `@Named` 限定符：支持同类型多实例。
-- `@Action` + `@MessageAuthorize` 联动：连入口都不用写。
-- KSP 增量优化：每个 action 独立文件。
-- 运行时动态兜底：字符串式 `MethodHandle` 入口。
-
----
-
-## 12. 附录：术语表
-
-| 术语         | 含义                               |
-| ------------ | ---------------------------------- |
-| Action       | 被规则链包裹的业务动作             |
-| Rule         | 横切逻辑单元                       |
-| Provider     | 类型加载声明                       |
-| Context      | 执行上下文                         |
-| RuleResult   | 规则结论                           |
-| Compensation | 副作用回滚器                       |
-| Facade       | KSP 生成的入口门面（`XxxActions`） |
-| Registry     | KSP 生成的注册表                   |
+首版目标校验：
 
+- `@Action.id` 非空且在聚合结果中唯一；
+- `@Before` / `@After` 引用的 actionId 存在；
+- Action、规则和 Provider 方法为支持的 object 成员函数、suspend 函数；
+- Action 参数符合首版 event / event + ActionContext 约定；
+- 规则返回 `Unit` 或动作结果类型；
+- Provider 返回非 Unit 类型；
+- Provider key 唯一，限定类型匹配，规则依赖可解析；
+- `@FromProvider` 只能用于规则参数，不能与不支持的默认参数/可空参数组合。
+
+实现时优先输出指向具体符号的 KSP 编译错误，不在运行时才暴露普通配置错误。
+
+## 7. 规则顺序约定
+
+| order 范围 | 建议用途 |
+| --- | --- |
+| 1–4 | 冷却、频率限制 |
+| 5–9 | 资格检查、状态检查 |
+| 10–49 | 加成和参数计算 |
+| 50–99 | 资源扣除或操作准备 |
+| 100+ | after 结算、记录 |
+
+数字只是团队约定，不自动赋予事务或回滚语义。消费/扣款类规则必须与后续动作失败时的处理策略一同设计，不能因为 order 较早就认为引擎可以恢复副作用。
+
+## 8. 事务与回滚
+
+### 8.1 第一版不实现自动回滚
+
+自动恢复数据库、内存状态、消息发送、事件广播和后台协程需要不同的边界与补偿策略。当前不把“规则失败后自动逆序回滚”作为框架能力，也不定义 Compensation 接口或回滚范围枚举。
+
+第一版的 `Rollback` 只是待讨论的动作结果候选，不触发任何回滚。实现前必须先确定它的含义、触发阶段和可恢复副作用；在此之前，实际失败仍由业务事务或现有错误处理逻辑负责。
+
+### 8.2 后续回滚候选范围
+
+目前识别到的候选对象：
+
+- 道具消耗；
+- 用户/游戏状态变更；
+- 资金流动。
+
+这些操作可能有不同的数据一致性和幂等要求，不预设可以用一个通用补偿器解决。优先在数据层明确数据库事务边界；跨内存或外部效果时，再设计显式且可审计的业务补偿。用户提出的“回滚应在最后执行”作为后续语义讨论项，本版不据此推导执行顺序。
+
+## 9. 生命周期与初始化
+
+`economy-main` 在数据库、Manager/服务及业务模块初始化完成后，聚合生成的 `ActionModule` 并创建规则引擎；之后再注册 HuYanAuthorize 事件入口。确切初始化顺序应结合各 Provider 依赖的服务确定。
+
+HuYanAuthorize 仍负责匹配命令和权限。入口只在复杂动作中调用生成 facade；普通动作仍可直接调用业务 object。
+
+最终插件包只包含运行时必需模块。KSP Processor、KSP API 等编译期依赖不得作为插件运行时依赖打包。Hibernate、HikariCP 和 log4j 排除约定保持不变。
+
+## 10. 渐进落地路线
+
+| 阶段 | 内容 | 验收重点 |
+| --- | --- | --- |
+| P0 | 定义结果语义、Provider 限定/作用域、object 和函数签名约束 | 文档契约无歧义 |
+| P1 | 新建运行时模块，手工构造一个 ActionModule 和规则链 | 规则顺序、正常结束、静默结束、文本回复 |
+| P2 | 新建 KSP Processor，生成单模块 facade、规则和 Provider 描述 | KSP 生成代码可编译且无反射 |
+| P3 | 增加模块级生成与 main 聚合 | core/game/main 模块组合、重复 ID/key 检查 |
+| P4 | 选择低副作用复杂流程试点迁移 | 行为与原流程一致，普通动作不受影响 |
+| P5 | 按领域逐步迁移确有规则编排收益的复杂动作 | 回归测试覆盖业务结果及权限入口 |
+| P6 | 根据真实迁移案例设计回滚能力 | 明确事务、补偿对象、幂等和执行时机后再实施 |
+
+每个阶段独立构建和验证。首个试点应避开长时间交互、后台协程、跨系统副作用较多的流程。签到和钓鱼可待框架契约与模块聚合验证后再评估。
+
+## 11. 测试要求
+
+### 11.1 运行时测试
+
+- before / after 顺序稳定；
+- Continue、EndSilently、EndWithMessage 的终止行为正确；
+- before 结束时动作本体和 after 不执行；
+- action 完成后 after 按序执行；
+- action 异常不被结束结果吞掉；
+- Provider 按类型、限定名和 Action 作用域解析；
+- 一个 Action 的局部 Provider 对其他 Action 不可见；
+- 全局与局部 Provider key 冲突会明确失败。
+
+### 11.2 KSP 编译测试
+
+通过 compile-testing 或 Gradle fixture 覆盖成功生成和预期编译失败：重复 actionId、缺少 action、Provider 缺失/歧义/类型不匹配、重复 key、不支持的签名、跨模块聚合冲突。
+
+### 11.3 项目集成验证
+
+沿用当前六模块测试，并额外构建 `buildPlugin`。确认生成代码进入相应业务模块 jar，运行时引擎进入最终插件，KSP Processor 不进入最终插件依赖。
+
+## 12. 已知限制与后续演进
+
+- 规则链不是所有 Action 的统一包装要求。
+- 首版不做运行时动态注册。
+- 首版不提供自动回滚。
+- 首版只支持约定的 object Action 与 event / event + context 签名。
+- 同一个 Action 下同类型多值通过显式 Provider 限定名区分。
+- 全局 Provider 与 Action 局部 Provider 的冲突采取严格报错，不静默覆盖。
+- 多模块聚合必须显式发生在 main；KSP 不跨 Gradle 模块扫描源码。
+- `EndWithMessage` 首版只承诺文本回复；复杂消息体留待真实需求出现后设计。
+
+后续可根据迁移案例评估 Provider 多 Action 共享、参数默认值/可空支持、消息内容抽象、事务集成和补偿机制。不要在没有真实用例前扩大首版 API。
+
+## 附录：名词
+
+| 名词 | 含义 |
+| --- | --- |
+| Action | 可选的规则链业务流程入口 |
+| Rule | before/after 流程步骤 |
+| Provider | 按类型和限定名装配规则参数的函数 |
+| Qualifier | 区分同一类型不同 Provider 的稳定字符串标识 |
+| Action-local Provider | 仅对声明绑定的 actionId 可见的 Provider |
+| ActionContext | 单次 Action 调用的上下文 |
+| ActionModule | 单个 Gradle 模块生成的规则链注册描述 |
+| Facade | KSP 生成的 Action 代理入口 |

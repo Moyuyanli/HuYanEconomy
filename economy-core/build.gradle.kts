@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
+    api(project(":economy-action"))
     api(project(":economy-common"))
     api(project(":economy-base"))
     api(project(":economy-data"))

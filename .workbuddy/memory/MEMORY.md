@@ -39,6 +39,18 @@ group `cn.chahuyun`，version 2.0.0，主分支 master。包根 `cn.chahuyun.eco
 - 七模块测试：`./gradlew.bat :economy-common:test :economy-base:test :economy-data:test :economy-image:test :economy-core:test :economy-game:test :economy-main:test --console=plain --offline`
 - 本地调试环境在 debug-sandbox/（config + bots + plugins）
 
+## 仓库配置约定（settings.gradle.kts，2026-10-13 修正）
+- 仓库顺序：`LocalOverflowGatewayStage`(file, overflow-gateway SNAPSHOT) → mavenCentral → google →
+  central-sonatype-snapshots → **ChahuyunNexus（最后，且 `content { includeGroup("cn.chahuyun") }`）**。
+- ⚠️ **Gradle 只有遇到 404 才继续找下一个仓库；连接超时会直接让整个解析失败。**
+  所以私有仓库 `https://nexus.chahuyun.cn/repository/maven-public/`（=121.11.204.184，会长期/间歇不可达）
+  **绝不能排在链首、也不能不加分组限制**，否则每次同步/构建都会卡死在 TCP 建连上（IDE 表现为「无法加载 Gradle 项目」）。
+- 排查手法：`jstack <gradle daemon pid>` 看是否卡在 `HttpClientHelper.performHttpRequest`；
+  `netstat -ano | findstr <pid>` 看是否 `SYN_SENT`；`--info` + `-Dorg.gradle.internal.http.connectionTimeout=4000` 复现并打印失败 URL。
+- `cn.chahuyun:hibernate-plus:2.1.1`、`HuYanAuthorize:1.3.7`、`HuYanAuthorize-ksp:1.3.7`
+  实际在 Maven Central 也拿得到（Nexus 只是兜底）；`xyz.cssxsh.mirai:mirai-economy-core:1.0.6` 在 Central。
+- GRADLE_USER_HOME = `D:\CodeTools\Gradle\core`（不是 `~/.gradle`）。
+
 ## 实体层版本化重构（docs/实体层重构方案.md）
 - 已落地：DTO 统一、Converter v1/v2、EntityProxy + DataSourceStrategy、Redis 缓存层（Cache-Aside + 延迟双删）、
   `hye entity version|switch|migration` 四条指令；模块版本持久化在 `PluginConfig.entityDataVersions`，缺省 V1

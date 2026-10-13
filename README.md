@@ -233,6 +233,8 @@ HuYanEconomy/
 ├── economy-game/        # 钓鱼、抢劫、抽奖、农场等玩法流程
 ├── economy-data/        # 实体、DTO、Converter、Repository、EntityProxy、数据版本与缓存
 ├── economy-image/       # 图片渲染、画布工具、Renderer
+├── economy-action/      # Action 规则链运行时 API 与注解
+├── economy-action-ksp/  # Action 规则链 KSP Processor 工程
 ├── economy-common/      # 通用基础能力、常量、时间/金额/文本工具
 ├── docs/                # 长期开发文档
 ├── plan/                # 版本规划与迁移记录

@@ -24,7 +24,8 @@
 # 构建并查看完整堆栈
 ./gradlew.bat buildPlugin --console=plain --stacktrace
 
-# 六模块测试
+# 业务模块与 Action 骨架测试
+./gradlew.bat :economy-action:test :economy-action-ksp:test --console=plain
 ./gradlew.bat :economy-common:test :economy-data:test :economy-image:test :economy-core:test :economy-game:test :economy-main:test --console=plain
 
 # 测试运行（debug-sandbox 环境）
@@ -61,6 +62,8 @@ economy-data/entity
 | `economy-game/` | 钓鱼、抢劫、抽奖、农场等玩法流程 |
 | `economy-data/` | 实体、DTO、Converter、Repository、EntityProxy、数据版本与缓存 |
 | `economy-image/` | 图片渲染、画布工具、Renderer |
+| `economy-action/` | Action 规则链运行时 API 与注解（当前为骨架） |
+| `economy-action-ksp/` | Action 规则链 KSP Processor 工程（当前尚未实现） |
 | `economy-common/` | 通用基础能力、常量、时间/金额/文本工具 |
 | `economy-main/src/main/resources/` | 插件资源（图片、表格、ServiceLoader 配置） |
 | `economy-image/src/main/resources/` | 历史资源残留，新增资源优先放入 `economy-main/src/main/resources/` |
