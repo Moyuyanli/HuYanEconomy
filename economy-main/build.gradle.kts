@@ -40,6 +40,7 @@ dependencies {
 
     testConsoleRuntime("cn.chahuyun:overflow-gateway:$overflowGatewayVersion")
     testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }
 
 configurations.named("testConsoleRuntime") {

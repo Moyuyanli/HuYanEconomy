@@ -3,6 +3,7 @@ package cn.chahuyun.economy.usecase
 import cn.chahuyun.authorize.entity.PermGroup
 import cn.chahuyun.authorize.utils.PermUtil
 import cn.chahuyun.authorize.utils.UserUtil
+import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.manager.BackpackManager
 import cn.chahuyun.economy.manager.TitleManager
@@ -31,6 +32,13 @@ import java.util.*
 
 object SignUsecase {
 
+    /**
+     * 签到主流程。
+     *
+     * 入口经 KSP 生成的门面 `SignUsecaseActions.sign(event)` 调用，
+     * 由 `core.sign` 规则链统一承载前置/后置规则。
+     */
+    @Action("core.sign")
     suspend fun sign(event: GroupMessageEvent) {
         Log.info("签到指令")
 

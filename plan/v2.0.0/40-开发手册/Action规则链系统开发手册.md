@@ -1,6 +1,6 @@
 # Action 规则链系统开发手册
 
-> 状态：阶段一设计与 API 骨架已完成；Action 执行系统与 KSP Processor 尚未实现。  
+> 状态：阶段一（骨架）、阶段二（运行时系统）、阶段三（KSP 生成）、阶段四（多模块接入）已完成；阶段五（API 文档）未开始。  
 > 设计依据：[KSP 驱动的 Action 规则链框架设计](../../../docs/KSP%20%E9%A9%B1%E5%8A%A8%E7%9A%84%20Action%20%E8%A7%84%E5%88%99%E9%93%BE%E6%A1%86%E6%9E%B6%20%C2%B7%20%E8%AE%BE%E8%AE%A1%E6%96%87%E6%A1%A3.md)
 
 本文将 Action 规则链工作拆分为五个可验收阶段：设计 Action 骨架、实现 Action 系统、设计并实现 KSP、多模块测试、编写 API 文档。各阶段完成后再进入下一阶段；发现设计缺口时回到相应阶段更新契约，不以跳过验证的方式推进。
@@ -55,7 +55,7 @@ economy-main/action (HuYanAuthorize, 命令/权限入口)
 
 ### 执行状态
 
-阶段一方案与代码产物见[Action 骨架契约](Action%E9%AA%A8%E6%9E%B6%E5%A5%91%E7%BA%A6.md)。运行时注解模块和 KSP 工程壳已建立；结果 API 名称、Action 返回值和回复发送责任等事项仍是阶段二的实现前置决议，详见契约第 6 节。
+阶段一方案与代码产物见[Action 骨架契约](Action%E9%AA%A8%E6%9E%B6%E5%A5%91%E7%BA%A6.md)。运行时注解模块和 KSP 工程壳已建立；结果 API 名称、Action 返回值和回复发送责任等事项已在阶段二开始前决议完毕，详见契约第 6 节。
 
 ### 关键任务
 
@@ -127,6 +127,20 @@ economy-main/action (HuYanAuthorize, 命令/权限入口)
 - 不存在自动回滚或“补偿器会被调用”的虚假能力声明。
 - `:economy-action:test` 与 `:economy-action:build` 通过（任务在模块创建后生效）。
 
+### 阶段二验收结果
+
+阶段二已完成（2026-10-13，提交 `8d73412`）。实际交付：
+
+| 文件 | 内容 |
+| --- | --- |
+| `actionchain/runtime/ActionContext.kt` | 单次调用上下文：`actionId`/`event`、类型化 `put`/`get`、`provide`、`attrs`、Action 返回值读取、Provider 调用内缓存 |
+| `actionchain/runtime/ActionResult.kt` | `ActionResult`(Continue/EndSilently/EndWithMessage)、`ActionExecution<T>`、`ActionResultHandler` 端口 |
+| `actionchain/runtime/ActionModule.kt` | `ActionModule`、`ActionRule`(before/after 工厂)、`ActionProvider`/`actionProvider`、`ActionConfigurationException` |
+| `actionchain/runtime/ActionEngine.kt` | before→action→after 执行、before 终止短路、action 异常直接抛出、结束结果只派发一次 handler、Provider 作用域与唯一性校验、构造期重复/悬空引用检查 |
+| `test/.../ActionEngineTest.kt` | 8 项用例，覆盖执行顺序、静默结束、回复结束、异常传播、qualifier 分离与缓存、全局 Provider、局部作用域、冲突与悬空引用 |
+
+验收结论：验收标准逐条满足（无反射调用、无回滚能力声明、Provider 局部可见性隔离）。`ActionEngineTest` 8/8 通过（`economy-action/build/test-results/test/TEST-...ActionEngineTest.xml`，2026-10-13）。
+
 ## 5. 阶段三：设计并实现 KSP
 
 ### 目标
@@ -161,6 +175,31 @@ economy-main/action (HuYanAuthorize, 命令/权限入口)
 - 生成实现与手工运行时测试使用相同执行语义。
 - Processor 仅为编译期依赖，不成为业务模块或最终插件的运行时依赖。
 - 不声称已验证的跨模块编译期能力；跨模块支持留待阶段四集成验收。
+
+### 阶段三验收结果
+
+阶段三已完成（2026-10-19）。实际交付：
+
+| 文件 | 内容 |
+| --- | --- |
+| `actionchain/ksp/ActionSymbolProcessorProvider.kt` | `SymbolProcessorProvider` 入口 |
+| `actionchain/ksp/ActionSymbolProcessor.kt` | 符号收集（`@Action`/`@Before`/`@After`/`@Provider`）、签名与引用校验、facade/模块描述落盘 |
+| `actionchain/ksp/ActionChainModel.kt` | 类型渲染（泛型、可空、类型参数）、命名转换、注解与运行时类 FQN 常量 |
+| `actionchain/ksp/ActionCodeGenerator.kt` | 生成源码：每 object 一个 `<Owner>Actions`，每模块一个 `<ModuleId>ActionModule` |
+| `resources/META-INF/services/...SymbolProcessorProvider` | ServiceLoader 注册，jar 内可见 |
+| `economy-action/.../runtime/ActionRuntime.kt` | 新增运行时入口：`install(engine)` / `invoke(actionId, event) {}`，供 facade 静态调用 |
+
+生成规则：
+
+- facade：`suspend fun <name>(event: EventType): ActionExecution<T>`，内部 `ActionRuntime.invoke(...)` 调用 object 成员；`event + ActionContext` 签名时注入 `context`，否则 lambda 参数用 `_`。
+- 模块描述：`ActionModule(moduleId, actionIds, rules, providers)`；规则以 `ActionRule.before/after(actionId, ruleId, order, invoke)` 生成，`ruleId = <object FQN>#<method>`（跨构建稳定）；Provider 以 `actionProvider<T>(qualifier, actionId, load)` 生成；参数通过 `context.provide(T::class[, qualifier])` 静态装配。
+- KSP 选项：`actionchain.moduleId`（决定对象名前缀，缺省 `unnamed-module`）、`actionchain.generatedPackage`（缺省 `cn.chahuyun.economy.actionchain.generated`）、`actionchain.allowExternalActions`（缺省 `false`；开启后「引用了本模块未声明的 actionId / 找不到 Provider」降级为 warning，交由聚合期校验）。
+
+编译期校验：actionId 非空与模块内唯一、规则 actionId 存在、object 成员 + `suspend` + 非 private/protected、Action 签名只允许 `(event)` / `(event, ActionContext)`、规则返回 `Unit`/`ActionResult`、Provider 返回非空非 Unit 类类型、Provider key 重复与全局/局部冲突、无限定名参数多候选时报歧义。
+
+测试：`ActionSymbolProcessorTest` 7 项（`economy-action-ksp/build/test-results/test`，2026-10-19 全绿）：正向生成 facade + 模块描述、无 context 注入的单事件 Action、重复 actionId、规则引用缺失 action、规则返回非法类型、无限定名参数歧义、Provider 返回 Unit。测试基于 `kotlin-compile-testing` + `kotlin-compile-testing-ksp`（`kspWithCompilation = true`），生成代码与 fixture 一起真实编译。
+
+当前限制：跨模块 actionId/Provider 校验只能依赖 `allowExternalActions` 降级，实际能力待阶段四验证；同一函数不支持重复绑定同一 actionId（ruleId 冲突会报错）。
 
 ## 6. 阶段四：多模块集成与测试
 
@@ -206,6 +245,37 @@ economy-main/action (HuYanAuthorize, 命令/权限入口)
 - HuYanAuthorize 继续成功注册现有入口；插件运行时没有装入 KSP Processor/KSP API。
 - 至少一个复杂 Action 通过 facade 实际执行；未迁移的直接 Action 行为不变。
 - 最终插件可构建，调试环境可启动并完成该试点的冒烟流程。
+
+### 阶段四验收结果（2026-10-19）
+
+已接入模块与试点：
+
+| 模块 | KSP 配置 | 试点 Action | 入口 |
+| --- | --- | --- | --- |
+| `economy-core` | `id("com.google.devtools.ksp")` + `ksp(project(":economy-action-ksp"))`；`actionchain.moduleId=economy-core` | `core.sign` → `SignUsecase.sign` | `SignAction.sign` 调用 `SignUsecaseActions.sign(event)` |
+| `economy-game` | 同上；`actionchain.moduleId=economy-game` | `game.fish` → 新包 `cn.chahuyun.economy.game.fishing.FishingChain`（仅打印日志 + 一条 before 规则） | `FishAction.fishing` 先调用 `FishingChainActions.fish(event)`，旧 usecase 暂保留 |
+| `economy-main` | 仅聚合，不应用 Processor | — | `plugin/ActionChainBootstrap` 创建唯一 `ActionEngine`，`ActionRuntime.install(...)` |
+
+生成物（`build/generated/ksp/main/kotlin`）：
+
+- `cn/chahuyun/economy/usecase/SignUsecaseActions.kt`、`cn/chahuyun/economy/game/fishing/FishingChainActions.kt`：facade 落在声明方包内。
+- `cn/chahuyun/economy/actionchain/generated/EconomyCoreActionModule.kt` / `EconomyGameActionModule.kt`：每模块一个描述对象，main 显式 import 聚合。
+
+装配时机与顺序：`HuYanEconomy.onEnable` 在全部 Manager/service 初始化之后、`AuthorizeServer.registerEvents` 之前调用 `ActionChainBootstrap.install()`；`onDisable` 调用 `shutdown()` 卸载运行时。启动日志输出模块数、action 数、规则/Provider 数与逐模块 actionId 明细。
+
+`EndWithMessage` 出口：`ActionResultHandler` 对 `MessageEvent` 直接 `subject.sendMessage`，非消息事件记录 warning 后丢弃（首版不做图片/MessageChain 适配）。
+
+验证结果：
+
+- `:economy-action:test` 10/10、`:economy-action-ksp:test` 7/7、`:economy-main:test` 5/5（新增 `ActionChainIntegrationTest` 3 项：模块聚合断言、经引擎执行 `game.fish` 的 before 规则、`ActionRuntime` 安装/卸载）。
+- `:economy-main:compileKotlin` 通过，证明 main 可直接引用 core/game 生成的 facade 与模块描述。
+- `buildPlugin` 通过；插件 jar 内含 `actionchain/runtime` 类，不含 `actionchain/ksp` 类（KSP 配置不进入运行期 classpath）。
+
+试点口径说明：
+
+- 签到是完整试点：指令 → facade → 引擎 → 原 usecase，行为不变。
+- 钓鱼因后续要按新实体重建，只新建 `cn.chahuyun.economy.game.fishing` 包并打印日志，`FishAction` 仍执行旧 usecase，避免提前改变玩法。
+- 跨模块 Provider（规则在 A 模块、Provider 在 B 模块）本阶段未验证，`actionchain.allowExternalActions` 仍只降级为 warning；首版仍建议 Provider 与 Action 同模块。
 
 ## 7. 阶段五：编写 API 文档
 
@@ -284,4 +354,53 @@ economy-main/action (HuYanAuthorize, 命令/权限入口)
 
 ## 9. 开发记录
 
-每个阶段完成后更新本节，记录日期、提交/PR、执行的构建命令、结果和未解决问题。当前不预填完成状态；此手册描述的是待执行计划。
+每个阶段完成后更新本节，记录日期、提交/PR、执行的构建命令、结果和未解决问题。
+
+### 阶段一（2026-10-13，提交 `8d73412`）
+
+- 交付：`settings.gradle.kts` 注册 `economy-action` / `economy-action-ksp`；注解骨架（SOURCE retention）；契约文档《Action 骨架契约》。
+- 命令：阶段一当时仅验证 Gradle 配置与注解模块可编译（无独立验收日志留存）
+- 结果：通过；阶段一验收清单全部勾选，阶段二门槛事项已决议（见契约第 6 节）。
+- 遗留：无。
+
+### 阶段二（2026-10-13，提交 `8d73412`）
+
+- 交付：`ActionContext`、`ActionResult`(`ActionExecution`/`ActionResultHandler`)、`ActionModule`(`ActionRule`/`ActionProvider`)、`ActionEngine`、`ActionEngineTest`。
+- 命令：`./gradlew.bat :economy-action:test --console=plain`
+- 结果：`ActionEngineTest` 10/10 通过（2026-10-19 复跑确认；2026-10-13 报告为 8 项，后续补足到 10 项）。
+- 遗留：`ActionRuntime` 直到阶段三才补上，阶段二的「引擎可被入口调用」此前只由测试覆盖。
+
+### 阶段三（2026-10-19）
+
+- 交付：`ActionSymbolProcessorProvider`、`ActionSymbolProcessor`、`ActionChainModel`、`ActionCodeGenerator`、`META-INF/services` 注册；运行时新增 `ActionRuntime`；测试依赖 `kotlin-compile-testing` + `kotlin-compile-testing-ksp`。
+- 命令：
+  - `./gradlew.bat :economy-action:test :economy-action-ksp:test --console=plain`
+  - `./gradlew.bat :economy-action-ksp:jar --console=plain --offline`
+- 结果：`economy-action` 10/10、`economy-action-ksp` 7/7 通过；`economy-action-ksp` jar 内含 Processor 类与 ServiceLoader 配置。
+- 过程记录：`kotlin-compile-testing:1.5.0` 本体不含 KSP 支持，需额外引入 `kotlin-compile-testing-ksp:1.5.0` 才提供 `symbolProcessorProviders`/`kspArgs`；该支持包默认拉 KSP 1.8.0，必须显式设置 `jvmTarget = "11"`，否则内联 `actionProvider<T>` 会因 JVM target 8 报错。
+- 遗留：跨模块校验尚未真实验证（`actionchain.allowExternalActions` 仅降级告警）；未应用到 core/game（阶段四）。
+
+### 阶段四（2026-10-19）
+
+- 交付：
+  - `economy-core` / `economy-game` 应用 `com.google.devtools.ksp` + `ksp(project(":economy-action-ksp"))`，分别配置 `actionchain.moduleId=economy-core|economy-game`。
+  - `SignUsecase.sign` 标注 `@Action("core.sign")`；`SignAction.sign` 改为调用生成门面 `SignUsecaseActions.sign(event)`。
+  - 新包 `cn.chahuyun.economy.game.fishing`：`FishingChain` 的 `@Action("game.fish")` 仅打印日志，另加 `@Before(order=10)` 日志规则；`FishAction.fishing` 先触发规则链，再执行旧 usecase。
+  - `economy-main` 新增 `plugin/ActionChainBootstrap`：显式聚合 `EconomyCoreActionModule` / `EconomyGameActionModule`，构造唯一 `ActionEngine`、安装 `ActionRuntime`，启动日志打印模块与 action 明细；`onEnable` 早于事件注册调用，`onDisable` 卸载。
+  - `economy-main` 新增 `ActionChainIntegrationTest`（3 项）。
+- 命令：
+  - `./gradlew.bat :economy-core:compileKotlin :economy-game:compileKotlin --console=plain`
+  - `./gradlew.bat :economy-main:test --console=plain`
+  - `./gradlew.bat :economy-action:test :economy-action-ksp:test --console=plain`
+  - `./gradlew.bat buildPlugin --console=plain`
+- 结果：全部通过；`economy-main` 测试 5/5（新增 3 项）；插件 jar 内 `actionchain/runtime` 26 个类、`actionchain/ksp` 0 个、KSP API 0 个，两个模块描述与两个 facade 均在包内。
+- 过程记录：
+  - KSP 生成物包名规则确认：facade 跟随声明方包（不跟 `generatedPackage`），模块描述才落在 `actionchain.generated`。
+  - 规则不消费参数时生成 `{ _: ActionContext -> ... }`，消除 unused parameter 警告。
+  - `economy-main` 的 `Test.java` 是图片预览工具，历史上已与 `FishingInfoCard`（8 字段）不一致，导致 `compileTestJava` 失败；本次一并按现有构造参数修正。
+- 遗留：跨模块 Provider 未验证；钓鱼玩法未迁移；阶段五 API 文档未写。
+
+### 下一阶段（阶段五：编写 API 文档）
+
+- 待做：按 §7 输出注解/签名/顺序/Provider/示例/限制文档，示例尽量用 `economy-action-ksp` 测试 fixture 兜底。
+- 待决议：是否把 `ActionChainBootstrap` 的模块清单改为 ServiceLoader 自动发现（当前为显式登记）。

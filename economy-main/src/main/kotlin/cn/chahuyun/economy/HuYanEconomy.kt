@@ -145,6 +145,10 @@ object HuYanEconomy : KotlinPlugin(
         // 自定义称号模板依赖 TitleTemplateManager 初始化完成后再加载。
         TitleTemplateManager.loadingCustomTitle()
 
+        // 装配 Action 规则链：聚合各模块生成描述并安装唯一引擎。
+        // 必须早于事件注册，否则入口调用生成 facade 时运行时会抛“未安装引擎”。
+        ActionChainBootstrap.install()
+
         // 注册消息事件，统一扫描 action 包。
         AuthorizeServer.registerEvents(
             plugin = this,
@@ -191,6 +195,7 @@ object HuYanEconomy : KotlinPlugin(
         YiYanManager.shutdown()
         HuYanScheduler.stop()
         EconomyAsyncService.shutdown()
+        ActionChainBootstrap.shutdown()
         Log.info("插件已卸载")
     }
 }

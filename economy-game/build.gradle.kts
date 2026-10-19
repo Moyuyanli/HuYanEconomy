@@ -1,11 +1,18 @@
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
+    id("com.google.devtools.ksp")
     `java-library`
+}
+
+// 规则链代码生成：facade 生成在声明包内，模块描述生成在 actionchain.generated 包。
+ksp {
+    arg("actionchain.moduleId", "economy-game")
 }
 
 dependencies {
     api(project(":economy-action"))
+    ksp(project(":economy-action-ksp"))
     api(project(":economy-common"))
     api(project(":economy-data"))
     api(project(":economy-image"))

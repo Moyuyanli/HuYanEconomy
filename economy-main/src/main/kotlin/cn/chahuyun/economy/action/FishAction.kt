@@ -8,6 +8,7 @@ import cn.chahuyun.authorize.constant.AuthPerm
 import cn.chahuyun.authorize.constant.MessageConversionEnum
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
 import cn.chahuyun.economy.constant.EconPerm
+import cn.chahuyun.economy.game.fishing.FishingChainActions
 import cn.chahuyun.economy.service.FishingRodService
 import cn.chahuyun.economy.service.GameCoroutineService
 import cn.chahuyun.economy.usecase.FishingUsecase
@@ -27,7 +28,13 @@ class FishAction {
         groupPermissions = [EconPerm.FISH_PERM]
     )
     suspend fun fishing(event: GroupMessageEvent) {
-        FishingUsecase.fishing(GameCoroutineService, event)
+        // 阶段四试点：新规则链入口（game.fish）先跑一次，当前 @Action 只打印日志；
+        // 玩法仍由旧 usecase 承载，待钓鱼重建后移入规则链并删除下面这段桥接。
+        // 若 before 规则提前结束（actionExecuted=false），不再执行旧玩法。
+        val execution = FishingChainActions.fish(event)
+        if (execution.actionExecuted) {
+            FishingUsecase.fishing(GameCoroutineService, event)
+        }
     }
 
     @MessageAuthorize(text = ["购买鱼竿"], groupPermissions = [EconPerm.FISH_PERM])

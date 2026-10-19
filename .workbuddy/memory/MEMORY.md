@@ -120,12 +120,32 @@ group `cn.chahuyun`，version 2.0.0，主分支 master。包根 `cn.chahuyun.eco
   收费率改千分比 fee_rate_permille（现网 rebate 0.05 ⇒ 50‰）；无独立排行表（从日志派生，榜首授予 FISHING 称号）
 - 遗留：鱼饵用内置 `FishingBaitConstant` 目录（未接 hye_item/背包）；未跑模块测试（scope 内测试延后）
 
-## ⚠️ KSP Action 规则链框架（设计文档已就绪，**尚未实现**）
-- `docs/KSP 驱动的 Action 规则链框架 · 设计文档.md`（855 行，提交 1d2f6e9）：
-  `@Action(id)` / `@Before(value,order,onFail,compensate)` / `@After` / `@Provides` + KSP 生成
-  ActionRegistry/BeforeRegistry/AfterRegistry/ContextRequirements + `XxxActions` 门面 + ActionEngine.invokeFromEntry
-  + RuleResult(Continue/Skip/Abort/Reject) + 逆序补偿。order 区间：1-4 冷却、5-9 资格、10-49 加成…
-- 用户在 `economy-core/.../model/user/TitleInfoColors.kt` 末尾留过一段**非法 Kotlin** 脚手架
-  （`class FishAction { @Action("game.fish") … }` / `object FishRules { @Before(...) … }`），意图让钓鱼走规则链；
-  已被改为注释 TODO 以恢复编译。
-- 待用户确认：是否实现该框架并把钓鱼 usecase 内的横切逻辑拆成 @Before/@After 规则
+## Action 规则链框架（截至 2026-10-19：阶段一~四完成，阶段五未开始）
+- 权威进度文档：`plan/v2.0.0/40-开发手册/Action规则链系统开发手册.md`（五阶段计划）+ `Action骨架契约.md`（阶段一契约与阶段二决议）。
+  设计文档 `docs/KSP 驱动的 Action 规则链框架 · 设计文档.md` 已在 8d73412 重写（去掉了 compensate/逆序补偿语义，与代码一致）。
+- 阶段一 ✅：settings 注册 `economy-action` / `economy-action-ksp`；`economy-action` 内置
+  `actionchain/annotation/ActionAnnotations.kt`（@Action/@Before/@After/@Provider/@FromProvider，SOURCE retention）。
+- 阶段二 ✅（代码完成）：`actionchain/runtime/` 有 ActionContext / ActionResult(+ActionExecution+ActionResultHandler) /
+  ActionModule(+ActionRule/ActionProvider/actionProvider) / ActionEngine（before→action→after、provider 作用域+缓存、
+  重复/缺失/歧义/冲突校验、无反射）。`ActionEngineTest` 8 项全绿（2026-10-13 报告）。
+  阶段二决议：结果名 ActionResult；Action 可返回任意值存 context 供 after 读；EndWithMessage 经 ActionResultHandler 一次；
+  Provider 仅收 ActionContext 且同一 invocation 内缓存；同 order 按 ruleId 字典序。
+- 阶段三 ✅（2026-10-19）：`economy-action-ksp` 已有 `ksp/` 包（Provider/Processor/Model/CodeGenerator）+ ServiceLoader；
+  生成 `<Owner>Actions` facade 与 `<ModuleId>ActionModule`；KSP 选项 `actionchain.moduleId|generatedPackage|allowExternalActions`；
+  `ActionRuntime.install/invoke` 已加入运行时。测试用 `kotlin-compile-testing` + `-ksp:1.5.0`（必须 `jvmTarget="11"`），7/7 通过。
+- 阶段四 ✅（2026-10-19）：
+  - `economy-core` / `economy-game` 应用 `id("com.google.devtools.ksp")` + `ksp(project(":economy-action-ksp"))`，
+    `ksp { arg("actionchain.moduleId", "economy-core"|"economy-game") }`。
+  - 签到完整试点：`SignUsecase.sign` 标 `@Action("core.sign")`，`SignAction.sign` → `SignUsecaseActions.sign(event)`。
+  - 钓鱼新包占位：`economy-game/.../game/fishing/FishingChain.kt`（`@Action("game.fish")` 仅日志 + `@Before(order=10)`），
+    `FishAction.fishing` 先触发 `FishingChainActions.fish(event)` 再走旧 usecase（玩法待重建）。
+  - 聚合：`economy-main/.../plugin/ActionChainBootstrap.kt`（显式 modules 清单 → ActionEngine → ActionRuntime.install，
+    启动日志打印模块/action 明细，EndWithMessage 走 MessageEvent.subject）；onEnable 早于事件注册，onDisable shutdown。
+  - 生成物位置：facade 在声明方包，模块描述在 `cn.chahuyun.economy.actionchain.generated.<ModuleId>ActionModule`
+    （moduleId `economy-core` → `EconomyCoreActionModule`）。
+  - 测试：`ActionChainIntegrationTest` 3 项；`:economy-action:test` 10、`:economy-action-ksp:test` 7、`:economy-main:test` 5。
+  - 打包：jar 内 runtime 26 类、ksp 0 类、KSP API 0。
+  - 坑：`economy-main/src/test/java/Test.java`（图片预览工具）历史遗留参数与 `FishingInfoCard`(8 字段) 不符，
+    会让 `compileTestJava` 失败，已修正；规则无参数时生成 `{ _: ActionContext -> }` 消警告。
+- 阶段五 ⬜：API 文档（注解/签名/顺序/Provider/示例/限制）。待决议：模块清单是否改 ServiceLoader 自动发现。
+- 遗留：跨模块 Provider（规则在 A、Provider 在 B）未验证，`allowExternalActions` 仍只降级 warning。

@@ -24,7 +24,7 @@
 # 构建并查看完整堆栈
 ./gradlew.bat buildPlugin --console=plain --stacktrace
 
-# 业务模块与 Action 骨架测试
+# 业务模块与 Action 规则链测试
 ./gradlew.bat :economy-action:test :economy-action-ksp:test --console=plain
 ./gradlew.bat :economy-common:test :economy-data:test :economy-image:test :economy-core:test :economy-game:test :economy-main:test --console=plain
 
@@ -62,8 +62,8 @@ economy-data/entity
 | `economy-game/` | 钓鱼、抢劫、抽奖、农场等玩法流程 |
 | `economy-data/` | 实体、DTO、Converter、Repository、EntityProxy、数据版本与缓存 |
 | `economy-image/` | 图片渲染、画布工具、Renderer |
-| `economy-action/` | Action 规则链运行时 API 与注解（当前为骨架） |
-| `economy-action-ksp/` | Action 规则链 KSP Processor 工程（当前尚未实现） |
+| `economy-action/` | Action 规则链运行时 API 与注解（注解 + ActionEngine + ActionRuntime） |
+| `economy-action-ksp/` | Action 规则链 KSP Processor（编译期生成 facade 与模块描述；core/game 已接入） |
 | `economy-common/` | 通用基础能力、常量、时间/金额/文本工具 |
 | `economy-main/src/main/resources/` | 插件资源（图片、表格、ServiceLoader 配置） |
 | `economy-image/src/main/resources/` | 历史资源残留，新增资源优先放入 `economy-main/src/main/resources/` |
@@ -96,3 +96,4 @@ economy-data/entity
 2. **Hibernate 冲突**: 不要将 Hibernate/HikariCP 打入插件 jar，运行期由 mirai-hibernate-plugin 提供
 3. **版本迁移**: 部分版本升级需执行 `hye repair` 指令修复数据库
 4. **KSP 生成代码**: `economy-main/build/generated/ksp/` 下有 KSP 生成的 AuthorizeRegistrar，不要手动修改
+5. **Action 规则链生成代码**: core/game 应用 `economy-action-ksp` 后，`build/generated/ksp/` 下的 `<Owner>Actions` facade 与 `<ModuleId>ActionModule` 不要手动修改；注解为 `SOURCE` retention，运行时看不到，全靠生成代码接线；新增业务模块需在 `ActionChainBootstrap.modules` 登记并在 build.gradle.kts 设置 `actionchain.moduleId`

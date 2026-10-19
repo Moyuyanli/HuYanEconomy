@@ -1,6 +1,6 @@
 # KSP 驱动的 Action 规则链框架设计
 
-> 状态：方案设计，尚未实现
+> 状态：阶段一（骨架）、阶段二（运行时引擎）、阶段三（KSP 生成）、阶段四（core/game 接入与 main 聚合）已完成；阶段五 API 文档尚未完成，进度以开发手册为准
 > 适用项目：HuYanEconomy 2.x
 > 目标：为包含多步骤业务流程、需要前置/后置规则编排的动作提供编译期生成的规则链；简单动作继续直接调用。
 
@@ -124,11 +124,11 @@ object TransferUsecase {
 
 ### 4.2 注解草案
 
-以下为方案形态，最终包名和 API 名称在实现阶段确定：
+以下为方案形态；阶段一已按此落地，实际属性名以 `economy-action/.../annotation/ActionAnnotations.kt` 为准：
 
 ```kotlin
 @Target(AnnotationTarget.FUNCTION)
-annotation class Action(val id: String)
+annotation class Action(val actionId: String)
 
 @Target(AnnotationTarget.FUNCTION)
 annotation class Before(val actionId: String, val order: Int = 100)

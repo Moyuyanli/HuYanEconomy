@@ -144,16 +144,16 @@ public class Test {
     }
 
     private static FishingInfoCard previewFishingInfo() {
+        // FishingInfoCard 现为 8 个字段（owner/rodLevel/currentPond/maxFishSize/maxNetIncome/totalCount/biggestFish/biggestFishDetail）。
         return new FishingInfoCard(
                 "预览用户(572490972)",
                 "Lv.100",
                 "小狐狸的星怒鱼塘(Lv.9)",
                 "鲑鱼 114cm",
-                "鱼等级 Lv.3 / 价值 912.0 / 鱼塘 小狐狸的星怒鱼塘",
+                "912.0",
                 "266",
-                "266",
-                "小狐狸的星怒鱼塘(Lv.9)",
-                "最低鱼竿等级 10 / 累计上鱼 16267 次 / 鱼种 24 个"
+                "鲑鱼 114cm",
+                "鱼等级 Lv.3 / 价值 912.0 / 鱼塘 小狐狸的星怒鱼塘"
         );
     }
 
