@@ -38,13 +38,11 @@
 
 ```
 economy-main/action
-                → 控制层：指令入口，由 AuthorizeServer 扫描注册事件
+                → 控制层：指令入口，由 AuthorizeServer 扫描注册事件（位置固定不动）
   ↓
-economy-core|economy-game/usecase
-                → 业务层：核心业务逻辑
-  ↓
-economy-core|economy-game/manager
-                → 模块管理器：模块级 API 与生命周期管理
+economy-core|economy-game/feature/<功能>
+                → 业务层：必备 Usecase（流程编排）+ Rules（规则链扩展点，可为空壳）
+                  按需 Service（对内规则）+ Manager（对外 API）+ Provider（规则链数据）
   ↓
 economy-data/data/repository 或 economy-data/data/proxy
                 → 数据访问层
@@ -52,6 +50,8 @@ economy-data/data/repository 或 economy-data/data/proxy
 economy-data/entity
                 → 数据实体（Hibernate @Entity）
 ```
+
+> 结构约定详见 `docs/项目开发说明.md` §3.3「Feature 垂直包结构」。
 
 ### 关键目录
 
@@ -86,6 +86,11 @@ economy-data/entity
 - **权限码**在 `PermCodeManager.init()` 中注册
 - **数据层**新增读写优先走 `economy-data` 的 repository/proxy，不在 core/game 新增 `HibernateFactory` 直连
 - **日志**使用自定义 `Log` 工具类（封装 mirai logger）
+- **功能包结构**：`action/` 固定在 `economy-main`，只做 Mirai 注册；业务代码按功能垂直放在 `feature/<功能>/`（如 `economy-core/.../feature/sign/`），usecase/service/manager 是该目录下的**文件**，不再新建横向顶层包；新代码只允许写进 `feature/`
+- **必备文件只有 Usecase + Rules（Rules 可为空壳）**：Service / Manager / Provider 全部按需——复杂校验有重复步骤才抽 Service，外部要查本功能信息才建 Manager，规则链真用到 `@Provider` 才建 Provider。不要为了结构对称建空壳文件。迁 `manager/` 下的旧类时先查外部调用方，没有就并入 `<Feature>Service.kt`（签到即无 `SignManager`，奖励计算在 `SignService`）
+- **不用自定义事件做功能扩展**：`feature/` 下不建 `<Feature>Event.kt`，也不 `broadcast()` Mirai 自定义事件；前置拦截/奖励加成/完成通知分别写 `Rules.kt` 的 `@Before` / 主流程普通调用 / `@After`，中间结果走 `ActionContext`
+- **迁移 feature 前先读样板实录**：`plan/v2.0.0/40-开发手册/签到功能规则链改造实录.md`（最复杂功能的完整改造过程 + 六大类 28 条易错点 + 迁移自检表）；`feature/sign/` 是可直接照抄的代码样板
+- **经济资金统一走门面**：业务代码只允许调用 `EconomyUtil`（兼容门面）或 `EconomyLedger`，不得直接 `import xyz.cssxsh.mirai.economy.*`，也不得直接 `EconomyAccount.take` 绑死 economy-base；后端由 `Config.yml` 的 `economyBackend` 决定（默认 BASE），上游类型只允许出现在 `economy-core/.../ledger/LegacyEconomyApi.kt`，`LedgerIsolationTest` 会扫常量池拦截
 - **单 bot 限制**：插件仅支持绑定一个 bot（由配置指定 bot QQ 号）
 - **数据库**支持 H2 / SQLite / MySQL，通过配置切换
 - 构建排除 log4j：`configurations.configureEach { exclude(group = "org.apache.logging.log4j") }`（防止 ClassLoader 冲突）

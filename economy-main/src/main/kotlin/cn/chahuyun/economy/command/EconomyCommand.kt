@@ -5,6 +5,7 @@ import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.data.proxy.DataVersion
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.data.proxy.MigrationResult
+import cn.chahuyun.economy.ledger.EconomyMigration
 import cn.chahuyun.economy.privatebank.PrivateBankRepairService
 import cn.chahuyun.economy.privatebank.PrivateBankService
 import cn.chahuyun.economy.repair.RepairManager
@@ -118,6 +119,61 @@ class EconomyCommand : CompositeCommand(
                 }
             }.trimEnd()
         )
+    }
+
+    @SubCommand("economy status")
+    @Description("显示当前经济后端与两套账本的余额概况")
+    suspend fun CommandSender.economyStatus() {
+        sendMessage(EconomyMigration.status())
+    }
+
+    @SubCommand("economy migrate")
+    @Description("预演：把 mirai-economy 的余额搬迁到 economy-base（只统计，不写库）")
+    suspend fun CommandSender.economyMigratePreview() {
+        val report = runCatching { EconomyMigration.migrate(dryRun = true) }.getOrElse {
+            sendMessage("预演失败: ${it.message}")
+            return
+        }
+        sendMessage(report.format("mirai-economy → economy-base"))
+    }
+
+    @SubCommand("economy migrate confirm")
+    @Description("执行搬迁：mirai-economy → economy-base（目标已有余额的账户会跳过）")
+    suspend fun CommandSender.economyMigrateConfirm(confirmation: String) {
+        if (confirmation != "confirm") {
+            sendMessage("该操作会真实修改余额，需要 confirm 参数确认：hye economy migrate confirm confirm")
+            return
+        }
+        val report = runCatching { EconomyMigration.migrate(dryRun = false) }.getOrElse {
+            sendMessage("搬迁失败: ${it.message}")
+            return
+        }
+        sendMessage(report.format("mirai-economy → economy-base"))
+        sendMessage("搬迁完成后请把 Config.yml 的 economyBackend 设为对应值并重启插件。")
+    }
+
+    @SubCommand("economy export-base")
+    @Description("预演：把 economy-base 的余额写回 mirai-economy（只统计，不写库）")
+    suspend fun CommandSender.economyExportPreview() {
+        val report = runCatching { EconomyMigration.exportBase(dryRun = true) }.getOrElse {
+            sendMessage("预演失败: ${it.message}")
+            return
+        }
+        sendMessage(report.format("economy-base → mirai-economy"))
+    }
+
+    @SubCommand("economy export-base confirm")
+    @Description("执行回写：economy-base → mirai-economy（上游按累加写入，执行前请确认目标为空）")
+    suspend fun CommandSender.economyExportConfirm(confirmation: String) {
+        if (confirmation != "confirm") {
+            sendMessage("该操作会真实修改上游余额，需要 confirm 参数确认：hye economy export-base confirm confirm")
+            return
+        }
+        val report = runCatching { EconomyMigration.exportBase(dryRun = false) }.getOrElse {
+            sendMessage("回写失败: ${it.message}")
+            return
+        }
+        sendMessage(report.format("economy-base → mirai-economy"))
     }
 
     private fun parseDataVersion(version: String): DataVersion? {

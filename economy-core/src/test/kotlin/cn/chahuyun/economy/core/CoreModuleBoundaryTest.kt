@@ -23,8 +23,9 @@ class CoreModuleBoundaryTest {
     }
 
     @Test
-    fun `core manager and usecase user visible text does not contain unexpected mojibake fragments`() {
+    fun `core feature manager and usecase user visible text does not contain unexpected mojibake fragments`() {
         val roots = listOf(
+            Path.of("src/main/kotlin/cn/chahuyun/economy/feature"),
             Path.of("src/main/kotlin/cn/chahuyun/economy/manager"),
             Path.of("src/main/kotlin/cn/chahuyun/economy/usecase")
         )
@@ -41,7 +42,7 @@ class CoreModuleBoundaryTest {
 
         assertTrue(
             hits.isEmpty(),
-            "core manager/usecase user-visible text contains unexpected mojibake fragments:\n${hits.joinToString("\n")}"
+            "core feature/manager/usecase user-visible text contains unexpected mojibake fragments:\n${hits.joinToString("\n")}"
         )
     }
 

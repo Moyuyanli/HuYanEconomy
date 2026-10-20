@@ -9,7 +9,6 @@ import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.ShareUtils
-import xyz.cssxsh.mirai.economy.EconomyService
 
 object PrivateBankBankruptcyService {
     const val BANKRUPTCY_THRESHOLD = 1_000_000_000.0
@@ -134,19 +133,18 @@ object PrivateBankBankruptcyService {
     private fun transferDebtToOwner(bank: PrivateBankDto, amount: Double, now: Long) {
         val accountId = UserCoreManager.getUserInfo(bank.ownerQq)?.id?.takeIf { it.isNotBlank() }
             ?: error("破产清算失败：无法解析行长账户 owner=${bank.ownerQq}")
-        val account = EconomyService.account(accountId, null)
         val (walletShare, bankShare) = ownerDebtShares(amount)
 
-        if (!EconomyUtil.plusMoneyToWalletForAccount(account, -walletShare)) {
+        if (!EconomyUtil.plusMoneyToWalletForAccount(accountId, -walletShare)) {
             error("破产清算失败：行长钱包债务转移失败")
         }
-        if (!EconomyUtil.plusMoneyToBankForAccount(account, -bankShare)) {
-            EconomyUtil.plusMoneyToWalletForAccount(account, walletShare)
+        if (!EconomyUtil.plusMoneyToBankForAccount(accountId, -bankShare)) {
+            EconomyUtil.plusMoneyToWalletForAccount(accountId, walletShare)
             error("破产清算失败：行长主银行债务转移失败")
         }
         runCatching { PrivateBankDebtService.repay(bank.code, amount, now) }.getOrElse {
-            EconomyUtil.plusMoneyToWalletForAccount(account, walletShare)
-            EconomyUtil.plusMoneyToBankForAccount(account, bankShare)
+            EconomyUtil.plusMoneyToWalletForAccount(accountId, walletShare)
+            EconomyUtil.plusMoneyToBankForAccount(accountId, bankShare)
             throw it
         }
     }

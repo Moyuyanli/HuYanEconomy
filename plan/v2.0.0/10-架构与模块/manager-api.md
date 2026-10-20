@@ -94,10 +94,16 @@
 - `fun markCooling(qq)`：记录冷却时间。
 - `fun getRobInfo(userInfo): RobInfo`：获取/创建抢劫统计信息。
 
-## SignManager
+## ~~SignManager~~（已并入 `SignService`）
 
-- `fun randomSignGold(event)`：签到基础金币随机（供 `SignEvent` 监听使用）。
-- `fun signProp(event)`：签到道具/称号加成逻辑（供 `SignEvent` 监听使用）。
+> **2026-10-20 修正**：`randomSignGold` / `signProp` 只有签到功能自己调用，不属于对外 API，
+> 已随 `SignManager.kt` 整体迁入 `feature/sign/SignService.kt`，本功能不再有 Manager。
+> `SignReward` 独立为 `feature/sign/SignReward.kt`（功能私有模型）。
+
+- `fun randomSignGold(reward)`：签到基础金币随机（`SignService`，由 `SignRules.calculateReward` 调用）。
+- `fun signProp(reward)`：签到道具/称号加成逻辑（`SignService`，同上）。
+
+> 参数类型为 `feature/sign` 内的运行期模型 `SignReward`，不再是 Mirai 事件；原 `SignEvent` 已删除，扩展点改由 `SignRules` 的 `@Before` / `@After` 承载。
 
 ## TitleManager
 

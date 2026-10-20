@@ -1,708 +1,187 @@
 package cn.chahuyun.economy.utils
 
-import cn.chahuyun.economy.constant.Constant
-import cn.chahuyun.economy.runtime.EconomyRuntime
-import cn.chahuyun.economy.scheduler.HuYanScheduler
-import cn.chahuyun.economy.utils.EconomyUtil.init
+import cn.chahuyun.economy.base.ledger.EconomyLedger
+import cn.chahuyun.economy.base.ledger.LedgerBook
+import cn.chahuyun.economy.base.ledger.LedgerEntry
+import cn.chahuyun.economy.base.ledger.LedgerOwner
+import cn.chahuyun.economy.ledger.EconomyLedgerProvider
 import net.mamoe.mirai.contact.User
-import xyz.cssxsh.mirai.economy.EconomyService
-import xyz.cssxsh.mirai.economy.service.*
-import java.util.concurrent.ConcurrentHashMap
+import java.math.BigDecimal
 
 /**
- * 经济账户工具。
+ * 经济账户门面（兼容层）。
  *
- * 使用前必须先调用 [init] 注册货币。mirai-economy 区分 custom/global 两类上下文：
- * - custom(EconomyRuntime.plugin)：插件私有账户，主要对应用户钱包和插件内部资金池。
- * - global()：全局银行账户，主要对应用户银行存款和全局账户。
+ * 所有方法都委托给当前生效的 [EconomyLedger]（economy-base 或上游 mirai-economy），
+ * 业务代码不需要知道底层是哪套账本。方法签名保持 2.0.1 之前的 `Double` 形态，
+ * 以最小化调用点改动；新代码建议直接使用 `EconomyLedger` + `BigDecimal`。
+ *
+ * 账户标识统一为 Mirai 权限 ID 形式（`u<qq>`），与 `UserInfoDto.id` 一致。
  */
 object EconomyUtil {
 
-    /** mirai-economy 服务入口，所有账户读写最终都从这里进入。 */
-    @JvmField
-    val economyService: IEconomyService = EconomyService
+    private val ledger: EconomyLedger
+        get() = EconomyLedgerProvider.current
 
-    /** 全局银行余额快照，避免频繁遍历账户导致指令响应变慢。 */
-    private data class BankTotalSnapshot(
-        val total: Double,
-        val updatedAt: Long,
-    )
-
-    private val bankTotalCache = ConcurrentHashMap<String, BankTotalSnapshot>()
-
-    @Volatile
-    private var bankTotalTaskRegistered = false
-
-    /**
-     * 初始化默认金币货币。
-     */
+    /** 初始化当前经济后端；由插件启动流程调用，重复调用安全。 */
     @JvmStatic
     fun init() {
-        init(Constant.CURRENCY_GOLD)
+        EconomyLedgerProvider.init()
     }
 
+    // region 读取
+
+    /** 用户钱包余额。 */
+    @JvmStatic
+    fun getMoneyByUser(user: User): Double = ledger.balance(wallet(user)).toDouble()
+
+    /** 用户主银行余额。 */
+    @JvmStatic
+    fun getMoneyByBank(user: User): Double = ledger.balance(userBank(user)).toDouble()
+
+    /** 全局银行指定账户余额。 */
+    @JvmStatic
+    fun getMoneyByBankFromId(userId: String, description: String): Double =
+        ledger.balance(LedgerOwner.GlobalAccount(userId, description)).toDouble()
+
+    /** 插件私有指定账户余额。 */
+    @JvmStatic
+    fun getMoneyFromPluginBankForId(userId: String, description: String): Double =
+        ledger.balance(LedgerOwner.PluginAccount(userId, description)).toDouble()
+
+    /** 按账户 ID 读取主银行余额（原上游 `EconomyAccount` 参数版本）。 */
+    @JvmStatic
+    fun getMoneyByBankForAccount(accountId: String): Double =
+        ledger.balance(LedgerOwner.UserBank(accountId)).toDouble()
+
     /**
-     * 初始化经济系统并注册货币。
+     * 全局银行账本的完整余额列表（替代原来的 `getAccountByBank()`）。
      *
-     * 注册完成后会立即刷新银行总额缓存，并注册后台刷新任务。
+     * 每项的 [LedgerEntry.accountId] 就是原上游账户的 `uuid`，可直接用于
+     * `UserCoreManager.getUserInfoByAccountId` 之类的反查。
      */
     @JvmStatic
-    fun init(vararg currencies: EconomyCurrency) {
-        try {
-            currencies.forEach { currency ->
-                economyService.register(currency, false)
-            }
-            Log.info("经济体系初始化成功!")
-        } catch (e: UnsupportedOperationException) {
-            Log.error("经济体系初始化失败!", e)
-        }
-        refreshBankTotalCache()
-        scheduleBankTotalCache()
-    }
+    fun bankEntries(): List<LedgerEntry> = ledger.entries(LedgerBook.USER_BANK)
 
-    /**
-     * 从用户 [钱包] 获取默认金币余额。
-     */
+    /** 银行总存款。旧实现有 3 小时缓存，这里直接聚合，语义一致。 */
     @JvmStatic
-    fun getMoneyByUser(user: User): Double {
-        return getMoneyByUser(user, Constant.CURRENCY_GOLD)
-    }
+    fun getBankTotalCached(): Double = ledger.total(LedgerBook.USER_BANK).toDouble()
 
-    /**
-     * 从用户 [钱包] 获取指定 [货币] 余额。
-     *
-     * 钱包余额存放在插件 custom 上下文，和 global 银行余额分开。
-     */
+    /** 兼容旧签名：当前实现不再维护额外缓存，调用即视为已刷新。 */
     @JvmStatic
-    fun getMoneyByUser(user: User, currency: EconomyCurrency): Double {
-        return try {
-            economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                with(context) {
-                    val account: UserEconomyAccount = economyService.account(user)
-                    account[currency]
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济获取出错:获取用户钱包余额", e)
-            0.0
-        }
+    fun refreshBankTotalCache() {
+        // 无缓存需要刷新；保留方法避免调用点改动。
     }
 
-    /**
-     * 从用户 [银行] 获取默认金币余额。
-     */
+    // endregion
+
+    // region 用户之间 / 用户与银行
+
+    /** 用户钱包 → 用户钱包。 */
     @JvmStatic
-    fun getMoneyByBank(user: User): Double {
-        return getMoneyByBank(user, Constant.CURRENCY_GOLD)
-    }
+    fun turnUserToUser(user: User, toUser: User, quantity: Double): Boolean =
+        transfer(wallet(user), wallet(toUser), quantity)
 
-    /**
-     * 从用户 [银行] 获取指定 [货币] 余额。
-     *
-     * 银行余额走 global 上下文，因此和钱包账户不是同一资金池。
-     */
+    /** 用户钱包 → 主银行。 */
     @JvmStatic
-    fun getMoneyByBank(user: User, currency: EconomyCurrency): Double {
-        return try {
-            economyService.global().use { global ->
-                with(global) {
-                    val account: UserEconomyAccount = economyService.account(user)
-                    account[currency]
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济获取出错:获取用户银行余额", e)
-            0.0
-        }
-    }
+    fun turnUserToBank(user: User, quantity: Double): Boolean =
+        transfer(wallet(user), userBank(user), quantity)
 
-    /**
-     * 从全局银行账户中按业务 id 和描述获取默认金币余额。
-     */
+    /** 主银行 → 用户钱包。 */
     @JvmStatic
-    fun getMoneyByBankFromId(userId: String, description: String): Double {
-        return getMoneyByBankFromId(userId, description, Constant.CURRENCY_GOLD)
-    }
+    fun turnBankToUser(user: User, quantity: Double): Boolean =
+        transfer(userBank(user), wallet(user), quantity)
 
-    /**
-     * 从全局银行账户中按业务 id 和描述获取指定 [货币] 余额。
-     *
-     * 私人银行准备金等需要全局可追踪的资金使用该路径。
-     */
+    // endregion
+
+    // region 增减
+
+    /** 给用户钱包增减（负数为扣减，沿用旧语义：允许负余额）。 */
     @JvmStatic
-    fun getMoneyByBankFromId(userId: String, description: String, currency: EconomyCurrency): Double {
-        return try {
-            economyService.global().use { global ->
-                with(global) {
-                    val account: EconomyAccount = economyService.account(userId, description)
-                    account[currency]
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济获取出错:获取用户银行余额", e)
-            0.0
-        }
-    }
+    fun plusMoneyToUser(user: User, quantity: Double): Boolean = adjust(wallet(user), quantity)
 
-    /**
-     * 从插件自定义账户中按业务 id 和描述获取金币余额。
-     */
+    /** 给用户主银行增减（负数为扣减）。 */
     @JvmStatic
-    fun getMoneyFromPluginBankForId(userId: String, description: String): Double {
-        return getMoneyFromPluginBankForId(userId, description, Constant.CURRENCY_GOLD)
-    }
+    fun plusMoneyToBank(user: User, quantity: Double): Boolean = adjust(userBank(user), quantity)
 
-    /**
-     * 从插件自定义账户中按业务 id 和描述获取指定 [货币] 余额。
-     *
-     * 私人银行流动金、库存池等插件内部资金使用该路径。
-     */
+    /** 扣减用户钱包，余额不足返回 false。 */
     @JvmStatic
-    fun getMoneyFromPluginBankForId(
-        userId: String,
-        description: String,
-        currency: EconomyCurrency,
-    ): Double {
-        return try {
-            economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                with(context) {
-                    val account: EconomyAccount = economyService.account(userId, description)
-                    account[currency]
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济获取出错:获取自定义银行用户余额", e)
-            0.0
-        }
-    }
+    fun minusMoneyToUser(user: User, quantity: Double): Boolean =
+        adjust(wallet(user), -quantity)
 
-    /**
-     * 转账
-     * 用户 [钱包] 到 用户 [钱包]
-     * 默认货币 [金币]
-     */
+    /** 给插件私有账户增减。 */
     @JvmStatic
-    fun turnUserToUser(user: User, toUser: User, quantity: Double): Boolean {
-        return turnUserToUser(user, toUser, quantity, Constant.CURRENCY_GOLD)
-    }
+    fun plusMoneyToPluginBankForId(userId: String, description: String, quantity: Double): Boolean =
+        adjust(LedgerOwner.PluginAccount(userId, description), quantity)
 
-    /**
-     * 转账
-     * 用户 [钱包] 到 用户 [钱包]
-     * 自定义货币
-     */
-    @JvmStatic
-    fun turnUserToUser(user: User, toUser: User, quantity: Double, currency: EconomyCurrency): Boolean {
-        return try {
-            economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                with(context) {
-                    val account: UserEconomyAccount = economyService.account(user)
-                    val toAccount: UserEconomyAccount = economyService.account(toUser)
-                    val userMoney = account[currency]
-                    if (userMoney - quantity < 0) {
-                        return false
-                    }
-                    account.minusAssign(currency, quantity)
-                    toAccount.plusAssign(currency, quantity)
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:用户->用户", e)
-            false
-        }
-    }
-
-    /**
-     * 转账
-     * 从 用户 [钱包] 到 [银行]
-     * 默认货币 [金币]
-     */
-    @JvmStatic
-    fun turnUserToBank(user: User, quantity: Double): Boolean {
-        return turnUserToBank(user, quantity, Constant.CURRENCY_GOLD)
-    }
-
-    /**
-     * 转账
-     * 从 用户 [钱包] 到 [银行]
-     * 自定义货币
-     */
-    @JvmStatic
-    fun turnUserToBank(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
-        return try {
-            economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                economyService.global().use { global: GlobalEconomyContext ->
-                    with(context) {
-                        with(global) {
-                            val account: UserEconomyAccount = economyService.account(user)
-                            val bankAccount: UserEconomyAccount = economyService.account(user)
-                            val money = context.run { account[currency] }
-                            if (money - quantity < 0) {
-                                return false
-                            }
-                            context.run { account.minusAssign(currency, quantity) }
-                            bankAccount.plusAssign(currency, quantity)
-                            true
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:用户->银行", e)
-            false
-        }
-    }
-
-    /**
-     * 转账
-     * 从 [银行] 到 用户 [钱包]
-     * 默认货币 [金币]
-     */
-    @JvmStatic
-    fun turnBankToUser(user: User, quantity: Double): Boolean {
-        return turnBankToUser(user, quantity, Constant.CURRENCY_GOLD)
-    }
-
-    /**
-     * 转账
-     * 从 [银行] 到 用户 [钱包]
-     * 自定义货币
-     */
-    @JvmStatic
-    fun turnBankToUser(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
-        return try {
-            economyService.global().use { global: GlobalEconomyContext ->
-                economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                    with(global) {
-                        with(context) {
-                            val bankAccount: UserEconomyAccount = economyService.account(user)
-                            val account: UserEconomyAccount = economyService.account(user)
-                            val bankMoney = global.run { bankAccount[currency] }
-                            if (bankMoney - quantity < 0) {
-                                return false
-                            }
-                            global.run { bankAccount.minusAssign(currency, quantity) }
-                            account.plusAssign(currency, quantity)
-                            true
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:银行->用户", e)
-            false
-        }
-    }
-
-    /**
-     * 给 [用户] [钱包] 添加余额
-     * 默认货物 [金币]
-     */
-    @JvmStatic
-    fun plusMoneyToUser(user: User, quantity: Double): Boolean {
-        return plusMoneyToUser(user, quantity, Constant.CURRENCY_GOLD)
-    }
-
-    /**
-     * 给 [用户] [钱包] 添加余额
-     * 货币自定义
-     */
-    @JvmStatic
-    fun plusMoneyToUser(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
-        return try {
-            economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                with(context) {
-                    val account: UserEconomyAccount = economyService.account(user)
-                    account.plusAssign(currency, quantity)
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:添加用户经济", e)
-            false
-        }
-    }
-
-    /**
-     * 给 [用户] [银行] 添加余额
-     * 默认货物 [金币]
-     */
-    @JvmStatic
-    fun plusMoneyToBank(user: User, quantity: Double): Boolean {
-        return plusMoneyToBank(user, quantity, Constant.CURRENCY_GOLD)
-    }
-
-    /**
-     * 给 [用户] [银行] 添加余额
-     * 货币自定义
-     */
-    @JvmStatic
-    fun plusMoneyToBank(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
-        return try {
-            economyService.global().use { context ->
-                with(context) {
-                    val account: UserEconomyAccount = economyService.account(user)
-                    if (quantity >= 0) {
-                        account.plusAssign(currency, quantity)
-                    } else {
-                        account.minusAssign(currency, -quantity)
-                    }
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:添加用户经济", e)
-            false
-        }
-    }
-
-    /**
-     * 给 [用户] [钱包] 减少余额
-     * 默认货物 [金币]
-     */
-    @JvmStatic
-    fun minusMoneyToUser(user: User, quantity: Double): Boolean {
-        return minusMoneyToUser(user, quantity, Constant.CURRENCY_GOLD)
-    }
-
-    /**
-     * 给 [用户] [钱包] 减少余额
-     * 货币自定义
-     */
-    @JvmStatic
-    fun minusMoneyToUser(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
-        return try {
-            economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                with(context) {
-                    val account: UserEconomyAccount = economyService.account(user)
-                    account.minusAssign(currency, quantity)
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:减少用户经济", e)
-            false
-        }
-    }
-
-    /**
-     * 给 [用户] [自定义银行] 添加余额
-     * 默认货物 [金币]
-     */
-    @JvmStatic
-    fun plusMoneyToPluginBankForId(userId: String, description: String, quantity: Double): Boolean {
-        return plusMoneyToPluginBankForId(userId, description, quantity, Constant.CURRENCY_GOLD)
-    }
-
-    /**
-     * 给 [用户] [自定义银行] 添加余额
-     * 货币自定义
-     */
-    @JvmStatic
-    fun plusMoneyToPluginBankForId(
-        userId: String,
-        description: String,
-        quantity: Double,
-        currency: EconomyCurrency,
-    ): Boolean {
-        return try {
-            economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                with(context) {
-                    val account: EconomyAccount = economyService.account(userId, description)
-                    if (quantity >= 0) {
-                        account.plusAssign(currency, quantity)
-                    } else {
-                        account.minusAssign(currency, -quantity)
-                    }
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:减少用户经济", e)
-            false
-        }
-    }
-
-    /**
-     * 给 [全局银行] 指定账户 (userId + description) 增减余额
-     * quantity 允许为负数（负数表示扣减）
-     */
+    /** 给全局银行指定账户增减。 */
     @JvmStatic
     fun plusMoneyToBankFromId(
         userId: String,
         description: String,
         quantity: Double,
-        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
-    ): Boolean {
-        return try {
-            economyService.global().use { global: GlobalEconomyContext ->
-                with(global) {
-                    val account: EconomyAccount = economyService.account(userId, description)
-                    if (quantity >= 0) {
-                        account.plusAssign(currency, quantity)
-                    } else {
-                        account.minusAssign(currency, -quantity)
-                    }
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:全局银行账户加减", e)
-            false
-        }
-    }
+    ): Boolean = adjust(LedgerOwner.GlobalAccount(userId, description), quantity)
 
-    /**
-     * 从 [用户钱包(custom)] 转入 [全局银行] 指定账户 (toUserId + toDescription)
-     */
+    /** 按账户 ID 增减主银行余额（原上游 `EconomyAccount` 参数版本）。 */
+    @JvmStatic
+    fun plusMoneyToBankForAccount(accountId: String, quantity: Double): Boolean =
+        adjust(LedgerOwner.UserBank(accountId), quantity)
+
+    /** 按账户 ID 增减钱包余额（原上游 `EconomyAccount` 参数版本）。 */
+    @JvmStatic
+    fun plusMoneyToWalletForAccount(accountId: String, quantity: Double): Boolean =
+        adjust(LedgerOwner.Wallet(accountId), quantity)
+
+    /** 主银行 → 用户钱包（原上游 `EconomyAccount` 参数版本）。 */
+    @JvmStatic
+    fun turnBankAccountToUserWallet(accountId: String, toUser: User, quantity: Double): Boolean =
+        transfer(LedgerOwner.UserBank(accountId), wallet(toUser), quantity)
+
+    /** 直接给钱包加钱（调试/补偿用）。 */
+    @JvmStatic
+    fun Cheat(user: User, quantity: Double): Boolean =
+        ledger.add(wallet(user), quantity.money()).success
+
+    // endregion
+
+    // region 跨账本划转
+
+    /** 用户钱包 → 全局银行指定账户。 */
     @JvmStatic
     fun turnUserWalletToGlobalBankAccount(
         user: User,
         toUserId: String,
         toDescription: String,
         quantity: Double,
-        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
-    ): Boolean {
-        if (quantity <= 0) return false
-        return try {
-            economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                economyService.global().use { global: GlobalEconomyContext ->
-                    with(context) {
-                        with(global) {
-                            val wallet: UserEconomyAccount = economyService.account(user)
-                            val walletMoney = context.run { wallet[currency] }
-                            if (walletMoney - quantity < 0) return false
+    ): Boolean = transfer(wallet(user), LedgerOwner.GlobalAccount(toUserId, toDescription), quantity)
 
-                            context.run { wallet.minusAssign(currency, quantity) }
-                            val toAccount: EconomyAccount = economyService.account(toUserId, toDescription)
-                            toAccount.plusAssign(currency, quantity)
-                            true
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:钱包->全局银行账户", e)
-            false
-        }
-    }
-
-    /**
-     * 从 [全局银行] 指定账户 (fromUserId + fromDescription) 转入 [用户钱包(custom)]
-     */
+    /** 全局银行指定账户 → 用户钱包。 */
     @JvmStatic
     fun turnGlobalBankAccountToUserWallet(
         fromUserId: String,
         fromDescription: String,
         user: User,
         quantity: Double,
-        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
-    ): Boolean {
-        if (quantity <= 0) return false
-        return try {
-            economyService.global().use { global: GlobalEconomyContext ->
-                economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                    with(global) {
-                        with(context) {
-                            val fromAccount: EconomyAccount = economyService.account(fromUserId, fromDescription)
-                            val fromMoney = global.run { fromAccount[currency] }
-                            if (fromMoney - quantity < 0) return false
+    ): Boolean = transfer(LedgerOwner.GlobalAccount(fromUserId, fromDescription), wallet(user), quantity)
 
-                            global.run { fromAccount.minusAssign(currency, quantity) }
-                            val wallet: UserEconomyAccount = economyService.account(user)
-                            wallet.plusAssign(currency, quantity)
-                            true
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:全局银行账户->钱包", e)
-            false
-        }
-    }
-
-    /**
-     * 给 [经济账户] [钱包] 添加余额
-     * 默认货物 [金币]
-     */
-    @JvmStatic
-    fun plusMoneyToWalletForAccount(account: EconomyAccount, quantity: Double): Boolean {
-        return plusMoneyToWalletForAccount(account, quantity, Constant.CURRENCY_GOLD)
-    }
-
-    /**
-     * 给 [经济账户] [钱包] 添加余额
-     * 货币自定义
-     */
-    @JvmStatic
-    fun plusMoneyToWalletForAccount(
-        account: EconomyAccount,
-        quantity: Double,
-        currency: EconomyCurrency,
-    ): Boolean {
-        return try {
-            economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                with(context) {
-                    account.plusAssign(currency, quantity)
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:减少用户经济", e)
-            false
-        }
-    }
-
-    /**
-     * 给 [经济账户] [银行] 添加余额
-     * 默认货物 [金币]
-     */
-    @JvmStatic
-    fun plusMoneyToBankForAccount(account: EconomyAccount, quantity: Double): Boolean {
-        return plusMoneyToBankForAccount(account, quantity, Constant.CURRENCY_GOLD)
-    }
-
-    /**
-     * 给 [经济账户] [银行] 添加余额
-     * 货币自定义
-     */
-    @JvmStatic
-    fun plusMoneyToBankForAccount(
-        account: EconomyAccount,
-        quantity: Double,
-        currency: EconomyCurrency,
-    ): Boolean {
-        return try {
-            economyService.global().use { context ->
-                with(context) {
-                    if (quantity >= 0) {
-                        account.plusAssign(currency, quantity)
-                    } else {
-                        account.minusAssign(currency, -quantity)
-                    }
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:减少用户经济", e)
-            false
-        }
-    }
-
-    @JvmStatic
-    fun getMoneyByBankForAccount(
-        account: EconomyAccount,
-        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
-    ): Double {
-        return try {
-            economyService.global().use { context ->
-                with(context) { account[currency] }
-            }
-        } catch (e: Exception) {
-            Log.error("经济获取出错:按账户获取主银行余额", e)
-            0.0
-        }
-    }
-
-    @JvmStatic
-    fun turnBankAccountToUserWallet(
-        fromAccount: EconomyAccount,
-        toUser: User,
-        quantity: Double,
-        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
-    ): Boolean {
-        if (quantity <= 0) return false
-        return try {
-            economyService.global().use { global ->
-                economyService.custom(EconomyRuntime.plugin).use { custom ->
-                    val balance = global.run { fromAccount[currency] }
-                    if (balance + 0.0001 < quantity) return false
-                    global.run { fromAccount.minusAssign(currency, quantity) }
-                    val target = economyService.account(toUser)
-                    custom.run { target.plusAssign(currency, quantity) }
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:账户主银行->用户钱包", e)
-            false
-        }
-    }
-
-    /**
-     * 从 [用户主银行(global)] 转入 [插件自定义账户(custom)]。
-        * 用于跨账本锁定保证金、银行（PrivateBank 模块）库存注入等。
-     */
+    /** 用户主银行 → 插件私有账户。 */
     @JvmStatic
     fun turnUserGlobalBankToPluginBankForId(
         user: User,
         toUserId: String,
         toDescription: String,
         quantity: Double,
-        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
-    ): Boolean {
-        if (quantity <= 0) return false
-        return try {
-            economyService.global().use { global: GlobalEconomyContext ->
-                economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                    with(global) {
-                        with(context) {
-                            val fromAccount: UserEconomyAccount = economyService.account(user)
-                            val fromMoney = global.run { fromAccount[currency] }
-                            if (fromMoney - quantity < 0) return false
+    ): Boolean = transfer(userBank(user), LedgerOwner.PluginAccount(toUserId, toDescription), quantity)
 
-                            global.run { fromAccount.minusAssign(currency, quantity) }
-                            val toAccount: EconomyAccount = economyService.account(toUserId, toDescription)
-                            toAccount.plusAssign(currency, quantity)
-                            true
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:主银行->自定义账户", e)
-            false
-        }
-    }
-
-    /**
-     * 从 [用户主银行(global)] 转入 [全局银行] 指定账户 (toUserId + toDescription)。
-        * 用于银行（PrivateBank 模块）创建时把启动资金沉淀到银行自身的全局银行子账户等。
-     */
+    /** 用户主银行 → 全局银行指定账户。 */
     @JvmStatic
     fun turnUserGlobalBankToGlobalBankAccount(
         user: User,
         toUserId: String,
         toDescription: String,
         quantity: Double,
-        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
-    ): Boolean {
-        if (quantity <= 0) return false
-        return try {
-            economyService.global().use { global: GlobalEconomyContext ->
-                with(global) {
-                    val fromAccount: UserEconomyAccount = economyService.account(user)
-                    val fromMoney = global.run { fromAccount[currency] }
-                    if (fromMoney - quantity < 0) return false
+    ): Boolean = transfer(userBank(user), LedgerOwner.GlobalAccount(toUserId, toDescription), quantity)
 
-                    global.run { fromAccount.minusAssign(currency, quantity) }
-                    val toAccount: EconomyAccount = economyService.account(toUserId, toDescription)
-                    toAccount.plusAssign(currency, quantity)
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:主银行->全局银行账户", e)
-            false
-        }
-    }
-
-    /**
-     * 从 [全局银行] 指定账户 (fromUserId + fromDescription) 转入 [插件自定义账户(custom)]。
-        * 用于银行（PrivateBank 模块）把准备金、国卷到期资金等迁移到自定义账本。
-     */
+    /** 全局银行指定账户 → 插件私有账户。 */
     @JvmStatic
     fun turnGlobalBankAccountToPluginBankForId(
         fromUserId: String,
@@ -710,36 +189,13 @@ object EconomyUtil {
         toUserId: String,
         toDescription: String,
         quantity: Double,
-        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
-    ): Boolean {
-        if (quantity <= 0) return false
-        return try {
-            economyService.global().use { global: GlobalEconomyContext ->
-                economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                    with(global) {
-                        with(context) {
-                            val fromAccount: EconomyAccount = economyService.account(fromUserId, fromDescription)
-                            val fromMoney = global.run { fromAccount[currency] }
-                            if (fromMoney - quantity < 0) return false
+    ): Boolean = transfer(
+        LedgerOwner.GlobalAccount(fromUserId, fromDescription),
+        LedgerOwner.PluginAccount(toUserId, toDescription),
+        quantity,
+    )
 
-                            global.run { fromAccount.minusAssign(currency, quantity) }
-                            val toAccount: EconomyAccount = economyService.account(toUserId, toDescription)
-                            toAccount.plusAssign(currency, quantity)
-                            true
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:全局银行账户->自定义账户", e)
-            false
-        }
-    }
-
-    /**
-     * 从 [插件自定义账户(custom)] 转入 [全局银行] 指定账户 (toUserId + toDescription)。
-     * 主要用于私银玩法中的“锁定资产到期回流”等场景。
-     */
+    /** 插件私有账户 → 全局银行指定账户。 */
     @JvmStatic
     fun turnPluginBankForIdToGlobalBankAccount(
         fromUserId: String,
@@ -747,158 +203,36 @@ object EconomyUtil {
         toUserId: String,
         toDescription: String,
         quantity: Double,
-        currency: EconomyCurrency = Constant.CURRENCY_GOLD,
-    ): Boolean {
-        if (quantity <= 0) return false
-        return try {
-            economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                economyService.global().use { global: GlobalEconomyContext ->
-                    with(context) {
-                        with(global) {
-                            val fromAccount: EconomyAccount = economyService.account(fromUserId, fromDescription)
-                            val fromMoney = context.run { fromAccount[currency] }
-                            if (fromMoney - quantity < 0) return false
+    ): Boolean = transfer(
+        LedgerOwner.PluginAccount(fromUserId, fromDescription),
+        LedgerOwner.GlobalAccount(toUserId, toDescription),
+        quantity,
+    )
 
-                            context.run { fromAccount.minusAssign(currency, quantity) }
-                            val toAccount: EconomyAccount = economyService.account(toUserId, toDescription)
-                            toAccount.plusAssign(currency, quantity)
-                            true
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:自定义账户->全局银行账户", e)
-            false
-        }
-    }
+    // endregion
 
-    /**
-     * 获取银行的所有经济信息
-     * 默认货币
-     */
-    @JvmStatic
-    fun getAccountByBank(): Map<EconomyAccount, Double> {
-        return getAccountByBank(Constant.CURRENCY_GOLD)
-    }
+    private fun wallet(user: User): LedgerOwner = LedgerOwner.Wallet("u${user.id}", user.nick)
 
-    /**
-     * 获取银行的所有经济信息
-     * 自定义货币
-     */
-    @JvmStatic
-    fun getAccountByBank(economyCurrency: EconomyCurrency): Map<EconomyAccount, Double> {
-        return try {
-            economyService.global().use { global: GlobalEconomyContext ->
-                with(global) {
-                    economyCurrency.balance()
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济获取出错:获取银行对应货币的所有经济信息", e)
-            HashMap()
-        }
-    }
+    private fun userBank(user: User): LedgerOwner = LedgerOwner.UserBank("u${user.id}", user.nick)
 
-    /**
-     * 获取银行总存款（缓存值）
-     * 默认货币 [金币]
-     */
-    @JvmStatic
-    fun getBankTotalCached(): Double {
-        return getBankTotalCached(Constant.CURRENCY_GOLD)
-    }
+    private fun transfer(from: LedgerOwner, to: LedgerOwner, quantity: Double): Boolean =
+        ledger.transfer(from, to, quantity.money()).success
 
-    /**
-     * 获取银行总存款（缓存值）
-     * 自定义货币
-     */
-    @JvmStatic
-    fun getBankTotalCached(currency: EconomyCurrency): Double {
-        val key = currency.id
-        return bankTotalCache[key]?.total ?: run {
-            refreshBankTotalCache(currency)
-            bankTotalCache[key]?.total ?: 0.0
-        }
-    }
+    private fun adjust(owner: LedgerOwner, quantity: Double): Boolean =
+        ledger.adjust(owner, quantity.money()).success
 
-    /**
-     * 刷新银行总存款缓存
-     * 默认货币 [金币]
-     */
-    @JvmStatic
-    fun refreshBankTotalCache() {
-        refreshBankTotalCache(Constant.CURRENCY_GOLD)
-    }
-
-    /**
-     * 刷新银行总存款缓存
-     * 自定义货币
-     */
-    @JvmStatic
-    fun refreshBankTotalCache(currency: EconomyCurrency) {
-        val total = try {
-            getAccountByBank(currency).values.sum()
-        } catch (e: Exception) {
-            Log.error("经济获取出错:刷新银行总存款缓存", e)
-            0.0
-        }
-        bankTotalCache[currency.id] = BankTotalSnapshot(total, System.currentTimeMillis())
-    }
-
-    private fun scheduleBankTotalCache() {
-        if (bankTotalTaskRegistered) return
-        HuYanScheduler.schedule("bank-total-cache", "0 0 */3 * * ?", BankTotalCacheTask())
-        bankTotalTaskRegistered = true
-    }
-
-    private class BankTotalCacheTask : Runnable {
-        override fun run() {
-            refreshBankTotalCache()
-        }
-    }
-
-    @JvmStatic
-    fun Cheat(user: User, quantity: Double): Boolean {
-        return Cheat(user, quantity, Constant.CURRENCY_GOLD)
-    }
-
-    @JvmStatic
-    fun Cheat(user: User, quantity: Double, currency: EconomyCurrency): Boolean {
-        return try {
-            economyService.custom(EconomyRuntime.plugin).use { context: EconomyContext ->
-                with(context) {
-                    val account: UserEconomyAccount = economyService.account(user)
-                    account.plusAssign(currency, quantity)
-                    true
-                }
-            }
-        } catch (e: Exception) {
-            Log.error("经济转移出错:用户", e)
-            false
-        }
-    }
+    private fun Double.money(): BigDecimal = BigDecimal.valueOf(this)
 }
 
 /**
- * Kotlin 友好接口（遵循当前项目使用方式）
+ * Kotlin 友好扩展，保持 2.0.1 之前的调用形态（去掉已无意义的货币参数）。
  */
-fun User.walletBalance(currency: EconomyCurrency = Constant.CURRENCY_GOLD): Double {
-    return EconomyUtil.getMoneyByUser(this, currency)
-}
+fun User.walletBalance(): Double = EconomyUtil.getMoneyByUser(this)
 
-fun User.bankBalance(currency: EconomyCurrency = Constant.CURRENCY_GOLD): Double {
-    return EconomyUtil.getMoneyByBank(this, currency)
-}
+fun User.bankBalance(): Double = EconomyUtil.getMoneyByBank(this)
 
-fun User.depositToBank(quantity: Double, currency: EconomyCurrency = Constant.CURRENCY_GOLD): Boolean {
-    return EconomyUtil.turnUserToBank(this, quantity, currency)
-}
+fun User.depositToBank(quantity: Double): Boolean = EconomyUtil.turnUserToBank(this, quantity)
 
-fun User.withdrawFromBank(quantity: Double, currency: EconomyCurrency = Constant.CURRENCY_GOLD): Boolean {
-    return EconomyUtil.turnBankToUser(this, quantity, currency)
-}
+fun User.withdrawFromBank(quantity: Double): Boolean = EconomyUtil.turnBankToUser(this, quantity)
 
-fun User.transferTo(toUser: User, quantity: Double, currency: EconomyCurrency = Constant.CURRENCY_GOLD): Boolean {
-    return EconomyUtil.turnUserToUser(this, toUser, quantity, currency)
-}
+fun User.transferTo(toUser: User, quantity: Double): Boolean = EconomyUtil.turnUserToUser(this, toUser, quantity)

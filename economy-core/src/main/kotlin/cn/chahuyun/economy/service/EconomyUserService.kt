@@ -3,7 +3,6 @@ package cn.chahuyun.economy.service
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.user.UserInfoDto
 import net.mamoe.mirai.contact.User
-import xyz.cssxsh.mirai.economy.service.EconomyAccount
 
 /**
  * Core-facing user profile operations for feature modules.
@@ -14,9 +13,10 @@ object EconomyUserService {
     fun getOrCreate(user: User): UserInfoDto =
         UserCoreManager.getUserInfo(user)
 
+    /** 按经济账户 ID（`u<qq>`）反查用户。 */
     @JvmStatic
-    fun get(account: EconomyAccount): UserInfoDto =
-        UserCoreManager.getUserInfo(account)
+    fun getByAccountId(accountId: String): UserInfoDto? =
+        UserCoreManager.getUserInfoByAccountId(accountId)
 
     @JvmStatic
     fun findByQq(userId: Long?): UserInfoDto? =

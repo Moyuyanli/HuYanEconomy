@@ -19,7 +19,6 @@ import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.message.data.ForwardMessageBuilder
 import net.mamoe.mirai.message.data.MessageChain
 import net.mamoe.mirai.message.data.PlainText
-import xyz.cssxsh.mirai.economy.EconomyService
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -202,8 +201,9 @@ object RedPackManager {
             EconomyUtil.plusMoneyToUser(owner, remainingMoney)
         } else {
             // 群内找不到成员时，按账号直接退回钱包。
-            val account = EconomyService.account(ownerId.toString(), null)
-            EconomyUtil.plusMoneyToWalletForAccount(account, remainingMoney)
+            // 注意账户标识必须是 u<qq>（与 UserInfoDto.id、上游 uuid 一致），
+            // 直接用纯 QQ 号会落到另一个孤立账户上。
+            EconomyUtil.plusMoneyToWalletForAccount("u$ownerId", remainingMoney)
         }
         group.sendMessage(
             MessageUtil.formatMessageChain(ownerId, "你的红包过期啦！退还金币 ${MoneyFormatUtil.format(remainingMoney)} 枚！")

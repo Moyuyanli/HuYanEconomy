@@ -11,7 +11,6 @@ import cn.hutool.core.date.DateUnit
 import cn.hutool.core.util.RandomUtil
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.User
-import xyz.cssxsh.mirai.economy.EconomyService
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.ln
@@ -692,10 +691,9 @@ object PrivateBankService {
 
     private fun payFromOwnerMainBank(bank: PrivateBankDto, user: User, requested: Double): Double {
         val accountId = UserCoreManager.getUserInfo(bank.ownerQq)?.id?.takeIf { it.isNotBlank() } ?: return 0.0
-        val account = EconomyService.account(accountId, null)
-        val amount = EconomyUtil.getMoneyByBankForAccount(account).coerceAtLeast(0.0).coerceAtMost(requested)
+        val amount = EconomyUtil.getMoneyByBankForAccount(accountId).coerceAtLeast(0.0).coerceAtMost(requested)
         if (amount <= 0.0001) return 0.0
-        return if (EconomyUtil.turnBankAccountToUserWallet(account, user, amount)) amount else 0.0
+        return if (EconomyUtil.turnBankAccountToUserWallet(accountId, user, amount)) amount else 0.0
     }
 
     private data class LedgerCleanupEntry(

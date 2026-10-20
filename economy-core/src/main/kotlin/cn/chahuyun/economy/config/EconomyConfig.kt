@@ -25,6 +25,19 @@ object EconomyConfig : AutoSavePluginConfig("Config") {
     @ValueDescription("数据库类型(H2,MYSQL,SQLITE)")
     var dataType: DriveType by value(DriveType.H2)
 
+    @ValueDescription(
+        """
+        经济后端
+        BASE           : 使用本插件自建账户 economy_account（默认，不依赖前置插件）
+        MIRAI_ECONOMY  : 使用上游 mirai-economy 插件（需自行安装该前置插件）
+        注意：切换后端不会自动搬迁余额，切换前请先执行 hye economy migrate
+        """
+    )
+    var economyBackend: EconomyBackend by value(EconomyBackend.BASE)
+
+    @ValueDescription("配置选择 MIRAI_ECONOMY 但探测不到上游插件时，是否降级为 BASE（true 降级并告警，false 启动失败）")
+    var economyBackendFallback: Boolean by value(true)
+
     @ValueDescription("mysql 连接地址")
     var mysqlUrl: String by value("localhost:3306/test")
 

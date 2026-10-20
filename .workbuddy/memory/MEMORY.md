@@ -1,151 +1,66 @@
 # HuYanEconomy 项目长期记忆
 
-## 定位
-基于 Mirai Console 2.16.0 的 QQ 机器人经济插件，Kotlin 1.9.20 / JVM Target 11，Gradle KTS，AGPL-3.0。
-group `cn.chahuyun`，version 2.0.0，主分支 master。包根 `cn.chahuyun.economy`。
-
-## 模块职责
-- economy-common —— 常量、时间/金额/文本工具、通用结果类型
-- economy-base —— 【2.0.0 新增】本地经济系统：EconomyScope/EconomyAccount/EconomyBalance/EconomyAction/EconomyCore，
-  表 `economy_scope`、`economy_account`（无 hye_ 前缀）。账户编码 u<qq> / g<群号> / u<qq>g<群号>。
-  **状态（2026-10-11 确认）：实现已完成、可用**——五类型 + 两表 + 金额口径 + 越界保护全部到位，
-  29 个测试全绿（8 值类型 + 1 边界 + 20 H2 集成），可编译可跑。
-  仍未接管全量业务资金流：`EconomyUtil`/`EconomyAccountService` 与上游 `mirai-economy-core` 仍在服役。
-  **钓鱼模块已首批接入**（`FishingAccountService`：用户 `u<qq>`、鱼塘 `f<pondId>`）。
-- economy-data —— entity(v1/v2 + 根包新实体)、DTO(model)、converter(v1/v2)、data/proxy、data/cache、data/repository
-- economy-image —— 图片渲染、画布工具、各业务 Renderer（bottom*.png 资源在此）
-- economy-core —— 签到、银行、私人银行、背包、道具、称号、红包、转账、用户状态
-- economy-game —— 钓鱼(已在新实体上重建)、抢劫、抽奖、彩票、农场
-- economy-main —— 插件入口、action、命令、事件、权限注册、资源与最终打包
-
-## 分层调用链
-用户消息 → economy-main/action（@MessageAuthorize）→ core|game/usecase → core|game/manager
-→ economy-data/data/repository 或 data/proxy → economy-data/entity
+## 定位与模块
+Mirai Console 2.16.0 的 QQ 经济插件；Kotlin 1.9.20 / JVM 11 / Gradle KTS，AGPL-3.0，
+group `cn.chahuyun`，version 2.0.0，包根 `cn.chahuyun.economy`。
+- common 工具 ｜ base 本地经济系统（已完成）｜ data 实体/DTO/Converter/Repository/proxy/cache
+- image 渲染 ｜ core 签到银行背包称号红包 ｜ game 钓鱼抢劫抽奖农场
+- main 入口/action/权限/打包 ｜ action + action-ksp 规则链运行时与 KSP
 
 ## 关键约定
-- 插件主类 `cn.chahuyun.economy.HuYanEconomy`（object : KotlinPlugin），生命周期 onLoad/onEnable/onDisable
-- 指令经 `AuthorizeServer.registerEvents()` 扫描 `cn.chahuyun.economy.action` 包注册
-- 权限码在 economy-main/plugin/PermCodeManager.init() 注册
-- 数据读写优先走 economy-data 的 repository/proxy，不在 core/game 新增 HibernateFactory 直连
-- 日志用自定义 `Log` 工具类
-- 单 bot：由配置指定绑定的 bot QQ 号
-- 数据库支持 H2 / SQLite / MySQL，配置切换；部分版本升级需执行 `hye repair`
-- 禁止把 log4j / Hibernate / HikariCP 打进插件 jar（运行期由 mirai 与 mirai-hibernate-plugin 提供）
-- 新增资源优先放 economy-main/src/main/resources/
-- KSP 生成的 AuthorizeRegistrar 在 economy-main/build/generated/ksp/，不要手改
+- 主类 `HuYanEconomy`（object : KotlinPlugin）；指令 `AuthorizeServer.registerEvents()` 扫 `cn.chahuyun.economy.action`；
+  权限码在 `PermCodeManager.init()`
+- 数据读写走 economy-data 的 repository/proxy，core/game 不新增 HibernateFactory 直连；日志用 `Log`；
+  单 bot；H2/SQLite/MySQL 可切；升级可能需 `hye repair`；禁止打包 log4j / Hibernate / HikariCP
+- **Feature 垂直包**：`action/` 固定 main 只做 Mirai 注册；业务在 `feature/<功能>/`，各角色是该目录下的**文件**，
+  不建横向顶层包。**必备只有 Usecase + Rules（Rules 允许空壳）**；Service（复杂/重复校验才抽）、
+  Manager、Provider（真用 `@Provider` 才建）按需，禁止为对称建空壳。详见开发说明 §3.3
+- **Manager 判据**：调用方在功能之外 → 建 Manager；只在自家 usecase/规则用 → 落 Service（签到即无 SignManager，
+  `randomSignGold`/`signProp` 在 SignService）。迁 `manager/` 旧类先查外部调用方
+- 跨 feature 只调对方 Manager，不直调 Usecase / Service
+- 扩展点用 Rules 的 `@Before`/`@After`，不建 `<Feature>Event.kt`、不 broadcast；中间结果走 `ActionContext`
+- KSP 生成物（`build/generated/ksp/`）不手改
 
 ## 构建与测试
-- 打包：`./gradlew.bat buildPlugin --console=plain` → `build/mirai/HuYanEconomy-<version>.mirai2.jar`
-- 七模块测试：`./gradlew.bat :economy-common:test :economy-base:test :economy-data:test :economy-image:test :economy-core:test :economy-game:test :economy-main:test --console=plain --offline`
-- 本地调试环境在 debug-sandbox/（config + bots + plugins）
+- 打包 `./gradlew.bat buildPlugin --console=plain`；全模块 `:economy-{common,base,data,image,core,game,main}:test --console=plain`
+- `GRADLE_USER_HOME=D:\CodeTools\Gradle\core`；⚠️ Gradle **不能带沙箱**（卡 SYN_SENT 无限等），
+  依赖已缓存时加 `--offline`
+- 离线不可用：logback-classic 1.5.16 等；mirai 测试用 `testCompileOnly` + slf4j NOP；`kotlin("test")` = JUnit4
+- 偶发 `journal-1.lock 拒绝访问`：等 IDE 同步结束再重试；本地调试 `debug-sandbox/`
 
-## 仓库配置约定（settings.gradle.kts，2026-10-13 修正）
-- 仓库顺序：`LocalOverflowGatewayStage`(file, overflow-gateway SNAPSHOT) → mavenCentral → google →
-  central-sonatype-snapshots → **ChahuyunNexus（最后，且 `content { includeGroup("cn.chahuyun") }`）**。
-- ⚠️ **Gradle 只有遇到 404 才继续找下一个仓库；连接超时会直接让整个解析失败。**
-  所以私有仓库 `https://nexus.chahuyun.cn/repository/maven-public/`（=121.11.204.184，会长期/间歇不可达）
-  **绝不能排在链首、也不能不加分组限制**，否则每次同步/构建都会卡死在 TCP 建连上（IDE 表现为「无法加载 Gradle 项目」）。
-- 排查手法：`jstack <gradle daemon pid>` 看是否卡在 `HttpClientHelper.performHttpRequest`；
-  `netstat -ano | findstr <pid>` 看是否 `SYN_SENT`；`--info` + `-Dorg.gradle.internal.http.connectionTimeout=4000` 复现并打印失败 URL。
-- `cn.chahuyun:hibernate-plus:2.1.1`、`HuYanAuthorize:1.3.7`、`HuYanAuthorize-ksp:1.3.7`
-  实际在 Maven Central 也拿得到（Nexus 只是兜底）；`xyz.cssxsh.mirai:mirai-economy-core:1.0.6` 在 Central。
-- GRADLE_USER_HOME = `D:\CodeTools\Gradle\core`（不是 `~/.gradle`）。
+## 仓库（settings.gradle.kts）
+- 顺序：LocalOverflowGatewayStage → mavenCentral → google → sonatype-snapshots →
+  ChahuyunNexus（**最后 + `includeGroup("cn.chahuyun")`**）
+- ⚠️ Gradle 只在 404 才换仓库，连接超时直接解析失败；私有 Nexus（121.11.204.184）常不可达，
+  不能排链首/不加分组限制，否则 IDE「无法加载 Gradle 项目」
 
-## 实体层版本化重构（docs/实体层重构方案.md）
-- 已落地：DTO 统一、Converter v1/v2、EntityProxy + DataSourceStrategy、Redis 缓存层（Cache-Aside + 延迟双删）、
-  `hye entity version|switch|migration` 四条指令；模块版本持久化在 `PluginConfig.entityDataVersions`，缺省 V1
-- V1 实体保持不动；V2 实体新设计（统一 Long 自增主键、真 JPA 关系、表名 `hye_` 前缀）
-- 未完成：V2 全面替换 V1、监控告警体系、V3 扩展
-- 陷阱：entity/v1 下扁平实体的 package 必须与引用方一致（`cn.chahuyun.economy.entity.v1`）
+## 实体与金额
+- V1 不动；V2 新设计（Long 自增主键、真 JPA 关系、`hye_` 前缀）；根包按领域分包
+  common/user/item/title/fishing/farm/bank 与 v1/v2 并存；新实体名不带 V2
+- 规范：金额 BigDecimal(19,2)、时间 Instant+DATETIME(3)、`user_id -> hye_user_info.id`
+- 同表遗留 `hye_title_info` / `hye_user_backpack`；新实体接线仅 fishing 完成
+- 金额口径：两位小数 HALF_UP 舍入（不拒绝）；上限 `MAX_ABS=99999999999999999.99`；
+  `isUsableAmount → EconomyCore.valid → INVALID_AMOUNT`，mutate/transfer 另有结果越界保护
+- 账户编码 u<qq> / g<群> / u<qq>g<群>；钓鱼用 u<qq>、f<pondId>
+- hibernate-plus：URL = 前缀 + address，**H2 前缀硬编码 `jdbc:h2:file:`（只能文件库）**；写死 HikariCP +
+  `hbm2ddl=update`；工厂按 ClassLoader 注册，`getSessionFactory()` 按 TCCL；无 close，用 `getSessionFactory().close()`
 
-## 2.0.0 新实体体系（plan/v2.0.0/2.0新用户关联实体设计.md）
-- economy-data/entity 根包下按领域分包：common/user/item/title/fishing/farm/bank，与 entity/v1、entity/v2 并存
-- 规范：全表 `hye_` 前缀、金额 BigDecimal(19,2)、时间 Instant+DATETIME(3)、用户关联统一 `user_id -> hye_user_info.id`
-- 命名避让：新实体类名不带 V2，v2 侧统一带 V2（无 @Entity name 冲突）
-- 表名冲突：`hye_fish` **已消解**（v2/fish 已删除）；`hye_title_info`、`hye_user_backpack` 仍新旧同表（未处理）
-- 新实体接线进度：**fishing 领域已全链路接入**（见「钓鱼模块」）；user/item/title/farm/bank 仍未接线
-- HibernateUtil.packageName 已放宽为 `cn.chahuyun.economy`（为扫到 economy-base 实体），扫描范围变大
-- 待办：entity/v1|v2 归档到 entity/old/、新实体 Repository 与服务、旧数据迁移
+## 钓鱼（2026-10-12 新实体重建）
+- 实体 `entity/fishing/`；四 Repository + `NewUserInfoRepository`（qq → hye_user_info.id）
+- 业务在 game：Catalog/Size/Runtime/RodUpgradeRules(level=rodLevel/10+2)/Rod/Pond/Log(排行派生)/
+  MessageBuilder/Identity/Usecase/Manager；指令 `FishAction`
+- 口径：抛竿 → 180s 内拉起 → 响应时间判惊喜/难度 → 抽鱼 → 尺寸 → 结算
+- 遗留：鱼饵用内置 `FishingBaitConstant`（未接背包）；`game/fishing` 将来改 `feature/fishing`
 
-## economy-base 金额口径（2026-10-09 已定，代码即准）
-- 两位小数：**不拒绝，统一 HALF_UP 舍入到 2 位**（`EconomyBalance.normalize`）。设计文档 §7 写「拒绝」、
-  §9 写「校验或舍入」自相矛盾，取「舍入」（§9 明确要求"统一舍入规则"）。
-- 上限：绝对值 ≤ `EconomyBalance.MAX_ABS` = `99999999999999999.99`（DECIMAL(19,2) 上限，17 位整数+2 位小数）。
-- 校验落点：`EconomyBalance.isUsableAmount()`（正数 + 范围内）→ `EconomyCore.valid()` → 越界返回 `INVALID_AMOUNT`；
-  `mutate(add)` / `transfer` 另有「结果余额越界保护」，防止余额接近上限时入账溢出。
-- 测试：`EconomyBalanceTest.kt`(8) + `BaseModuleBoundaryTest.kt`(1) + **`EconomyCoreH2IntegrationTest.kt`(20，H2 集成)**。
-- 仍未做：设计文档 §7/§9 矛盾原文未同步修改。
-
-## hibernate-plus（cn.chahuyun:hibernate-plus:2.1.1）接入要点
-- 入口：`HibernatePlusService.createConfiguration(baseClass)` → 设 `driveType/address/packageName` →
-  `HibernatePlusService.loadingService(configuration)`。`classLoader` 默认取 `baseClass.classLoader`。
-- URL 固定拼成 `getUrlPrefix(driveType) + address`；**H2 前缀硬编码 `jdbc:h2:file:`，只能用文件库**
-  （sqlite `jdbc:sqlite:`、hsqldb `jdbc:hsqldb:file:`、mysql/mariadb/duckdb 同理）。
-- 写死：`provider_class=HikariCPConnectionProvider`、`hbm2ddl.auto=update`、autocommit=true；H2 只补 `isolation=1`。
-- 实体扫描：`org.reflections` `forPackage(packageName, classLoader)` + TypesAnnotated(Entity/Embeddable/MappedSuperclass)。
-  `packageName` 为空时回落 `baseClass` 的包名。
-- 工厂按 **ClassLoader** 注册（`HibernateFactory.initFactory`）；`getSessionFactory()` 按 **TCCL** 查，
-  查不到且只有一个工厂时直接返回它（兜底）。`HibernateFactory` 无 close，需 `getSessionFactory().close()`。
-- 生产装配见 `economy-core/utils/HibernateUtil.kt`（packageName 被放宽为 `cn.chahuyun.economy`）。
-
-## 构建与测试（补充）
-- grep 结论：全工程 66 处 jakarta.persistence（无 javax），经济的持久化 API 统一 jakarta
-- 首次构建慢（约 1 小时）主因是下载 kotlin-noarg / kotlin-allopen 插件依赖
-- ⚠️ **Gradle 不能带沙箱跑**：沙箱会黑洞化外网，守护进程卡在 `SYN_SENT`、CPU 0%、日志停写、无限等待。
-  对策：加 `--offline`（依赖已缓存时 10~30s 完成），或显式禁用沙箱。
-- ⚠️ 离线不可用的依赖：**logback-classic:1.5.16**（descriptor 只在 `metadata-2.107`，
-  当前 Gradle 7.6.6 用 `metadata-2.101`）；mirai-core-api 运行期图里的
-  `kotlinx-serialization-protobuf-jvm:1.5.0`、`org.jetbrains:annotations:19.0.0`。
-  对策：测试里 mirai 用 `testCompileOnly`（不给运行期），日志走 slf4j NOP。
-- `kotlin("test")` 在本工程 = **kotlin-test-junit（JUnit4 4.13.2）**（无 `useJUnitPlatform()`），
-  生命周期用 `org.junit.BeforeClass/AfterClass` + `@JvmStatic`。
-- economy-base 测试：`./gradlew.bat :economy-base:test --console=plain --offline`（H2 集成库文件落在
-  `economy-base/build/h2-it/`，每次运行重建）
-
-## 钓鱼模块（2026-10-12 在新一代实体上全链路重建；旧钓鱼已在 e1e5aa3 删除）
-- 实体：`entity/fishing/` 的 FishEntity/UserPondEntity/UserFishingInfoEntity/FishingLogEntity（设计 §11，字段未改）
-- 数据：Fish/UserPond/UserFishingInfo/FishingLog 四个 Repository + `NewUserInfoRepository`（hye_user_info 桥，
-  `getOrCreateId(qq)` 解析 `hye_user_info.id`；业务表 user_id 写内部主键，不写 QQ）
-- 资金：`economy-core/.../service/FishingAccountService` → economy-base（用户 `u<qq>`、鱼塘 `f<pondId>`，Scope DEFAULT）
-- 业务(economy-game)：FishingCatalogService(默认鱼类目录)、FishingSizeService、FishingRuntimeService(冷却+会话+失败)、
-  FishingRodUpgradeRules(level=rodLevel/10+2)、FishingRodService、FishingPondService、FishingLogService(排行由流水派生)、
-  FishingMessageBuilder、FishingIdentity、FishingUsecase、FishingManager
-- 指令(economy-main/FishAction)：钓鱼/抛竿、购买鱼竿、升级鱼竿\*?、鱼竿等级、鱼塘等级、创建鱼塘、购买鱼饵、
-  钓鱼信息(图片)、钓鱼信息#(文本)、刷新钓鱼、开启/关闭 钓鱼；权限 `EconPerm.FISH_PERM`("fish")/组"钓鱼组"
-- 配置：economy-core `FishingMsgConfig`（EconomyRuntime.msgConfig 暴露）
-- 图片：`FishingInfoImageRenderer`（自包含，底图缺失退化纯色）+ `FishingInfoCard`
-- 玩法口径沿用现网：抛竿→180s 内「拉起/!」→按响应时间判定惊喜(between≤500ms)/难度→抽鱼→尺寸→结算；
-  maxDifficulty=rodLevel*baitLevel、maxGrade=rodLevel/10+2、minDifficulty=round(rodLevel*quality)
-- 与现网差异（有意）：实体无 status/isFishRod → 内存会话 + rodLevel=0 表示未购买；鱼塘改「归属用户」；
-  收费率改千分比 fee_rate_permille（现网 rebate 0.05 ⇒ 50‰）；无独立排行表（从日志派生，榜首授予 FISHING 称号）
-- 遗留：鱼饵用内置 `FishingBaitConstant` 目录（未接 hye_item/背包）；未跑模块测试（scope 内测试延后）
-
-## Action 规则链框架（截至 2026-10-19：阶段一~四完成，阶段五未开始）
-- 权威进度文档：`plan/v2.0.0/40-开发手册/Action规则链系统开发手册.md`（五阶段计划）+ `Action骨架契约.md`（阶段一契约与阶段二决议）。
-  设计文档 `docs/KSP 驱动的 Action 规则链框架 · 设计文档.md` 已在 8d73412 重写（去掉了 compensate/逆序补偿语义，与代码一致）。
-- 阶段一 ✅：settings 注册 `economy-action` / `economy-action-ksp`；`economy-action` 内置
-  `actionchain/annotation/ActionAnnotations.kt`（@Action/@Before/@After/@Provider/@FromProvider，SOURCE retention）。
-- 阶段二 ✅（代码完成）：`actionchain/runtime/` 有 ActionContext / ActionResult(+ActionExecution+ActionResultHandler) /
-  ActionModule(+ActionRule/ActionProvider/actionProvider) / ActionEngine（before→action→after、provider 作用域+缓存、
-  重复/缺失/歧义/冲突校验、无反射）。`ActionEngineTest` 8 项全绿（2026-10-13 报告）。
-  阶段二决议：结果名 ActionResult；Action 可返回任意值存 context 供 after 读；EndWithMessage 经 ActionResultHandler 一次；
-  Provider 仅收 ActionContext 且同一 invocation 内缓存；同 order 按 ruleId 字典序。
-- 阶段三 ✅（2026-10-19）：`economy-action-ksp` 已有 `ksp/` 包（Provider/Processor/Model/CodeGenerator）+ ServiceLoader；
-  生成 `<Owner>Actions` facade 与 `<ModuleId>ActionModule`；KSP 选项 `actionchain.moduleId|generatedPackage|allowExternalActions`；
-  `ActionRuntime.install/invoke` 已加入运行时。测试用 `kotlin-compile-testing` + `-ksp:1.5.0`（必须 `jvmTarget="11"`），7/7 通过。
-- 阶段四 ✅（2026-10-19）：
-  - `economy-core` / `economy-game` 应用 `id("com.google.devtools.ksp")` + `ksp(project(":economy-action-ksp"))`，
-    `ksp { arg("actionchain.moduleId", "economy-core"|"economy-game") }`。
-  - 签到完整试点：`SignUsecase.sign` 标 `@Action("core.sign")`，`SignAction.sign` → `SignUsecaseActions.sign(event)`。
-  - 钓鱼新包占位：`economy-game/.../game/fishing/FishingChain.kt`（`@Action("game.fish")` 仅日志 + `@Before(order=10)`），
-    `FishAction.fishing` 先触发 `FishingChainActions.fish(event)` 再走旧 usecase（玩法待重建）。
-  - 聚合：`economy-main/.../plugin/ActionChainBootstrap.kt`（显式 modules 清单 → ActionEngine → ActionRuntime.install，
-    启动日志打印模块/action 明细，EndWithMessage 走 MessageEvent.subject）；onEnable 早于事件注册，onDisable shutdown。
-  - 生成物位置：facade 在声明方包，模块描述在 `cn.chahuyun.economy.actionchain.generated.<ModuleId>ActionModule`
-    （moduleId `economy-core` → `EconomyCoreActionModule`）。
-  - 测试：`ActionChainIntegrationTest` 3 项；`:economy-action:test` 10、`:economy-action-ksp:test` 7、`:economy-main:test` 5。
-  - 打包：jar 内 runtime 26 类、ksp 0 类、KSP API 0。
-  - 坑：`economy-main/src/test/java/Test.java`（图片预览工具）历史遗留参数与 `FishingInfoCard`(8 字段) 不符，
-    会让 `compileTestJava` 失败，已修正；规则无参数时生成 `{ _: ActionContext -> }` 消警告。
-- 阶段五 ⬜：API 文档（注解/签名/顺序/Provider/示例/限制）。待决议：模块清单是否改 ServiceLoader 自动发现。
-- 遗留：跨模块 Provider（规则在 A、Provider 在 B）未验证，`allowExternalActions` 仍只降级 warning。
+## Action 规则链（一~四完成，五未做）
+- 权威文档 `plan/v2.0.0/40-开发手册/Action规则链系统开发手册.md` + `Action骨架契约.md`
+- 运行时 `actionchain/runtime`：ActionContext / ActionResult(Continue/EndSilently/EndWithMessage) /
+  ActionExecution / ActionResultHandler / ActionModule(ActionRule/ActionProvider) / ActionEngine / ActionRuntime
+- 引擎 before→action→after（before 拦截则 after 不执行）；Provider 按类型+限定名缓存；
+  构造期校验 actionId 唯一/规则引用/Provider 冲突；同 order 按 ruleId 字典序；全程无反射
+- KSP 生成 `<Owner>Actions` facade（跟随声明方包）+ `<ModuleId>ActionModule`（actionchain.generated）；
+  选项 `actionchain.moduleId|generatedPackage|allowExternalActions`；源码注解 SOURCE retention
+- main 的 `ActionChainBootstrap` 显式登记模块 → 唯一 ActionEngine → install；新增业务模块必须登记
+- 已接入：签到 4 个 action（`core.sign` / `.close` / `.open` / `.refresh`；Provider `signer`→`SignActor`；
+  before 10 资格校验 / 20 奖励计算，after 10 日志 / 20 称号检查；`sign` 返回 `SignOutcome?`）；钓鱼 `game.fish` 占位
+- 遗留：跨模块 Provider 未验证（`allowExternalActions` 只降级 warning）；阶段五 API 文档未写

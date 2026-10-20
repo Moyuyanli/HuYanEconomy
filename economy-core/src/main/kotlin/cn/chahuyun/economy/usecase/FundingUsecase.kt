@@ -5,8 +5,6 @@ import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 import net.mamoe.mirai.event.events.FriendMessageEvent
 import net.mamoe.mirai.message.data.MessageChain
-import xyz.cssxsh.mirai.economy.EconomyService
-import xyz.cssxsh.mirai.economy.service.EconomyAccount
 import java.util.*
 
 object FundingUsecase {
@@ -53,9 +51,9 @@ object FundingUsecase {
         }
 
         val userId = user.id
-        val account: EconomyAccount = EconomyService.account(userId, null)
 
-        if (EconomyUtil.plusMoneyToBankForAccount(account, -amount)) {
+        // 账户标识统一用 UserInfoDto.id（u<qq>），不再直接构造上游 EconomyAccount。
+        if (EconomyUtil.plusMoneyToBankForAccount(userId, -amount)) {
             event.sender.sendMessage("fund get $uuid ${MoneyFormatUtil.format(amount)} success")
         } else {
             event.sender.sendMessage("fund get $uuid ${MoneyFormatUtil.format(amount)} fail")

@@ -22,8 +22,6 @@ dependencies {
     implementation(project(":economy-core"))
     implementation(project(":economy-game"))
 
-    compileOnly("xyz.cssxsh.mirai:mirai-economy-core:1.0.6")
-
     val auth = "1.3.7"
     compileOnly("cn.chahuyun:HuYanAuthorize:$auth@mirai2.jar")
     ksp("cn.chahuyun:HuYanAuthorize-ksp:$auth")

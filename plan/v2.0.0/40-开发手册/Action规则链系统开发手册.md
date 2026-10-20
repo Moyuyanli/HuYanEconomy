@@ -400,6 +400,73 @@ economy-main/action (HuYanAuthorize, 命令/权限入口)
   - `economy-main` 的 `Test.java` 是图片预览工具，历史上已与 `FishingInfoCard`（8 字段）不一致，导致 `compileTestJava` 失败；本次一并按现有构造参数修正。
 - 遗留：跨模块 Provider 未验证；钓鱼玩法未迁移；阶段五 API 文档未写。
 
+### 签到功能整体入链（2026-10-20）
+
+- 背景：阶段四只把 `core.sign` 一个函数接进规则链，关闭/开启/刷新签到仍是 usecase 直调，签到的
+  「资格校验」「奖励计算」「称号检查」全挤在主流程里，规则链形同虚设。
+- 交付（`economy-core/.../feature/sign/`）：
+  - **四个动作**：`core.sign` / `core.sign.close` / `core.sign.open` / `core.sign.refresh`，全部标 `@Action`，
+    KSP 门面 `SignUsecaseActions` 一次性暴露给 `economy-main/action/SignAction`。
+  - **Provider**：新增 `SignProvider.kt`，`@Provider("signer", actionId="core.sign")` 产出 `SignActor`
+    （userInfo / user / subject / message / groupId）。`@Before`、动作、`@After` 共享同一个 `UserInfoDto` 实例，
+    补签卡改过的连签数才能传到结算阶段，且一次调用只查一次库。
+  - **前置规则**：`@Before(10) rejectIfNotSignable`（`SignService.canSign` 纯判断后拦截，
+    返回 `ActionResult.EndWithMessage("你已经签到过了哦!")`）、`@Before(20) calculateReward`
+    （`SignService.randomSignGold` + `signProp`，结果 `context.put(SignReward::class, ...)`）。
+  - **后置规则**：`@After(10) logCommitted`、`@After(20) grantSignTitles`（`checkSignTitle` + `checkMonopoly`
+    从主流程挪出）；三个管理动作各一条 `@After` 审计日志。
+  - **主流程**：`SignUsecase.sign` 只保留不可拆的结算流水（推进状态 → 取奖励 → 入账 → 扣道具落库 →
+    拼文案 → 发图），并改为**返回 `SignOutcome?`**，后置规则用 `context.actionResult(SignOutcome::class)` 读取
+    （替代原来的 `context.put`，返回值就是「这次成没成」的唯一判据）。
+  - `SignService` 拆出纯判断 `canSign`（与 `applySign` 共用 `minutesSinceSignable`），
+    保证 `@Before` 拦截时不会留下改了一半的状态。
+- 命令：
+  - `./gradlew.bat :economy-core:compileKotlin :economy-main:compileKotlin --console=plain --offline`
+  - `./gradlew.bat :economy-core:test :economy-main:test --console=plain --offline`
+- 结果：编译 0 警告；`economy-core` 46 项 / `economy-main` 6 项测试全绿（`ActionChainIntegrationTest`
+  的期望集合同步为四个签到动作，并用管理动作 `core.sign.refresh` 跑通整链——它不依赖 Provider，
+  `@After` 审计规则对非群消息事件静默跳过）。
+- 陷阱：`@Action` 的第一个参数固定是事件，只为满足契约时会产生 unused parameter 警告，
+  用一行来源日志消费掉即可；`@Provider` 的 qualifier 在注解里必须写字面量，
+  常量 `SignProvider.SIGNER` 只用于代码侧，两处要一起改。
+- 遗留（待人工收尾）：
+  - 真机验证「重复签到被 `@Before` 拦截」与「补签卡连签数传递」两条路径；
+  - `SignService.signProp` 里的补签卡仍会改 `userInfo`，属于 `@Before(20)` 的已知状态副作用，
+    若要彻底消除需把它下沉到动作本体（届时奖励计算只剩纯计算）；
+  - 跨模块 Provider 仍未实测。
+
+### 作用域修正：签到删除 `SignManager`（2026-10-20）
+
+- 问题：`randomSignGold` / `signProp` 只有签到自己调用，却被放在 `SignManager`（对外 API 位置），
+  违反「Manager = 功能之外也要读本功能」的判据——签到根本没有外部调用方。
+- 处置：
+  - `SignManager.kt` 删除（`git rm`），`randomSignGold` / `signProp` / `isMonthlyCardActive` 整体并入 `SignService.kt`，
+    与 `canSign` / `applySign` 一起成为对内领域逻辑；
+  - `SignReward` 从 `SignManager.kt` 末尾拆到独立 `SignReward.kt`（功能私有模型，按 §3.3.4「其它私有文件」平铺）；
+  - `SignRules.calculateReward` 改调 `SignService.randomSignGold` / `SignService.signProp`；
+  - 测试 `SignManagerTest` → `SignServiceTest`（仍是月卡被动生效的两条断言）。
+- 结论沉淀：迁 `manager/` 下的旧类时，**先查有没有外部调用方**；没有就落到 `Service`，
+  不要因为「以前叫 Manager」就原样搬成 `<Feature>Manager.kt`。已写入 `docs/项目开发说明.md` §3.3.3。
+
+### 样板实录：签到功能规则链改造全记录（2026-10-20）
+
+- 新增 `plan/v2.0.0/40-开发手册/签到功能规则链改造实录.md`，把签到从横向包到规则链的**完整过程**固定下来：
+  - §1 复杂度画像（4 动作 / 5 字段状态机 / 4 档奖励 / 道具副作用 / 跨阶段取数 / 图片输出 / 权限开关）；
+  - §2 改造前的四处拼装结构与四个具体毛病；
+  - §3 七个步骤（定结构 → 拆动作 → 纯判断拦截 → 奖励计算+Provider → 后置+返回值 → 删事件 → 作用域校正），
+    每步含产出、验收与当步踩的坑；
+  - §4 最终形态（文件表 / 动作×规则矩阵 / 数据流 / 职责边界表）；
+  - §5 七条关键取舍（每条给出"替代方案为何不选"）；
+  - §6 本次实际踩到的 7 个坑（按发现顺序）；
+  - §7 **六大类 28 条易错点**，A 作用域 / B 规则链契约 / C KSP / D 构建测试 / E Mirai 兼容 / F 迁移纪律，
+    每条按「症状 → 根因 → 正确处理」写，并附本次实例；
+  - §8 可打勾的迁移自检表（结构 / 规则链 / KSP 装配 / 兼容边界 / 验证 共 5 组）；
+  - §9 bank / backpack / title / redpack / transfer / fishing / lottery·farm 的迁移难度与起手建议；
+  - §10 验收记录与已知遗留。
+- 定位：**这是"迁下一个人"的默认入口**。`docs/项目开发说明.md` §3.3.7 迁移规则第 6 条已指向它。
+- 同步修正：`SignProvider.SIGNER` 的注释原写「注解里必须写字面量」，与代码（注解用的是 `const val`）不符；
+  已改为准确表述——KSP 只解析**编译期常量**，非 `const` 会静默降级成空串且不报错（对应实录 §7.C1）。
+
 ### 下一阶段（阶段五：编写 API 文档）
 
 - 待做：按 §7 输出注解/签名/顺序/Provider/示例/限制文档，示例尽量用 `economy-action-ksp` 测试 fixture 兜底。

@@ -17,7 +17,6 @@ import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil.toMoneyFormat
 import net.mamoe.mirai.console.permission.AbstractPermitteeId
 import net.mamoe.mirai.contact.*
-import xyz.cssxsh.mirai.economy.service.EconomyAccount
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.IOException
@@ -66,10 +65,14 @@ object UserCoreManager {
     }
 
     @JvmStatic
-    fun getUserInfo(account: EconomyAccount): UserInfoDto {
-        val userId = account.uuid
-        return userProxy.findWhere { it.id == userId }.firstOrNull()
-            ?: throw RuntimeException("该经济账号不存在用户信息")
+    /**
+     * 按经济账户 ID（`u<qq>`）反查用户；经济账本条目只携带账户 ID。
+     *
+     * 找不到返回 null，由调用方决定跳过还是中断。
+     */
+    fun getUserInfoByAccountId(accountId: String): UserInfoDto? {
+        if (accountId.isBlank()) return null
+        return userProxy.findWhere { it.id == accountId }.firstOrNull()
     }
 
     @JvmStatic

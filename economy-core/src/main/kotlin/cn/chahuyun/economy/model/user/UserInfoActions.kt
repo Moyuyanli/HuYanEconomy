@@ -1,10 +1,10 @@
 package cn.chahuyun.economy.model.user
 
+import cn.chahuyun.economy.feature.sign.SignService
 import cn.chahuyun.economy.runtime.EconomyRuntime.config
 import cn.chahuyun.economy.service.EconomyInventoryService
 import cn.chahuyun.economy.service.EconomyUserProfileFormatter
 import cn.chahuyun.economy.service.UserRuntimeContextService
-import cn.chahuyun.economy.service.UserSignRuleService
 import net.mamoe.mirai.contact.Group
 import net.mamoe.mirai.contact.User
 
@@ -26,7 +26,7 @@ object UserInfoBehaviorService {
         UserRuntimeContextService.attach(dto, user, group)
 
     fun sign(dto: UserInfoDto): Boolean =
-        UserSignRuleService.applySign(dto, config.reSignTime)
+        SignService.applySign(dto, config.reSignTime)
 
     fun getString(dto: UserInfoDto): String {
         return EconomyUserProfileFormatter.basicInfo(dto)

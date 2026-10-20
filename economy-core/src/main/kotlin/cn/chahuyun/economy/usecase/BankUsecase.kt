@@ -17,7 +17,6 @@ import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.ForwardMessageBuilder
 import net.mamoe.mirai.message.data.PlainText
-import xyz.cssxsh.mirai.economy.service.EconomyAccount
 import java.util.*
 
 /**
@@ -221,10 +220,10 @@ object BankUsecase {
     }
 
     private fun buildRegalTopLines(bot: Bot): List<String> {
-        val accountByBank: Map<EconomyAccount, Double> = EconomyUtil.getAccountByBank()
-        val accountBalances = HashMap<String, Double>(accountByBank.size)
-        accountByBank.forEach { (account, money) ->
-            accountBalances.merge(account.uuid, money, Double::plus)
+        val bankEntries = EconomyUtil.bankEntries()
+        val accountBalances = HashMap<String, Double>(bankEntries.size)
+        bankEntries.forEach { entry ->
+            accountBalances.merge(entry.accountId, entry.amount.toDouble(), Double::plus)
         }
 
         val snapshot = buildRegalTopSnapshot(

@@ -7,7 +7,6 @@ import cn.chahuyun.economy.utils.FormatUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.ShareUtils
 import cn.hutool.core.date.DateUtil
-import xyz.cssxsh.mirai.economy.service.EconomyAccount
 
 /**
  * 银行利息定时任务（从 `BankAction.java` 迁移）。
@@ -25,12 +24,12 @@ class BankInterestTask(
 
             if (bankInfo.id == 1) {
                 val interest = bankInfo.interest
-                val accountByBank: Map<EconomyAccount, Double> = EconomyUtil.getAccountByBank()
-                for ((account, money) in accountByBank) {
-                    val userInfo= UserCoreManager.getUserInfo(account)
-                    var v = ShareUtils.rounding(money) * (interest / 1000.0)
+                for (entry in EconomyUtil.bankEntries()) {
+                    // 账本条目只带账户 ID（u<qq>），按 id 反查用户；查不到的账户直接跳过。
+                    val userInfo = UserCoreManager.getUserInfoByAccountId(entry.accountId) ?: continue
+                    var v = ShareUtils.rounding(entry.amount.toDouble()) * (interest / 1000.0)
                     v = FormatUtil.round(v, 1)
-                    if (EconomyUtil.plusMoneyToBankForAccount(account, v)) {
+                    if (EconomyUtil.plusMoneyToBankForAccount(entry.accountId, v)) {
                         userInfo.bankEarnings = v
                         UserCoreManager.saveUserInfo(userInfo)
                     } else {

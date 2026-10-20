@@ -18,8 +18,6 @@ import cn.chahuyun.economy.plugin.*
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.service.EconomyAsyncService
-import cn.chahuyun.economy.sign.SignRewardEvent
-import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.HibernateUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
@@ -28,8 +26,6 @@ import net.mamoe.mirai.console.command.CommandManager
 import net.mamoe.mirai.console.extension.PluginComponentStorage
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
-import net.mamoe.mirai.event.EventPriority
-import net.mamoe.mirai.event.GlobalEventChannel
 
 /**
  * 壶言经济插件主类。
@@ -128,7 +124,9 @@ object HuYanEconomy : KotlinPlugin(
         Log.info(formatEntityVersionSummary())
 
         // 加载功能模块。
-        EconomyUtil.init()
+        // 经济后端选择：默认 economy-base；只有配置 MIRAI_ECONOMY 且上游插件可用时才切到
+        // mirai-economy，探测失败按 economyBackendFallback 决定降级或启动失败。
+        cn.chahuyun.economy.ledger.EconomyLedgerProvider.init()
         LotteryManager.init()
         FarmCropManager.init()
         BankManager.init()
@@ -158,13 +156,9 @@ object HuYanEconomy : KotlinPlugin(
             useKsp = true
         )
 
-        val eventChannel = GlobalEventChannel.parentScope(this)
-
-        // 监听自定义事件：指令只负责发布事件，具体奖励、玩法推进等逻辑在 manager/usecase 中处理。
-        eventChannel.subscribeAlways<SignRewardEvent>(priority = EventPriority.HIGH) { cn.chahuyun.economy.manager.SignManager.randomSignGold(it) }
-        eventChannel.subscribeAlways<SignRewardEvent> { cn.chahuyun.economy.manager.SignManager.signProp(it) }
-
-        Log.info("事件已监听")
+        // 已迁入 feature/ 的功能（如签到）不再注册自定义事件：
+        // 其前置/后置扩展点由规则链的 @Before / @After 承载，随 ActionChainBootstrap 一起装配。
+        // 这里只保留尚未迁移功能的 Mirai 事件订阅。
 
         EconomyPluginConfig.firstStart = false
         Log.info("HuYanEconomy 已加载！当前版本 ${description.version} !")
@@ -193,6 +187,7 @@ object HuYanEconomy : KotlinPlugin(
         LotteryManager.close()
         cn.chahuyun.economy.manager.FishingManager.shutdown()
         YiYanManager.shutdown()
+        cn.chahuyun.economy.ledger.EconomyLedgerProvider.shutdown()
         HuYanScheduler.stop()
         EconomyAsyncService.shutdown()
         ActionChainBootstrap.shutdown()
