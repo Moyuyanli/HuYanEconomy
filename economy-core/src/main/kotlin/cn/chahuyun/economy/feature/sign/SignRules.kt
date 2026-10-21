@@ -130,7 +130,7 @@ object SignRules {
         val outcome = context.actionResult(SignOutcome::class) ?: return
         Log.info(
             "签到完成:群(${outcome.groupId}) 用户(${outcome.qq}) " +
-                "连签 ${outcome.signNumber} 天,本次收益 ${outcome.gold}"
+                "连签 ${outcome.signNumber} 天,本次收益 ${outcome.gold.toPlainString()}"
         )
     }
 

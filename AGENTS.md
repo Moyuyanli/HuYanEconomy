@@ -90,7 +90,10 @@ economy-data/entity
 - **必备文件只有 Usecase + Rules（Rules 可为空壳）**：Service / Manager / Provider 全部按需——复杂校验有重复步骤才抽 Service，外部要查本功能信息才建 Manager，规则链真用到 `@Provider` 才建 Provider。不要为了结构对称建空壳文件。迁 `manager/` 下的旧类时先查外部调用方，没有就并入 `<Feature>Service.kt`（签到即无 `SignManager`，奖励计算在 `SignService`）
 - **不用自定义事件做功能扩展**：`feature/` 下不建 `<Feature>Event.kt`，也不 `broadcast()` Mirai 自定义事件；前置拦截/奖励加成/完成通知分别写 `Rules.kt` 的 `@Before` / 主流程普通调用 / `@After`，中间结果走 `ActionContext`
 - **迁移 feature 前先读样板实录**：`plan/v2.0.0/40-开发手册/签到功能规则链改造实录.md`（最复杂功能的完整改造过程 + 六大类 28 条易错点 + 迁移自检表）；`feature/sign/` 是可直接照抄的代码样板
-- **经济资金统一走门面**：业务代码只允许调用 `EconomyUtil`（兼容门面）或 `EconomyLedger`，不得直接 `import xyz.cssxsh.mirai.economy.*`，也不得直接 `EconomyAccount.take` 绑死 economy-base；后端由 `Config.yml` 的 `economyBackend` 决定（默认 BASE），上游类型只允许出现在 `economy-core/.../ledger/LegacyEconomyApi.kt`，`LedgerIsolationTest` 会扫常量池拦截
+- **经济资金统一走门面**：业务代码只允许调用 `UserWallet`（新代码首选，`BigDecimal` + `LedgerOp`）或 `EconomyUtil`（2.0.1 兼容层，逐 feature 淘汰中），不得直接 `import xyz.cssxsh.mirai.economy.*`，也不得直接 `EconomyAccount.take` 绑死 economy-base；后端由 `Config.yml` 的 `economyBackend` 决定（默认 BASE），上游类型只允许出现在 `economy-core/.../ledger/LegacyEconomyApi.kt`，`LedgerIsolationTest` 会扫常量池拦截
+- **金额精度入口**：`Double` 金额入账前必须过 `UserWallet.money(...)`（两位 HALF_UP），账户标识必须过 `UserWallet.accountId(qq)`（`u<qq>`），不要在业务层手写 `"u$qq"` 或 `BigDecimal.valueOf`
+- **签到是首个已迁移 feature**：`SignUsecase` 的入账/读余额已走 `UserWallet`，`SignOutcome.gold` 为 `BigDecimal`；`UserWalletH2Test` 用真实 H2 + `BaseLedger` 验证落库，新增 feature 迁移时照此补一条集成测试
+- **mirai 后端只用 `custom(plugin)` 一个上下文**：scope 编码进账户 id 后缀（`u<qq>` / `u<qq>#BANK` / `<id>#PLUGIN` / `<id>#GLOBAL`），不用 `global()`。编码规则集中在 `ledger/MiraiAccountId.kt`，新增 scope 只改那一处；2.0.1 之前的旧布局（主银行在 global、id 无后缀）只能由 `hye economy migrate` 读取，`MiraiEconomyLedger.Layout` 区分这两种布局
 - **单 bot 限制**：插件仅支持绑定一个 bot（由配置指定 bot QQ 号）
 - **数据库**支持 H2 / SQLite / MySQL，通过配置切换
 - 构建排除 log4j：`configurations.configureEach { exclude(group = "org.apache.logging.log4j") }`（防止 ClassLoader 冲突）

@@ -45,6 +45,26 @@ group `cn.chahuyun`，version 2.0.0，包根 `cn.chahuyun.economy`。
 - hibernate-plus：URL = 前缀 + address，**H2 前缀硬编码 `jdbc:h2:file:`（只能文件库）**；写死 HikariCP +
   `hbm2ddl=update`；工厂按 ClassLoader 注册，`getSessionFactory()` 按 TCCL；无 close，用 `getSessionFactory().close()`
 
+## 经济后端可切换（2026-10-20 起，2026-10-21 改布局）
+- 抽象在 `economy-base/base/ledger`：`LedgerOwner`（sealed：Wallet/UserBank/PluginAccount/GlobalAccount）
+  + `EconomyLedger` 接口 + `BaseLedger`；`EconomyLedgerProvider` 按 `Config.yml` 的 `economyBackend`
+  （默认 BASE）+ `economyBackendFallback` 选后端
+- `EconomyUtil` 是纯门面（签名仍 Double）；业务禁止 import 上游、禁止直连 `EconomyAccount.take`；
+  上游类型只在 `ledger/LegacyEconomyApi.kt`，`LedgerIsolationTest` 扫常量池拦截
+- **mirai 侧不用 `global()`**，全走 `custom(plugin)`，scope 编码进 id：`u<qq>` / `u<qq>#BANK` /
+  `<id>#PLUGIN` / `<id>#GLOBAL`；规则集中在 `ledger/MiraiAccountId.kt`，新增 scope 只改这里
+- `MiraiEconomyLedger.Layout`：`SCOPE_SUFFIX`（运行时）/ `LEGACY_CONTEXT`（仅迁移读 2.0.1 前旧数据：
+  主银行在 global、id 无后缀）；`start()` 会告警旧布局残留
+- 迁移 `hye economy status|migrate|export-base`：旧布局余额只能经 base 中转一次，不能上游对上游直改
+- 上游事实：余额表主键 `(uuid, context, currency)`；`account_record` 主键仅 uuid（description 可变、
+  会被 merge 覆盖）；`custom` 的 context = `plugin.id`（按插件隔离）；**无 transfer API**，转账靠补偿
+- **新代码走 `UserWallet`**（`economy-core/ledger/UserWallet.kt`）：`balance/credit/debit`，
+  构造可注入 `EconomyLedger`（默认 provider）便于测试；`UserWallet.money(Double)` 两位 HALF_UP、
+  `accountId(qq)="u<qq>"` 是唯一入口，业务层不手写 `"u$qq"`/`BigDecimal.valueOf`
+- **签到是首个迁移 feature（2026-10-21）**：入账/回显走 `UserWallet`，`SignOutcome.gold` 为 `BigDecimal`；
+  指标测试 `test/ledger/UserWalletH2Test.kt`（真 H2 + `BaseLedger`，10 例）。core 测试已加
+  hibernate-plus/h2/reflections 依赖，后续 feature 迁移照此补集成测试
+
 ## 钓鱼（2026-10-12 新实体重建）
 - 实体 `entity/fishing/`；四 Repository + `NewUserInfoRepository`（qq → hye_user_info.id）
 - 业务在 game：Catalog/Size/Runtime/RodUpgradeRules(level=rodLevel/10+2)/Rod/Pond/Log(排行派生)/

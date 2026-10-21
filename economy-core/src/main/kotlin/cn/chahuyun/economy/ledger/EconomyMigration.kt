@@ -37,8 +37,8 @@ object EconomyMigration {
     /** 两套账本当前的总额与条目数。 */
     fun status(): String = buildString {
         val base = BaseLedger
-        val current = EconomyLedgerProvider.currentOrNull
-        appendLine("当前经济后端: ${current?.backendId ?: "未初始化"}")
+        val active = EconomyLedgerProvider.currentOrNull
+        appendLine("当前经济后端: ${active?.backendId ?: "未初始化"}")
         appendLine("配置项 economyBackend=${cn.chahuyun.economy.config.EconomyConfig.economyBackend}")
         appendLine()
         appendLine("[economy-base]")
@@ -51,26 +51,61 @@ object EconomyMigration {
             appendLine("[mirai-economy] 未安装或不可用，跳过")
             return@buildString
         }
-        val remote = MiraiEconomyLedger()
-        appendLine("[mirai-economy]")
+
+        appendLine("[mirai-economy / 当前布局：custom + scope 后缀]")
+        val currentLayout = MiraiEconomyLedger(MiraiEconomyLedger.Layout.SCOPE_SUFFIX)
         for (book in LedgerBook.values()) {
-            val entries = runCatching { remote.entries(book) }.getOrElse { emptyList() }
+            val entries = runCatching { currentLayout.entries(book) }.getOrElse { emptyList() }
             appendLine("  ${book.name}: 账户=${entries.size}，合计=${sum(entries).setScale(2, java.math.RoundingMode.HALF_UP)}")
+        }
+
+        appendLine()
+        appendLine("[mirai-economy / 历史布局：custom 钱包 + global 主银行]")
+        val legacyLayout = MiraiEconomyLedger(MiraiEconomyLedger.Layout.LEGACY_CONTEXT)
+        var legacyResidue = 0
+        for (book in LedgerBook.values()) {
+            val entries = runCatching { legacyLayout.entries(book) }.getOrElse { emptyList() }
+            legacyResidue += entries.count { it.amount.signum() != 0 }
+            appendLine("  ${book.name}: 账户=${entries.size}，合计=${sum(entries).setScale(2, java.math.RoundingMode.HALF_UP)}")
+        }
+        if (legacyResidue > 0) {
+            appendLine()
+            appendLine("  提示：历史布局仍有 $legacyResidue 条非零余额，运行时不会读取它们。")
+            appendLine("        需要保留这些资金请先 hye economy migrate confirm confirm")
         }
     }.trimEnd()
 
-    /** mirai-economy → economy-base。 */
+    /**
+     * 上游 mirai-economy → economy-base。
+     *
+     * 源固定读**历史布局**：2.0.1 之前上游把钱包放 `custom`、主银行放 `global`，
+     * 且 id 无后缀。若按当前布局读取会全部落空，等于把用户余额判成 0。
+     */
     fun migrate(dryRun: Boolean): MigrationReport {
         require(MiraiEconomyProbe.available()) { "未探测到上游插件 mirai-economy-core，无法执行 migrate" }
         BaseLedger.start()
-        return transferAll(source = MiraiEconomyLedger(), target = BaseLedger, dryRun = dryRun, skipZeroTarget = true)
+        return transferAll(
+            source = MiraiEconomyLedger(MiraiEconomyLedger.Layout.LEGACY_CONTEXT),
+            target = BaseLedger,
+            dryRun = dryRun,
+            skipZeroTarget = true,
+        )
     }
 
-    /** economy-base → mirai-economy（回滚用）。 */
+    /**
+     * economy-base → mirai-economy（回滚用）。
+     *
+     * 目标写**当前布局**（全部 custom + scope 后缀），与运行时读取规则一致。
+     */
     fun exportBase(dryRun: Boolean): MigrationReport {
         require(MiraiEconomyProbe.available()) { "未探测到上游插件 mirai-economy-core，无法执行 export-base" }
         BaseLedger.start()
-        return transferAll(source = BaseLedger, target = MiraiEconomyLedger(), dryRun = dryRun, skipZeroTarget = false)
+        return transferAll(
+            source = BaseLedger,
+            target = MiraiEconomyLedger(MiraiEconomyLedger.Layout.SCOPE_SUFFIX),
+            dryRun = dryRun,
+            skipZeroTarget = false,
+        )
     }
 
     /**

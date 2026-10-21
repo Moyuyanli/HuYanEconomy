@@ -2,12 +2,10 @@ package cn.chahuyun.economy.ledger
 
 import cn.chahuyun.economy.model.currency.GoldEconomyCurrency
 import cn.chahuyun.economy.runtime.EconomyRuntime
-import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.Log
 import net.mamoe.mirai.contact.User
 import xyz.cssxsh.mirai.economy.EconomyService
 import xyz.cssxsh.mirai.economy.service.*
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 上游 mirai-economy 的原始资金实现。
@@ -19,8 +17,13 @@ import java.util.concurrent.ConcurrentHashMap
  * 业务代码请使用 `EconomyUtil` 门面或 [cn.chahuyun.economy.base.ledger.EconomyLedger]。
  *
  * mirai-economy 区分 custom/global 两类上下文：
- * - custom(EconomyRuntime.plugin)：插件私有账户，主要对应用户钱包和插件内部资金池。
- * - global()：全局银行账户，主要对应用户银行存款和全局账户。
+ * - custom(EconomyRuntime.plugin)：插件私有账户。**当前布局只用这个上下文**，
+ *   scope 由 [MiraiEconomyLedger] 编码进账户 id 后缀。
+ * - global()：全局银行账户。仅 [MiraiEconomyLedger.Layout.LEGACY_CONTEXT]（迁移读取
+ *   2.0.1 之前的存量）会用到；运行时路径不再触碰。
+ *
+ * 文件后半部分的 `getMoneyByBank` / `turnUserToBank` 等方法是 2.0 之前的原始实现，
+ * 保留作为历史布局的语义参考，**运行时已无调用方**（门面统一走 [EconomyLedger]）。
  */
 internal object LegacyEconomyApi {
 
@@ -33,17 +36,6 @@ internal object LegacyEconomyApi {
     @JvmField
     val economyService: IEconomyService = EconomyService
 
-    /** 全局银行余额快照，避免频繁遍历账户导致指令响应变慢。 */
-    private data class BankTotalSnapshot(
-        val total: Double,
-        val updatedAt: Long,
-    )
-
-    private val bankTotalCache = ConcurrentHashMap<String, BankTotalSnapshot>()
-
-    @Volatile
-    private var bankTotalTaskRegistered = false
-
     /**
      * 初始化默认金币货币。
      */
@@ -55,7 +47,9 @@ internal object LegacyEconomyApi {
     /**
      * 初始化经济系统并注册货币。
      *
-     * 注册完成后会立即刷新银行总额缓存，并注册后台刷新任务。
+     * 只做货币注册。2.0.1 之前这里还会刷新 global 上下文的银行总额缓存并挂一个
+     * 3 小时定时任务；改为「单上下文 + scope 后缀」布局后主银行已不在 global，
+     * 那个缓存与任务全部失去意义，且会在每次启动做一次无用的全量扫描，故移除。
      */
     @JvmStatic
     fun init(vararg currencies: EconomyCurrency) {
@@ -67,8 +61,6 @@ internal object LegacyEconomyApi {
         } catch (e: UnsupportedOperationException) {
             Log.error("经济体系初始化失败!", e)
         }
-        refreshBankTotalCache()
-        scheduleBankTotalCache()
     }
 
     /**
@@ -808,64 +800,6 @@ internal object LegacyEconomyApi {
         } catch (e: Exception) {
             Log.error("经济获取出错:获取银行对应货币的所有经济信息", e)
             HashMap()
-        }
-    }
-
-    /**
-     * 获取银行总存款（缓存值）
-     * 默认货币 [金币]
-     */
-    @JvmStatic
-    fun getBankTotalCached(): Double {
-        return getBankTotalCached(CURRENCY_GOLD)
-    }
-
-    /**
-     * 获取银行总存款（缓存值）
-     * 自定义货币
-     */
-    @JvmStatic
-    fun getBankTotalCached(currency: EconomyCurrency): Double {
-        val key = currency.id
-        return bankTotalCache[key]?.total ?: run {
-            refreshBankTotalCache(currency)
-            bankTotalCache[key]?.total ?: 0.0
-        }
-    }
-
-    /**
-     * 刷新银行总存款缓存
-     * 默认货币 [金币]
-     */
-    @JvmStatic
-    fun refreshBankTotalCache() {
-        refreshBankTotalCache(CURRENCY_GOLD)
-    }
-
-    /**
-     * 刷新银行总存款缓存
-     * 自定义货币
-     */
-    @JvmStatic
-    fun refreshBankTotalCache(currency: EconomyCurrency) {
-        val total = try {
-            getAccountByBank(currency).values.sum()
-        } catch (e: Exception) {
-            Log.error("经济获取出错:刷新银行总存款缓存", e)
-            0.0
-        }
-        bankTotalCache[currency.id] = BankTotalSnapshot(total, System.currentTimeMillis())
-    }
-
-    private fun scheduleBankTotalCache() {
-        if (bankTotalTaskRegistered) return
-        HuYanScheduler.schedule("bank-total-cache", "0 0 */3 * * ?", BankTotalCacheTask())
-        bankTotalTaskRegistered = true
-    }
-
-    private class BankTotalCacheTask : Runnable {
-        override fun run() {
-            refreshBankTotalCache()
         }
     }
 

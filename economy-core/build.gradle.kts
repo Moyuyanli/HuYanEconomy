@@ -34,4 +34,11 @@ dependencies {
     compileOnly("cn.chahuyun:hibernate-plus:2.1.1")
 
     testImplementation(kotlin("test"))
+
+    // 经济账本集成测试：主线 hibernate-plus 是 compileOnly（运行期由宿主提供），
+    // 测试里需要真实实现 + JDBC 驱动才能起一个文件型 H2 库，验证签到入账真的落库。
+    testImplementation("cn.chahuyun:hibernate-plus:2.1.1")
+    testImplementation("com.h2database:h2:2.2.224")
+    // hibernate-plus 用 Reflections 扫描实体包。
+    testImplementation("org.reflections:reflections:0.10.2")
 }

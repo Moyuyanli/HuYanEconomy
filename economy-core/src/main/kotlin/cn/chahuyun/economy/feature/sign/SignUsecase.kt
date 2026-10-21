@@ -7,10 +7,10 @@ import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.feature.sign.SignUsecase.sign
+import cn.chahuyun.economy.ledger.UserWallet
 import cn.chahuyun.economy.manager.BackpackManager
 import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.user.UserInfoDto
-import cn.chahuyun.economy.model.user.user
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.service.EconomyAsyncService
 import cn.chahuyun.economy.utils.*
@@ -23,6 +23,7 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.message.data.MessageChain
 import net.mamoe.mirai.message.data.PlainText
 import java.awt.image.BufferedImage
+import java.math.BigDecimal
 import java.util.*
 
 /**
@@ -36,13 +37,13 @@ import java.util.*
  * 广播 `SignCommittedEvent` 更明确：返回值就是「这次到底成没成」的唯一判据。
  *
  * @property qq 签到用户 QQ。
- * @property gold 本次实发金币（已含倍率）。
+ * @property gold 本次实发金币（已含倍率），已按账本精度舍入到两位小数。
  * @property signNumber 本次签到后的连签天数。
  * @property groupId 触发签到的群号。
  */
 data class SignOutcome(
     val qq: Long,
-    val gold: Double,
+    val gold: BigDecimal,
     val signNumber: Int,
     val groupId: Long,
 )
@@ -132,7 +133,18 @@ object SignUsecase {
             .orEmpty()
 
         // ---------- 步骤 5：金币入账 ----------
-        if (!EconomyUtil.plusMoneyToUser(userInfo.user, goldNumber)) {
+        // 走新经济接口（BigDecimal + LedgerOp），具体落到 economy-base 还是上游 mirai-economy
+        // 由 Config.yml 的 economyBackend 决定，本方法不感知。
+        // 账户标识用 userInfo.qq 而不是 userInfo.user：前者不依赖 mirai User 对象，
+        // 与账本主键 u<qq> 一一对应，也让这段逻辑可以在没有 mirai 运行时的测试里跑。
+        val wallet = UserWallet()
+        val rewardAmount = UserWallet.money(goldNumber)
+        val credit = wallet.credit(userInfo.qq, rewardAmount, userInfo.name)
+        if (!credit.success) {
+            Log.warning(
+                "签到:金币入账失败（用户 ${userInfo.qq}，金额 ${rewardAmount.toPlainString()}，" +
+                    "后端 ${wallet.backendId}，原因 ${credit.message}）"
+            )
             subject.sendMessage("签到失败!")
             return null
         }
@@ -147,13 +159,15 @@ object SignUsecase {
 
         // ---------- 步骤 7：组装回复文案 ----------
         // 同一份文案有两个去处：消息链（图片发不出去时降级用）与图片信息区（逐行绘制）。
-        val moneyByUser = EconomyUtil.getMoneyByUser(userInfo.user)
+        // 余额优先用入账返回的快照（就是入账后的真实值），拿不到才回查一次账本。
+        val moneyByUser: BigDecimal = credit.balance ?: wallet.balance(userInfo.qq)
         val signInfoLines = mutableListOf<String>()
 
         messages.append(PlainText("签到成功!\n"))
         signInfoLines += "签到成功!"
 
-        val moneyLine = "金币:${MoneyFormatUtil.format(moneyByUser)}(+${MoneyFormatUtil.format(goldNumber)})"
+        val moneyLine =
+            "金币:${MoneyFormatUtil.format(moneyByUser.toDouble())}(+${MoneyFormatUtil.format(goldNumber)})"
         messages.append(PlainText("$moneyLine\n"))
         signInfoLines += moneyLine
 
@@ -182,7 +196,7 @@ object SignUsecase {
         // 到这行为止才算「真的签成了」，后置日志与称号检查都以它为准。
         return SignOutcome(
             qq = userInfo.qq,
-            gold = goldNumber,
+            gold = rewardAmount,
             signNumber = userInfo.signNumber,
             groupId = actor.groupId,
         )
