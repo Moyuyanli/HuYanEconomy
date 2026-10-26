@@ -6,11 +6,11 @@ import cn.chahuyun.authorize.constant.AuthPerm
 import cn.chahuyun.authorize.constant.MessageConversionEnum
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
 import cn.chahuyun.economy.constant.EconPerm
-import cn.chahuyun.economy.usecase.RobUsecase
+import cn.chahuyun.economy.games.rob.RobUsecaseActions
 import net.mamoe.mirai.event.events.GroupMessageEvent
 
 /**
- * 抢劫管理
+ * 抢劫指令入口。
  */
 @EventComponent
 class RobAction {
@@ -22,7 +22,7 @@ class RobAction {
         groupPermissions = [EconPerm.ROB_PERM]
     )
     suspend fun rob(event: GroupMessageEvent) {
-        RobUsecase.rob(event)
+        RobUsecaseActions.rob(event)
     }
 
     @MessageAuthorize(
@@ -32,16 +32,16 @@ class RobAction {
         groupPermissions = [EconPerm.ROB_PERM]
     )
     suspend fun hit(event: GroupMessageEvent) {
-        RobUsecase.hit(event)
+        RobUsecaseActions.hit(event)
     }
 
     @MessageAuthorize(text = ["开启 抢劫"], userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
     suspend fun startRob(event: GroupMessageEvent) {
-        RobUsecase.startRob(event)
+        RobUsecaseActions.startRob(event)
     }
 
     @MessageAuthorize(text = ["关闭 抢劫"], userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN])
     suspend fun endRob(event: GroupMessageEvent) {
-        RobUsecase.endRob(event)
+        RobUsecaseActions.endRob(event)
     }
 }

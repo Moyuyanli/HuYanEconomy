@@ -1,10 +1,10 @@
 package cn.chahuyun.economy.core
 
+import cn.chahuyun.economy.feature.privatebank.PrivateBankBankruptcyService
+import cn.chahuyun.economy.feature.privatebank.PrivateBankDebtService
+import cn.chahuyun.economy.feature.privatebank.PrivateBankLedger
+import cn.chahuyun.economy.feature.privatebank.PrivateBankService
 import cn.chahuyun.economy.model.privatebank.*
-import cn.chahuyun.economy.privatebank.PrivateBankBankruptcyService
-import cn.chahuyun.economy.privatebank.PrivateBankDebtService
-import cn.chahuyun.economy.privatebank.PrivateBankLedger
-import cn.chahuyun.economy.privatebank.PrivateBankService
 import java.util.*
 import kotlin.test.*
 

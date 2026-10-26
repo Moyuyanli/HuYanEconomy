@@ -40,7 +40,7 @@ sealed interface ActionResult {
  * 一次规则链调用的完整结果。
  *
  * 引擎在 before 阶段被提前终止时，动作没有执行，此时 [actionExecuted] 为 `false`、[value] 为 `null`；
- * 只有动作真正执行过，[value] 才可能非空（动作返回 `Unit` 时它仍然是 `null`）。
+ * 只有动作真正执行过，[value] 才有值（动作返回 `Unit` 时它是一个 `Unit` 实例，而不是 `null`）。
  *
  * @param T 动作本体的返回值类型；动作为 `Unit` 时通常用 `ActionExecution<Unit>`。
  * @property actionId 本次调用的动作 id。

@@ -1,6 +1,6 @@
 # KSP 驱动的 Action 规则链框架设计
 
-> 状态：阶段一（骨架）、阶段二（运行时引擎）、阶段三（KSP 生成）、阶段四（core/game 接入与 main 聚合）已完成；阶段五 API 文档尚未完成，进度以开发手册为准
+> 状态：阶段一（骨架）、阶段二（运行时引擎）、阶段三（KSP 生成）、阶段四（core/game 接入与 main 聚合）、阶段五（API 文档）均已完成。使用者请看 [Action 规则链 API 文档](../plan/v2.0.0/40-%E5%BC%80%E5%8F%91%E6%89%8B%E5%86%8C/Action%E8%A7%84%E5%88%99%E9%93%BEAPI%E6%96%87%E6%A1%A3.md)，进度以开发手册为准
 > 适用项目：HuYanEconomy 2.x
 > 目标：为包含多步骤业务流程、需要前置/后置规则编排的动作提供编译期生成的规则链；简单动作继续直接调用。
 
@@ -137,7 +137,9 @@ annotation class Before(val actionId: String, val order: Int = 100)
 annotation class After(val actionId: String, val order: Int = 100)
 ```
 
-`actionId` 必须唯一。规则引用的 actionId 必须存在；同一 action 的规则按 `order` 升序执行。相同 order 的稳定顺序应由生成器定义，建议按源文件路径和声明位置稳定排序，避免依赖 KSP 返回顺序。
+`actionId` 必须唯一。规则引用的 actionId 必须存在；同一 action 的规则按 `order` 升序执行。
+相同 order 的稳定顺序为 **`ruleId`（`声明对象全限定名#函数名`）字典序**——这是阶段二已决议并落地的次级排序键，
+不依赖 KSP 返回顺序，也不依赖源文件路径。
 
 ### 4.3 动作结果语义
 
@@ -181,14 +183,17 @@ Action 本体允许返回任意业务值，运行时以 `ActionExecution<T>` 表
 
 ### 5.1 ActionContext
 
-`ActionContext` 表示单次 Action 执行，可承载：
+`ActionContext` 表示单次 Action 执行，实际承载四样东西：
 
-- `actionId` 和原始 Mirai event；
-- Action 的显式参数；
-- 规则间共享的类型化中间数据或 attrs；
-- 动作本体的返回值（若需要供 after 使用）。
+- `actionId` 和原始事件（`event: Any`，框架不做类型假设）；
+- 规则间共享的类型化中间数据（`put` / `get`，键为「类型 + 限定名」）或字符串 `attrs`；
+- 本次调用内的 Provider 解析结果缓存；
+- 动作本体的返回值（`actionResult` 读取，供 after 使用）。
 
-Context 生命周期仅限一次调用。不得把用户数据缓存到跨调用共享的可变对象中。事件类型和 Action 参数由生成 facade 放入 context；领域数据通过 Provider 获取。
+它**不承载"动作的显式参数"**：生成 facade 只暴露 event，引擎内部也不传额外参数。
+动作需要的其他输入要么从 `event` 取，要么由 Provider 装配，要么由前置规则 `put` 进来。
+
+Context 生命周期仅限一次调用。不得把用户数据缓存到跨调用共享的可变对象中。
 
 ### 5.2 Provider 的作用与作用域
 
@@ -251,7 +256,9 @@ suspend fun validateAccounts(
 
 ### 5.5 属性与中间数据
 
-只在规则间传递的一次性数据放入 `ActionContext`，不应为了临时值增加 Provider。优先使用有类型的 context 扩展或独立数据类；若使用字符串 attrs，应集中定义 key，避免拼写错误。
+只在规则间传递的一次性数据放入 `ActionContext`，不应为了临时值增加 Provider。
+优先用 `context.put(Type::class, value)` 的类型化通道（值本身用独立数据类承载，如签到的 `SignReward`）；
+字符串 `attrs` 只在确实没有合适类型时使用，并集中定义 key 避免拼写错误。
 
 ## 6. KSP 生成与多模块
 
@@ -336,13 +343,14 @@ object TransferUsecaseActions {
 
 ## 7. 规则顺序约定
 
-| order 范围 | 建议用途 |
-| --- | --- |
-| 1–4 | 冷却、频率限制 |
-| 5–9 | 资格检查、状态检查 |
-| 10–49 | 加成和参数计算 |
-| 50–99 | 资源扣除或操作准备 |
-| 100+ | after 结算、记录 |
+| order 范围 | 建议用途 | 签到实例 |
+| --- | --- | --- |
+| 1–9 | 开关、冷却、频率限制 | — |
+| 10 | 资格检查、状态检查（必须无副作用） | `@Before(10) rejectIfNotSignable` |
+| 20 | 加成、参数与奖励计算（可带副作用） | `@Before(20) calculateReward` |
+| 30–49 | 追加加成（节日翻倍、公会加成等） | 预留 |
+| 50–99 | 资源扣除、状态准备 | — |
+| 100+ | 兜底与统计；`@After` 从 10 起按「记录 → 通知 → 统计」递增 | `@After(10) logCommitted` / `@After(20) grantSignTitles` |
 
 数字只是团队约定，不自动赋予事务或回滚语义。消费/扣款类规则必须与后续动作失败时的处理策略一同设计，不能因为 order 较早就认为引擎可以恢复副作用。
 

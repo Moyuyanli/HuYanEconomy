@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.service
 
-import cn.chahuyun.economy.manager.TitleManager
+import cn.chahuyun.economy.feature.title.TitleManager
 import cn.chahuyun.economy.model.user.UserInfoDto
 
 /**

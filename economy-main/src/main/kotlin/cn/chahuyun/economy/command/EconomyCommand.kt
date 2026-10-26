@@ -5,9 +5,9 @@ import cn.chahuyun.economy.HuYanEconomy
 import cn.chahuyun.economy.data.proxy.DataVersion
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.data.proxy.MigrationResult
+import cn.chahuyun.economy.feature.privatebank.PrivateBankRepairService
+import cn.chahuyun.economy.feature.privatebank.PrivateBankService
 import cn.chahuyun.economy.ledger.EconomyMigration
-import cn.chahuyun.economy.privatebank.PrivateBankRepairService
-import cn.chahuyun.economy.privatebank.PrivateBankService
 import cn.chahuyun.economy.repair.RepairManager
 import cn.chahuyun.economy.repair.RepairScope
 import net.mamoe.mirai.console.command.CommandSender

@@ -15,6 +15,15 @@ group `cn.chahuyun`，version 2.0.0，包根 `cn.chahuyun.economy`。
 - **Feature 垂直包**：`action/` 固定 main 只做 Mirai 注册；业务在 `feature/<功能>/`，各角色是该目录下的**文件**，
   不建横向顶层包。**必备只有 Usecase + Rules（Rules 允许空壳）**；Service（复杂/重复校验才抽）、
   Manager、Provider（真用 `@Provider` 才建）按需，禁止为对称建空壳。详见开发说明 §3.3
+- **game 根包是 `games/<玩法>/`**（与 core 的 `feature/<功能>` 平行，game 内不再有 `feature`）；core 侧 11 个
+  feature 已于 2026-10-26 两批迁完（sign/user/backpack/title/transfer/status + bank/privatebank/bond/redpack/shop），
+  `usecase/`、`manager/`、`privatebank/` 横向包已删；第三批把 farm/lottery/raffle/rob 迁入 `games/`（28 个动作），
+  **钓鱼按要求不迁**，`game/fishing` + `service/Fishing*` + `usecase/FishingUsecase` + `manager/FishingManager` 保留待重写
+- **第三批的类改名**（勿再引用旧名）：`FarmShieldRules`→`FarmShieldPolicy`、`FarmStealRules`→`FarmStealPolicy`、
+  `UpgradeLoopService/UpgradeStepResult`→`FarmUpgradeLoop/FarmUpgradeStep`、`GameOverviewService`→`FarmOverviewService`、
+  `DefaultGameOverviewProvider`→`FarmGameOverviewProvider`、`LuckyDrawService`→`RaffleService`（目录 `games/raffle`）、
+  共用回复 `usecase/GameUsecaseReplySupport`→`games/GamesReplySupport`；
+  **`FarmManager`/`LuckyDrawManager`/`RobManager` 已删**（Farm 的锁+委派并入 `FarmCommandService`，农场命令统一从它进）
 - **Manager 判据**：调用方在功能之外 → 建 Manager；只在自家 usecase/规则用 → 落 Service（签到即无 SignManager，
   `randomSignGold`/`signProp` 在 SignService）。迁 `manager/` 旧类先查外部调用方
 - 跨 feature 只调对方 Manager，不直调 Usecase / Service

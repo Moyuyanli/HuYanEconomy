@@ -11,9 +11,15 @@ import cn.chahuyun.economy.constant.Icon
 import cn.chahuyun.economy.data.PrizesData
 import cn.chahuyun.economy.data.proxy.DataSourceStrategyImpl
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
-import cn.chahuyun.economy.game.DefaultGameOverviewProvider
+import cn.chahuyun.economy.feature.bank.BankManager
+import cn.chahuyun.economy.feature.privatebank.PrivateBankManager
+import cn.chahuyun.economy.feature.redpack.RedPackManager
+import cn.chahuyun.economy.feature.title.TitleManager
 import cn.chahuyun.economy.game.GameOverviewBridge
-import cn.chahuyun.economy.manager.*
+import cn.chahuyun.economy.games.farm.FarmCropManager
+import cn.chahuyun.economy.games.farm.FarmGameOverviewProvider
+import cn.chahuyun.economy.games.lottery.LotteryManager
+import cn.chahuyun.economy.manager.FishingManager
 import cn.chahuyun.economy.plugin.*
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.scheduler.HuYanScheduler
@@ -103,7 +109,7 @@ object HuYanEconomy : KotlinPlugin(
         config = EconomyConfig
         robConfig = RobMsgConfig
         EconomyAsyncService.init()
-        GameOverviewBridge.register(DefaultGameOverviewProvider)
+        GameOverviewBridge.register(FarmGameOverviewProvider)
 
         // 初始化插件功能。
         MessageUtil.init(this)
@@ -134,8 +140,7 @@ object HuYanEconomy : KotlinPlugin(
         TitleManager.init()
         PrivateBankManager.init()
         YiYanManager.init()
-        cn.chahuyun.economy.manager.FarmManager.init()
-        cn.chahuyun.economy.manager.FishingManager.init()
+        FishingManager.init()
         FactorManager.init()
         PluginPropsManager.init()
         HuYanScheduler.registerSubmittedTasks()
@@ -185,7 +190,7 @@ object HuYanEconomy : KotlinPlugin(
         EconomyRuntime.pluginStatus = false
 
         LotteryManager.close()
-        cn.chahuyun.economy.manager.FishingManager.shutdown()
+        FishingManager.shutdown()
         YiYanManager.shutdown()
         cn.chahuyun.economy.ledger.EconomyLedgerProvider.shutdown()
         HuYanScheduler.stop()

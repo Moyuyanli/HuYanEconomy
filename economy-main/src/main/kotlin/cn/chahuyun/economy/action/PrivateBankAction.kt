@@ -4,7 +4,7 @@ import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
 import cn.chahuyun.authorize.constant.AuthPerm
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
-import cn.chahuyun.economy.usecase.PrivateBankUsecase
+import cn.chahuyun.economy.feature.privatebank.PrivateBankUsecaseActions
 import net.mamoe.mirai.event.events.MessageEvent
 
 /**
@@ -18,47 +18,47 @@ import net.mamoe.mirai.event.events.MessageEvent
 class PrivateBankAction {
     @MessageAuthorize(text = ["银行列表"])
     suspend fun listBanks(event: MessageEvent) {
-        PrivateBankUsecase.listBanks(event)
+        PrivateBankUsecaseActions.listBanks(event)
     }
 
     @MessageAuthorize(text = ["默认银行"])
     suspend fun defaultBank(event: MessageEvent) {
-        PrivateBankUsecase.defaultBank(event)
+        PrivateBankUsecaseActions.defaultBank(event)
     }
 
     @MessageAuthorize(text = ["默认银行设置 .+"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun setDefaultBank(event: MessageEvent) {
-        PrivateBankUsecase.setDefaultBank(event)
+        PrivateBankUsecaseActions.setDefaultBank(event)
     }
 
     @MessageAuthorize(text = ["银行创建 \\S+ .+"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbCreate(event: MessageEvent) {
-        PrivateBankUsecase.pbCreate(event)
+        PrivateBankUsecaseActions.pbCreate(event)
     }
 
     @MessageAuthorize(text = ["银行描述修改"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbDesc(event: MessageEvent) {
-        PrivateBankUsecase.pbDesc(event)
+        PrivateBankUsecaseActions.pbDesc(event)
     }
 
     @MessageAuthorize(text = ["银行利率(变更|修改|调整) \\S+"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbRate(event: MessageEvent) {
-        PrivateBankUsecase.pbRate(event)
+        PrivateBankUsecaseActions.pbRate(event)
     }
 
     @MessageAuthorize(text = ["银行补资 .+"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbFund(event: MessageEvent) {
-        PrivateBankUsecase.pbFund(event)
+        PrivateBankUsecaseActions.pbFund(event)
     }
 
     @MessageAuthorize(text = ["银行撤资 \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?( [pPfF])?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbDivest(event: MessageEvent) {
-        PrivateBankUsecase.pbDivest(event)
+        PrivateBankUsecaseActions.pbDivest(event)
     }
 
     @MessageAuthorize(text = ["银行资料修改 \\S+ .+"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbProfile(event: MessageEvent) {
-        PrivateBankUsecase.pbProfile(event)
+        PrivateBankUsecaseActions.pbProfile(event)
     }
 
     @MessageAuthorize(
@@ -66,7 +66,7 @@ class PrivateBankAction {
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun pbLoanOffer(event: MessageEvent) {
-        PrivateBankUsecase.pbLoanOffer(event)
+        PrivateBankUsecaseActions.pbLoanOffer(event)
     }
 
     @MessageAuthorize(
@@ -74,69 +74,69 @@ class PrivateBankAction {
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun pbLoanRate(event: MessageEvent) {
-        PrivateBankUsecase.pbLoanRate(event)
+        PrivateBankUsecaseActions.pbLoanRate(event)
     }
 
     @MessageAuthorize(text = ["放贷列表"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbLoanOffers(event: MessageEvent) {
-        PrivateBankUsecase.pbLoanOffers(event)
+        PrivateBankUsecaseActions.pbLoanOffers(event)
     }
 
     @MessageAuthorize(text = ["借贷列表"])
     suspend fun pbLoans(event: MessageEvent) {
-        PrivateBankUsecase.pbBorrowedLoans(event)
+        PrivateBankUsecaseActions.pbBorrowedLoans(event)
     }
 
     @MessageAuthorize(text = ["撤贷 \\d+", "贷款撤回 \\d+", "放贷撤回 \\d+"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbLoanCancel(event: MessageEvent) {
-        PrivateBankUsecase.pbLoanCancel(event)
+        PrivateBankUsecaseActions.pbLoanCancel(event)
     }
 
     @MessageAuthorize(text = ["狐卷", "狐卷查看", "狐卷列表"])
     suspend fun foxView(event: MessageEvent) {
-        PrivateBankUsecase.foxView(event)
+        PrivateBankUsecaseActions.foxView(event)
     }
 
     @MessageAuthorize(text = ["狐卷补发"], userPermissions = [AuthPerm.OWNER])
     suspend fun foxSupplement(event: MessageEvent) {
-        PrivateBankUsecase.foxSupplement(event)
+        PrivateBankUsecaseActions.foxSupplement(event)
     }
 
     @MessageAuthorize(
         text = ["狐卷竞标 \\S+ \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]? \\d+(\\.\\d+)?"], messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun foxBid(event: MessageEvent) {
-        PrivateBankUsecase.foxBid(event)
+        PrivateBankUsecaseActions.foxBid(event)
     }
 
     @MessageAuthorize(text = ["银行信息( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbInfo(event: MessageEvent) {
-        PrivateBankUsecase.pbInfo(event)
+        PrivateBankUsecaseActions.pbInfo(event)
     }
 
     @MessageAuthorize(text = ["我的银行"])
     suspend fun myBank(event: MessageEvent) {
-        PrivateBankUsecase.myBank(event)
+        PrivateBankUsecaseActions.myBank(event)
     }
 
     @MessageAuthorize(text = ["我的银行#"])
     suspend fun myBankText(event: MessageEvent) {
-        PrivateBankUsecase.myBankText(event)
+        PrivateBankUsecaseActions.myBankText(event)
     }
 
     @MessageAuthorize(text = ["银行评分 [1-5]( .+)?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbReview(event: MessageEvent) {
-        PrivateBankUsecase.pbReview(event)
+        PrivateBankUsecaseActions.pbReview(event)
     }
 
     @MessageAuthorize(text = ["(贷款|借款) \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbBorrow(event: MessageEvent) {
-        PrivateBankUsecase.pbBorrow(event)
+        PrivateBankUsecaseActions.pbBorrow(event)
     }
 
     @MessageAuthorize(text = ["还款 \\d+(\\.\\d+)?[kKmMgGtTpPwWeE万亿]?( \\S+)?"], messageMatching = MessageMatchingEnum.REGULAR)
     suspend fun pbRepay(event: MessageEvent) {
-        PrivateBankUsecase.pbRepay(event)
+        PrivateBankUsecaseActions.pbRepay(event)
     }
 
 

@@ -5,7 +5,7 @@ import cn.chahuyun.authorize.MessageAuthorize
 import cn.chahuyun.authorize.constant.AuthPerm
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
 import cn.chahuyun.economy.constant.EconPerm
-import cn.chahuyun.economy.usecase.RedPackUsecase
+import cn.chahuyun.economy.feature.redpack.RedPackUsecaseActions
 import net.mamoe.mirai.event.events.GroupMessageEvent
 import net.mamoe.mirai.event.events.MessageEvent
 
@@ -26,7 +26,7 @@ class RedPackAction {
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )
     suspend fun create(event: GroupMessageEvent) {
-        RedPackUsecase.create(event)
+        RedPackUsecaseActions.create(event)
     }
 
     /**
@@ -40,7 +40,7 @@ class RedPackAction {
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )
     suspend fun receive(event: GroupMessageEvent) {
-        RedPackUsecase.receive(event)
+        RedPackUsecaseActions.receive(event)
     }
 
     /**
@@ -53,7 +53,7 @@ class RedPackAction {
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )
     suspend fun queryRedPackList(event: GroupMessageEvent) {
-        RedPackUsecase.queryRedPackList(event)
+        RedPackUsecaseActions.queryRedPackList(event)
     }
 
     /**
@@ -66,11 +66,14 @@ class RedPackAction {
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )
     suspend fun grabNewestRedPack(event: GroupMessageEvent) {
-        RedPackUsecase.grabNewestRedPack(event)
+        RedPackUsecaseActions.grabNewestRedPack(event)
     }
 
     /**
      * 口令领取红包（直接发送口令）
+     *
+     * 走独立的 `core.redpack.grabByPassword`：无前缀口令是「被动触发」的，
+     * 单独一个 actionId 才能在日志与规则里和主动指令区分开。
      */
     @MessageAuthorize(
         text = ["^[\\s\\S]{1,32}$"],
@@ -78,7 +81,7 @@ class RedPackAction {
         groupPermissions = [EconPerm.RED_PACKET_PERM]
     )
     suspend fun grabByPassword(event: GroupMessageEvent) {
-        RedPackUsecase.receive(event)
+        RedPackUsecaseActions.grabByPassword(event)
     }
 
     /**
@@ -91,7 +94,7 @@ class RedPackAction {
         userPermissions = [AuthPerm.OWNER]
     )
     suspend fun queryGlobalRedPackList(event: MessageEvent) {
-        RedPackUsecase.queryGlobalRedPackList(event)
+        RedPackUsecaseActions.queryGlobalRedPackList(event)
     }
 
     @MessageAuthorize(
@@ -99,7 +102,7 @@ class RedPackAction {
         userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN]
     )
     suspend fun startRob(event: GroupMessageEvent) {
-        RedPackUsecase.startRob(event)
+        RedPackUsecaseActions.startRob(event)
     }
 
     @MessageAuthorize(
@@ -107,6 +110,6 @@ class RedPackAction {
         userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN]
     )
     suspend fun endRob(event: GroupMessageEvent) {
-        RedPackUsecase.endRob(event)
+        RedPackUsecaseActions.endRob(event)
     }
 }

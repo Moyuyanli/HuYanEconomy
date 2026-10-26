@@ -5,7 +5,7 @@ import cn.chahuyun.economy.actionchain.annotation.Before
 import cn.chahuyun.economy.actionchain.annotation.FromProvider
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.actionchain.runtime.ActionResult
-import cn.chahuyun.economy.manager.TitleManager
+import cn.chahuyun.economy.feature.title.TitleManager
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil

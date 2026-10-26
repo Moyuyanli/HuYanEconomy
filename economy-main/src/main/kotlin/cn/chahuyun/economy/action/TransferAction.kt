@@ -4,7 +4,7 @@ import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
 import cn.chahuyun.authorize.constant.AuthPerm
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
-import cn.chahuyun.economy.usecase.TransferUsecase
+import cn.chahuyun.economy.feature.transfer.TransferUsecaseActions
 import net.mamoe.mirai.event.events.MessageEvent
 
 /**
@@ -22,7 +22,7 @@ class TransferAction {
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun userToUser(event: MessageEvent) {
-        TransferUsecase.userToUser(event)
+        TransferUsecaseActions.userToUser(event)
     }
 
     @MessageAuthorize(
@@ -31,6 +31,6 @@ class TransferAction {
         userPermissions = [AuthPerm.OWNER]
     )
     suspend fun cheat(event: MessageEvent) {
-        TransferUsecase.cheat(event)
+        TransferUsecaseActions.cheat(event)
     }
 }

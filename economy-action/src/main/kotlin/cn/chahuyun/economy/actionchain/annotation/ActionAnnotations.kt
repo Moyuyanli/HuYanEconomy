@@ -142,6 +142,7 @@ annotation class After(
  *
  * @property qualifier 限定名。同一类型有多个 Provider 时，规则参数必须用 [FromProvider] 指定限定名，
  *                     否则引擎会因“歧义”报错；只有一个候选时可省略限定名。
+ *                     注意本参数**没有默认值**，要表达“未限定”需显式写 `qualifier = ""`。
  * @property actionId 作用域动作 id；留空表示全局可见。
  */
 @Target(AnnotationTarget.FUNCTION)
@@ -168,7 +169,9 @@ annotation class Provider(
  * - 不能标注 `ActionContext` 参数（上下文由框架直接注入，不经过 Provider）；
  * - 不能标注 Provider 函数自身的参数（Provider 的参数只能是 ActionContext）。
  *
- * @property qualifier 目标 Provider 的限定名，需与 [Provider.qualifier] 一致；留空表示“空限定名”。
+ * @property qualifier 目标 Provider 的限定名，需与 [Provider.qualifier] 一致。
+ *                     留空（或显式写 `""`）等价于“未指定”：引擎只按类型匹配并在多候选时报歧义，
+ *                     不会去匹配 `qualifier = ""` 的 Provider。
  */
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.SOURCE)

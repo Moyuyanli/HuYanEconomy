@@ -4,15 +4,16 @@ import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
 import cn.chahuyun.economy.constant.EconPerm
-import cn.chahuyun.economy.usecase.LotteryUsecase
+import cn.chahuyun.economy.games.lottery.LotteryUsecaseActions
 import net.mamoe.mirai.event.events.GroupMessageEvent
 
 /**
- * 彩票管理
- * 3种彩票：
- * 一分钟开一次
- * 一小时开一次
- * 一天开一次
+ * 猜签指令入口。
+ *
+ * 三种签按号码位数区分：
+ * - 三位 → 小签，每分钟开一次
+ * - 四位 → 中签，每小时开一次
+ * - 五位 → 大签，每天开一次
  */
 @EventComponent
 class LotteryAction {
@@ -23,16 +24,16 @@ class LotteryAction {
         groupPermissions = [EconPerm.LOTTERY_PERM]
     )
     suspend fun addLottery(event: GroupMessageEvent) {
-        LotteryUsecase.addLottery(event)
+        LotteryUsecaseActions.bet(event)
     }
 
     @MessageAuthorize(text = ["开启 猜签"], userPermissions = [cn.chahuyun.authorize.constant.AuthPerm.OWNER, cn.chahuyun.authorize.constant.AuthPerm.ADMIN])
     suspend fun startLottery(event: GroupMessageEvent) {
-        LotteryUsecase.startLottery(event)
+        LotteryUsecaseActions.startLottery(event)
     }
 
     @MessageAuthorize(text = ["关闭 猜签"], userPermissions = [cn.chahuyun.authorize.constant.AuthPerm.OWNER, cn.chahuyun.authorize.constant.AuthPerm.ADMIN])
     suspend fun endLottery(event: GroupMessageEvent) {
-        LotteryUsecase.endLottery(event)
+        LotteryUsecaseActions.endLottery(event)
     }
 }

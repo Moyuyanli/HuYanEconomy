@@ -6,10 +6,10 @@ import cn.chahuyun.authorize.utils.UserUtil
 import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.constant.EconPerm
+import cn.chahuyun.economy.feature.backpack.BackpackManager
 import cn.chahuyun.economy.feature.sign.SignUsecase.sign
+import cn.chahuyun.economy.feature.user.UserManager
 import cn.chahuyun.economy.ledger.UserWallet
-import cn.chahuyun.economy.manager.BackpackManager
-import cn.chahuyun.economy.manager.UserCoreManager
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.service.EconomyAsyncService
@@ -155,7 +155,7 @@ object SignUsecase {
         reward.propsToConsume.forEach { backpack ->
             BackpackManager.delPropToBackpack(userInfo, backpack)
         }
-        UserCoreManager.saveUserInfo(userInfo)
+        UserManager.saveUserInfo(userInfo)
 
         // ---------- 步骤 7：组装回复文案 ----------
         // 同一份文案有两个去处：消息链（图片发不出去时降级用）与图片信息区（逐行绘制）。
@@ -284,12 +284,12 @@ object SignUsecase {
         val sender: Member = event.sender
 
         // 步骤 1：取用户信息，把上次签到时间往前挪一天（= 重新满足「已过下一签到点」）。
-        val userInfo: UserInfoDto = UserCoreManager.getUserInfo(sender)
+        val userInfo: UserInfoDto = UserManager.getUserInfo(sender)
         val dateTime: DateTime = DateUtil.offsetDay(Date(userInfo.signTime), -1)
         userInfo.signTime = dateTime.time
 
         // 步骤 2：落库后回复结果。
-        UserCoreManager.saveUserInfo(userInfo)
+        UserManager.saveUserInfo(userInfo)
         group.sendMessage(MessageUtil.formatMessageChain(event.message, "签到刷新成功!"))
     }
 
@@ -315,13 +315,13 @@ object SignUsecase {
         // 这样「签到成功 / 金币 / 随机事件 / 道具事件」都由统一卡片绘制流程负责排版。
         val userInfoImageBase: BufferedImage = runCatching {
             withContext(EconomyAsyncService.coroutineDispatcher()) {
-                val card = UserCoreManager.buildUserInfoCard(
+                val card = UserManager.buildUserInfoCard(
                     userInfo = userInfo,
                     infoTitle = "签到信息",
                     infoText = signInfoText,
                     infoSignature = "",
                 )
-                UserCoreManager.renderUserInfoCard(userInfo, card)
+                UserManager.renderUserInfoCard(userInfo, card)
             }
         }.getOrElse { e ->
             Log.error("签到管理:签到图片生成错误!", e)

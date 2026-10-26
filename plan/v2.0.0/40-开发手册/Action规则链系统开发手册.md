@@ -1,6 +1,7 @@
 # Action 规则链系统开发手册
 
-> 状态：阶段一（骨架）、阶段二（运行时系统）、阶段三（KSP 生成）、阶段四（多模块接入）已完成；阶段五（API 文档）未开始。  
+> 状态：阶段一（骨架）、阶段二（运行时系统）、阶段三（KSP 生成）、阶段四（多模块接入）、阶段五（API 文档）全部完成。
+> API 参考见 [Action 规则链 API 文档](Action规则链API文档.md)。
 > 设计依据：[KSP 驱动的 Action 规则链框架设计](../../../docs/KSP%20%E9%A9%B1%E5%8A%A8%E7%9A%84%20Action%20%E8%A7%84%E5%88%99%E9%93%BE%E6%A1%86%E6%9E%B6%20%C2%B7%20%E8%AE%BE%E8%AE%A1%E6%96%87%E6%A1%A3.md)
 
 本文将 Action 规则链工作拆分为五个可验收阶段：设计 Action 骨架、实现 Action 系统、设计并实现 KSP、多模块测试、编写 API 文档。各阶段完成后再进入下一阶段；发现设计缺口时回到相应阶段更新契约，不以跳过验证的方式推进。
@@ -312,6 +313,18 @@ economy-main/action (HuYanAuthorize, 命令/权限入口)
 - 所有未实现能力、限制、跨模块约束和回复职责均明确。
 - 交叉链接有效，文档构建/格式检查（若项目配置）通过。
 
+### 阶段五验收结果（2026-10-26）
+
+| 验收标准 | 结论 | 依据 |
+| --- | --- | --- |
+| 注解和方法签名与源码一致 | ✅ | 全部签名从 `ActionAnnotations.kt` / `runtime/*.kt` 抄录，未按设计稿转述 |
+| 每个示例可由测试验证或标为伪代码 | ✅ | 签到案例对应 `ActionChainIntegrationTest` / `SignServiceTest`；生成物示例标注"节选自 build/generated" |
+| 外部使用者可按文档接入新模块 | ✅ | §1.2 三件套 + §1.5 五步清单 + §8 报错对照表 |
+| 未实现能力与限制明确 | ✅ | §10 列 12 条（无回滚、无动态注册、EndWithMessage 仅文本、泛型不可区分、跨模块未验证等） |
+| 交叉链接有效 | ✅ | 设计文档头部、本文 §7 阶段五记录、`plan/v2.0.0/README.md` 均指向 API 文档 |
+
+产物：[Action 规则链 API 文档](Action规则链API文档.md)。核对中修正的 6 处不一致见该文档 §11。
+
 ## 8. 待补充或确认事项
 
 以下事项在现有设计中仍未完全确定。进入相关阶段前应形成明确决策；不应由实现者自行补造语义。
@@ -427,8 +440,8 @@ economy-main/action (HuYanAuthorize, 命令/权限入口)
   的期望集合同步为四个签到动作，并用管理动作 `core.sign.refresh` 跑通整链——它不依赖 Provider，
   `@After` 审计规则对非群消息事件静默跳过）。
 - 陷阱：`@Action` 的第一个参数固定是事件，只为满足契约时会产生 unused parameter 警告，
-  用一行来源日志消费掉即可；`@Provider` 的 qualifier 在注解里必须写字面量，
-  常量 `SignProvider.SIGNER` 只用于代码侧，两处要一起改。
+  用一行来源日志消费掉即可；`@Provider` 的 qualifier 必须是**编译期常量**（字面量或 `const val`），
+  `SignProvider.SIGNER` 这样的 `const val` 已被 KSP 正确解析，普通 `val` 会静默变成空串（详见 API 文档 §2.5）。
 - 遗留（待人工收尾）：
   - 真机验证「重复签到被 `@Before` 拦截」与「补签卡连签数传递」两条路径；
   - `SignService.signProp` 里的补签卡仍会改 `userInfo`，属于 `@Before(20)` 的已知状态副作用，
@@ -465,9 +478,25 @@ economy-main/action (HuYanAuthorize, 命令/权限入口)
   - §10 验收记录与已知遗留。
 - 定位：**这是"迁下一个人"的默认入口**。`docs/项目开发说明.md` §3.3.7 迁移规则第 6 条已指向它。
 - 同步修正：`SignProvider.SIGNER` 的注释原写「注解里必须写字面量」，与代码（注解用的是 `const val`）不符；
-  已改为准确表述——KSP 只解析**编译期常量**，非 `const` 会静默降级成空串且不报错（对应实录 §7.C1）。
+  已改为准确表述——KSP 只解析**编译期常量**。注意后果按参数不同：`@Action` / `@Before` / `@After` 的
+  `actionId` 解析失败会**编译报错**；真正静默的是 `@Provider(actionId = 非常量)`（变成全局 Provider）与
+  `@Provider/@FromProvider(qualifier = 非常量)`（变成空串），完整对照见 API 文档 §2.5。
 
-### 下一阶段（阶段五：编写 API 文档）
+### 阶段五（2026-10-26）：编写 API 文档
 
-- 待做：按 §7 输出注解/签名/顺序/Provider/示例/限制文档，示例尽量用 `economy-action-ksp` 测试 fixture 兜底。
-- 待决议：是否把 `ActionChainBootstrap` 的模块清单改为 ServiceLoader 自动发现（当前为显式登记）。
+- 交付：[Action 规则链 API 文档](Action规则链API文档.md)（12 节），逐条对照源码写成，覆盖：
+  - 模块职责与业务模块接入三件套、三个 KSP 参数、聚合与启动顺序、新增模块清单；
+  - 5 个注解的完整参考（目标/签名/可见性/参数/返回值/编译期报错文案）；
+  - 运行时 API 逐个签名表（`ActionContext` 三条通道、`ActionResult`、`ActionExecution`、
+    `ActionResultHandler`、`ActionEngine`、`ActionModule/ActionRule/ActionProvider`、`ActionRuntime`）；
+  - 执行语义（七步流程、短路矩阵、异常、回复出口、构造期 7 类校验、Provider 缓存）；
+  - Provider 解析算法（可见范围、匹配伪代码、三类冲突、跨模块限制）；
+  - 两类生成物的真实形态与命名规则；
+  - **签到完整案例**：文件布局、动作清单、规则矩阵、三个角色代码、成功/被拦截两条时序、生成物核对锚点、照抄 8 步；
+  - 编译期报错对照表（26 条）、运行期异常对照表、当前限制 12 条。
+- 核对结论：文档规则与实现有 6 处不符，已就地修正（设计文档 3 处、手册 2 处、临时整理路线 1 处），
+  明细见 API 文档 §11。核心修正：order 区间以签到样板为准、同 order 排序键统一为 `ruleId` 字典序、
+  `ActionContext` 不承载"动作显式参数"、注解常量解析失败按参数区分后果。
+- 未做：Dokka 生成（项目未启用，API 文档以 Markdown 维护）；`ActionChainBootstrap` 模块清单仍为显式登记，
+  未改为 ServiceLoader 自动发现（保持"漏登记就报错"的可控性）。
+

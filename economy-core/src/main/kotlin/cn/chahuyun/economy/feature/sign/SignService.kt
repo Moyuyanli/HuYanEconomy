@@ -5,7 +5,7 @@ import cn.chahuyun.economy.feature.sign.SignService.applySign
 import cn.chahuyun.economy.feature.sign.SignService.canSign
 import cn.chahuyun.economy.feature.sign.SignService.randomSignGold
 import cn.chahuyun.economy.feature.sign.SignService.signProp
-import cn.chahuyun.economy.manager.TitleManager
+import cn.chahuyun.economy.feature.title.TitleManager
 import cn.chahuyun.economy.model.props.PropsCard
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.prop.PropsManager
@@ -79,7 +79,7 @@ object SignService {
      * - 间隔在 1440 分钟（1 天）以内：连签天数 +1，连签第 2 天时清空断签记录；
      * - 间隔超过 1440 分钟：视为断签，原连签数转入 `oldSignNumber`，连签重置为 1。
      *
-     * 方法只修改传入的 DTO，持久化由调用方（[SignUsecase] 经 `UserCoreManager`）负责。
+     * 方法只修改传入的 DTO，持久化由调用方（[SignUsecase] 经 `UserManager`）负责。
      *
      * @param dto 用户信息，方法内会原地修改签到字段
      * @param reSignTime 每日签到重置点（小时，0-23）

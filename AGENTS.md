@@ -40,7 +40,7 @@
 economy-main/action
                 → 控制层：指令入口，由 AuthorizeServer 扫描注册事件（位置固定不动）
   ↓
-economy-core|economy-game/feature/<功能>
+economy-core/feature/<功能> | economy-game/games/<玩法>
                 → 业务层：必备 Usecase（流程编排）+ Rules（规则链扩展点，可为空壳）
                   按需 Service（对内规则）+ Manager（对外 API）+ Provider（规则链数据）
   ↓
@@ -86,7 +86,7 @@ economy-data/entity
 - **权限码**在 `PermCodeManager.init()` 中注册
 - **数据层**新增读写优先走 `economy-data` 的 repository/proxy，不在 core/game 新增 `HibernateFactory` 直连
 - **日志**使用自定义 `Log` 工具类（封装 mirai logger）
-- **功能包结构**：`action/` 固定在 `economy-main`，只做 Mirai 注册；业务代码按功能垂直放在 `feature/<功能>/`（如 `economy-core/.../feature/sign/`），usecase/service/manager 是该目录下的**文件**，不再新建横向顶层包；新代码只允许写进 `feature/`
+- **功能包结构**：`action/` 固定在 `economy-main`，只做 Mirai 注册；业务代码按功能垂直放在 `economy-core/.../feature/<功能>/`（经济）或 `economy-game/.../games/<玩法>/`（玩法），usecase/service/manager 是该目录下的**文件**，不再新建横向顶层包；新代码只允许写进这两个目录
 - **必备文件只有 Usecase + Rules（Rules 可为空壳）**：Service / Manager / Provider 全部按需——复杂校验有重复步骤才抽 Service，外部要查本功能信息才建 Manager，规则链真用到 `@Provider` 才建 Provider。不要为了结构对称建空壳文件。迁 `manager/` 下的旧类时先查外部调用方，没有就并入 `<Feature>Service.kt`（签到即无 `SignManager`，奖励计算在 `SignService`）
 - **不用自定义事件做功能扩展**：`feature/` 下不建 `<Feature>Event.kt`，也不 `broadcast()` Mirai 自定义事件；前置拦截/奖励加成/完成通知分别写 `Rules.kt` 的 `@Before` / 主流程普通调用 / `@After`，中间结果走 `ActionContext`
 - **迁移 feature 前先读样板实录**：`plan/v2.0.0/40-开发手册/签到功能规则链改造实录.md`（最复杂功能的完整改造过程 + 六大类 28 条易错点 + 迁移自检表）；`feature/sign/` 是可直接照抄的代码样板
@@ -104,4 +104,4 @@ economy-data/entity
 2. **Hibernate 冲突**: 不要将 Hibernate/HikariCP 打入插件 jar，运行期由 mirai-hibernate-plugin 提供
 3. **版本迁移**: 部分版本升级需执行 `hye repair` 指令修复数据库
 4. **KSP 生成代码**: `economy-main/build/generated/ksp/` 下有 KSP 生成的 AuthorizeRegistrar，不要手动修改
-5. **Action 规则链生成代码**: core/game 应用 `economy-action-ksp` 后，`build/generated/ksp/` 下的 `<Owner>Actions` facade 与 `<ModuleId>ActionModule` 不要手动修改；注解为 `SOURCE` retention，运行时看不到，全靠生成代码接线；新增业务模块需在 `ActionChainBootstrap.modules` 登记并在 build.gradle.kts 设置 `actionchain.moduleId`
+5. **Action 规则链生成代码**: core/game 应用 `economy-action-ksp` 后，`build/generated/ksp/` 下的 `<Owner>Actions` facade 与 `<ModuleId>ActionModule` 不要手动修改；注解为 `SOURCE` retention，运行时看不到，全靠生成代码接线；新增业务模块需在 `ActionChainBootstrap.modules` 登记并在 build.gradle.kts 设置 `actionchain.moduleId`。写规则前先看 `plan/v2.0.0/40-开发手册/Action规则链API文档.md`（注解约束、执行语义、报错对照、签到案例）

@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.service
 
-import cn.chahuyun.economy.manager.UserStatusManager
+import cn.chahuyun.economy.feature.status.UserStatusManager
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.model.user.UserStatusDto
 

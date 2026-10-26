@@ -1,9 +1,9 @@
 package cn.chahuyun.economy.core
 
+import cn.chahuyun.economy.feature.bank.BankRoute
+import cn.chahuyun.economy.feature.bank.BankTransferParser
+import cn.chahuyun.economy.feature.bank.BankUsecase
 import cn.chahuyun.economy.model.user.UserInfoDto
-import cn.chahuyun.economy.usecase.BankRoute
-import cn.chahuyun.economy.usecase.BankTransferParser
-import cn.chahuyun.economy.usecase.BankUsecase
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

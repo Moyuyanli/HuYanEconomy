@@ -9,6 +9,7 @@ import cn.chahuyun.economy.data.repository.UserFishingInfoRepository
 import cn.chahuyun.economy.entity.fishing.FishEntity
 import cn.chahuyun.economy.entity.fishing.UserFishingInfoEntity
 import cn.chahuyun.economy.entity.fishing.UserPondEntity
+import cn.chahuyun.economy.games.GamesReplySupport
 import cn.chahuyun.economy.image.FishingInfoImageRenderer
 import cn.chahuyun.economy.image.model.FishingInfoCard
 import cn.chahuyun.economy.model.fish.FishingBait
@@ -54,7 +55,7 @@ object FishingUsecase {
 
         val remaining = FishingRuntimeService.remainingCooldownMillis(userInfo.qq, fishInfo.rodLevel, fishTitle)
         if (remaining > 0) {
-            GameUsecaseReplySupport.reply(group, message, "你还差${FishingRuntimeService.minutesRoundedUp(remaining)}分钟来抛第二杆!")
+            GamesReplySupport.reply(group, message, "你还差${FishingRuntimeService.minutesRoundedUp(remaining)}分钟来抛第二杆!")
             return
         }
 
@@ -64,17 +65,17 @@ object FishingUsecase {
                 EconomyUserStatusService.isInPrison(userInfo) -> "在监狱就不要想钓鱼的事了..."
                 else -> "你当前不在可以钓鱼的地方"
             }
-            GameUsecaseReplySupport.reply(group, message, msg)
+            GamesReplySupport.reply(group, message, msg)
             return
         }
 
         if (fishInfo.rodLevel <= 0) {
-            GameUsecaseReplySupport.reply(group, message, "你还没有鱼竿，先购买鱼竿吧!")
+            GamesReplySupport.reply(group, message, "你还没有鱼竿，先购买鱼竿吧!")
             return
         }
 
         if (!FishingRuntimeService.tryBeginSession(userInfo.qq)) {
-            GameUsecaseReplySupport.reply(group, message, "请稍后再试!")
+            GamesReplySupport.reply(group, message, "请稍后再试!")
             return
         }
 
@@ -89,7 +90,7 @@ object FishingUsecase {
             val minDifficultyBase = Math.round(fishInfo.rodLevel * bait.quality)
             val maxGradeBase = FishingRodUpgradeRules.fishingLevel(fishInfo.rodLevel)
 
-            GameUsecaseReplySupport.plain(event, FishingMessageBuilder.startFishing(userInfo.name, bait, pond))
+            GamesReplySupport.plain(event, FishingMessageBuilder.startFishing(userInfo.name, bait, pond))
             Log.info("${userInfo.name}开始钓鱼")
 
             val pull = if (fishTitle) RandomUtil.randomInt(10, 101) else RandomUtil.randomInt(30, 151)
@@ -100,7 +101,7 @@ object FishingUsecase {
             val reminderJob = scope.launch {
                 delay(prompt * 1000L)
                 if (EconomyRuntime.pluginStatus) {
-                    GameUsecaseReplySupport.reply(group, userInfo.qq, "浮漂动了!")
+                    GamesReplySupport.reply(group, userInfo.qq, "浮漂动了!")
                 }
             }
 
@@ -124,7 +125,7 @@ object FishingUsecase {
 
             val landed = resultTime
             if (landed == null) {
-                GameUsecaseReplySupport.reply(group, userInfo.qq, "你的鱼跑了!!!")
+                GamesReplySupport.reply(group, userInfo.qq, "你的鱼跑了!!!")
                 return
             }
 
@@ -149,7 +150,7 @@ object FishingUsecase {
 
             val fish = rollFish(pond, minDifficultyBase, maxDifficulty, minGrade, maxGrade)
             if (fish == null) {
-                GameUsecaseReplySupport.reply(event, "卧槽，脱线了！")
+                GamesReplySupport.reply(event, "卧槽，脱线了！")
                 return
             }
 
@@ -174,14 +175,14 @@ object FishingUsecase {
                     baitItemId = baitConstant?.id,
                 )
                 updateStatistics(fishInfo, dimensions, netIncome)
-                GameUsecaseReplySupport.send(
+                GamesReplySupport.send(
                     event,
                     FishingMessageBuilder.success(userInfo.qq, fish, dimensions, totalMoney),
                 )
                 checkFishTitle(userInfo, userId, group)
             } else {
                 Log.error("钓鱼:结算入账失败 qq=${userInfo.qq}")
-                GameUsecaseReplySupport.plain(event, "钓鱼失败!")
+                GamesReplySupport.plain(event, "钓鱼失败!")
             }
         } finally {
             FishingRuntimeService.endSession(userInfo.qq)
@@ -191,7 +192,7 @@ object FishingUsecase {
 
     suspend fun refresh(event: MessageEvent) {
         FishingRuntimeService.resetAll()
-        GameUsecaseReplySupport.reply(event, "钓鱼状态刷新成功!")
+        GamesReplySupport.reply(event, "钓鱼状态刷新成功!")
     }
 
     suspend fun startFish(event: GroupMessageEvent) {
@@ -200,13 +201,13 @@ object FishingUsecase {
         val util = PermUtil
 
         if (util.checkUserHasPerm(user, EconPerm.FISH_PERM)) {
-            GameUsecaseReplySupport.plain(group, "本群的钓鱼已经开启了!")
+            GamesReplySupport.plain(group, "本群的钓鱼已经开启了!")
             return
         }
         if (util.addUserToPermGroupByName(user, EconPerm.GROUP.FISH_PERM_GROUP)) {
-            GameUsecaseReplySupport.reply(group, event.message, "本群钓鱼开启成功!")
+            GamesReplySupport.reply(group, event.message, "本群钓鱼开启成功!")
         } else {
-            GameUsecaseReplySupport.reply(group, event.message, "本群钓鱼开启失败!")
+            GamesReplySupport.reply(group, event.message, "本群钓鱼开启失败!")
         }
     }
 
@@ -216,14 +217,14 @@ object FishingUsecase {
         val util = PermUtil
 
         if (!util.checkUserHasPerm(user, EconPerm.FISH_PERM)) {
-            GameUsecaseReplySupport.plain(group, "本群的钓鱼已经关闭了!")
+            GamesReplySupport.plain(group, "本群的钓鱼已经关闭了!")
             return
         }
         util.takePermGroupByName(EconPerm.GROUP.FISH_PERM_GROUP).apply {
             users.remove(user)
             save()
         }
-        GameUsecaseReplySupport.reply(group, event.message, "本群钓鱼关闭成功!")
+        GamesReplySupport.reply(group, event.message, "本群钓鱼关闭成功!")
     }
 
     suspend fun viewFishPond(event: GroupMessageEvent) {
@@ -233,7 +234,7 @@ object FishingUsecase {
         val pond = FishingPondService.resolveDefaultPond(fishInfo, userId, userInfo.name)
         val money = FishingAccountService.pondBalance(pond.id)
 
-        GameUsecaseReplySupport.reply(event.group, event.message, FishingMessageBuilder.pondInfo(pond, money))
+        GamesReplySupport.reply(event.group, event.message, FishingMessageBuilder.pondInfo(pond, money))
     }
 
     suspend fun viewFishingInfo(event: GroupMessageEvent) {
@@ -242,12 +243,12 @@ object FishingUsecase {
             ImageMessageUtil.sendQuotedImage(event.subject, event.message, FishingInfoImageRenderer.render(card))
         } catch (e: Exception) {
             Log.error("钓鱼信息图片生成或发送失败", e)
-            GameUsecaseReplySupport.reply(event, formatFishingInfoText(card))
+            GamesReplySupport.reply(event, formatFishingInfoText(card))
         }
     }
 
     suspend fun viewFishingInfoText(event: GroupMessageEvent) {
-        GameUsecaseReplySupport.reply(event, formatFishingInfoText(buildFishingInfoCard(event)))
+        GamesReplySupport.reply(event, formatFishingInfoText(buildFishingInfoCard(event)))
     }
 
     suspend fun createPond(event: GroupMessageEvent, name: String) {
@@ -257,10 +258,10 @@ object FishingUsecase {
 
         val pond = FishingPondService.createNamedPond(userId, name)
         if (pond == null) {
-            GameUsecaseReplySupport.reply(event, msg.pondNameDuplicated)
+            GamesReplySupport.reply(event, msg.pondNameDuplicated)
             return
         }
-        GameUsecaseReplySupport.reply(event, msg.createPondSuccess.format(name))
+        GamesReplySupport.reply(event, msg.createPondSuccess.format(name))
     }
 
     suspend fun buyBait(event: GroupMessageEvent, code: String) {
@@ -268,13 +269,13 @@ object FishingUsecase {
         val userId = FishingIdentity.userId(userInfo)
         val bait = FishingBaitConstant.ofCode(code)
         if (bait == null) {
-            GameUsecaseReplySupport.reply(event, "没有找到鱼饵:$code")
+            GamesReplySupport.reply(event, "没有找到鱼饵:$code")
             return
         }
 
         val price = BigDecimal.valueOf(bait.price)
         if (FishingAccountService.userBalance(userInfo.qq) < price) {
-            GameUsecaseReplySupport.reply(event, "你的金币不足以购买该鱼饵(需要 ${MoneyFormatUtil.format(bait.price)})!")
+            GamesReplySupport.reply(event, "你的金币不足以购买该鱼饵(需要 ${MoneyFormatUtil.format(bait.price)})!")
             return
         }
         if (FishingAccountService.deductUser(userInfo.qq, price)) {
@@ -282,9 +283,9 @@ object FishingUsecase {
             fishInfo.defaultBaitItemId = bait.id
             fishInfo.touch()
             UserFishingInfoRepository.save(fishInfo)
-            GameUsecaseReplySupport.reply(event, "购买鱼饵成功:${bait.displayName}(Lv.${bait.level})")
+            GamesReplySupport.reply(event, "购买鱼饵成功:${bait.displayName}(Lv.${bait.level})")
         } else {
-            GameUsecaseReplySupport.reply(event, "购买鱼饵失败!")
+            GamesReplySupport.reply(event, "购买鱼饵失败!")
         }
     }
 

@@ -57,7 +57,7 @@ object EconomyUtil {
      * 全局银行账本的完整余额列表（替代原来的 `getAccountByBank()`）。
      *
      * 每项的 [LedgerEntry.accountId] 就是原上游账户的 `uuid`，可直接用于
-     * `UserCoreManager.getUserInfoByAccountId` 之类的反查。
+     * `UserManager.getUserInfoByAccountId` 之类的反查。
      */
     @JvmStatic
     fun bankEntries(): List<LedgerEntry> = ledger.entries(LedgerBook.USER_BANK)

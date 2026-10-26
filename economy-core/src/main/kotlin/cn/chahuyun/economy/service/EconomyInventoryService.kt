@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.service
 
-import cn.chahuyun.economy.manager.BackpackManager
+import cn.chahuyun.economy.feature.backpack.BackpackManager
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.model.user.UserBackpackDto
 import cn.chahuyun.economy.model.user.UserInfoDto

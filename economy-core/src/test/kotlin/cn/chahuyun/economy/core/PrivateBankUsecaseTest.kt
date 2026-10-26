@@ -1,9 +1,9 @@
 package cn.chahuyun.economy.core
 
+import cn.chahuyun.economy.feature.privatebank.PrivateBankUsecase
 import cn.chahuyun.economy.model.privatebank.PrivateBankDto
 import cn.chahuyun.economy.model.privatebank.PrivateBankLoanDto
 import cn.chahuyun.economy.model.privatebank.PrivateBankLoanOfferDto
-import cn.chahuyun.economy.usecase.PrivateBankUsecase
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertFalse

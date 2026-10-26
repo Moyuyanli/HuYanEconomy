@@ -3,7 +3,7 @@ package cn.chahuyun.economy.action
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
-import cn.chahuyun.economy.usecase.BackpackUsecase
+import cn.chahuyun.economy.feature.backpack.BackpackUsecaseActions
 import net.mamoe.mirai.event.events.GroupMessageEvent
 
 /**
@@ -17,7 +17,7 @@ class BackpackAction {
 
     @MessageAuthorize(text = ["我的背包", "backpack"])
     suspend fun viewBackpack(event: GroupMessageEvent) {
-        BackpackUsecase.viewBackpack(event)
+        BackpackUsecaseActions.viewBackpack(event)
     }
 
     @MessageAuthorize(
@@ -25,7 +25,7 @@ class BackpackAction {
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun useProp(event: GroupMessageEvent) {
-        BackpackUsecase.useProp(event)
+        BackpackUsecaseActions.useProp(event)
     }
 
     @MessageAuthorize(
@@ -33,6 +33,6 @@ class BackpackAction {
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun discard(event: GroupMessageEvent) {
-        BackpackUsecase.discard(event)
+        BackpackUsecaseActions.discard(event)
     }
 }

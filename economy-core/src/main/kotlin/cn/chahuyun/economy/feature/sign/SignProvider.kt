@@ -3,7 +3,7 @@ package cn.chahuyun.economy.feature.sign
 import cn.chahuyun.economy.actionchain.annotation.Provider
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.feature.sign.SignProvider.signer
-import cn.chahuyun.economy.manager.UserCoreManager
+import cn.chahuyun.economy.feature.user.UserManager
 import cn.chahuyun.economy.model.user.UserInfoDto
 import net.mamoe.mirai.contact.Contact
 import net.mamoe.mirai.contact.User
@@ -15,7 +15,7 @@ import net.mamoe.mirai.message.data.MessageChain
  *
  * **为什么要单独抽一个类型**：签到的前置规则（资格校验、奖励计算）、动作本体、后置规则
  * （日志、称号检查）都要用到同一份用户信息与同一条群消息。如果各写各的
- * `UserCoreManager.getUserInfo(event.sender)`，一次指令会查三遍库，而且拿到的不是同一个实例——
+ * `UserManager.getUserInfo(event.sender)`，一次指令会查三遍库，而且拿到的不是同一个实例——
  * `@Before` 里补签卡改过的连签数，动作本体就读不到。
  *
  * 由 [SignProvider.signer] 统一定义，规则参数写 `@FromProvider("signer") actor: SignActor` 即可注入；
@@ -76,7 +76,7 @@ object SignProvider {
         val sender = event.sender
         return SignActor(
             // 用户信息在这里查一次，后续阶段共享同一实例（补签卡修改的连签数才能传递下去）。
-            userInfo = UserCoreManager.getUserInfo(sender),
+            userInfo = UserManager.getUserInfo(sender),
             user = sender,
             subject = event.subject,
             message = event.message,

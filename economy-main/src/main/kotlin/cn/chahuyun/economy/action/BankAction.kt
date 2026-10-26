@@ -3,7 +3,7 @@ package cn.chahuyun.economy.action
 import cn.chahuyun.authorize.EventComponent
 import cn.chahuyun.authorize.MessageAuthorize
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
-import cn.chahuyun.economy.usecase.BankUsecase
+import cn.chahuyun.economy.feature.bank.BankUsecaseActions
 import net.mamoe.mirai.event.events.MessageEvent
 
 /**
@@ -21,7 +21,7 @@ class BankAction {
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun deposit(event: MessageEvent) {
-        BankUsecase.deposit(event)
+        BankUsecaseActions.deposit(event)
     }
 
     /**
@@ -32,7 +32,7 @@ class BankAction {
         messageMatching = MessageMatchingEnum.REGULAR
     )
     suspend fun withdrawal(event: MessageEvent) {
-        BankUsecase.withdrawal(event)
+        BankUsecaseActions.withdrawal(event)
     }
 
     /**
@@ -40,7 +40,7 @@ class BankAction {
      */
     @MessageAuthorize(text = ["本周利率", "银行利率"])
     suspend fun viewBankInterest(event: MessageEvent) {
-        BankUsecase.viewBankInterest(event)
+        BankUsecaseActions.viewBankInterest(event)
     }
 
     /**
@@ -48,6 +48,6 @@ class BankAction {
      */
     @MessageAuthorize(text = ["富豪榜", "经济排行"])
     suspend fun viewRegalTop(event: MessageEvent) {
-        BankUsecase.viewRegalTop(event)
+        BankUsecaseActions.viewRegalTop(event)
     }
 }

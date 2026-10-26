@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.model.bank.action
 
-import cn.chahuyun.economy.privatebank.PrivateBankService
+import cn.chahuyun.economy.feature.privatebank.PrivateBankService
 import cn.chahuyun.economy.utils.EconomyUtil
 import net.mamoe.mirai.contact.User
 

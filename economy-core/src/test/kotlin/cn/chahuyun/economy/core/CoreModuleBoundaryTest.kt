@@ -23,12 +23,11 @@ class CoreModuleBoundaryTest {
     }
 
     @Test
-    fun `core feature manager and usecase user visible text does not contain unexpected mojibake fragments`() {
-        val roots = listOf(
-            Path.of("src/main/kotlin/cn/chahuyun/economy/feature"),
-            Path.of("src/main/kotlin/cn/chahuyun/economy/manager"),
-            Path.of("src/main/kotlin/cn/chahuyun/economy/usecase")
-        )
+    fun `core feature user visible text does not contain unexpected mojibake fragments`() {
+        // 第一批、第二批迁移完成后，`manager/`、`usecase/` 顶层包已整体删除，
+        // 功能文件全部落在 `feature/` 下，因此只扫描仍然存在的目录。
+        val roots = listOf(Path.of("src/main/kotlin/cn/chahuyun/economy/feature"))
+            .filter { Files.exists(it) }
         val mojibakeFragments = listOf(
             "\u9583", "\u93B6", "\u9352", "\u5BEE", "\u934F", "\u6978", "\u752F", "\u60F0",
             "\u7ECB", "\u93C1", "\u93C3", "\u9422", "\u9359", "\u9428", "\u7F01", "\u7441",
@@ -42,7 +41,7 @@ class CoreModuleBoundaryTest {
 
         assertTrue(
             hits.isEmpty(),
-            "core feature/manager/usecase user-visible text contains unexpected mojibake fragments:\n${hits.joinToString("\n")}"
+            "core feature 目录的用户可见文本包含疑似乱码片段：\n${hits.joinToString("\n")}"
         )
     }
 

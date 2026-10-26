@@ -1,6 +1,6 @@
 package cn.chahuyun.economy.prop.effect
 
-import cn.chahuyun.economy.manager.UserCoreManager
+import cn.chahuyun.economy.feature.user.UserManager
 import cn.chahuyun.economy.model.props.PropsCard
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.prop.BaseProp
@@ -12,9 +12,9 @@ object NameChangeCardEffectHandler : PropEffectHandler {
 
     override suspend fun use(prop: BaseProp, event: UseEvent): UseResult {
         val sender = event.sender
-        val userInfo = UserCoreManager.getUserInfo(sender)
+        val userInfo = UserManager.getUserInfo(sender)
         userInfo.name = sender.nameCardOrNick
-        UserCoreManager.saveUserInfo(userInfo)
+        UserManager.saveUserInfo(userInfo)
 
         return UseResult.success("改名卡使用成功!")
     }

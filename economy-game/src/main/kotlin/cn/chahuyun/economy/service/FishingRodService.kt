@@ -2,8 +2,8 @@ package cn.chahuyun.economy.service
 
 import cn.chahuyun.economy.data.repository.UserFishingInfoRepository
 import cn.chahuyun.economy.entity.fishing.UserFishingInfoEntity
+import cn.chahuyun.economy.games.GamesReplySupport
 import cn.chahuyun.economy.runtime.EconomyRuntime
-import cn.chahuyun.economy.usecase.GameUsecaseReplySupport
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
 import net.mamoe.mirai.event.events.MessageEvent
@@ -27,13 +27,13 @@ object FishingRodService {
         val msg = EconomyRuntime.msgConfig
 
         if (fishInfo.rodLevel > 0) {
-            GameUsecaseReplySupport.reply(event, msg.repeatPurchaseRod)
+            GamesReplySupport.reply(event, msg.repeatPurchaseRod)
             return
         }
 
         val price = BigDecimal.valueOf(msg.buyRodPrice.toLong())
         if (FishingAccountService.userBalance(userInfo.qq) < price) {
-            GameUsecaseReplySupport.reply(event, msg.coinNotEnoughForRod)
+            GamesReplySupport.reply(event, msg.coinNotEnoughForRod)
             return
         }
 
@@ -41,7 +41,7 @@ object FishingRodService {
             fishInfo.rodLevel = 1
             fishInfo.touch()
             UserFishingInfoRepository.save(fishInfo)
-            GameUsecaseReplySupport.reply(event, msg.buyFishingRodSuccess)
+            GamesReplySupport.reply(event, msg.buyFishingRodSuccess)
         } else {
             Log.error("钓鱼:购买鱼竿扣款失败 qq=${userInfo.qq}")
         }
@@ -54,11 +54,11 @@ object FishingRodService {
         val msg = EconomyRuntime.msgConfig
 
         if (fishInfo.rodLevel <= 0) {
-            GameUsecaseReplySupport.reply(event, msg.noneRodUpgradeMsg)
+            GamesReplySupport.reply(event, msg.noneRodUpgradeMsg)
             return
         }
         if (FishingRuntimeService.isFishing(userInfo.qq)) {
-            GameUsecaseReplySupport.reply(event, msg.upgradeWhenFishing)
+            GamesReplySupport.reply(event, msg.upgradeWhenFishing)
             return
         }
 

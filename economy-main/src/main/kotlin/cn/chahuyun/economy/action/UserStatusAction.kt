@@ -5,7 +5,7 @@ import cn.chahuyun.authorize.MessageAuthorize
 import cn.chahuyun.authorize.constant.AuthPerm
 import cn.chahuyun.authorize.constant.MessageConversionEnum
 import cn.chahuyun.authorize.constant.MessageMatchingEnum
-import cn.chahuyun.economy.usecase.UserStatusUsecase
+import cn.chahuyun.economy.feature.status.UserStatusUsecaseActions
 import net.mamoe.mirai.event.events.GroupMessageEvent
 
 /**
@@ -16,12 +16,12 @@ class UserStatusAction {
 
     @MessageAuthorize(text = ["我的状态", "我的位置"])
     suspend fun myStatus(event: GroupMessageEvent) {
-        UserStatusUsecase.myStatus(event)
+        UserStatusUsecaseActions.myStatus(event)
     }
 
     @MessageAuthorize(text = ["回家"])
     suspend fun goHome(event: GroupMessageEvent) {
-        UserStatusUsecase.goHome(event)
+        UserStatusUsecaseActions.goHome(event)
     }
 
     @MessageAuthorize(
@@ -31,6 +31,6 @@ class UserStatusAction {
         userPermissions = [AuthPerm.OWNER, AuthPerm.ADMIN]
     )
     suspend fun gotoHome(event: GroupMessageEvent) {
-        UserStatusUsecase.gotoHome(event)
+        UserStatusUsecaseActions.gotoHome(event)
     }
 }
