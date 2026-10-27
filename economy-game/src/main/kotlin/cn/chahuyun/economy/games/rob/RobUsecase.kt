@@ -7,7 +7,7 @@ import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.constant.TitleCode
-import cn.chahuyun.economy.feature.privatebank.PrivateBankService
+import cn.chahuyun.economy.feature.privatebank.PrivateBankManager
 import cn.chahuyun.economy.games.GamesReplySupport
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.UseEvent
@@ -186,7 +186,7 @@ object RobUsecase {
             return
         }
 
-        val repayment = PrivateBankService.repayOverdueLoansFromIncome(user.id, money)
+        val repayment = PrivateBankManager.repayOverdueLoansFromIncome(user.id, money)
         if (repayment.remaining > 0.0001) {
             EconomyAccountService.addWallet(user, repayment.remaining)
         }

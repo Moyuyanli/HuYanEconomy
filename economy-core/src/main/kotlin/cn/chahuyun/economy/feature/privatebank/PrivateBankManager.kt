@@ -3,9 +3,13 @@ package cn.chahuyun.economy.feature.privatebank
 import cn.chahuyun.economy.data.repository.PrivateBankRepository
 import cn.chahuyun.economy.feature.privatebank.PrivateBankManager.init
 import cn.chahuyun.economy.feature.privatebank.PrivateBankManager.ownedBank
+import cn.chahuyun.economy.model.privatebank.PrivateBankDepositDto
 import cn.chahuyun.economy.model.privatebank.PrivateBankDto
+import cn.chahuyun.economy.model.privatebank.PrivateBankGovBondIssueDto
 import cn.chahuyun.economy.scheduler.HuYanScheduler
 import cn.chahuyun.economy.utils.Log
+import net.mamoe.mirai.contact.User
+import java.util.Date
 
 /**
  * 私银功能的对外管理器：初始化 + 定时任务 + 跨功能查询入口。
@@ -13,7 +17,12 @@ import cn.chahuyun.economy.utils.Log
  * 本功能的指令入口在 [PrivateBankUsecase]，规则链在 [PrivateBankRules]；
  * 这里保留 Manager 是因为**功能之外**有调用方：
  * - 插件启动（`HuYanEconomy.onEnable`）要 [init] 注册 7 个定时任务；
- * - 国卷功能（`feature/bond`）要按 QQ 找到行长的银行，走 [ownedBank]。
+ * - 国卷功能（`feature/bond`）要按 QQ 找到行长的银行，走 [ownedBank]；
+ * - 主银行（`feature/bank`）、国卷（`feature/bond`）、转账（`feature/transfer`）、
+ *   抢劫（`games/rob`）要用存取款 / 贷款 / 国卷能力，走下方「跨功能 API」段。
+ *
+ * 按 §3.3.6，跨 feature 只允许调用 Manager，不直连 [PrivateBankService]：
+ * 下方的转发方法就是对外契约，内部实现全部留在 [PrivateBankService]。
  */
 object PrivateBankManager {
 
@@ -28,6 +37,53 @@ object PrivateBankManager {
      */
     fun ownedBank(qq: Long): PrivateBankDto? =
         PrivateBankRepository.listBanks().firstOrNull { it.ownerQq == qq }
+
+    // ===== 跨功能 API（对外契约，实现在 PrivateBankService）=====
+
+    /** 按编码或名称查私银。`feature/bank` 利率与存取场景使用。 */
+    fun getBank(key: String): PrivateBankDto? = PrivateBankService.getBank(key)
+
+    /** 查某用户在指定私银的存款。`feature/bank` 存款展示使用。 */
+    fun getDeposit(bankCode: String, userQq: Long): PrivateBankDepositDto? =
+        PrivateBankService.getDeposit(bankCode, userQq)
+
+    /** 向私银存款。`feature/bank` 存款动作使用。 */
+    fun deposit(user: User, bankCode: String, amount: Double): Pair<Boolean, String> =
+        PrivateBankService.deposit(user, bankCode, amount)
+
+    /** 从私银取款。`feature/bank` 取款动作使用。 */
+    fun withdraw(user: User, bankCode: String, amount: Double): Pair<Boolean, String> =
+        PrivateBankService.withdraw(user, bankCode, amount)
+
+    /** 用户是否有未还清贷款。`feature/transfer` 与 `games/rob` 的资格校验使用。 */
+    fun hasUnrepaidLoans(userQq: Long): Boolean = PrivateBankService.hasUnrepaidLoans(userQq)
+
+    /** 用一笔收入优先偿还逾期贷款。`games/rob` 抢劫结算使用。 */
+    fun repayOverdueLoansFromIncome(userQq: Long, income: Double): PrivateBankService.LoanIncomeRepayment =
+        PrivateBankService.repayOverdueLoansFromIncome(userQq, income)
+
+    /** 确保当日国卷已发行（不足补足）。`feature/bond` 与定时任务使用。 */
+    fun ensureDailyBondIssues(now: Date = Date()): List<PrivateBankGovBondIssueDto> =
+        PrivateBankService.ensureDailyBondIssues(now)
+
+    /** 手工补发当日国卷。`feature/bond` 补发指令使用。 */
+    fun supplementDailyBondIssues(now: Date = Date()): List<PrivateBankGovBondIssueDto> =
+        PrivateBankService.supplementDailyBondIssues(now)
+
+    /** 列出当前可购买的国卷。`feature/bond` 列表指令使用。 */
+    fun listAvailableBondIssues(now: Date = Date()): List<PrivateBankGovBondIssueDto> =
+        PrivateBankService.listAvailableBondIssues(now)
+
+    /** 计算国卷赎回时间戳。`feature/bond` 展示使用。 */
+    fun bondRedeemAt(issue: PrivateBankGovBondIssueDto): Long = PrivateBankService.bondRedeemAt(issue)
+
+    /** 购买国卷。`feature/bond` 购买动作使用。 */
+    fun buyBond(owner: User, bankCode: String, bondCode: String, amount: Double): Pair<Boolean, String> =
+        PrivateBankService.buyBond(owner, bankCode, bondCode, amount)
+
+    /** 赎回国卷（按金额或全额）。`feature/bond` 赎回动作使用。 */
+    fun redeemBond(owner: User, bondCode: String, requestedAmount: Double? = null): Pair<Boolean, String> =
+        PrivateBankService.redeemBond(owner, bondCode, requestedAmount)
 
     @JvmStatic
     fun init() {

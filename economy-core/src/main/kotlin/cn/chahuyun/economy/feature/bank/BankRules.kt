@@ -5,7 +5,7 @@ import cn.chahuyun.economy.actionchain.annotation.Before
 import cn.chahuyun.economy.actionchain.annotation.FromProvider
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.actionchain.runtime.ActionResult
-import cn.chahuyun.economy.feature.privatebank.PrivateBankService
+import cn.chahuyun.economy.feature.privatebank.PrivateBankManager
 import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil
@@ -143,7 +143,7 @@ object BankRules {
             return ActionResult.Continue
         }
 
-        val bank = PrivateBankService.getBank(bankKey!!)
+        val bank = PrivateBankManager.getBank(bankKey!!)
             ?: return ActionResult.EndWithMessage("未找到该银行：$bankKey")
         if (request.amount != null && request.amount <= 0) {
             return ActionResult.EndWithMessage("你在该银行没有可取出的存款")

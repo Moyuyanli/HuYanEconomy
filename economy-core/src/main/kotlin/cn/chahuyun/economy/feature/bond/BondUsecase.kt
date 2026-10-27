@@ -6,7 +6,7 @@ import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.data.repository.PrivateBankRepository
 import cn.chahuyun.economy.feature.bond.BondUsecase.PAGE_SIZE
-import cn.chahuyun.economy.feature.privatebank.PrivateBankService
+import cn.chahuyun.economy.feature.privatebank.PrivateBankManager
 import cn.chahuyun.economy.utils.FormatUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
@@ -53,8 +53,8 @@ object BondUsecase {
         Log.info("国卷指令:列表 用户(${event.sender.id})")
 
         val actor = context.provide(BondActor::class, BondProvider.ACTOR)
-        PrivateBankService.ensureDailyBondIssues()
-        val issues = PrivateBankService.listAvailableBondIssues()
+        PrivateBankManager.ensureDailyBondIssues()
+        val issues = PrivateBankManager.listAvailableBondIssues()
         if (issues.isEmpty()) {
             actor.subject.sendMessage(MessageUtil.formatMessageChain(actor.message, "当前没有可购买的国卷"))
             return
@@ -67,7 +67,7 @@ object BondUsecase {
                 append("\n剩余：${MoneyFormatUtil.format(issue.remaining)} / ${MoneyFormatUtil.format(issue.totalLimit)}")
                 append("\n利率：${FormatUtil.fixed(issue.rateMultiplier, 2)}%/day")
                 append("\n锁仓：${issue.lockDays} 天")
-                append("\n赎回时间：${DateUtil.formatDateTime(Date(PrivateBankService.bondRedeemAt(issue)))}")
+                append("\n赎回时间：${DateUtil.formatDateTime(Date(PrivateBankManager.bondRedeemAt(issue)))}")
             }
         }
         sendForwardPages(actor, "可购买国卷", lines)
@@ -129,7 +129,7 @@ object BondUsecase {
         Log.info("国卷指令:补发 用户(${event.sender.id})")
 
         val actor = context.provide(BondActor::class, BondProvider.ACTOR)
-        val issues = PrivateBankService.supplementDailyBondIssues()
+        val issues = PrivateBankManager.supplementDailyBondIssues()
         actor.subject.sendMessage(
             MessageUtil.formatMessageChain(actor.message, "国卷补发完成，本次新增 ${issues.size} 个国卷")
         )
@@ -152,7 +152,7 @@ object BondUsecase {
             return
         }
 
-        val (_, msg) = PrivateBankService.buyBond(actor.sender, plan.bankCode, plan.code, plan.amount)
+        val (_, msg) = PrivateBankManager.buyBond(actor.sender, plan.bankCode, plan.code, plan.amount)
         actor.subject.sendMessage(MessageUtil.formatMessageChain(actor.message, msg))
     }
 
@@ -173,7 +173,7 @@ object BondUsecase {
             return
         }
 
-        val (_, msg) = PrivateBankService.redeemBond(actor.sender, plan.code, plan.amount)
+        val (_, msg) = PrivateBankManager.redeemBond(actor.sender, plan.code, plan.amount)
         actor.subject.sendMessage(MessageUtil.formatMessageChain(actor.message, msg))
     }
 

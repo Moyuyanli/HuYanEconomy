@@ -2,7 +2,7 @@
 
 import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
-import cn.chahuyun.economy.feature.privatebank.PrivateBankService
+import cn.chahuyun.economy.feature.privatebank.PrivateBankManager
 import cn.chahuyun.economy.feature.user.UserManager
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.service.EconomyAsyncService
@@ -73,7 +73,7 @@ object BankUsecase {
                 }
             }
             BankRoute.PRIVATE -> {
-                val (_, msg) = PrivateBankService.deposit(actor.user, plan.bankKey.orEmpty(), plan.amount)
+                val (_, msg) = PrivateBankManager.deposit(actor.user, plan.bankKey.orEmpty(), plan.amount)
                 actor.subject.sendMessage(MessageUtil.formatMessageChain(actor.message, msg))
             }
             BankRoute.DEFAULT -> Log.error("银行管理:存款路由未归一化（用户 ${actor.user.id}）")
@@ -117,14 +117,14 @@ object BankUsecase {
             BankRoute.PRIVATE -> {
                 val bankKey = plan.bankKey.orEmpty()
                 val amount = plan.amount
-                    ?: (PrivateBankService.getDeposit(bankKey, actor.user.id)?.principal ?: 0.0)
+                    ?: (PrivateBankManager.getDeposit(bankKey, actor.user.id)?.principal ?: 0.0)
                 if (amount <= 0) {
                     actor.subject.sendMessage(
                         MessageUtil.formatMessageChain(actor.message, "你在该银行没有可取出的存款")
                     )
                     return
                 }
-                val (_, msg) = PrivateBankService.withdraw(actor.user, bankKey, amount)
+                val (_, msg) = PrivateBankManager.withdraw(actor.user, bankKey, amount)
                 actor.subject.sendMessage(MessageUtil.formatMessageChain(actor.message, msg))
             }
             BankRoute.DEFAULT -> Log.error("银行管理:取款路由未归一化（用户 ${actor.user.id}）")

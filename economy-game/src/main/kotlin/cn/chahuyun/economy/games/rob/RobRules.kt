@@ -8,7 +8,7 @@ import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.actionchain.runtime.ActionResult
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.constant.UserLocation
-import cn.chahuyun.economy.feature.privatebank.PrivateBankService
+import cn.chahuyun.economy.feature.privatebank.PrivateBankManager
 import cn.chahuyun.economy.model.rob.RobInfoDto
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.service.EconomyUserService
@@ -54,7 +54,7 @@ object RobRules {
     suspend fun validateNoUnpaidLoan(
         @FromProvider(RobProvider.ACTOR) actor: RobActor,
     ): ActionResult =
-        if (PrivateBankService.hasUnrepaidLoans(actor.user.id)) {
+        if (PrivateBankManager.hasUnrepaidLoans(actor.user.id)) {
             ActionResult.EndWithMessage("你还有未还贷款，暂时不能抢劫")
         } else {
             ActionResult.Continue
