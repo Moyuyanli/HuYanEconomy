@@ -35,7 +35,10 @@ group `cn.chahuyun`，version 2.0.0，包根 `cn.chahuyun.economy`。
 - `GRADLE_USER_HOME=D:\CodeTools\Gradle\core`；⚠️ Gradle **不能带沙箱**（卡 SYN_SENT 无限等），
   依赖已缓存时加 `--offline`
 - 离线不可用：logback-classic 1.5.16 等；mirai 测试用 `testCompileOnly` + slf4j NOP；`kotlin("test")` = JUnit4
-- 偶发 `journal-1.lock 拒绝访问`：等 IDE 同步结束再重试；本地调试 `debug-sandbox/`
+- 偶发 `journal-1.lock 拒绝访问`：可能是 IDE 同步，也可能是**另一工程的 Gradle 守护进程共用同一
+  `GRADLE_USER_HOME`**（跨版本抢 user-home 级 journal，`--no-daemon`/关 vfs watch 都绕不过）；
+  `gradlew --status` 只列**当前版本**守护进程，误判"无守护进程"时用
+  `Get-CimInstance Win32_Process -Filter "Name='java.exe'"` 看命令行再决定是否停；本地调试 `debug-sandbox/`
 
 ## 仓库（settings.gradle.kts）
 - 顺序：LocalOverflowGatewayStage → mavenCentral → google → sonatype-snapshots →
@@ -58,8 +61,22 @@ group `cn.chahuyun`，version 2.0.0，包根 `cn.chahuyun.economy`。
 - 抽象在 `economy-base/base/ledger`：`LedgerOwner`（sealed：Wallet/UserBank/PluginAccount/GlobalAccount）
   + `EconomyLedger` 接口 + `BaseLedger`；`EconomyLedgerProvider` 按 `Config.yml` 的 `economyBackend`
   （默认 BASE）+ `economyBackendFallback` 选后端
-- `EconomyUtil` 是纯门面（签名仍 Double）；业务禁止 import 上游、禁止直连 `EconomyAccount.take`；
-  上游类型只在 `ledger/LegacyEconomyApi.kt`，`LedgerIsolationTest` 扫常量池拦截
+- **经济操作统一走 `EconomyProxy`（2026-11-02 完成，唯一业务入口）**：`economy-core/ledger/EconomyProxy.kt`，
+  四类位置 `wallet(user|qq|ById)` / `userBank(...)` / `plugin(id,desc)` / `global(id,desc)`，操作
+  `balance()`/`balanceDouble()`/`credit`/`debit`/`adjust`/`transferTo` + `bankEntries`/`bankTotal`；
+  金额统一 `EconomyProxy.money`（两位 HALF_UP）、账户编码统一 `EconomyProxy.walletId(qq)`；
+  后端注入 `useBackend(ledger?)`（`null` 恢复配置选择），`backend`/`backendId` 读当前后端。
+  **`UserWallet` 已删除**（2026-11-02 并入代理，不再有第二个资金入口）。
+  **语义**：`debit` 余额不足即失败；`adjust` 负数=强制扣款允许负余额（仅债务转移/破产清算）；
+  `transferTo` base 原子、mirai 补偿。
+- 后端默认本地 `BaseLedger`（`Config.yml` 的 `economyBackend=BASE`），可选 `MIRAI_ECONOMY`，
+  探测失败按 `economyBackendFallback` 降级；运行期不热切换
+- 业务禁止 import 上游、禁止直连 `EconomyAccount.take`；上游类型只在 `ledger/LegacyEconomyApi.kt`
+  （`GoldEconomyCurrency` 已内联为其 `private` 嵌套类，全仓仅此文件 import `xyz.cssxsh`），
+  `LedgerIsolationTest` 既扫门面常量池，也全量扫 core main 产物（白名单
+  `ledger/LegacyEconomyApi|MiraiEconomyLedger|MiraiEconomyProbe`）
+- 旧银行模型 `model/bank/`（AbstractBank/Bank/action/*）与 `model/currency/` 已于 2026-11-02 删除；
+  core `model/` 现 10 文件（props/title/user）
 - **mirai 侧不用 `global()`**，全走 `custom(plugin)`，scope 编码进 id：`u<qq>` / `u<qq>#BANK` /
   `<id>#PLUGIN` / `<id>#GLOBAL`；规则集中在 `ledger/MiraiAccountId.kt`，新增 scope 只改这里
 - `MiraiEconomyLedger.Layout`：`SCOPE_SUFFIX`（运行时）/ `LEGACY_CONTEXT`（仅迁移读 2.0.1 前旧数据：
@@ -67,12 +84,9 @@ group `cn.chahuyun`，version 2.0.0，包根 `cn.chahuyun.economy`。
 - 迁移 `hye economy status|migrate|export-base`：旧布局余额只能经 base 中转一次，不能上游对上游直改
 - 上游事实：余额表主键 `(uuid, context, currency)`；`account_record` 主键仅 uuid（description 可变、
   会被 merge 覆盖）；`custom` 的 context = `plugin.id`（按插件隔离）；**无 transfer API**，转账靠补偿
-- **新代码走 `UserWallet`**（`economy-core/ledger/UserWallet.kt`）：`balance/credit/debit`，
-  构造可注入 `EconomyLedger`（默认 provider）便于测试；`UserWallet.money(Double)` 两位 HALF_UP、
-  `accountId(qq)="u<qq>"` 是唯一入口，业务层不手写 `"u$qq"`/`BigDecimal.valueOf`
-- **签到是首个迁移 feature（2026-10-21）**：入账/回显走 `UserWallet`，`SignOutcome.gold` 为 `BigDecimal`；
-  指标测试 `test/ledger/UserWalletH2Test.kt`（真 H2 + `BaseLedger`，10 例）。core 测试已加
-  hibernate-plus/h2/reflections 依赖，后续 feature 迁移照此补集成测试
+- **集成测试口径**：`test/ledger/EconomyProxyWalletH2Test.kt`（8 例，钱包路径 / 签到）
+  + `EconomyProxyH2Test.kt`（10 例：四类位置隔离 / debit 不透支 / adjust 透支 / 转账原子 /
+  两位舍入 / 账本聚合）；两者都用 `EconomyProxy.useBackend(BaseLedger)` 注入，`@AfterClass` 置回 null
 
 ## 钓鱼（2026-10-12 新实体重建）
 - 实体 `entity/fishing/`；四 Repository + `NewUserInfoRepository`（qq → hye_user_info.id）
