@@ -1,9 +1,9 @@
 package cn.chahuyun.economy.feature.redpack
 
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.redpack.RedPackDto
 import cn.chahuyun.economy.model.redpack.RedPackKind
-import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 import cn.chahuyun.economy.utils.TimeConvertUtil
@@ -145,7 +145,7 @@ object RedPackManager {
             RedPackAllocationService.averagePack(money, number)
         }
 
-        if (!EconomyUtil.plusMoneyToUser(sender, perMoney)) {
+        if (!EconomyProxy.wallet(sender).credit(perMoney).success) {
             val msg = "红包领取失败!"
             if (!skipMessage && message != null) subject.sendMessage(MessageUtil.formatMessageChain(message, msg))
             return GrabResult(false, message = msg)
@@ -196,12 +196,12 @@ object RedPackManager {
         val remainingMoney = money - redPack.takenMoneys
 
         if (owner != null) {
-            EconomyUtil.plusMoneyToUser(owner, remainingMoney)
+            EconomyProxy.wallet(owner).credit(remainingMoney)
         } else {
             // 群内找不到成员时，按账号直接退回钱包。
-            // 注意账户标识必须是 u<qq>（与 UserInfoDto.id、上游 uuid 一致），
+            // 账户标识由 EconomyProxy.wallet(qq) 统一编码为 u<qq>（与 UserInfoDto.id、上游 uuid 一致），
             // 直接用纯 QQ 号会落到另一个孤立账户上。
-            EconomyUtil.plusMoneyToWalletForAccount("u$ownerId", remainingMoney)
+            EconomyProxy.wallet(ownerId).credit(remainingMoney)
         }
         group.sendMessage(
             MessageUtil.formatMessageChain(ownerId, "你的红包过期啦！退还金币 ${MoneyFormatUtil.format(remainingMoney)} 枚！")

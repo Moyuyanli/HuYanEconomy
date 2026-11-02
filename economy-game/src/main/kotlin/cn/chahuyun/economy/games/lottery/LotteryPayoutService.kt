@@ -1,8 +1,8 @@
 package cn.chahuyun.economy.games.lottery
 
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.LotteryInfoDto
 import cn.chahuyun.economy.runtime.EconomyRuntime
-import cn.chahuyun.economy.service.EconomyAccountService
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.contact.NormalMember
@@ -20,7 +20,7 @@ object LotteryPayoutService {
         val member: NormalMember = group.get(lotteryInfo.qq) ?: return
         LotteryDataService.delete(lotteryInfo)
 
-        if (!EconomyAccountService.addWallet(member, lotteryInfo.bonus)) {
+        if (!EconomyProxy.wallet(member).credit(lotteryInfo.bonus).success) {
             runBlocking { member.sendMessage("奖金添加失败，请联系管理员") }
             return
         }

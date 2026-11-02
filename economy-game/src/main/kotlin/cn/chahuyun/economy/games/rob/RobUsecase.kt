@@ -9,6 +9,7 @@ import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.constant.TitleCode
 import cn.chahuyun.economy.feature.privatebank.PrivateBankManager
 import cn.chahuyun.economy.games.GamesReplySupport
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.props.FunctionProps
 import cn.chahuyun.economy.model.props.UseEvent
 import cn.chahuyun.economy.model.user.UserFactorDto
@@ -112,7 +113,7 @@ object RobUsecase {
 
         val dodge = ShareUtils.percentageToInt(robberFactor.dodge)
         if (robRandom - dodge > 75) {
-            EconomyAccountService.subtractWallet(user, FINE.toDouble())
+            EconomyProxy.wallet(user).debit(FINE.toDouble()).success
             EconomyUserStatusService.movePrison(robber, PRISON_MINUTES)
             GamesReplySupport.reply(
                 group,
@@ -146,7 +147,7 @@ object RobUsecase {
         val message = event.message
         val user = event.sender
 
-        val targetBalance = EconomyAccountService.walletBalance(member)
+        val targetBalance = EconomyProxy.wallet(member).balanceDouble()
         if (targetBalance < POOR_THRESHOLD) {
             val hit = RandomUtil.randomInt(0, 101)
             val irritable = ShareUtils.percentageToInt(robberFactor.irritable)
@@ -181,14 +182,14 @@ object RobUsecase {
             )
         }
 
-        if (!EconomyAccountService.subtractWallet(member, money)) {
+        if (!EconomyProxy.wallet(member).debit(money).success) {
             GamesReplySupport.reply(group, message, "抢劫结算失败，对方的钱包扣款失败")
             return
         }
 
         val repayment = PrivateBankManager.repayOverdueLoansFromIncome(user.id, money)
         if (repayment.remaining > 0.0001) {
-            EconomyAccountService.addWallet(user, repayment.remaining)
+            EconomyProxy.wallet(user).credit(repayment.remaining).success
         }
         if (repayment.repaid > 0.0001) {
             GamesReplySupport.reply(

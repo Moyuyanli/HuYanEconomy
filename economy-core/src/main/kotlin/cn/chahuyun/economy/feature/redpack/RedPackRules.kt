@@ -5,8 +5,8 @@ import cn.chahuyun.economy.actionchain.annotation.Before
 import cn.chahuyun.economy.actionchain.annotation.FromProvider
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.actionchain.runtime.ActionResult
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.redpack.RedPackKind
-import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 
@@ -87,7 +87,7 @@ object RedPackRules {
         if (money / number < 0.1) {
             return ActionResult.EndWithMessage("你发的红包太小了，每个红包金额不能低于 0.1！")
         }
-        if (money > EconomyUtil.getMoneyByUser(actor.sender)) {
+        if (money > EconomyProxy.wallet(actor.sender).balanceDouble()) {
             return ActionResult.EndWithMessage("你的金币不够啦！")
         }
 

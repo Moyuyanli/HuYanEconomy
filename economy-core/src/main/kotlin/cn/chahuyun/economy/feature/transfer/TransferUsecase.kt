@@ -2,7 +2,7 @@
 
 import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
-import cn.chahuyun.economy.utils.EconomyUtil
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 import net.mamoe.mirai.contact.Contact
@@ -46,7 +46,7 @@ object TransferUsecase {
 
         val subject: Contact = actor.subject
         val chainBuilder = MessageChainBuilder()
-        if (EconomyUtil.turnUserToUser(actor.user, intent.target, intent.money)) {
+        if (EconomyProxy.wallet(actor.user).transferTo(EconomyProxy.wallet(intent.target), intent.money).success) {
             chainBuilder.append("成功向${intent.target.nick}转账${MoneyFormatUtil.format(intent.money)}金币")
             subject.sendMessage(chainBuilder.build())
         } else {
@@ -78,7 +78,7 @@ object TransferUsecase {
         }
 
         val chainBuilder = MessageChainBuilder()
-        if (EconomyUtil.Cheat(user, money)) {
+        if (EconomyProxy.wallet(user).credit(money).success) {
             chainBuilder.append("成功作弊: 获取${MoneyFormatUtil.format(money)}金币")
             subject.sendMessage(chainBuilder.build())
         } else {

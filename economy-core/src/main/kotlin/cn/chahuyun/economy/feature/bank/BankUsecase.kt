@@ -4,6 +4,7 @@ import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.feature.privatebank.PrivateBankManager
 import cn.chahuyun.economy.feature.user.UserManager
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.service.EconomyAsyncService
 import cn.chahuyun.economy.utils.*
@@ -60,7 +61,10 @@ object BankUsecase {
 
         when (plan.route) {
             BankRoute.MAIN -> {
-                if (EconomyUtil.turnUserToBank(actor.user, plan.amount)) {
+                if (EconomyProxy.wallet(actor.user)
+                        .transferTo(EconomyProxy.userBank(actor.user), plan.amount)
+                        .success
+                ) {
                     actor.subject.sendMessage(
                         MessageUtil.formatMessageChain(
                             actor.message,
@@ -102,7 +106,10 @@ object BankUsecase {
         when (plan.route) {
             BankRoute.MAIN -> {
                 val amount = plan.amount ?: 0.0
-                if (EconomyUtil.turnBankToUser(actor.user, amount)) {
+                if (EconomyProxy.userBank(actor.user)
+                        .transferTo(EconomyProxy.wallet(actor.user), amount)
+                        .success
+                ) {
                     actor.subject.sendMessage(
                         MessageUtil.formatMessageChain(
                             actor.message,
@@ -221,7 +228,7 @@ object BankUsecase {
     }
 
     private fun buildRegalTopLines(bot: Bot): List<String> {
-        val bankEntries = EconomyUtil.bankEntries()
+        val bankEntries = EconomyProxy.bankEntries()
         val accountBalances = HashMap<String, Double>(bankEntries.size)
         bankEntries.forEach { entry ->
             accountBalances.merge(entry.accountId, entry.amount.toDouble(), Double::plus)

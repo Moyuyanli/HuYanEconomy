@@ -8,6 +8,7 @@ import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.feature.redpack.RedPackUsecase.receive
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.redpack.RedPackDto
 import cn.chahuyun.economy.model.redpack.RedPackKind
 import cn.chahuyun.economy.runtime.EconomyRuntime
@@ -64,7 +65,7 @@ object RedPackUsecase {
         val sender = actor.sender
         val group = requireNotNull(actor.group) { "红包只能在群聊中创建" }
 
-        if (!EconomyUtil.plusMoneyToUser(sender, -plan.money)) {
+        if (!EconomyProxy.wallet(sender).adjust(-plan.money).success) {
             subject.sendMessage(MessageUtil.formatMessageChain(actor.message, "红包发送失败！"))
             return
         }

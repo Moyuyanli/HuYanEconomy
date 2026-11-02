@@ -3,7 +3,7 @@ package cn.chahuyun.economy.games.raffle
 import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.games.GamesReplySupport
-import cn.chahuyun.economy.service.EconomyAccountService
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.service.EconomyRaffleService
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
@@ -39,7 +39,7 @@ object RaffleUsecase {
         val price = EconomyRaffleService.defaultPoolPrice()
         val userRaffle = RaffleService.takeUserRaffle(actor.user.id)
 
-        if (!EconomyAccountService.subtractWallet(actor.user, price)) {
+        if (!EconomyProxy.wallet(actor.user).debit(price).success) {
             GamesReplySupport.quote(event, "抽奖失败!")
             return
         }
@@ -71,7 +71,7 @@ object RaffleUsecase {
         val price = EconomyRaffleService.defaultPoolPrice(10)
         val userRaffle = RaffleService.takeUserRaffle(actor.user.id)
 
-        if (!EconomyAccountService.subtractWallet(actor.user, price)) {
+        if (!EconomyProxy.wallet(actor.user).debit(price).success) {
             GamesReplySupport.quote(event, "抽奖失败!")
             return
         }

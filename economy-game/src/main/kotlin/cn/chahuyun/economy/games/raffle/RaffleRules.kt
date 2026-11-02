@@ -3,7 +3,7 @@ package cn.chahuyun.economy.games.raffle
 import cn.chahuyun.economy.actionchain.annotation.Before
 import cn.chahuyun.economy.actionchain.annotation.FromProvider
 import cn.chahuyun.economy.actionchain.runtime.ActionResult
-import cn.chahuyun.economy.service.EconomyAccountService
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.service.EconomyRaffleService
 
 /**
@@ -45,7 +45,7 @@ object RaffleRules {
         @FromProvider(RaffleProvider.ACTOR) actor: RaffleActor,
     ): ActionResult {
         val price = EconomyRaffleService.defaultPoolPrice()
-        return if (EconomyAccountService.walletBalance(actor.user) < price) {
+        return if (EconomyProxy.wallet(actor.user).balanceDouble() < price) {
             ActionResult.EndWithMessage("你的余额不足 $price ,无法抽奖")
         } else {
             ActionResult.Continue
@@ -76,7 +76,7 @@ object RaffleRules {
         @FromProvider(RaffleProvider.ACTOR) actor: RaffleActor,
     ): ActionResult {
         val price = EconomyRaffleService.defaultPoolPrice(10)
-        return if (EconomyAccountService.walletBalance(actor.user) < price) {
+        return if (EconomyProxy.wallet(actor.user).balanceDouble() < price) {
             ActionResult.EndWithMessage("你的余额不足 $price ,无法抽奖")
         } else {
             ActionResult.Continue

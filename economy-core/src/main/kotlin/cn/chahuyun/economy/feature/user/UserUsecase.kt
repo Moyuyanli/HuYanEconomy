@@ -3,6 +3,7 @@ package cn.chahuyun.economy.feature.user
 import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.data.repository.PrivateBankRepository
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.user.getString
 import cn.chahuyun.economy.model.yiyan.YiYan
 import cn.chahuyun.economy.plugin.YiYanManager
@@ -98,8 +99,8 @@ object UserUsecase {
         val message = event.message
         val user = event.sender
 
-        val money = EconomyUtil.getMoneyByUser(user)
-        val bank = EconomyUtil.getMoneyByBank(user)
+        val money = EconomyProxy.wallet(user).balanceDouble()
+        val bank = EconomyProxy.userBank(user).balanceDouble()
         val privateDeposits = PrivateBankRepository.listBanks()
             .mapNotNull { privateBank ->
                 val deposit = PrivateBankRepository.findDeposit(privateBank.code, user.id) ?: return@mapNotNull null
@@ -150,7 +151,7 @@ object UserUsecase {
         }
 
         append(userInfo.getString())
-        append("金币:${MoneyFormatUtil.format(EconomyUtil.getMoneyByUser(sender))}")
+        append("金币:${MoneyFormatUtil.format(EconomyProxy.wallet(sender).balanceDouble())}")
     }.build()
 
     private fun moneyRatio(amount: Double, total: Double): String =

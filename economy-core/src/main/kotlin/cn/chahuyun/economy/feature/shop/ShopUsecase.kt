@@ -6,10 +6,10 @@ import cn.chahuyun.economy.feature.backpack.BackpackManager
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.model.user.user
 import cn.chahuyun.economy.prop.BaseProp
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.prop.PropsManager
 import cn.chahuyun.economy.prop.PropsShop
 import cn.chahuyun.economy.prop.Stackable
-import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
 import net.mamoe.mirai.event.events.GroupMessageEvent
@@ -93,7 +93,7 @@ object ShopUsecase {
             }
             val name = template.name
             val propCode = template.code
-            val money = EconomyUtil.getMoneyByUser(userInfo.user)
+            val money = EconomyProxy.wallet(userInfo.user).balanceDouble()
             val cost = template.cost
             val finalCost = cost * number
 
@@ -102,7 +102,7 @@ object ShopUsecase {
                 continue
             }
 
-            if (!EconomyUtil.minusMoneyToUser(userInfo.user, finalCost.toDouble())) {
+            if (!EconomyProxy.wallet(userInfo.user).debit(finalCost.toDouble()).success) {
                 builder.add(MessageUtil.formatMessage("\n道具 ${name} 购买失败!"))
                 continue
             }
@@ -129,7 +129,7 @@ object ShopUsecase {
                     runCatching { PropsManager.destroyProsAndBackpack(propId) }
                         .onFailure { Log.error("购买道具失败后清理道具失败: propId=$propId", it) }
                 }
-                val refunded = EconomyUtil.plusMoneyToUser(userInfo.user, finalCost.toDouble())
+                val refunded = EconomyProxy.wallet(userInfo.user).credit(finalCost.toDouble()).success
                 val refundMessage = if (refunded) "已退款${finalCost}" else "退款失败，请联系管理员"
                 builder.add(MessageUtil.formatMessage("\n道具 ${name} 购买失败，${refundMessage}"))
             }

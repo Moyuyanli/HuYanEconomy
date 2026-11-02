@@ -2,9 +2,9 @@
 
 import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.title.TitleTemplate
 import cn.chahuyun.economy.plugin.TitleTemplateManager
-import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MessageUtil
 import cn.chahuyun.economy.utils.MoneyFormatUtil
@@ -119,7 +119,7 @@ object TitleUsecase {
         val price = template.price ?: return
 
         val actor = context.provide(TitleActor::class, TitleProvider.ACTOR)
-        if (EconomyUtil.minusMoneyToUser(sender, price)) {
+        if (EconomyProxy.wallet(sender).debit(price).success) {
             if (TitleManager.addTitleInfo(actor.userInfo, template.templateCode)) {
                 val validity = template.validityPeriod ?: -1
                 subject.sendMessage(

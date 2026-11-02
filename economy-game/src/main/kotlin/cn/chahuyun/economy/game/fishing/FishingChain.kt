@@ -16,6 +16,10 @@ import net.mamoe.mirai.event.events.GroupMessageEvent
  * - `@Before` / `@Action` 在真实模块中的执行顺序
  *
  * 重建钓鱼时把真正的玩法逻辑搬进 [fish]，再移除指令入口里的旧 usecase 调用。
+ *
+ * TODO(action-chain): 重建时把 `FishingUsecase` 内的横切逻辑拆成规则——
+ *   冷却 / 称号 / 鱼饵消耗写 `@Before(actionId = "game.fish", order = ...)`，
+ *   结算与称号授予写 `@After(...)`，中间结果通过 `ActionContext` 传递。
  */
 object FishingChain {
 

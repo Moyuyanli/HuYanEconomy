@@ -4,12 +4,12 @@ package cn.chahuyun.economy.feature.title
 
 import cn.chahuyun.economy.constant.TitleCode
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.title.TitleTemplateSimpleImpl
 import cn.chahuyun.economy.model.user.TitleInfoDto
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.model.user.user
 import cn.chahuyun.economy.plugin.TitleTemplateManager
-import cn.chahuyun.economy.utils.EconomyUtil
 import cn.hutool.core.date.DateUnit
 import cn.hutool.core.date.DateUtil
 import kotlinx.coroutines.runBlocking
@@ -180,7 +180,7 @@ object TitleManager {
      * 检查大富翁称号。
      */
     suspend fun checkMonopoly(userInfo: UserInfoDto, subject: Contact) {
-        val moneyByUser = EconomyUtil.getMoneyByUser(userInfo.user)
+        val moneyByUser = EconomyProxy.wallet(userInfo.user).balanceDouble()
         if (moneyByUser > 100000) {
             if (checkTitleIsExist(userInfo, TitleCode.MONOPOLY)) return
             addTitleInfo(userInfo, TitleCode.MONOPOLY)

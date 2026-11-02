@@ -6,7 +6,7 @@ import cn.chahuyun.economy.actionchain.annotation.FromProvider
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.actionchain.runtime.ActionResult
 import cn.chahuyun.economy.feature.privatebank.PrivateBankManager
-import cn.chahuyun.economy.utils.EconomyUtil
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 
@@ -70,12 +70,12 @@ object BankRules {
         val request = BankTransferParser.parse(actor.content, "存款", "deposit")
             ?: return ActionResult.EndWithMessage("用法：存款! / 存款!! / 存款 <金额> [银行|main]")
 
-        val amount = request.amount ?: EconomyUtil.getMoneyByUser(actor.user)
+        val amount = request.amount ?: EconomyProxy.wallet(actor.user).balanceDouble()
         if (amount <= 0) {
             return ActionResult.EndWithMessage("你的钱包没有可存入的金币")
         }
 
-        val wallet = EconomyUtil.getMoneyByUser(actor.user)
+        val wallet = EconomyProxy.wallet(actor.user).balanceDouble()
         if (wallet + 1e-6 < amount) {
             return ActionResult.EndWithMessage("你的金币不够 ${MoneyFormatUtil.format(amount)}")
         }
@@ -132,11 +132,11 @@ object BankRules {
         }
 
         if (route == BankRoute.MAIN) {
-            val amount = request.amount ?: EconomyUtil.getMoneyByBank(actor.user)
+            val amount = request.amount ?: EconomyProxy.userBank(actor.user).balanceDouble()
             if (amount <= 0) {
                 return ActionResult.EndWithMessage("你的主银行没有可取出的金币")
             }
-            if (EconomyUtil.getMoneyByBank(actor.user) + 1e-6 < amount) {
+            if (EconomyProxy.userBank(actor.user).balanceDouble() + 1e-6 < amount) {
                 return ActionResult.EndWithMessage("你的银行余额不够 ${MoneyFormatUtil.format(amount)} 枚金币")
             }
             context.put(BankWithdrawPlan::class, BankWithdrawPlan(amount, BankRoute.MAIN, null))

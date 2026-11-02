@@ -3,7 +3,7 @@
 import cn.chahuyun.economy.constant.FarmConstants
 import cn.chahuyun.economy.entity.v1.farm.FarmCrop
 import cn.chahuyun.economy.entity.v1.farm.FarmPlot
-import cn.chahuyun.economy.service.EconomyAccountService
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 import net.mamoe.mirai.contact.User
 
@@ -21,10 +21,10 @@ object FarmOperationService {
         val crop = FarmCropService.getCropByLevel(nextLevel)
             ?: return FarmOperationResult(false, "缺少${nextLevel}级农场升级配置")
         val cost = crop.upgradeCost.toDouble()
-        if (EconomyAccountService.walletBalance(user) < cost) {
+        if (EconomyProxy.wallet(user).balanceDouble() < cost) {
             return FarmOperationResult(false, "金币不足，升级需要${cost.toLong()}金币")
         }
-        if (!EconomyAccountService.subtractWallet(user, cost)) {
+        if (!EconomyProxy.wallet(user).debit(cost).success) {
             return FarmOperationResult(false, "扣款失败")
         }
         player.level = nextLevel
@@ -44,10 +44,10 @@ object FarmOperationService {
         val crop = FarmCropService.getCropByLevel(player.level)
             ?: return FarmOperationResult(false, "缺少${player.level}级农场配置")
         val cost = FarmShieldPolicy.activationCost(crop.upgradeCost).toDouble()
-        if (EconomyAccountService.walletBalance(user) < cost) {
+        if (EconomyProxy.wallet(user).balanceDouble() < cost) {
             return FarmOperationResult(false, "金币不足，激活守护需要${cost.toLong()}金币")
         }
-        if (!EconomyAccountService.subtractWallet(user, cost)) {
+        if (!EconomyProxy.wallet(user).debit(cost).success) {
             return FarmOperationResult(false, "守护费用扣款失败")
         }
 
@@ -58,7 +58,7 @@ object FarmOperationService {
             FarmOperationResult(true, "守护已激活，持续12小时，花费${cost.toLong()}金币")
         } catch (_: Exception) {
             player.shieldUntil = previousShieldUntil
-            val refunded = EconomyAccountService.addWallet(user, cost)
+            val refunded = EconomyProxy.wallet(user).credit(cost).success
             FarmOperationResult(
                 false,
                 if (refunded) "守护激活失败，费用已退回" else "守护激活失败且退款失败，请联系管理员",
@@ -74,16 +74,16 @@ object FarmOperationService {
             return FarmOperationResult(false, "${crop.name} 需要农场${crop.level}级才能购买")
         }
         val cost = crop.seedPrice.toDouble() * amount
-        if (EconomyAccountService.walletBalance(user) < cost) {
+        if (EconomyProxy.wallet(user).balanceDouble() < cost) {
             return FarmOperationResult(false, "金币不足，需要${cost.toLong()}金币")
         }
-        if (!EconomyAccountService.subtractWallet(user, cost)) {
+        if (!EconomyProxy.wallet(user).debit(cost).success) {
             return FarmOperationResult(false, "扣款失败")
         }
         runCatching {
             FarmInventoryStorageService.addInventory(user.id, FarmConstants.ITEM_SEED, crop.code, amount)
         }.onFailure {
-            EconomyAccountService.addWallet(user, cost)
+            EconomyProxy.wallet(user).credit(cost).success
             return FarmOperationResult(false, "种子入库失败，已退款")
         }
         return FarmOperationResult(true, "购买 ${crop.name} 种子 x$amount 成功，花费${cost.toLong()}金币")
@@ -107,7 +107,7 @@ object FarmOperationService {
         var autoBought = 0
         var autoBuyCost = 0.0
         if (seedShortage > 0) {
-            val walletBalance = EconomyAccountService.walletBalance(user)
+            val walletBalance = EconomyProxy.wallet(user).balanceDouble()
             val buyableAmount = if (crop.seedPrice <= 0) {
                 seedShortage
             } else {
@@ -115,14 +115,14 @@ object FarmOperationService {
             }
             if (buyableAmount > 0) {
                 val cost = crop.seedPrice.toDouble() * buyableAmount
-                if (cost > 0 && !EconomyAccountService.subtractWallet(user, cost)) {
+                if (cost > 0 && !EconomyProxy.wallet(user).debit(cost).success) {
                     return FarmOperationResult(false, "自动购买种子扣款失败")
                 }
                 runCatching {
                     FarmInventoryStorageService.addInventory(user.id, FarmConstants.ITEM_SEED, crop.code, buyableAmount)
                 }.onFailure {
                     if (cost > 0) {
-                        EconomyAccountService.addWallet(user, cost)
+                        EconomyProxy.wallet(user).credit(cost).success
                     }
                     return FarmOperationResult(false, "自动购买种子入库失败，已退款")
                 }
@@ -233,7 +233,7 @@ object FarmOperationService {
         deductions.forEach {
             FarmInventoryStorageService.removeInventory(user.id, FarmConstants.ITEM_FRUIT, it.first, it.second)
         }
-        if (!EconomyAccountService.addWallet(user, totalMoney.toDouble())) {
+        if (!EconomyProxy.wallet(user).credit(totalMoney.toDouble()).success) {
             deductions.forEach {
                 FarmInventoryStorageService.addInventory(user.id, FarmConstants.ITEM_FRUIT, it.first, it.second)
             }

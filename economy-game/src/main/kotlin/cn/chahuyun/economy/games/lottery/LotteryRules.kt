@@ -7,7 +7,7 @@ import cn.chahuyun.economy.actionchain.annotation.FromProvider
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.actionchain.runtime.ActionResult
 import cn.chahuyun.economy.constant.EconPerm
-import cn.chahuyun.economy.service.EconomyAccountService
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 
 /**
@@ -74,7 +74,7 @@ object LotteryRules {
         @FromProvider(LotteryProvider.ACTOR) actor: LotteryActor,
     ): ActionResult {
         val draft = context.get(LotteryBetDraft::class) ?: return ActionResult.Continue
-        val balance = EconomyAccountService.walletBalance(actor.user)
+        val balance = EconomyProxy.wallet(actor.user).balanceDouble()
         return if (balance - draft.money <= 0) {
             ActionResult.EndWithMessage("你都穷的叮当响了，还来猜签？")
         } else {

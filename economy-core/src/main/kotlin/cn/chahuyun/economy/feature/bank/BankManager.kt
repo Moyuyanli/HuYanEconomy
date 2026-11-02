@@ -2,10 +2,10 @@ package cn.chahuyun.economy.feature.bank
 
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.feature.user.UserManager
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.bank.BankInfoDto
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.scheduler.HuYanScheduler
-import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.FormatUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.ShareUtils
@@ -88,12 +88,12 @@ private class BankInterestTask(
 
             if (bankInfo.id == 1) {
                 val interest = bankInfo.interest
-                for (entry in EconomyUtil.bankEntries()) {
+                for (entry in EconomyProxy.bankEntries()) {
                     // 账本条目只带账户 ID（u<qq>），按 id 反查用户；查不到的账户直接跳过。
                     val userInfo = UserManager.getUserInfoByAccountId(entry.accountId) ?: continue
                     var v = ShareUtils.rounding(entry.amount.toDouble()) * (interest / 1000.0)
                     v = FormatUtil.round(v, 1)
-                    if (EconomyUtil.plusMoneyToBankForAccount(entry.accountId, v)) {
+                    if (EconomyProxy.userBankById(entry.accountId).adjust(v).success) {
                         userInfo.bankEarnings = v
                         UserManager.saveUserInfo(userInfo)
                     } else {

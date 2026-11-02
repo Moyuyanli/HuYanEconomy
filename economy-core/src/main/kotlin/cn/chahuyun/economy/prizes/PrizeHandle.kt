@@ -2,7 +2,7 @@ package cn.chahuyun.economy.prizes
 
 import cn.chahuyun.economy.constant.PrizeType
 import cn.chahuyun.economy.exception.RaffleException
-import cn.chahuyun.economy.utils.EconomyUtil
+import cn.chahuyun.economy.ledger.EconomyProxy
 import net.mamoe.mirai.Bot
 
 @Suppress("unused")
@@ -27,7 +27,7 @@ object PrizeHandle {
         val groupId = raffleResult.groupId
         val member = Bot.instances.first().getGroup(groupId)?.get(userId) ?: throw RaffleException("兑奖异常")
         val money = prize.metadata["money"] ?: throw RaffleException("兑奖异常,奖金为空!")
-        EconomyUtil.plusMoneyToUser(member, money.toDouble())
+        EconomyProxy.wallet(member).credit(money.toDouble())
     }
 
     @Suppress("UNUSED_PARAMETER")

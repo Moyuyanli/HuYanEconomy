@@ -9,7 +9,7 @@ import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.feature.backpack.BackpackManager
 import cn.chahuyun.economy.feature.sign.SignUsecase.sign
 import cn.chahuyun.economy.feature.user.UserManager
-import cn.chahuyun.economy.ledger.UserWallet
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.service.EconomyAsyncService
@@ -133,17 +133,17 @@ object SignUsecase {
             .orEmpty()
 
         // ---------- 步骤 5：金币入账 ----------
-        // 走新经济接口（BigDecimal + LedgerOp），具体落到 economy-base 还是上游 mirai-economy
+        // 走统一经济代理（BigDecimal + LedgerOp），具体落到 economy-base 还是上游 mirai-economy
         // 由 Config.yml 的 economyBackend 决定，本方法不感知。
         // 账户标识用 userInfo.qq 而不是 userInfo.user：前者不依赖 mirai User 对象，
         // 与账本主键 u<qq> 一一对应，也让这段逻辑可以在没有 mirai 运行时的测试里跑。
-        val wallet = UserWallet()
-        val rewardAmount = UserWallet.money(goldNumber)
-        val credit = wallet.credit(userInfo.qq, rewardAmount, userInfo.name)
+        val rewardAmount = EconomyProxy.money(goldNumber)
+        val wallet = EconomyProxy.wallet(userInfo.qq, userInfo.name)
+        val credit = wallet.credit(rewardAmount)
         if (!credit.success) {
             Log.warning(
                 "签到:金币入账失败（用户 ${userInfo.qq}，金额 ${rewardAmount.toPlainString()}，" +
-                    "后端 ${wallet.backendId}，原因 ${credit.message}）"
+                    "后端 ${EconomyProxy.backendId}，原因 ${credit.message}）"
             )
             subject.sendMessage("签到失败!")
             return null
@@ -160,7 +160,7 @@ object SignUsecase {
         // ---------- 步骤 7：组装回复文案 ----------
         // 同一份文案有两个去处：消息链（图片发不出去时降级用）与图片信息区（逐行绘制）。
         // 余额优先用入账返回的快照（就是入账后的真实值），拿不到才回查一次账本。
-        val moneyByUser: BigDecimal = credit.balance ?: wallet.balance(userInfo.qq)
+        val moneyByUser: BigDecimal = credit.balance ?: wallet.balance()
         val signInfoLines = mutableListOf<String>()
 
         messages.append(PlainText("签到成功!\n"))

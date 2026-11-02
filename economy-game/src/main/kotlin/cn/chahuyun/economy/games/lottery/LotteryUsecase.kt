@@ -7,8 +7,8 @@ import cn.chahuyun.economy.actionchain.annotation.Action
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.constant.EconPerm
 import cn.chahuyun.economy.games.GamesReplySupport
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.LotteryInfoDto
-import cn.chahuyun.economy.service.EconomyAccountService
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 import net.mamoe.mirai.event.events.GroupMessageEvent
@@ -42,7 +42,7 @@ object LotteryUsecase {
         val actor = context.provide(LotteryActor::class, LotteryProvider.ACTOR)
         val bet = context.get(LotteryBet::class) ?: return
 
-        if (!EconomyAccountService.subtractWallet(actor.user, bet.money)) {
+        if (!EconomyProxy.wallet(actor.user).debit(bet.money).success) {
             GamesReplySupport.reply(actor.subject, actor.message, "猜签失败！")
             return
         }

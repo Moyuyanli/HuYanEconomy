@@ -4,6 +4,7 @@ import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.data.repository.PrivateBankRepository
 import cn.chahuyun.economy.feature.bank.BankManager
 import cn.chahuyun.economy.feature.user.UserManager
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.privatebank.*
 import cn.chahuyun.economy.model.user.UserInfoDto
 import cn.chahuyun.economy.utils.*
@@ -91,7 +92,7 @@ object PrivateBankService {
     }
 
     private fun validateBorrowerEligibility(user: User): String? {
-        val wallet = EconomyUtil.getMoneyByUser(user)
+        val wallet = EconomyProxy.wallet(user).balanceDouble()
         if (wallet < 0.0) {
             return "你的钱包余额为负，暂时不能贷款"
         }
@@ -226,7 +227,7 @@ object PrivateBankService {
             return false to "创建失败：你已拥有自己的银行(code=${existingOwnerBank.code})"
         }
 
-        val bankBalance = EconomyUtil.getMoneyByBank(owner)
+        val bankBalance = EconomyProxy.userBank(owner).balanceDouble()
         if (bankBalance < CREATE_THRESHOLD) {
             return false to "创建失败：主银行余额需达到 100,000,000（当前 ${MoneyFormatUtil.format(bankBalance)}）"
         }
@@ -262,7 +263,7 @@ object PrivateBankService {
         if (!PrivateBankLedger.transferFromMainBank(owner, bank.code, PrivateBankLedger.LIQUIDITY_DESC, liquidityPart)) {
             // 回滚准备金划转
             PrivateBankLedger.add(bank.code, PrivateBankLedger.RESERVE_DESC, -reservePart)
-            EconomyUtil.plusMoneyToBank(owner, reservePart)
+            EconomyProxy.userBank(owner).adjust(reservePart)
             return false to "创建失败：启动资金划转流动金失败"
         }
 
@@ -315,8 +316,8 @@ object PrivateBankService {
     fun fund(owner: User, amount: Double, pool: FundingPool): Pair<Boolean, String> {
         if (amount <= 0) return false to "金额必须大于 0"
         val bank = findOwnedActiveBank(owner.id) ?: return false to "你的银行不存在或已经破产"
-        val walletBalance = EconomyUtil.getMoneyByUser(owner)
-        val mainBankBalance = EconomyUtil.getMoneyByBank(owner)
+        val walletBalance = EconomyProxy.wallet(owner).balanceDouble()
+        val mainBankBalance = EconomyProxy.userBank(owner).balanceDouble()
         val source = selectFundingSource(amount, walletBalance, mainBankBalance)
         if (source == null) {
             return false to "补资失败：钱包和主银行均无法单独支付 ${MoneyFormatUtil.format(amount)}" +
@@ -385,7 +386,7 @@ object PrivateBankService {
         }
         if (!debitOk) return false to "撤资失败：资金扣减失败"
 
-        if (!EconomyUtil.plusMoneyToBank(owner, amount)) {
+        if (!EconomyProxy.userBank(owner).adjust(amount).success) {
             when (pool) {
                 FundingPool.RESERVE -> PrivateBankLedger.add(bank.code, PrivateBankLedger.RESERVE_DESC, amount)
                 FundingPool.LIQUIDITY -> PrivateBankLedger.add(bank.code, PrivateBankLedger.LIQUIDITY_DESC, amount)
@@ -445,21 +446,21 @@ object PrivateBankService {
             }
         }
 
-        val wallet = EconomyUtil.getMoneyByUser(user)
+        val wallet = EconomyProxy.wallet(user).balanceDouble()
         if (wallet - amount < 0) return false to "钱包余额不足（当前 ${MoneyFormatUtil.format(wallet)}）"
 
-        if (!EconomyUtil.minusMoneyToUser(user, amount)) {
+        if (!EconomyProxy.wallet(user).debit(amount).success) {
             return false to "存入失败：钱包扣减失败"
         }
 
         val repayment = runCatching { PrivateBankDebtService.repay(bank.code, amount) }.getOrElse {
-            EconomyUtil.plusMoneyToUser(user, amount)
+            EconomyProxy.wallet(user).adjust(amount)
             return false to "存入失败：主银行债务结算失败"
         }
         val depositedAmount = repayment.remainingInput
 
         if (!creditDepositPools(bank.code, depositedAmount)) {
-            if (depositedAmount > 0) EconomyUtil.plusMoneyToUser(user, depositedAmount)
+            if (depositedAmount > 0) EconomyProxy.wallet(user).adjust(depositedAmount)
             val repaid = ShareUtils.rounding(repayment.paidInterest + repayment.paidPrincipal)
             return if (repaid > 0) {
                 refreshRating(bank.code)
@@ -645,13 +646,13 @@ object PrivateBankService {
             remaining = ShareUtils.rounding((remaining - ownerPaid).coerceAtLeast(0.0))
         }
 
-        if (allowEmergencyFunding && remaining > 0.0001 && EconomyUtil.plusMoneyToUser(user, remaining)) {
+        if (allowEmergencyFunding && remaining > 0.0001 && EconomyProxy.wallet(user).adjust(remaining).success) {
             val debtSaved = runCatching { PrivateBankDebtService.addPrincipal(bank.code, remaining) }.isSuccess
             if (debtSaved) {
                 mainBankLoanPaid = remaining
                 remaining = 0.0
             } else {
-                EconomyUtil.minusMoneyToUser(user, remaining)
+                EconomyProxy.wallet(user).debit(remaining)
             }
         }
 
@@ -691,9 +692,12 @@ object PrivateBankService {
 
     private fun payFromOwnerMainBank(bank: PrivateBankDto, user: User, requested: Double): Double {
         val accountId = UserManager.getUserInfo(bank.ownerQq)?.id?.takeIf { it.isNotBlank() } ?: return 0.0
-        val amount = EconomyUtil.getMoneyByBankForAccount(accountId).coerceAtLeast(0.0).coerceAtMost(requested)
+        val amount = EconomyProxy.userBankById(accountId).balanceDouble().coerceAtLeast(0.0).coerceAtMost(requested)
         if (amount <= 0.0001) return 0.0
-        return if (EconomyUtil.turnBankAccountToUserWallet(accountId, user, amount)) amount else 0.0
+        return if (EconomyProxy.userBankById(accountId)
+                .transferTo(EconomyProxy.wallet(user), amount)
+                .success
+        ) amount else 0.0
     }
 
     private data class LedgerCleanupEntry(
@@ -721,9 +725,9 @@ object PrivateBankService {
         return cleanupLedgerEntries.any { entry ->
             val accountId = entry.accountId(code)
             if (entry.global) {
-                EconomyUtil.getMoneyByBankFromId(accountId, entry.description) > 0.0001
+                EconomyProxy.global(accountId, entry.description).balanceDouble() > 0.0001
             } else {
-                EconomyUtil.getMoneyFromPluginBankForId(accountId, entry.description) > 0.0001
+                EconomyProxy.plugin(accountId, entry.description).balanceDouble() > 0.0001
             }
         }
     }
@@ -763,24 +767,24 @@ object PrivateBankService {
         for (entry in cleanupLedgerEntries) {
             val accountId = entry.accountId(code)
             val amount = if (entry.global) {
-                EconomyUtil.getMoneyByBankFromId(accountId, entry.description)
+                EconomyProxy.global(accountId, entry.description).balanceDouble()
             } else {
-                EconomyUtil.getMoneyFromPluginBankForId(accountId, entry.description)
+                EconomyProxy.plugin(accountId, entry.description).balanceDouble()
             }
             if (abs(amount) <= 0.0001) continue
 
             val ok = if (entry.global) {
-                EconomyUtil.plusMoneyToBankFromId(accountId, entry.description, -amount)
+                EconomyProxy.global(accountId, entry.description).adjust(-amount).success
             } else {
-                EconomyUtil.plusMoneyToPluginBankForId(accountId, entry.description, -amount)
+                EconomyProxy.plugin(accountId, entry.description).adjust(-amount).success
             }
             if (!ok) {
                 cleared.forEach { (clearedEntry, clearedAmount) ->
                     val clearedAccountId = clearedEntry.accountId(code)
                     if (clearedEntry.global) {
-                        EconomyUtil.plusMoneyToBankFromId(clearedAccountId, clearedEntry.description, clearedAmount)
+                        EconomyProxy.global(clearedAccountId, clearedEntry.description).adjust(clearedAmount)
                     } else {
-                        EconomyUtil.plusMoneyToPluginBankForId(clearedAccountId, clearedEntry.description, clearedAmount)
+                        EconomyProxy.plugin(clearedAccountId, clearedEntry.description).adjust(clearedAmount)
                     }
                 }
                 return false to "清理失败：${entry.label} 扣减失败，已尝试回滚"
@@ -852,15 +856,15 @@ object PrivateBankService {
     private fun migrateLedger(oldCode: String, newCode: String, description: String) {
         val oldAccountId = PrivateBankLedger.accountId(oldCode, description)
         val newAccountId = PrivateBankLedger.accountId(newCode, description)
-        val amount = EconomyUtil.getMoneyFromPluginBankForId(oldAccountId, description)
+        val amount = EconomyProxy.plugin(oldAccountId, description).balanceDouble()
         if (amount <= 0.0001) return
 
-        val debitOk = EconomyUtil.plusMoneyToPluginBankForId(oldAccountId, description, -amount)
+        val debitOk = EconomyProxy.plugin(oldAccountId, description).adjust(-amount).success
         if (!debitOk) error("迁移旧账本失败: $oldCode/$description")
 
-        val creditOk = EconomyUtil.plusMoneyToPluginBankForId(newAccountId, description, amount)
+        val creditOk = EconomyProxy.plugin(newAccountId, description).adjust(amount).success
         if (!creditOk) {
-            EconomyUtil.plusMoneyToPluginBankForId(oldAccountId, description, amount)
+            EconomyProxy.plugin(oldAccountId, description).adjust(amount)
             error("迁移新账本失败: $newCode/$description")
         }
     }
@@ -1077,11 +1081,11 @@ object PrivateBankService {
         val credit = plan.moves.firstOrNull { it.description == PrivateBankLedger.INVENTORY_DESC && it.amount > 0 }
             ?: return false
 
-        if (!EconomyUtil.minusMoneyToUser(owner, total)) {
+        if (!EconomyProxy.wallet(owner).debit(total).success) {
             return false
         }
         if (!PrivateBankLedger.add(bankCode, credit.description, credit.amount)) {
-            EconomyUtil.plusMoneyToUser(owner, total)
+            EconomyProxy.wallet(owner).adjust(total)
             return false
         }
         return true
@@ -1375,7 +1379,7 @@ object PrivateBankService {
             if (liquidity < total) return false to freezePlan.requiredBalanceError
             freezeLoanFundsFromLiquidity(bank.code, freezePlan)
         } else {
-            val ownerWallet = EconomyUtil.getMoneyByUser(owner)
+            val ownerWallet = EconomyProxy.wallet(owner).balanceDouble()
             if (ownerWallet < total) return false to freezePlan.requiredBalanceError
             freezeLoanFundsFromOwnerWallet(owner, bank.code, total, freezePlan)
         }
@@ -1483,19 +1487,19 @@ object PrivateBankService {
 
         // 还款优先从钱包扣，不足时再从主银行扣。
         var remaining = pay
-        val wallet = EconomyUtil.getMoneyByUser(user)
+        val wallet = EconomyProxy.wallet(user).balanceDouble()
         val takeWallet = wallet.coerceAtMost(remaining)
         if (takeWallet > 0) {
-            if (!EconomyUtil.minusMoneyToUser(user, takeWallet)) return false to "扣款失败"
+            if (!EconomyProxy.wallet(user).debit(takeWallet).success) return false to "扣款失败"
             remaining -= takeWallet
         }
         if (remaining > 0) {
-            val bank = EconomyUtil.getMoneyByBank(user)
+            val bank = EconomyProxy.userBank(user).balanceDouble()
             val takeBank = bank.coerceAtMost(remaining)
             if (takeBank > 0) {
-                if (!EconomyUtil.plusMoneyToBank(user, -takeBank)) {
+                if (!EconomyProxy.userBank(user).adjust(-takeBank).success) {
                     // 回滚钱包扣款
-                    if (takeWallet > 0) EconomyUtil.plusMoneyToUser(user, takeWallet)
+                    if (takeWallet > 0) EconomyProxy.wallet(user).adjust(takeWallet)
                     return false to "扣款失败"
                 }
                 remaining -= takeBank
@@ -1566,19 +1570,19 @@ object PrivateBankService {
 
             // 优先从主银行扣款，再从钱包扣款。
             var remaining = outstanding
-            val bankBal = EconomyUtil.getMoneyByBank(borrower)
+            val bankBal = EconomyProxy.userBank(borrower).balanceDouble()
             val takeBank = bankBal.coerceAtMost(remaining)
             if (takeBank > 0) {
-                if (EconomyUtil.plusMoneyToBank(borrower, -takeBank)) {
+                if (EconomyProxy.userBank(borrower).adjust(-takeBank).success) {
                     remaining -= takeBank
                 }
             }
 
             if (remaining > 0) {
-                val walletBal = EconomyUtil.getMoneyByUser(borrower)
+                val walletBal = EconomyProxy.wallet(borrower).balanceDouble()
                 val takeWallet = walletBal.coerceAtMost(remaining)
                 if (takeWallet > 0) {
-                    if (EconomyUtil.minusMoneyToUser(borrower, takeWallet)) {
+                    if (EconomyProxy.wallet(borrower).debit(takeWallet).success) {
                         remaining -= takeWallet
                     }
                 }

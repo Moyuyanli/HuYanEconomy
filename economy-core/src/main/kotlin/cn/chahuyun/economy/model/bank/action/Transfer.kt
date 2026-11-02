@@ -1,7 +1,7 @@
 package cn.chahuyun.economy.model.bank.action
 
 import cn.chahuyun.economy.feature.privatebank.PrivateBankService
-import cn.chahuyun.economy.utils.EconomyUtil
+import cn.chahuyun.economy.ledger.EconomyProxy
 import net.mamoe.mirai.contact.User
 
 /**
@@ -24,9 +24,9 @@ class Transfer(originUser: User, private val toUser: User, private val money: In
             throw Exception("不能给自己转帐")
         } else if (PrivateBankService.hasUnrepaidLoans(currentUser.id)) {
             throw Exception("你还有未还贷款，暂时不能转账")
-        } else if (EconomyUtil.getMoneyByUser(currentUser) < money) {
+        } else if (EconomyProxy.wallet(currentUser).balanceDouble() < money) {
             throw Exception("余额不足")
         }
-        EconomyUtil.turnUserToUser(currentUser, toUser, money.toDouble())
+        EconomyProxy.wallet(currentUser).transferTo(EconomyProxy.wallet(toUser), money.toDouble())
     }
 }

@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
  * 经济后端的类加载隔离约束。
  *
  * 需求是"mirai-economy 可选"：上游插件未安装时，插件必须能正常启动。只要
- * `EconomyUtil` / `BaseLedger` / `EconomyLedgerProvider` 的常量池里出现上游类型，
+ * `EconomyProxy` / `BaseLedger` / `EconomyLedgerProvider` 的常量池里出现上游类型，
  * 这些类在未装上游的环境里就会抛 `NoClassDefFoundError`，所以这里直接扫描 class
  * 文件常量池做静态把关，防止以后有人在门面里顺手 import 上游类型。
  */
@@ -25,7 +25,8 @@ class LedgerIsolationTest {
     @Test
     fun `economic facade and default backend must not reference upstream plugin`() {
         listOf(
-            "cn/chahuyun/economy/utils/EconomyUtil.class",
+            "cn/chahuyun/economy/ledger/EconomyProxy.class",
+            "cn/chahuyun/economy/ledger/EconomyProxy\$Account.class",
             "cn/chahuyun/economy/base/ledger/BaseLedger.class",
             "cn/chahuyun/economy/base/ledger/EconomyLedger.class",
             "cn/chahuyun/economy/ledger/EconomyLedgerProvider.class",

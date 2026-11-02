@@ -5,9 +5,9 @@ import cn.chahuyun.economy.actionchain.annotation.Before
 import cn.chahuyun.economy.actionchain.annotation.FromProvider
 import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.actionchain.runtime.ActionResult
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.title.TitleTemplate
 import cn.chahuyun.economy.plugin.TitleTemplateManager
-import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil
 
@@ -61,7 +61,7 @@ object TitleRules {
             ?: return ActionResult.EndWithMessage("该称号当前不可购买")
 
         // 步骤 4：余额校验——必须在扣款之前拦截，动作里不再重复判断。
-        val moneyByUser = EconomyUtil.getMoneyByUser(actor.user)
+        val moneyByUser = EconomyProxy.wallet(actor.user).balanceDouble()
         if (moneyByUser < price) {
             return ActionResult.EndWithMessage(
                 "你的金币不够 ${MoneyFormatUtil.format(price)} ,无法购买 ${template.titleName} 称号!"

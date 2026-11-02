@@ -10,6 +10,7 @@ import cn.chahuyun.economy.image.PrivateBankInfoImageRenderer
 import cn.chahuyun.economy.image.model.BankInfoFundLine
 import cn.chahuyun.economy.image.model.BankInfoLoanLine
 import cn.chahuyun.economy.image.model.PrivateBankInfoCard
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.privatebank.PrivateBankDto
 import cn.chahuyun.economy.model.privatebank.PrivateBankLoanDto
 import cn.chahuyun.economy.model.privatebank.PrivateBankLoanOfferDto
@@ -290,7 +291,7 @@ object PrivateBankUsecase {
         val liquidity = PrivateBankLedger.balance(bank.code, PrivateBankLedger.LIQUIDITY_DESC)
         val inventory = PrivateBankLedger.balance(bank.code, PrivateBankLedger.INVENTORY_DESC)
         val ownerBankBalance = resolveUser(subject, bank.ownerQq)
-            ?.let { EconomyUtil.getMoneyByBank(it) }
+            ?.let { EconomyProxy.userBank(it).balanceDouble() }
             ?: 0.0
         val govBondPrincipal = PrivateBankRepository.listBondHoldings(bank.code)
             .filter { it.redeemedAt == 0L }

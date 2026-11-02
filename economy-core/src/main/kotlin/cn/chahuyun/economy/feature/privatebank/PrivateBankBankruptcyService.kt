@@ -3,10 +3,10 @@ package cn.chahuyun.economy.feature.privatebank
 import cn.chahuyun.economy.data.proxy.EntityProxyRegistry
 import cn.chahuyun.economy.data.repository.PrivateBankRepository
 import cn.chahuyun.economy.feature.user.UserManager
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.privatebank.PrivateBankDto
 import cn.chahuyun.economy.model.privatebank.PrivateBankLoanDto
 import cn.chahuyun.economy.model.user.UserInfoDto
-import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.ShareUtils
 
@@ -135,16 +135,16 @@ object PrivateBankBankruptcyService {
             ?: error("破产清算失败：无法解析行长账户 owner=${bank.ownerQq}")
         val (walletShare, bankShare) = ownerDebtShares(amount)
 
-        if (!EconomyUtil.plusMoneyToWalletForAccount(accountId, -walletShare)) {
+        if (!EconomyProxy.walletById(accountId).adjust(-walletShare).success) {
             error("破产清算失败：行长钱包债务转移失败")
         }
-        if (!EconomyUtil.plusMoneyToBankForAccount(accountId, -bankShare)) {
-            EconomyUtil.plusMoneyToWalletForAccount(accountId, walletShare)
+        if (!EconomyProxy.userBankById(accountId).adjust(-bankShare).success) {
+            EconomyProxy.walletById(accountId).credit(walletShare)
             error("破产清算失败：行长主银行债务转移失败")
         }
         runCatching { PrivateBankDebtService.repay(bank.code, amount, now) }.getOrElse {
-            EconomyUtil.plusMoneyToWalletForAccount(accountId, walletShare)
-            EconomyUtil.plusMoneyToBankForAccount(accountId, bankShare)
+            EconomyProxy.walletById(accountId).credit(walletShare)
+            EconomyProxy.userBankById(accountId).credit(bankShare)
             throw it
         }
     }

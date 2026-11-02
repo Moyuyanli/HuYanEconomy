@@ -12,9 +12,9 @@ import cn.chahuyun.economy.game.GameOverviewBridge
 import cn.chahuyun.economy.image.PersonalInfoImageRenderer
 import cn.chahuyun.economy.image.model.BankDepositLine
 import cn.chahuyun.economy.image.model.PersonalInfoCard
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.user.*
 import cn.chahuyun.economy.utils.DateUtil
-import cn.chahuyun.economy.utils.EconomyUtil
 import cn.chahuyun.economy.utils.FormatUtil
 import cn.chahuyun.economy.utils.Log
 import cn.chahuyun.economy.utils.MoneyFormatUtil.toMoneyFormat
@@ -153,7 +153,7 @@ object UserManager {
             nicknameGradient = nicknameColors.third,
             signTime = signTime,
             signDays = "${userInfo.signNumber} 天",
-            wallet = EconomyUtil.getMoneyByUser(user).toMoneyFormat(),
+            wallet = EconomyProxy.wallet(user).balanceDouble().toMoneyFormat(),
             signEarnings = userInfo.signEarnings.toMoneyFormat(),
             bankEarnings = userInfo.bankEarnings.toMoneyFormat(),
             location = getLocationText(userInfo),
@@ -207,7 +207,7 @@ object UserManager {
     private fun getBankDepositLines(user: User): List<BankDepositLine> {
         val lines = mutableListOf<BankDepositLine>()
 
-        val mainBankMoney = EconomyUtil.getMoneyByBank(user)
+        val mainBankMoney = EconomyProxy.userBank(user).balanceDouble()
         val mainBankInterest = BankManager.getBankInfo(1)?.interest ?: 0
         lines += BankDepositLine(
             "主银行",

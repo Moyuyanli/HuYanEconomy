@@ -5,6 +5,7 @@ import cn.chahuyun.economy.actionchain.runtime.ActionContext
 import cn.chahuyun.economy.constant.UserLocation
 import cn.chahuyun.economy.feature.backpack.BackpackManager
 import cn.chahuyun.economy.feature.user.UserManager
+import cn.chahuyun.economy.ledger.EconomyProxy
 import cn.chahuyun.economy.model.props.PropsCard
 import cn.chahuyun.economy.utils.*
 import cn.hutool.core.date.DateUnit
@@ -157,7 +158,7 @@ object UserStatusUsecase {
             builder.add(MessageUtil.formatMessage("你出院了！这次只掏了${MoneyFormatUtil.format(real)}的医药费！"))
         }
 
-        if (EconomyUtil.minusMoneyToUser(user, real)) {
+        if (EconomyProxy.wallet(user).debit(real).success) {
             group.sendMessage(builder.build())
             UserStatusManager.moveHome(userInfo)
         } else {

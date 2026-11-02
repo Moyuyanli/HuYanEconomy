@@ -1,8 +1,14 @@
 package cn.chahuyun.economy.feature.privatebank
 
-import cn.chahuyun.economy.utils.EconomyUtil
+import cn.chahuyun.economy.ledger.EconomyProxy
 import net.mamoe.mirai.contact.User
 
+/**
+ * 私人银行账本：把「银行 code + 资金池」翻译成插件私有账户。
+ *
+ * 账户标识规则（[accountId]）保持不变，读写统一走 [EconomyProxy]，金额精度由代理层抹平；
+ * 本类只负责资金池语义与失败补偿。
+ */
 object PrivateBankLedger {
     const val RESERVE_DESC = "pb-reserve"
     const val LIQUIDITY_DESC = "pb-liquidity"
@@ -17,12 +23,16 @@ object PrivateBankLedger {
         }
     }
 
+    /** 资金池账户句柄；[description] 只作展示，账户身份由 [accountId] 决定。 */
+    fun account(bankCode: String, description: String): EconomyProxy.Account =
+        EconomyProxy.plugin(accountId(bankCode, description), description)
+
     fun balance(bankCode: String, description: String): Double {
-        return EconomyUtil.getMoneyFromPluginBankForId(accountId(bankCode, description), description)
+        return account(bankCode, description).balanceDouble()
     }
 
     fun add(bankCode: String, description: String, amount: Double): Boolean {
-        return EconomyUtil.plusMoneyToPluginBankForId(accountId(bankCode, description), description, amount)
+        return account(bankCode, description).adjust(amount).success
     }
 
     fun debit(bankCode: String, description: String, amount: Double): Boolean {
@@ -32,21 +42,21 @@ object PrivateBankLedger {
     }
 
     fun transferFromMainBank(user: User, bankCode: String, description: String, amount: Double): Boolean {
-        return EconomyUtil.turnUserGlobalBankToPluginBankForId(user, accountId(bankCode, description), description, amount)
+        return EconomyProxy.userBank(user).transferTo(account(bankCode, description), amount).success
     }
 
     fun transferFromWallet(user: User, bankCode: String, description: String, amount: Double): Boolean {
         if (amount <= 0) return false
-        if (!EconomyUtil.minusMoneyToUser(user, amount)) return false
+        if (!EconomyProxy.wallet(user).debit(amount).success) return false
         if (add(bankCode, description, amount)) return true
-        EconomyUtil.plusMoneyToUser(user, amount)
+        EconomyProxy.wallet(user).credit(amount)
         return false
     }
 
     fun transferToWallet(bankCode: String, description: String, user: User, amount: Double): Boolean {
         if (amount <= 0) return false
         if (!debit(bankCode, description, amount)) return false
-        if (EconomyUtil.plusMoneyToUser(user, amount)) return true
+        if (EconomyProxy.wallet(user).credit(amount).success) return true
         add(bankCode, description, amount)
         return false
     }
@@ -54,7 +64,7 @@ object PrivateBankLedger {
     fun transferToMainBank(bankCode: String, description: String, user: User, amount: Double): Boolean {
         if (amount <= 0) return false
         if (!debit(bankCode, description, amount)) return false
-        if (EconomyUtil.plusMoneyToBank(user, amount)) return true
+        if (EconomyProxy.userBank(user).adjust(amount).success) return true
         add(bankCode, description, amount)
         return false
     }
