@@ -1,5 +1,7 @@
 package cn.chahuyun.economy.ledger
 
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -41,6 +43,43 @@ class LedgerIsolationTest {
         assertTrue(
             containsUpstream("cn/chahuyun/economy/ledger/LegacyEconomyApi.class"),
             "LegacyEconomyApi 是上游实现的唯一载体，应包含上游引用",
+        )
+    }
+
+    /**
+     * 全量兜底：扫 `economy-core` 编译产物里所有 class 的常量池，除**适配层白名单**外
+     * 不允许出现上游类型。
+     *
+     * 白名单只有 `ledger/` 下的三个适配类（含其嵌套类），它们只会在
+     * [EconomyLedgerProvider] 探测到上游插件后才被加载；其余任何类——尤其是业务
+     * `feature/` 与 `model/`——一旦引用上游，就会在「未安装 mirai-economy」的环境里
+     * 抛 `NoClassDefFoundError`，插件直接起不来。
+     */
+    @Test
+    fun `only ledger adapter classes may reference upstream plugin`() {
+        val allowedPrefixes = listOf(
+            "ledger/LegacyEconomyApi",
+            "ledger/MiraiEconomyLedger",
+            "ledger/MiraiEconomyProbe",
+        )
+        // 锚定 `main` 的编译产物：测试类自身含上游包名字面量，不能纳入扫描范围。
+        val anchor = javaClass.classLoader.getResource("cn/chahuyun/economy/ledger/EconomyProxy.class")
+            ?: error("找不到 economy-core 的 class 输出目录")
+        val ledgerDir = Path.of(anchor.toURI()).parent ?: error("无法解析 ledger 目录: $anchor")
+        val root = ledgerDir.parent ?: error("无法解析 economy 根包目录: $ledgerDir")
+        val offenders = Files.walk(root).use { stream ->
+            stream.filter { it.toString().endsWith(".class") }
+                .filter { classFile ->
+                    val relative = root.relativize(classFile).toString().replace('\\', '/')
+                    allowedPrefixes.none { relative.startsWith(it) } &&
+                        Files.readAllBytes(classFile).toString(Charsets.ISO_8859_1).contains(upstreamMarker)
+                }
+                .map { root.relativize(it).toString() }
+                .toList()
+        }
+        assertTrue(
+            offenders.isEmpty(),
+            "以下类引用了 $upstreamMarker，应改走 EconomyProxy:\n${offenders.joinToString("\n")}",
         )
     }
 

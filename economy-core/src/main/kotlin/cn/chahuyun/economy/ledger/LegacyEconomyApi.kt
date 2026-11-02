@@ -1,6 +1,5 @@
 package cn.chahuyun.economy.ledger
 
-import cn.chahuyun.economy.model.currency.GoldEconomyCurrency
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.utils.Log
 import net.mamoe.mirai.contact.User
@@ -14,7 +13,7 @@ import xyz.cssxsh.mirai.economy.service.*
  * 本文件是插件里唯一直接依赖 `xyz.cssxsh.mirai.economy` 的资金实现处，上游插件未安装时
  * 不能触碰本文件的任何成员（否则会抛 `NoClassDefFoundError`）。
  *
- * 业务代码请使用 `EconomyUtil` 门面或 [cn.chahuyun.economy.base.ledger.EconomyLedger]。
+ * 业务代码请使用 [cn.chahuyun.economy.ledger.EconomyProxy] 或 [cn.chahuyun.economy.base.ledger.EconomyLedger]。
  *
  * mirai-economy 区分 custom/global 两类上下文：
  * - custom(EconomyRuntime.plugin)：插件私有账户。**当前布局只用这个上下文**，
@@ -822,5 +821,17 @@ internal object LegacyEconomyApi {
             Log.error("经济转移出错:用户", e)
             false
         }
+    }
+
+    /**
+     * 金币货币模型（上游 `EconomyCurrency` 的实现）。
+     *
+     * 刻意内嵌在本对象里、声明为 `private`：上游类型只允许出现在这一个适配层文件里。
+     * 一旦有人把它挪到 `model/` 或业务包，`LedgerIsolationTest` 的全量常量池扫描就会失败。
+     */
+    private class GoldEconomyCurrency : EconomyCurrency {
+        override val id: String = "hy-gold"
+        override val name: String = "金币"
+        override val description: String = "壶言经济金币"
     }
 }
