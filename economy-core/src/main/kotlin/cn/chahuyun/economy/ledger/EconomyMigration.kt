@@ -15,7 +15,18 @@ import java.math.BigDecimal
  */
 object EconomyMigration {
 
-    /** 单次搬迁的统计结果。 */
+    /**
+     * 单次搬迁的统计结果。
+     *
+     * @property dryRun 是否试运行（`true` 时 [written] 只是"将会写入"的数量，库里没有变化）
+     * @property scanned 源账本扫描到的非零条目数（零余额条目在搬运前已过滤）
+     * @property written 实际（或试运行时预计）写入的目标条目数
+     * @property skippedExisting 因目标已有余额而跳过的条目数，只在 `migrate` 的幂等规则下非零
+     * @property failed 写入失败的条目数；失败明细最多保留 3 条在 [lines] 里，避免刷屏
+     * @property sourceTotal 源账本扫描到的金额合计（含负数债务）
+     * @property writtenTotal 成功写入的金额合计；与 [sourceTotal] 的差额即"跳过 + 失败"部分
+     * @property lines 逐分类的明细行，供 `hye economy migrate` 直接回显
+     */
     data class MigrationReport(
         val dryRun: Boolean,
         val scanned: Int,
@@ -26,6 +37,7 @@ object EconomyMigration {
         val writtenTotal: BigDecimal,
         val lines: List<String>,
     ) {
+        /** 渲染成聊天可读的多行文本；[direction] 是展示用的方向名（如 `mirai-economy → economy-base`）。 */
         fun format(direction: String): String = buildString {
             appendLine("经济账本搬迁（$direction）${if (dryRun) "【试运行，未写库】" else ""}")
             appendLine("扫描条目=$scanned，写入=$written，目标已存在跳过=$skippedExisting，失败=$failed")
@@ -34,7 +46,15 @@ object EconomyMigration {
         }.trimEnd()
     }
 
-    /** 两套账本当前的总额与条目数。 */
+    /**
+     * 两套账本当前的总额与条目数，供 `hye economy status` 展示。
+     *
+     * 输出三段：当前生效后端 + 配置项、`economy-base` 四个分类、mirai 的两种布局
+     * （当前布局与历史布局）。历史布局若有非零余额会额外提示——那意味着还没执行
+     * `migrate`，此时切到 mirai 后端会读到空账户。
+     *
+     * 上游不可用时只打印 `economy-base` 部分，不抛异常（状态查询必须永远能出结果）。
+     */
     fun status(): String = buildString {
         val base = BaseLedger
         val active = EconomyLedgerProvider.currentOrNull
@@ -110,6 +130,9 @@ object EconomyMigration {
 
     /**
      * 搬运主流程。
+     *
+     * 写入统一用 `target.adjust(amount)` 而不是 `add`：源余额可能为负（债务），
+     * `adjust` 的负数分支才能把它原样搬过去，`add` 会因"金额必须为正"被拒。
      *
      * @param skipZeroTarget true 时目标余额必须为 0 才写入（migrate 的幂等规则）；
      *                       export-base 沿用上游"累加"语义，不做该限制
@@ -188,6 +211,13 @@ object EconomyMigration {
         )
     }
 
+    /**
+     * 账本分类 → 位置。
+     *
+     * 迁移是"按分类遍历"的：源端只给出 `(accountId, amount)`，要落到目标端必须还原成
+     * 具体位置，否则会被写进错误的 Scope。这里的映射必须与 `BaseLedger` /
+     * `MiraiAccountId` 的分类口径保持一致。
+     */
     private fun owner(book: LedgerBook, accountId: String): LedgerOwner = when (book) {
         LedgerBook.WALLET -> LedgerOwner.Wallet(accountId)
         LedgerBook.USER_BANK -> LedgerOwner.UserBank(accountId)
@@ -195,6 +225,7 @@ object EconomyMigration {
         LedgerBook.GLOBAL -> LedgerOwner.GlobalAccount(accountId)
     }
 
+    /** 金额合计；含负数（债务），因此不能用"取绝对值再相加"的写法。 */
     private fun sum(entries: List<LedgerEntry>): BigDecimal =
         entries.fold(BigDecimal.ZERO) { acc, entry -> acc + entry.amount }
 }

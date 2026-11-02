@@ -1,10 +1,6 @@
 package cn.chahuyun.economy.ledger
 
-import cn.chahuyun.economy.base.ledger.EconomyLedger
-import cn.chahuyun.economy.base.ledger.LedgerBook
-import cn.chahuyun.economy.base.ledger.LedgerEntry
-import cn.chahuyun.economy.base.ledger.LedgerOp
-import cn.chahuyun.economy.base.ledger.LedgerOwner
+import cn.chahuyun.economy.base.ledger.*
 import cn.chahuyun.economy.runtime.EconomyRuntime
 import cn.chahuyun.economy.utils.Log
 import java.math.BigDecimal
@@ -129,6 +125,12 @@ internal class MiraiEconomyLedger(
         }
     }.getOrElse { emptyList() }
 
+    /**
+     * 当前布局的分类枚举：扫一遍 `custom` 上下文全部余额，再按 id 后缀归类。
+     *
+     * 上游没有"按类型查账户"的 API，只能全量拉一次余额表在内存里分桶；账户量级千级，
+     * 可接受，但**不要放进热路径循环**（每次调用都会拉全量）。
+     */
     private fun entriesBySuffix(book: LedgerBook): List<LedgerEntry> =
         balanceMap(custom = true).asSequence()
             .mapNotNull { (rawId, balance) ->
@@ -142,6 +144,15 @@ internal class MiraiEconomyLedger(
             .sortedBy { it.accountId }
             .toList()
 
+    /**
+     * 历史布局的分类枚举：靠"上下文 + id 形态"区分，而不是后缀。
+     *
+     * - 上下文：`WALLET` / `PLUGIN` 在 `custom`，`USER_BANK` / `GLOBAL` 在 `global`；
+     * - 形态：`WALLET` / `USER_BANK` 只取 `u<qq>`，`PLUGIN` / `GLOBAL` 只取非 `u<qq>`
+     *   （历史数据里自定义账户名没有统一前缀，只能靠排除法）。
+     *
+     * 这条规则只服务迁移读取，与运行时路径无关。
+     */
     private fun entriesByContext(book: LedgerBook): List<LedgerEntry> {
         val custom = book == LedgerBook.WALLET || book == LedgerBook.PLUGIN
         val onlyUser = book == LedgerBook.WALLET || book == LedgerBook.USER_BANK
@@ -152,6 +163,16 @@ internal class MiraiEconomyLedger(
             .toList()
     }
 
+    /**
+     * 增减的共同实现。
+     *
+     * 上游 `plusAssign` / `minusAssign` 是"直接改"语义：**本层不预检余额**，
+     * 扣款是否被拦成负余额取决于上游实现，因此 mirai 后端下 `debit` 的"不透支"保证
+     * 弱于 `BaseLedger`。需要强保证的场景（贷款、竞拍）应在业务层先读余额，
+     * 或直接使用 economy-base 后端。
+     *
+     * 唯一在这里挡掉的是非正金额（上游对负数没有统一语义，`minusAssign(-x)` 等于加钱）。
+     */
     private fun mutate(owner: LedgerOwner, amount: BigDecimal, plus: Boolean): LedgerOp {
         if (amount.signum() <= 0) return LedgerOp.fail("INVALID_AMOUNT")
         return runCatching {
@@ -172,6 +193,12 @@ internal class MiraiEconomyLedger(
         }.getOrElse { LedgerOp.fail(it.message) }
     }
 
+    /**
+     * 拉取一个上下文的余额快照：`uuid -> 金币余额`。
+     *
+     * `use { }` 保证上下文句柄释放——上游的 `EconomyContext` 持有缓存与锁，
+     * 忘记关闭会在并发下表现为卡死。
+     */
     private fun balanceMap(custom: Boolean): Map<String, Double> {
         val service = LegacyEconomyApi.economyService
         val context = if (custom) service.custom(EconomyRuntime.plugin) else service.global()
@@ -183,6 +210,12 @@ internal class MiraiEconomyLedger(
         }
     }
 
+    /**
+     * 功能性自检：金币货币是否已注册进上游的 `basket`。
+     *
+     * 只探类存在（[MiraiEconomyProbe]）不够——类在但插件未 enable 时货币没注册，
+     * 之后所有读写都会落空，因此在 [start] 里做一次真实状态检查。
+     */
     private fun healthCheck(): Boolean = runCatching {
         LegacyEconomyApi.economyService.basket.containsKey(LegacyEconomyApi.CURRENCY_GOLD.id)
     }.getOrElse { false }
@@ -207,20 +240,28 @@ internal class MiraiEconomyLedger(
         }
     }
 
-    /** 解析上游账户坐标：账户 id、展示名、是否走 global 上下文。 */
+    /** 解析上游账户坐标：账户 id、展示名、是否走 global 上下文。两种布局的差别只在 id 与上下文。 */
     private fun resolve(owner: LedgerOwner): Target = when (layout) {
         Layout.SCOPE_SUFFIX -> Target(MiraiAccountId.encode(owner), displayName(owner), global = false)
         Layout.LEGACY_CONTEXT -> Target(MiraiAccountId.rawId(owner), displayName(owner), global = isGlobalOwner(owner))
     }
 
+    /** 历史布局下，主银行与全局池在 `global` 上下文；当前布局恒为 `false`。 */
     private fun isGlobalOwner(owner: LedgerOwner): Boolean =
         owner is LedgerOwner.UserBank || owner is LedgerOwner.GlobalAccount
 
+    /**
+     * 取上游账户的展示名（`EconomyAccountRecord.description`）。
+     *
+     * 上游该字段是**可变**的且会被覆盖写，传 `null` 时会被上游置成空串，因此能拿到昵称
+     * 时尽量传；插件账户没有稳定展示名，一律传 `null`（身份只靠 id）。
+     */
     private fun displayName(owner: LedgerOwner): String? = when (owner) {
         is LedgerOwner.Wallet -> owner.displayName
         is LedgerOwner.UserBank -> owner.displayName
         else -> null
     }
 
+    /** 上游账户坐标：id 已经被编码（当前布局带后缀），[global] 只在历史布局为 `true`。 */
     private data class Target(val id: String, val description: String?, val global: Boolean)
 }

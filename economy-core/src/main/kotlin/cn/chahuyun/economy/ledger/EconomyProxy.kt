@@ -1,10 +1,18 @@
 package cn.chahuyun.economy.ledger
 
-import cn.chahuyun.economy.base.ledger.EconomyLedger
-import cn.chahuyun.economy.base.ledger.LedgerBook
-import cn.chahuyun.economy.base.ledger.LedgerEntry
-import cn.chahuyun.economy.base.ledger.LedgerOp
-import cn.chahuyun.economy.base.ledger.LedgerOwner
+import cn.chahuyun.economy.base.ledger.*
+import cn.chahuyun.economy.ledger.EconomyProxy.backend
+import cn.chahuyun.economy.ledger.EconomyProxy.bankEntries
+import cn.chahuyun.economy.ledger.EconomyProxy.bankTotal
+import cn.chahuyun.economy.ledger.EconomyProxy.global
+import cn.chahuyun.economy.ledger.EconomyProxy.money
+import cn.chahuyun.economy.ledger.EconomyProxy.plugin
+import cn.chahuyun.economy.ledger.EconomyProxy.useBackend
+import cn.chahuyun.economy.ledger.EconomyProxy.userBank
+import cn.chahuyun.economy.ledger.EconomyProxy.userBankById
+import cn.chahuyun.economy.ledger.EconomyProxy.wallet
+import cn.chahuyun.economy.ledger.EconomyProxy.walletById
+import cn.chahuyun.economy.ledger.EconomyProxy.walletId
 import net.mamoe.mirai.contact.User
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -54,13 +62,36 @@ import java.math.RoundingMode
  * ## 精度与账户编码
  * [money] 与 [walletId] 是本项目唯一的两个转换入口：业务层不要手写 `"u$qq"`、
  * 也不要用 `BigDecimal.valueOf` 直接拼金额。
+ *
+ * ## 使用约束
+ * - **句柄无状态**：[Account] 不缓存余额，`balance()` 每次都查库；需要"读一次用多次"时
+ *   自己接住返回值，不要反复调用。
+ * - **不做业务校验**：代理只管资金增减，不判断"这个人能不能付""这个账户是否冻结"，
+ *   那些属于 feature 层的 Rules。
+ * - **不组合原子性**：`a.debit(x); b.credit(x)` 不是一次原子操作，需要严格的跨账户语义时
+ *   用 [Account.transferTo]（base 后端单事务）而不是两步调用。
+ * - **不要在热路径上做聚合**：[bankEntries] / [bankTotal] 是全表读，只给对账与排行用。
+ *
+ * ```kotlin
+ * // 反例：绕过代理自己拼编码与金额
+ * val id = "u${user.id}"
+ * val amount = BigDecimal.valueOf(qty / 100.0)
+ *
+ * // 正例
+ * EconomyProxy.wallet(user).credit(EconomyProxy.money(qty))
+ * ```
  */
 object EconomyProxy {
 
     /** 金额精度：与 `economy_account.balance DECIMAL(19,2)` 对齐。 */
     const val SCALE: Int = 2
 
-    /** 注入的后端；`null` 表示按配置选择。 */
+    /**
+     * 注入的后端；`null` 表示按配置选择。
+     *
+     * `@Volatile` 是因为注入通常发生在测试的 `@BeforeClass` / 迁移脚本的线程里，
+     * 而读取方可能是任意业务线程；不保证复合操作原子性（本字段只会整体赋值，够用）。
+     */
     @Volatile
     private var injected: EconomyLedger? = null
 
@@ -144,6 +175,12 @@ object EconomyProxy {
      *
      * 句柄本身不持有 [EconomyLedger] 实例，每次操作都向 [backend] 取当前后端，
      * 避免启动期构造顺序问题、后端切换或注入后的悬挂引用。
+     *
+     * 构造器是 `internal`：外部只能经 [wallet] / [userBank] / [plugin] / [global] 拿到句柄，
+     * 保证账户编码永远由本类统一生成，不允许调用方自己 `Account(LedgerOwner.Wallet("u$qq"))`。
+     *
+     * 句柄**无状态、可安全跨线程传递**：真正的并发安全由后端实现决定
+     * （`BaseLedger` 走事务/悲观锁，mirai 依赖上游锁）。
      */
     class Account internal constructor(val owner: LedgerOwner) {
 

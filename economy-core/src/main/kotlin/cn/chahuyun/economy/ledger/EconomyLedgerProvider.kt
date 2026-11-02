@@ -4,6 +4,9 @@ import cn.chahuyun.economy.base.ledger.BaseLedger
 import cn.chahuyun.economy.base.ledger.EconomyLedger
 import cn.chahuyun.economy.config.EconomyBackend
 import cn.chahuyun.economy.config.EconomyConfig
+import cn.chahuyun.economy.ledger.EconomyLedgerProvider.current
+import cn.chahuyun.economy.ledger.EconomyLedgerProvider.init
+import cn.chahuyun.economy.ledger.EconomyLedgerProvider.shutdown
 import cn.chahuyun.economy.utils.Log
 
 /**
@@ -19,6 +22,12 @@ import cn.chahuyun.economy.utils.Log
  */
 object EconomyLedgerProvider {
 
+    /**
+     * 已启动的后端单例。
+     *
+     * `@Volatile` 只保证可见性：写入发生在 `onEnable`（单线程），其余线程在 `onEnable`
+     * 之后才开始调用代理，因此不需要额外加锁。置空只发生在 [shutdown]。
+     */
     @Volatile
     private var ledger: EconomyLedger? = null
 
@@ -26,7 +35,12 @@ object EconomyLedgerProvider {
     val current: EconomyLedger
         get() = ledger ?: error("经济后端尚未初始化，请检查 HuYanEconomy.onEnable 的初始化顺序")
 
-    /** 当前生效的后端，未初始化时为 null；供状态查询类逻辑使用。 */
+    /**
+     * 当前生效的后端，未初始化时为 null。
+     *
+     * 与 [current] 的区别是**不抛异常**，只给状态展示类逻辑用（例如 `hye economy status`
+     * 在启动失败后仍要能打印"未初始化"）。业务读写必须用 [current]。
+     */
     val currentOrNull: EconomyLedger?
         get() = ledger
 
@@ -72,6 +86,17 @@ object EconomyLedgerProvider {
         ledger = null
     }
 
+    /**
+     * 按配置挑出候选后端，**不做启动与自检**。
+     *
+     * 三层判定：
+     * 1. 配置不是 `MIRAI_ECONOMY` → 直接 `BaseLedger`（绝大多数场景，不触碰上游类型）；
+     * 2. 配了 `MIRAI_ECONOMY` 但类探测失败 → 按 `economyBackendFallback` 决定抛错或降级；
+     * 3. 类存在 → 尝试构造 `MiraiEconomyLedger`，构造期异常同样走降级开关。
+     *
+     * 这里只处理"选谁"，启动失败的重试与降级在 [init] 里做——两段分开是为了让
+     * "类不存在"和"类存在但 start 失败"给出不同的日志与异常信息。
+     */
     private fun candidate(): EconomyLedger {
         val requested = EconomyConfig.economyBackend
         if (requested != EconomyBackend.MIRAI_ECONOMY) return BaseLedger

@@ -42,7 +42,19 @@ sealed interface LedgerOwner {
     data class GlobalAccount(val accountId: String, val description: String = "") : LedgerOwner
 }
 
-/** 账本分类，对应上游的 custom / global 上下文与账户类型。 */
+/**
+ * 账本分类，对应上游的 custom / global 上下文与账户类型。
+ *
+ * 这是[位置][LedgerOwner]的**扁平化视图**，只用于"按类聚合"的场景（迁移、排行、对账）；
+ * 单笔读写一律用 [LedgerOwner]，因为分类无法表达具体是哪个账户。
+ *
+ * | 分类 | `BaseLedger` 的 Scope code | `MiraiEconomyLedger` 的 id 后缀 |
+ * |------|---------------------------|--------------------------------|
+ * | [WALLET] | `DEFAULT` | 无后缀（仅 `u<qq>` 形态） |
+ * | [USER_BANK] | `BANK` | `#BANK` |
+ * | [PLUGIN] | `PLUGIN` | `#PLUGIN` |
+ * | [GLOBAL] | `GLOBAL` | `#GLOBAL` |
+ */
 enum class LedgerBook {
     /** 全部钱包账户（上游 custom 上下文全量）。 */
     WALLET,
@@ -57,22 +69,39 @@ enum class LedgerBook {
     GLOBAL,
 }
 
-/** 账本中的一条余额记录，用于迁移、总额统计与排行。 */
+/**
+ * 账本中的一条余额记录，用于迁移、总额统计与排行。
+ *
+ * @property accountId 账户标识，**不含** scope 后缀（`#BANK` 等已被实现剥掉）
+ * @property description 展示名；`BaseLedger` 取库里的描述字段，mirai 实现因上游该字段
+ *   可变、不可作为身份依据而返回 `null`
+ * @property amount 余额，允许为负（债务场景）；迁移时按原值搬运，不取绝对值
+ */
 data class LedgerEntry(
     val accountId: String,
     val description: String?,
     val amount: BigDecimal,
 )
 
-/** 单次经济操作的结果；不向业务层暴露数据库异常细节。 */
+/**
+ * 单次经济操作的结果；不向业务层暴露数据库异常细节。
+ *
+ * @property success 是否成功。**唯一**可判断成败的字段，不要靠 `balance` 是否为空推断
+ * @property balance 操作后的余额快照；失败时通常是操作前的余额（部分实现为 `null`），
+ *   仅用于回显，不能当作账本真实状态
+ * @property message 失败原因码，取值见 [EconomyLedger] 的"失败信息约定"表；
+ *   成功时为 `null`
+ */
 data class LedgerOp(
     val success: Boolean,
     val balance: BigDecimal? = null,
     val message: String? = null,
 ) {
     companion object {
+        /** 构造成功结果；可附带操作后余额。 */
         fun ok(balance: BigDecimal? = null) = LedgerOp(true, balance)
 
+        /** 构造失败结果；[message] 建议使用错误码而非自由文本，便于调用方分支判断。 */
         fun fail(message: String? = null, balance: BigDecimal? = null) = LedgerOp(false, balance, message)
     }
 }
